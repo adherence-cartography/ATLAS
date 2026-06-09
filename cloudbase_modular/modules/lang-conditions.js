@@ -443,8 +443,8 @@ async function submitMMAS() {
 
   // SDoH: ZOE path uses pre-captured snapshot; manual path reads live fields
   const _sn = window._zoeSdohSnapshot || {};
-  const sdohCountry  = _sn.country   || (document.getElementById('sdoh-country')?.value.trim())  || userLocation.country;
-  const sdohCity     = _sn.city      || (document.getElementById('sdoh-city')?.value.trim())      || userLocation.city;
+  const sdohCountry  = _sn.country   || document.getElementById('sdoh-country')?.value.trim()  || userLocation?.country  || 'Unknown';
+  const sdohCity     = _sn.city      || document.getElementById('sdoh-city')?.value.trim()      || userLocation?.city     || 'Unknown';
   const manualPatient = _sn.patientNum || document.getElementById('sdoh-patient-num')?.value.trim() || null;
 
   // Auto-assign a short readable patient ID if none was entered.
@@ -485,9 +485,9 @@ async function submitMMAS() {
     adherence_level: cat.label,
     country:         normalizeCountry(sdohCountry),
     city:            sdohCity,
-    latitude:        userLocation.latitude,
-    longitude:       userLocation.longitude,
-    country_code:    resolveCountryCode(sdohCountry, userLocation.country_code),
+    latitude:        userLocation?.latitude ?? null,
+    longitude:       userLocation?.longitude ?? null,
+    country_code:    resolveCountryCode(sdohCountry, userLocation?.country_code),
     role:            isResearcher ? 'researcher' : 'patient',
     data_tier:       isResearcher ? 'clinical' : 'public',
     q1: mmasAnswers.q1||0, q2: mmasAnswers.q2||0, q3: mmasAnswers.q3||0,
@@ -690,7 +690,9 @@ function classifyMapPattern(record) {
 function computeMMASPE(r) {
   if (r.q1 === undefined || r.q2 === undefined || r.q7 === undefined) return null;
   const q8num = typeof r.q8 === 'number'
-    ? ({0:1,1:0.75,2:0.5,3:0.25,4:0}[r.q8] ?? null)
+    ? (Number.isInteger(r.q8) && r.q8 >= 0 && r.q8 <= 4
+        ? ({0:1, 1:0.75, 2:0.5, 3:0.25, 4:0}[r.q8] ?? null)
+        : (r.q8 >= 0 && r.q8 <= 1 ? r.q8 : null))
     : ({'never':1,'rarely':0.75,'once in a while':0.75,'sometimes':0.5,'often':0.25,'usually':0.25,'always':0,'all the time':0}[String(r.q8||'').toLowerCase()] ?? null);
   if (q8num === null) return null;
   const A   = ((+(r.q2)||0) + (+(r.q3)||0) + (+(r.q6)||0)) / 3;

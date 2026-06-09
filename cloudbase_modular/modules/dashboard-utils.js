@@ -792,6 +792,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     dashMiniPeacs = null;
     dashMiniMap = null;
     window._miniMmasLiveInited = false;
+    window._miniPeacsLiveInited = false;
     window._miniMapLiveInited = false;
     peacsMapInited = false;
     peacsMap = null;
@@ -1033,8 +1034,9 @@ function hardResetApp() {
     dashMiniMmas        = null;
     dashMiniPeacs       = null;
     dashMiniMap         = null;
-    window._miniMmasLiveInited = false;
-    window._miniMapLiveInited  = false;
+    window._miniMmasLiveInited  = false;
+    window._miniPeacsLiveInited = false;
+    window._miniMapLiveInited   = false;
     if (typeof peacsMapInited  !== 'undefined') peacsMapInited  = false;
     if (typeof peacsMap        !== 'undefined') peacsMap        = null;
     _sentinelListener   = null;

@@ -305,17 +305,6 @@ function switchFactSheet(type){
   // P4: Render version history on open
   if(typeof _fsRenderVersionHistory==='function')_fsRenderVersionHistory();
 }
-/** Opens a print-optimised popup of the currently active fact sheet tab. @returns {void} */
-function printFactSheet(){
-  const content=document.getElementById('fact-sheet-content');
-  if(!content)return;
-  const type=document.querySelector('.fs-tab[style*="rgba(139,111,245,0.9)"]')?.dataset?.fstype||'direct';
-  const title='ATLAS Data Security Fact Sheet — '+(type==='bulk'?'Bulk Upload':'Direct Assessment');
-  const w=window.open('','_blank','width=960,height=740');
-  w.document.write(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${title}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Georgia,serif;color:#1a2535;max-width:800px;margin:40px auto;padding:0 32px;font-size:13px;line-height:1.75}h1{font-size:22px;font-weight:400;color:#0f1e33;margin-bottom:4px}h2{font-size:13px;font-weight:600;color:#1a2535;border-bottom:1px solid #dde3ea;padding-bottom:5px;margin:28px 0 12px;letter-spacing:0.04em;text-transform:uppercase}p{margin-bottom:10px;color:#374151}table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:11.5px}th{background:#f3f4f6;padding:7px 10px;text-align:left;border:1px solid #dde3ea;font-family:'Courier New',monospace;font-size:9px;text-transform:uppercase;color:#4b5563}td{padding:7px 10px;border:1px solid #e5e7eb;color:#374151;vertical-align:top}@media print{body{margin:20px auto}}</style></head><body>${content.innerHTML}</body></html>`);
-  w.document.close();
-  setTimeout(()=>{w.focus();w.print();},400);
-}
 document.addEventListener('click',e=>{
   const o=document.getElementById('fact-sheet-overlay');
   if(o&&o.style.display!=='none'&&e.target===o)closeFactSheet();
@@ -406,7 +395,8 @@ function _applyBannerData(d) {
     };
   }
 
-  setTimeout(() => { banner.style.display = 'flex'; }, 1200);
+  if (window._bannerShowTimer) clearTimeout(window._bannerShowTimer);
+  window._bannerShowTimer = setTimeout(() => { banner.style.display = 'flex'; }, 1200);
 }
 
 (function initSiteBanner() {
@@ -537,13 +527,16 @@ function _updateBannerPreview(d) {
 })();
 
 // Auto-load banner data when banner section is opened
-const _origAccNav = typeof accNav === 'function' ? accNav : null;
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('atlas:workspace-ready', () => {
   const orig = window.accNav;
-  if (orig) window.accNav = function(section) {
-    orig(section);
-    if (section === 'banner') accLoadBanner();
-  };
+  if (orig && !orig._bannerWrapped) {
+    const wrapped = function(section) {
+      orig(section);
+      if (section === 'banner') accLoadBanner();
+    };
+    wrapped._bannerWrapped = true;
+    window.accNav = wrapped;
+  }
 });
 
 // ── Compliance & Security Page ─────────────────────────────────────────────

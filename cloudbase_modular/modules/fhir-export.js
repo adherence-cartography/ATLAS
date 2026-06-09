@@ -88,6 +88,14 @@ function exportFHIRBundle(records) {
  * @param {Object[]} records - array of ATLAS assessment records
  */
 function downloadFHIRBundle(records) {
+  if (typeof isSuperAdmin !== 'function' && typeof isPIMode !== 'function') return;
+  const hasAccess = (typeof isSuperAdmin === 'function' && isSuperAdmin()) ||
+                    (typeof isPIMode === 'function' && isPIMode()) ||
+                    (typeof isInstitutionMode === 'function' && isInstitutionMode());
+  if (!hasAccess) {
+    if (typeof showToast === 'function') showToast('PI or higher access required for FHIR export.', 3000);
+    return;
+  }
   const bundle = exportFHIRBundle(records);
   const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/fhir+json' });
   const url = URL.createObjectURL(blob);

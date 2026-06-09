@@ -140,6 +140,14 @@ function _finishMmasLoad(dashMmasData) {
   window._mmasDashListener = database.ref('assessments').on('child_added', snap => {
     const r = snap.val();
     if (!r || r.timestamp <= since) return;
+    // If allowed workspace cache hasn't resolved yet, defer this record to next full reload
+    if (!isSuperAdmin() && !isInstitutionMode() && typeof _allowedWSCache === 'undefined') {
+      clearTimeout(window._mmasDashRefreshTimer);
+      window._mmasDashRefreshTimer = setTimeout(() => {
+        if (typeof loadMmasCohortData === 'function') loadMmasCohortData();
+      }, 1200);
+      return;
+    }
     const rWs     = (r.institution_code   || '').toUpperCase();
     const rParent = (r.parent_institution || '').toUpperCase();
     const rParentPi = (r.parent_pi || '').toUpperCase();
@@ -674,6 +682,14 @@ function loadPeacsCohortData() {
     window._peacsDashListener = database.ref('peacs_assessments').on('child_added', snap => {
       const r = snap.val();
       if (!r || r.timestamp <= _peacsSince) return;
+      // If allowed workspace cache hasn't resolved yet, defer this record to next full reload
+      if (!isSuperAdmin() && !isInstitutionMode() && typeof _allowedWSCache === 'undefined') {
+        clearTimeout(window._peacsDashRefreshTimer);
+        window._peacsDashRefreshTimer = setTimeout(() => {
+          if (typeof loadPeacsCohortData === 'function') loadPeacsCohortData();
+        }, 1200);
+        return;
+      }
       const rWs     = (r.institution_code   || '').toUpperCase();
       const rParent   = (r.parent_institution || '').toUpperCase();
       const rParentPi = (r.parent_pi          || '').toUpperCase();

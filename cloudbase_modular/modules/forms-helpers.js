@@ -109,7 +109,7 @@ function addMedRow(prefill) {
   const id = ++_medRowCount;
   const row = document.createElement('div');
   row.id = 'med-row-' + id;
-  row.style.cssText = 'background:var(--card2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;';
+  row.style.cssText = 'background:var(--card2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;position:relative;';
   const routeOpts = ROUTES.map(r => '<option' + (prefill && prefill.route===r?' selected':'') + '>' + r + '</option>').join('');
   const freqOpts  = DOSING_FREQS.map(([label, val]) => '<option value="' + val + '"' + (prefill && prefill.frequency===val?' selected':'') + '>' + label + '</option>').join('');
   const isLinked  = prefill && prefill.mmas_linked ? 'checked' : '';

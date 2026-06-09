@@ -41,8 +41,8 @@ function _recomputeMMASScore(r) {
 // Institution key: sees only workspaces where parent_institution === currentWorkspace
 // Returns Promise<Set<string>> of allowed workspace keys (null = allow all)
 // Result is cached per session to avoid redundant Firebase reads on re-renders
-/** @type {Set<string>|null|undefined} Cached allowed workspace set; null = all workspaces; undefined = not yet resolved */
-let _allowedWSCache = null;
+/** @type {Set<string>|null|undefined} Cached allowed workspace set; null = all workspaces (superadmin); undefined = not yet resolved */
+let _allowedWSCache = undefined;
 /** @type {string|null} Workspace key for which _allowedWSCache was last computed */
 let _allowedWSCacheKey = null;
 
@@ -92,6 +92,14 @@ async function resolveAllowedWorkspaces() {
       workspaceProfile._childWorkspaces.forEach(k => allowed.add(k.toUpperCase()));
     }
 
+    // PERF NOTE (Fix 3 — deferred): These two Firebase reads duplicate the reads in
+    // loadMmasCohortData() and loadPeacsCohortData(), causing up to 6 full-node reads
+    // per PI login. The fix is to populate window._atlasAssessmentsCache in the cohort
+    // loaders and read from it here instead of hitting Firebase again. This is safe only
+    // if the cohort loaders are guaranteed to have run first, which currently cannot be
+    // assumed because resolveAllowedWorkspaces() and the cohort loaders race at login.
+    // Requires a load-order guarantee (e.g. cohort loaders await resolveAllowedWorkspaces
+    // and populate the cache before returning) — not safe to wire in isolation here.
     try {
       const snap = await database.ref('assessments').once('value');
       const all = snap.val();
@@ -156,6 +164,7 @@ async function resolveAllowedWorkspaces() {
   // tagged with parent_institution === this institution key.
   // SSM profiles for child workspaces must have parent_institution set
   // (confirmed configured in AWS SSM) so submissions arrive pre-tagged.
+  // PERF NOTE (Fix 3 — deferred): same triple-read issue as PI branch above.
   try {
     const snap = await database.ref('assessments').once('value');
     const all = snap.val();

@@ -54,6 +54,9 @@ function sanitizeCountryKey(c) {
 function updatePublicStats(score, country) {
   const s = parseFloat(score);
   if (isNaN(s) || s < 0) return; // skip invalid / rapid-only scores
+  // public_stats is intentionally written to the global Firebase instance (US)
+  // as it contains only anonymized aggregate counts, not individual records.
+  // This is by design per the ATLAS data architecture.
   const sr = database.ref('public_stats');
   sr.child('total').transaction(n => (n||0)+1);
   sr.child('score_sum').transaction(n => (n||0)+s);
@@ -177,7 +180,13 @@ function atlasAuditLog(action, meta) {
   };
   if (meta && typeof meta === 'object') {
     const SAFE = ['records','workspace','screen','export_type','filter','count','tier','instrument','rows'];
-    SAFE.forEach(k => { if (meta[k] !== undefined) entry[k] = meta[k]; });
+    SAFE.forEach(k => {
+      if (meta[k] !== undefined) {
+        const v = meta[k];
+        // Strip HTML from string values to prevent stored XSS
+        entry[k] = typeof v === 'string' ? v.replace(/<[^>]*>/g, '') : v;
+      }
+    });
   }
 
   // BP-SEC-09: Exponential backoff retry — up to 3 attempts (delays: 500ms, 1000ms, 2000ms)
@@ -188,9 +197,12 @@ function atlasAuditLog(action, meta) {
     atlasDB('audit_log').push(entry)
       .then(function() {
         // Success — also write to per-workspace audit log for PI visibility
+        // Secondary write in its own chain — failures here don't trigger primary retry
         if (ws && (role === 'pi' || role === 'institution' || role === 'superadmin')) {
           atlasDB('ws_audit/' + ws).push({ action: entry.action, ts: entry.timestamp, uid: entry.uid })
-            .catch(function() {});
+            .catch(function(e) {
+              console.warn('[ATLAS] ws_audit secondary write failed:', e && e.message);
+            });
         }
       })
       .catch(function(err) {

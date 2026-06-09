@@ -249,7 +249,7 @@ function openInstitutionControl() {
   // workspaceProfile is the authoritative role source — token claim 'researcher'
   // is used for Firebase rules but does NOT equal the logical role 'pi'.
   const piOk        = typeof isPIMode === 'function' && isPIMode();
-  const adminOk     = typeof isSuperadmin === 'function' && isSuperadmin();
+  const adminOk     = typeof isSuperAdmin === 'function' && isSuperAdmin();
   if (!piOk && !adminOk) {
     showToast('Institution Control requires PI access or higher.', 3000);
     return;

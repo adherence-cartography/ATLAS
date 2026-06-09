@@ -81,10 +81,14 @@ function loadMmasMapData() {
  * @returns {void}
  */
 function listenMmasLive() {
-  if (window._mmasLiveListenerActive) return;
+  // Remove existing listener before re-registering
+  if (window._mmasLiveListenerRef) {
+    database.ref('mapData').off('child_added', window._mmasLiveListenerRef);
+    window._mmasLiveListenerRef = null;
+  }
   window._mmasLiveListenerActive = true;
   const since = Date.now();
-  database.ref('mapData').on('child_added', snap => {
+  window._mmasLiveListenerRef = database.ref('mapData').on('child_added', snap => {
     const a = snap.val();
     if (a.timestamp > since) addMmasMarker(a);
   });
@@ -439,8 +443,6 @@ function enterSpectatorMode() {
   } else {
     updateCinematicStats();
     updateCinematicLeaderboard();
-    // Restart cinematic tour — tourActive was cleared on last exit
-    startCinematicTour();
     // Re-seed and restart the ticker (rAF was cancelled on exit)
     renderTicker();
   }
@@ -450,6 +452,21 @@ function exitSpectatorMode() {
   spectatorActive = false;
   tourActive = false;
   if (tourTimeout) { clearTimeout(tourTimeout); tourTimeout = null; }
+  // Remove live Firebase listeners to prevent stacked listeners on re-entry
+  if (window._specAssessListener) {
+    database.ref('assessments').off('child_added', window._specAssessListener);
+    window._specAssessListener = null;
+  }
+  if (window._specMapListener) {
+    database.ref('mapData').off('child_added', window._specMapListener);
+    window._specMapListener = null;
+  }
+  if (window._specCheckinRef && window._specCheckinListener) {
+    window._specCheckinRef.off('child_added', window._specCheckinListener);
+    window._specCheckinRef = null;
+    window._specCheckinListener = null;
+  }
+  spectatorListening = false;
   document.getElementById('spectator-overlay').classList.remove('active');
   document.body.style.overflow = '';
   // Restore site banner if it was visible before entering spectator mode
@@ -606,6 +623,12 @@ function enterPeacsSpectatorMode() {
 
 function exitPeacsSpectatorMode() {
   peacsSpectatorActive = false;
+  // Remove live Firebase listener to prevent stacked listeners on re-entry
+  if (window._peacsSpecListener) {
+    database.ref('peacs_assessments').off('child_added', window._peacsSpecListener);
+    window._peacsSpecListener = null;
+  }
+  window._peacsSpectatorListening = false;
   document.getElementById('peacs-spectator-overlay').style.display = 'none';
   document.body.style.overflow = '';
 }
@@ -716,7 +739,7 @@ function listenPeacsSpectatorLive(peZoneColors, getZone) {
   if (window._peacsSpectatorListening) return;
   window._peacsSpectatorListening = true;
   const since = Date.now();
-  database.ref('peacs_assessments').on('child_added', snap => {
+  window._peacsSpecListener = database.ref('peacs_assessments').on('child_added', snap => {
     const a = snap.val();
     if (a.timestamp > since) {
       addPeacsSpectatorMarker(a, peZoneColors, getZone);
@@ -1091,7 +1114,6 @@ function loadSpectatorData() {
       tickerItems = tickerItems.slice(-40).reverse();
       renderTicker();
       listenSpectatorLive();
-      startCinematicTour();
     }); // end mapData.once
   }); // end assessments.once
 }
@@ -1103,7 +1125,7 @@ function listenSpectatorLive() {
 
   // Listen on assessments for counts — this is the source of truth matching the dashboard.
   // mapData may be missing entries whose coords were null/invalid, causing count mismatch.
-  database.ref('assessments').on('child_added', snap => {
+  window._specAssessListener = database.ref('assessments').on('child_added', snap => {
     const a = snap.val();
     if (!a || a.timestamp <= since) return;
     if (a.score === undefined || a.score === null) return;
@@ -1119,7 +1141,7 @@ function listenSpectatorLive() {
     updateCinematicLeaderboard();
     checkMilestone(mmasTotal);
   });
-  database.ref('mapData').on('child_added', snap => {
+  window._specMapListener = database.ref('mapData').on('child_added', snap => {
     const a = snap.val();
     if (a.timestamp > since) {
       if (a.score === undefined || a.score === null) return;
@@ -1165,11 +1187,11 @@ function listenSpectatorLive() {
       items.sort((a,b) => (b.timestamp||0) - (a.timestamp||0)).slice(0,8).reverse()
         .forEach(c => addToCheckinFeed(c, false));
     });
-  database.ref('wad_checkins').orderByChild('timestamp').startAt(since)
-    .on('child_added', snap => {
-      const c = snap.val();
-      if (c && c.timestamp > since) addToCheckinFeed(c, true);
-    });
+  window._specCheckinRef = database.ref('wad_checkins').orderByChild('timestamp').startAt(since);
+  window._specCheckinListener = window._specCheckinRef.on('child_added', snap => {
+    const c = snap.val();
+    if (c && c.timestamp > since) addToCheckinFeed(c, true);
+  });
 }
 
 function addToCheckinFeed(c, animate) {
@@ -1206,11 +1228,6 @@ function addSpectatorMarker(a) {
 
 function renderSpectatorCluster(key, cl) {
   // No-op — all rendering handled by _updateSpectatorSource() as a single GeoJSON upload
-}
-
-function startCinematicTour() {
-  // Auto-tour disabled — globe only moves when a new assessment is submitted live.
-  // The listenSpectatorLive() handler flies to each new submission as it arrives.
 }
 
 function updateCinematicStats() {

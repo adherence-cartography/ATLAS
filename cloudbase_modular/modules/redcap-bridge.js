@@ -155,9 +155,12 @@ async function syncATLAStoREDCap() {
   if (status) status.textContent = 'Syncing ATLAS → REDCap…';
 
   try {
-    const snap = await database.ref(`assessments/${currentWorkspace}`).once('value');
-    const records = snap.val() || {};
-    const items = Object.values(records);
+    const snap = await database.ref('assessments').once('value');
+    const allRecords = snap.val() ? Object.values(snap.val()) : [];
+    // Filter to only this workspace's records by institution_code
+    const items = allRecords.filter(r =>
+      (r.institution_code || '').toUpperCase() === (currentWorkspace || '').toUpperCase()
+    );
     if (status) status.textContent = `Pushing ${items.length} records to REDCap…`;
 
     const res = await fetch(LAMBDA_URL + '/redcap-push', {

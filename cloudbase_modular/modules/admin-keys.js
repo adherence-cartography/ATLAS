@@ -524,21 +524,20 @@ function accRenderKeys(keys) {
           const lastActiveStr = k._lastActive ? new Date(k._lastActive).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'Never';
           const lastActiveColor = k._lastActive ? 'var(--dim)' : 'rgba(255,255,255,0.18)';
           const assessmentTip = (k._mmasCount||k._peacsCount) ? `MMAS: ${k._mmasCount||0}  PEACS: ${k._peacsCount||0}` : '';
-          const safeKey = (k.key||'').replace(/'/g,"\\'");
           return `<tr>
-            <td style="color:${col};letter-spacing:0.1em;">${k.key || '—'}</td>
-            <td style="color:var(--text);">${k.name || '—'}</td>
-            <td style="color:var(--muted);max-width:160px;" title="${k.institution||''}${k.parent_institution ? ' · inst: ' + k.parent_institution : ''}${k.parent_pi ? ' · pi: ' + k.parent_pi : ''}">
-              <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.institution || '—'}</div>
-              ${k.parent_institution ? `<div style="font-size:0.68rem;color:rgba(212,168,67,0.55);letter-spacing:0.06em;margin-top:1px;">↑ ${k.parent_institution}</div>` : ''}
-              ${k.parent_pi ? `<div style="font-size:0.68rem;color:rgba(78,156,245,0.55);letter-spacing:0.06em;margin-top:1px;">↑ PI: ${k.parent_pi}</div>` : ''}
+            <td style="color:${col};letter-spacing:0.1em;">${_esc(k.key) || '—'}</td>
+            <td style="color:var(--text);">${_esc(k.name) || '—'}</td>
+            <td style="color:var(--muted);max-width:160px;" title="${_esc(k.institution||'')}${k.parent_institution ? ' · inst: ' + _esc(k.parent_institution) : ''}${k.parent_pi ? ' · pi: ' + _esc(k.parent_pi) : ''}">
+              <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(k.institution) || '—'}</div>
+              ${k.parent_institution ? `<div style="font-size:0.68rem;color:rgba(212,168,67,0.55);letter-spacing:0.06em;margin-top:1px;">↑ ${_esc(k.parent_institution)}</div>` : ''}
+              ${k.parent_pi ? `<div style="font-size:0.68rem;color:rgba(78,156,245,0.55);letter-spacing:0.06em;margin-top:1px;">↑ PI: ${_esc(k.parent_pi)}</div>` : ''}
             </td>
             <td><span style="color:${col};border:1px solid ${col}44;padding:1px 6px;border-radius:3px;font-size:0.72rem;letter-spacing:0.1em;">${(k.role||'—').toUpperCase()}</span></td>
             <td><span style="color:${active?'var(--strata)':'var(--poor)'}">${active?'Active':'Revoked'}</span></td>
             <td style="color:var(--dim);">${created}</td>
             <td style="color:${lastActiveColor};" title="${assessmentTip}">${lastActiveStr}${assessmentTip ? `<div style="font-size:0.65rem;color:rgba(78,156,245,0.5);margin-top:1px;letter-spacing:0.04em;">${k._mmasCount ? k._mmasCount+' MMAS' : ''}${k._mmasCount&&k._peacsCount?' · ':''}${k._peacsCount ? k._peacsCount+' PEACS' : ''}</div>` : ''}</td>
             <td style="white-space:nowrap;">
-              <span onclick="accOpenEditKey('${safeKey}')" style="color:var(--base);cursor:pointer;opacity:0.7;margin-right:8px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Edit key profile">Edit</span>${active ? `<span onclick="document.getElementById('km-revoke-key').value='${safeKey}';accRevokeKey()" style="color:var(--poor);cursor:pointer;opacity:0.7;margin-right:8px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Revoke key (keeps record, disables login)">Revoke</span>` : ''}<span onclick="accDeleteKey('${safeKey}')" style="color:rgba(239,68,68,0.55);cursor:pointer;opacity:0.7;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Permanently delete key from registry">Delete</span>
+              <span data-key="${_esc(k.key)}" onclick="accOpenEditKey(this.dataset.key)" style="color:var(--base);cursor:pointer;opacity:0.7;margin-right:8px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Edit key profile">Edit</span>${active ? `<span data-key="${_esc(k.key)}" onclick="document.getElementById('km-revoke-key').value=this.dataset.key;accRevokeKey()" style="color:var(--poor);cursor:pointer;opacity:0.7;margin-right:8px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Revoke key (keeps record, disables login)">Revoke</span>` : ''}<span data-key="${_esc(k.key)}" onclick="accDeleteKey(this.dataset.key)" style="color:rgba(239,68,68,0.55);cursor:pointer;opacity:0.7;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Permanently delete key from registry">Delete</span>
             </td>
           </tr>`;
         }).join('')}
@@ -1704,6 +1703,10 @@ async function executeBatchRollback(batchId) {
 }
 
 function accExportGlobalMMAS() {
+  if (typeof isSuperAdmin !== 'function' || !isSuperAdmin()) {
+    if (typeof showToast === 'function') showToast('Superadmin access required.', 3000);
+    return;
+  }
   showToast('Preparing global MMAS export…');
   const db=(typeof database!=='undefined')?database:null;
   if(!db) return;
@@ -1723,6 +1726,10 @@ function accExportGlobalMMAS() {
   });
 }
 function accExportGlobalPEACS() {
+  if (typeof isSuperAdmin !== 'function' || !isSuperAdmin()) {
+    if (typeof showToast === 'function') showToast('Superadmin access required.', 3000);
+    return;
+  }
   showToast('Preparing global PEACS export…');
   const db=(typeof database!=='undefined')?database:null;
   if(!db) return;

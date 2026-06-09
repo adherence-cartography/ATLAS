@@ -111,7 +111,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
 <div id="clinic-mode-bar">
   <div class="clinic-mode-label"><span style="width:7px;height:7px;border-radius:50%;background:var(--optimal);box-shadow:0 0 6px var(--optimal);display:inline-block;"></span>Clinic Mode Active · Patient flow protected</div>
   <span style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.5);background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.20);border-radius:4px;padding:2px 7px;">MODULE: Clinic Mode</span>
-  <button class="clinic-pin-btn" onclick="showClinicPinModal('exit')">🔒 Exit Clinic Mode</button>
+  <button class="clinic-pin-btn" onclick="if(confirm('End clinic session?')){_deactivateClinicMode();}">🔒 Exit Clinic Mode</button>
 </div>
 
 <!-- ── Clinic PIN Modal ── -->
@@ -215,12 +215,14 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
 
       <!-- Hook copy — cartographic/navigation metaphor -->
       <p class="entry-hook">Every patient is a coordinate. Every medication taken — or missed — is a data point. ATLAS maps the true territory of adherence, in real time, across every country on earth.</p>
+      <!-- UI language selector: controls interface text via setUILanguage() -->
+      <!-- Syncs with #lang-select-entry (assessment/patient language) below -->
       <div class="lang-selector" id="atlas-lang-selector">
-        <button class="lang-btn active" onclick="setUILanguage('en')">EN</button>
-        <button class="lang-btn" onclick="setUILanguage('es')">ES</button>
-        <button class="lang-btn" onclick="setUILanguage('fr')">FR</button>
-        <button class="lang-btn" onclick="setUILanguage('de')">DE</button>
-        <button class="lang-btn" onclick="setUILanguage('pt')">PT</button>
+        <button class="lang-btn active" onclick="setUILanguage('en');(function(s){if(s)s.value='en';})(document.getElementById('lang-select-entry'));renderPatientLanguage('en');">EN</button>
+        <button class="lang-btn" onclick="setUILanguage('es');(function(s){if(s)s.value='es';})(document.getElementById('lang-select-entry'));renderPatientLanguage('es');">ES</button>
+        <button class="lang-btn" onclick="setUILanguage('fr');(function(s){if(s)s.value='fr';})(document.getElementById('lang-select-entry'));renderPatientLanguage('fr');">FR</button>
+        <button class="lang-btn" onclick="setUILanguage('de');(function(s){if(s)s.value='de';})(document.getElementById('lang-select-entry'));renderPatientLanguage('de');">DE</button>
+        <button class="lang-btn" onclick="setUILanguage('pt');(function(s){if(s)s.value='pt';})(document.getElementById('lang-select-entry'));renderPatientLanguage('pt');">PT</button>
       </div>
     </div>
 
@@ -267,7 +269,9 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     <!-- ── LANGUAGE SELECTOR ── -->
     <div id="entry-lang-wrap" style="padding:10px 28px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <div id="entry-lang-label" style="font-family:'IBM Plex Mono',monospace;font-size:0.88rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);white-space:nowrap;">Language</div>
-      <select id="lang-select-entry" style="font-family:'IBM Plex Mono',monospace;font-size:0.90rem;background:#0e1a2e;border:1px solid rgba(212,168,67,0.2);padding:6px 10px;color:#c8d8ea;outline:none;cursor:pointer;max-width:240px;appearance:auto;" onchange="renderPatientLanguage(this.value)">
+      <!-- Assessment/patient language selector: controls MMAS question language via renderPatientLanguage() -->
+      <!-- Syncs with #atlas-lang-selector button group (UI language) above -->
+      <select id="lang-select-entry" style="font-family:'IBM Plex Mono',monospace;font-size:0.90rem;background:#0e1a2e;border:1px solid rgba(212,168,67,0.2);padding:6px 10px;color:#c8d8ea;outline:none;cursor:pointer;max-width:240px;appearance:auto;" onchange="renderPatientLanguage(this.value);setUILanguage(this.value);(function(v){document.querySelectorAll('#atlas-lang-selector .lang-btn').forEach(function(b){b.classList.toggle('active',b.textContent.trim().toLowerCase()===v.toLowerCase());});})(this.value);">
         <option value="en">English (Default)</option>
       </select>
     </div>
@@ -277,7 +281,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
       <div class="entry-paths-label">Choose your path</div>
       <div class="path-grid">
 
-        <div class="path-card patient" id="btn-patient">
+        <div class="path-card patient" id="btn-patient" tabindex="0" role="button" aria-label="Patient: Complete the MAP medication adherence assessment and receive your personal adherence profile" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"  >
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
             <div class="path-label">Track A · Patient</div>
             <div style="display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(46,201,138,0.8);">
@@ -294,7 +298,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
           <div class="path-prereg-note">No registration required</div>
         </div>
 
-        <div class="path-card explorer" id="btn-explorer">
+        <div class="path-card explorer" id="btn-explorer" tabindex="0" role="button" aria-label="Explorer: Try MAP and PEACS, view the live analytics dashboard, and evaluate ATLAS with no registration required" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
           <div class="path-label">Tracks A+B · Explorer</div>
           <div class="path-name">I want to explore the platform</div>
           <p class="path-desc">Try MAP and PEACS, see the live analytics dashboard, and evaluate ATLAS — no registration, no commitment.</p>
@@ -307,21 +311,21 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
           <div style="margin-top:10px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:rgba(46,201,138,0.08);border:1px solid rgba(46,201,138,0.28);border-radius:6px;padding:6px 12px;transition:all 0.2s;" onclick="window.open('https://keys.adherence.cc','_blank');event.stopPropagation()" onmouseover="this.style.background='rgba(46,201,138,0.16)';this.style.borderColor='rgba(46,201,138,0.55)'" onmouseout="this.style.background='rgba(46,201,138,0.08)';this.style.borderColor='rgba(46,201,138,0.28)'"><span style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(46,201,138,0.85);">See all plans</span><span style="font-size:0.71rem;color:rgba(46,201,138,0.7);">→</span></div>
         </div>
 
-        <div class="path-card researcher" id="btn-researcher">
+        <div class="path-card researcher" id="btn-researcher" tabindex="0" role="button" aria-label="Workspace: Enter your workspace key to access your cohort with full MAP and PEACS analytics, for students, pharmacists, researchers, and PIs" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
           <div class="path-label">Tracks A+B · Workspace</div>
           <div class="path-name">I have a Workspace Key</div>
           <p class="path-desc">For students, pharmacists, researchers, and PIs. Your own isolated cohort with full MAP + PEACS analytics, longitudinal tracking, and IRB-grade export.</p>
           <div class="path-detail">
-            <div><span class="path-detail-dot"></span> Student — $19/mo</div>
-            <div><span class="path-detail-dot"></span> Clinician — $49/mo</div>
-            <div><span class="path-detail-dot"></span> Investigator — $149/mo</div>
+            <div><span class="path-detail-dot"></span> Student — $0–$9/mo</div>
+            <div><span class="path-detail-dot"></span> Pharmacist · Researcher — $29/mo</div>
+            <div><span class="path-detail-dot"></span> Funded PI — $99/mo</div>
             <div><span class="path-detail-dot"></span> SDoH intelligence stack · MAP + intake + geo pre-fill</div>
           </div>
           <div class="path-prereg-note" style="color:rgba(139,111,245,0.7);border-color:rgba(139,111,245,0.2);background:rgba(139,111,245,0.04);">Workspace key required · MAP + PEACS included</div>
-          <div style="margin-top:10px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:rgba(139,111,245,0.1);border:1px solid rgba(139,111,245,0.35);border-radius:6px;padding:6px 12px;transition:all 0.2s;" onclick="window.open('https://keys.adherence.cc','_blank');event.stopPropagation()" onmouseover="this.style.background='rgba(139,111,245,0.18)';this.style.borderColor='rgba(139,111,245,0.6)'" onmouseout="this.style.background='rgba(139,111,245,0.1)';this.style.borderColor='rgba(139,111,245,0.35)'"><span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(139,111,245,0.9);font-weight:500;">Get a Key</span><span style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:rgba(139,111,245,0.7);">$19 · $49 · $149/mo</span><span style="font-size:0.71rem;color:rgba(139,111,245,0.8);">→</span></div>
+          <div style="margin-top:10px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:rgba(139,111,245,0.1);border:1px solid rgba(139,111,245,0.35);border-radius:6px;padding:6px 12px;transition:all 0.2s;" onclick="window.open('https://keys.adherence.cc','_blank');event.stopPropagation()" onmouseover="this.style.background='rgba(139,111,245,0.18)';this.style.borderColor='rgba(139,111,245,0.6)'" onmouseout="this.style.background='rgba(139,111,245,0.1)';this.style.borderColor='rgba(139,111,245,0.35)'"><span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(139,111,245,0.9);font-weight:500;">Get a Key</span><span style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:rgba(139,111,245,0.7);">$0–$9 · $29 · $99/mo</span><span style="font-size:0.71rem;color:rgba(139,111,245,0.8);">→</span></div>
         </div>
 
-        <div class="path-card institution" id="btn-institution">
+        <div class="path-card institution" id="btn-institution" tabindex="0" role="button" aria-label="Institution: Enterprise deployment for organizations requiring a Population Command Center, multi-PI dashboards, and a formal Business Associate Agreement" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
           <div class="path-label">Tracks A+B · Institution</div>
           <div class="path-name">I represent an Institution</div>
           <p class="path-desc">Enterprise deployment. Population Command Center, cross-PI roll-ups, ZOE SOAP interventions, site benchmarking, Sentinel triage, B2B API, and a formal BAA. Priced per facility.</p>
@@ -485,7 +489,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
       <span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.4);">ATLAS · MMAS-8</span>
     </span>
     <div class="mmas-nav-div"></div>
-    <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--dim);">MMAS-8 · Track C</span>
+    <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--dim);">Track A · MMAS-8</span>
     <div class="mmas-nav-right">
       <button class="theme-toggle-btn" onclick="toggleTheme()" title="Switch Night / Daylight" style="margin-right:4px;">
         <span class="theme-toggle-icon" id="theme-toggle-icon-mmas">☀</span>
@@ -1301,9 +1305,9 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
 
     <div class="ws-benefits" id="ws-benefits-block">
       <div class="ws-benefits-label" id="ws-benefits-label">Four plans — all include MAP</div>
-      <div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--optimal)"></span><span><strong style="color:var(--bright);">Student ($19/mo)</strong> — MAP instrument · PEACS snapshot · cohort isolation · CSV export</span></div>
-      <div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--mvmt)"></span><span><strong style="color:var(--bright);">Clinician ($49/mo)</strong> — PharmD · NP · PA · RN · MD · Care Coordinator · MTM/CCM/RTM billing codes · ZOE SOAP notes · Sentinel alerts · PE Domain Analysis</span></div>
-      <div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--pe)"></span><span><strong style="color:var(--bright);">Investigator ($149/mo)</strong> — IRB-grade export · dataset lock · multi-site · Validation Study Tools (MAP ↔ MMAS-8) · API access</span></div>
+      <div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--optimal)"></span><span><strong style="color:var(--bright);">Student ($0–$9/mo)</strong> — MAP instrument · PEACS snapshot · cohort isolation · CSV export</span></div>
+      <div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--mvmt)"></span><span><strong style="color:var(--bright);">Pharmacist · Researcher ($29/mo)</strong> — PharmD · NP · PA · RN · MD · Care Coordinator · MTM/CCM/RTM billing codes · ZOE SOAP notes · Sentinel alerts · PE Domain Analysis</span></div>
+      <div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--pe)"></span><span><strong style="color:var(--bright);">Funded PI ($99/mo)</strong> — IRB-grade export · dataset lock · multi-site · Validation Study Tools (MAP ↔ MMAS-8) · API access</span></div>
       <div class="ws-benefit-row" style="opacity:0.5;"><span class="ws-benefit-dot" style="background:rgba(255,255,255,0.2)"></span><span>Population Health Command Center · multi-PI dashboard · Sentinel triage — Institution tier only ($499/mo)</span></div>
     </div>
 
@@ -6398,7 +6402,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
               <option value="" disabled selected>Select a role…</option>
               <optgroup label="Clinical Research">
                 <option value="researcher">Researcher — full data access · MAP + PEACS</option>
-                <option value="student">Student — MAP + PEACS · $19/mo</option>
+                <option value="student">Student — MAP + PEACS · $0–$9/mo</option>
               </optgroup>
               <optgroup label="Clinical Care">
                 <option value="clinician">Clinician — full clinical suite · $49/mo</option>

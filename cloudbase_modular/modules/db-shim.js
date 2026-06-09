@@ -46,6 +46,7 @@
     'peacs_dimension_history',
     'audit_log',
     'ws_audit',
+    'mapData',
   ]);
 
   // Map Firebase path names → Lambda op names
@@ -56,6 +57,7 @@
     'peacs_dimension_history':  'set_peacs_dim',  // history handled server-side
     'audit_log':                'push_audit',
     'ws_audit':                 'push_audit',
+    'mapData':                  'push_map',
   };
 
   // ── dyna_only flag ───────────────────────────────────────────────────────────

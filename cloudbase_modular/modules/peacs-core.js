@@ -70,6 +70,20 @@ function loadPeacsCache(cb){
         const parent=(r.parent_institution||'').toUpperCase();
         return code===ws||parent===ws;
       });
+    } else if(typeof isPIMode==='function'&&isPIMode()){
+      if(typeof resolveAllowedWorkspaces==='function'){
+        resolveAllowedWorkspaces().then(allowedWS=>{
+          const piFiltered=all.filter(r=>{
+            const code=(r.institution_code||'').toUpperCase();
+            return code===ws||(allowedWS&&allowedWS.has(code));
+          });
+          _peacsCache=piFiltered;
+          if(typeof cb==='function')cb(_peacsCache);
+        });
+        return;
+      } else {
+        filtered=all.filter(r=>(r.institution_code||'').toUpperCase()===ws);
+      }
     } else {
       filtered=all.filter(r=>(r.institution_code||'').toUpperCase()===ws);
     }

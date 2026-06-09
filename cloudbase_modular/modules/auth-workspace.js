@@ -75,14 +75,16 @@ async function validateWorkspaceCode(code) {
     });
     clearTimeout(timeoutId);
     if (!res.ok) {
-      window._lastWsError = `Server error ${res.status} — check Lambda is deployed`;
+      console.error('[ATLAS] validateWorkspaceCode: server error', res.status, '— check Lambda is deployed');
+      window._lastWsError = 'server_config_error';
       return null;
     }
     const data = await res.json();
     window._lastWsError = null;
     window._lastWsData  = data;
     if (!data.valid) {
-      window._lastWsError = 'Key not recognised (valid=false) — check SSM entry exists';
+      console.warn('[ATLAS] validateWorkspaceCode: key lookup returned valid=false — check SSM entry exists');
+      window._lastWsError = 'key_not_found';
       return null;
     }
     // MFA required — return the profile so submitWorkspaceCode can show the OTP step.
@@ -96,21 +98,25 @@ async function validateWorkspaceCode(code) {
       return data.profile;
     }
     if (!data.token) {
-      window._lastWsError = 'Lambda returned valid but no token — deploy the Lambda fix';
+      console.error('[ATLAS] validateWorkspaceCode: Lambda returned valid=true but no token — Lambda fix may not be deployed');
+      window._lastWsError = 'server_config_error';
       return null;
     }
     try {
       await firebase.auth().signInWithCustomToken(data.token);
     } catch(authErr) {
-      window._lastWsError = `Firebase auth failed: ${authErr.code}`;
+      console.error('[ATLAS] validateWorkspaceCode: Firebase signInWithCustomToken failed', authErr.code, authErr);
+      window._lastWsError = 'server_config_error';
       return null;
     }
     return data.profile;
   } catch(e) {
     if (e.name === 'AbortError') {
-      window._lastWsError = 'Lambda timed out (>12s) — try again, may be cold-starting';
+      console.warn('[ATLAS] validateWorkspaceCode: request timed out (>12s) — Lambda may be cold-starting');
+      window._lastWsError = 'timeout';
     } else {
-      window._lastWsError = `Network error: ${e.message} — Lambda URL or CORS issue`;
+      console.error('[ATLAS] validateWorkspaceCode: network error —', e.message, '— check Lambda URL and CORS config');
+      window._lastWsError = 'Network error';
     }
     return null;
   }
@@ -384,9 +390,15 @@ async function submitWorkspaceCode() {
 
   } else {
     btn.disabled = false; btn.innerHTML = 'Verify Access →'; btn.style.background = '';
-    err.textContent = (window._lastWsError && (window._lastWsError.includes('Network error') || window._lastWsError.includes('Failed to fetch')))
-      ? 'Unable to verify key — please check your connection and try again.'
-      : 'Key not recognised. Please double-check your key or contact support@adherence.cc.';
+    err.textContent = (window._lastWsError === 'timeout')
+      ? 'Verification is taking longer than expected. Please try again.'
+      : (window._lastWsError === 'server_config_error')
+        ? 'There was a server configuration issue. Please contact support if this persists.'
+        : (window._lastWsError && (window._lastWsError.includes('Network error') || window._lastWsError.includes('Failed to fetch')))
+          ? 'Unable to verify key — please check your connection and try again.'
+          : (window._lastWsError === 'key_not_found')
+            ? 'Key not recognized. Please check your key and try again, or contact support.'
+            : 'Key not recognised. Please double-check your key or contact support@adherence.cc.';
     err.classList.add('show');
 
     // CFR-11 §11.10(f) — log failed login attempt to audit_log
@@ -457,10 +469,11 @@ async function _submitOTP(otp) {
     atlasAuditLog('superadmin_mfa_success', { workspace: _mfaPendingKey });
     _grantWorkspaceAccess(_mfaPendingKey, _mfaPendingProfile);
   } catch(e) {
+    console.error('[ATLAS] _submitOTP: network error —', e.name, e.message);
     btn.disabled = false; btn.textContent = 'Verify Code →';
     err.textContent = e.name === 'AbortError'
-      ? 'Request timed out. Please try again.'
-      : `Network error: ${e.message}`;
+      ? 'Verification is taking longer than expected. Please try again.'
+      : 'Verification failed. Please try again or contact support.';
     err.classList.add('show');
   }
 }

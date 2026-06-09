@@ -516,7 +516,8 @@ async function checkExportCap(exportType) {
     await ref.set(used + 1);
     return true;
   } catch(e) {
-    return true; // fail open — don't block export on Firebase error
+    console.warn('[ATLAS] Export cap check failed, denying export:', e.message);
+    return false;
   }
 }
 

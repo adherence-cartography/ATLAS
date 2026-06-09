@@ -127,7 +127,7 @@ function _accPhantomKeys(show) {
       tr.style.cssText = 'opacity:0.28;filter:saturate(0.3);';
       const col = ROLE_COLORS[k.role] || 'var(--muted)';
       const created = k.created_at ? new Date(k.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
-      tr.innerHTML = `<td style="color:${col};letter-spacing:0.1em;">${k.key||'—'}</td><td style="color:var(--text);">${k.name||'—'}</td><td style="color:var(--muted);">${k.institution||'—'}</td><td><span style="color:var(--poor);border:1px solid rgba(239,68,68,0.3);padding:1px 6px;border-radius:3px;font-size:0.72rem;">${(k.role||'—').toUpperCase()}</span></td><td style="color:var(--poor);">Revoked</td><td style="color:var(--dim);">${created}</td><td>—</td>`;
+      tr.innerHTML = `<td style="color:${col};letter-spacing:0.1em;">${_esc(k.key)||'—'}</td><td style="color:var(--text);">${_esc(k.name)||'—'}</td><td style="color:var(--muted);">${_esc(k.institution)||'—'}</td><td><span style="color:var(--poor);border:1px solid rgba(239,68,68,0.3);padding:1px 6px;border-radius:3px;font-size:0.72rem;">${(k.role||'—').toUpperCase()}</span></td><td style="color:var(--poor);">Revoked</td><td style="color:var(--dim);">${created}</td><td>—</td>`;
       tbody.appendChild(tr);
     });
   } else {

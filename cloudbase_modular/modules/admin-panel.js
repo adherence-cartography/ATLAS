@@ -217,7 +217,7 @@ async function processBulkUpload(file) {
         titleEl.textContent = `${rowErrors.length} row${rowErrors.length>1?'s':''} failed validation`;
         const validCount = validRows.length;
         msgEl.innerHTML = `<span style="color:#f59e0b;">${rowErrors.length} row${rowErrors.length>1?'s':''} have errors and will not be uploaded.</span>${validCount ? ` <span style="color:#10b981;">${validCount} valid row${validCount>1?'s':''} ready to upload.</span>` : ' <span style="color:#ef4444;">No valid rows found.</span>'}`;
-        const errorHTML = rowErrors.map(e => `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="font-family:'IBM Plex Mono',monospace;font-size:0.88rem;color:#f59e0b;">Row ${e.rowNum}:</span> <span style="font-size:0.88rem;color:var(--muted);">${e.errors.join(' · ')}</span></div>`).join('');
+        const errorHTML = rowErrors.map(e => `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="font-family:'IBM Plex Mono',monospace;font-size:0.88rem;color:#f59e0b;">Row ${e.rowNum}:</span> <span style="font-size:0.88rem;color:var(--muted);">${_esc(e.errors.join(' · '))}</span></div>`).join('');
         const errorBox = document.createElement('div');
         errorBox.style.cssText = 'max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:8px;padding:10px 14px;margin:12px 0;text-align:left;';
         errorBox.innerHTML = errorHTML;
@@ -375,7 +375,7 @@ async function processBulkUpload(file) {
           await atlasDB('assessments').push(submission);
           // Guard against 0,0 null-island when Nominatim returns no result
           const bulkHasCoords = lat !== 0 || lng !== 0;
-          await database.ref('mapData').push({
+          await atlasDB('mapData').push({
             score:           total_score,
             adherence_level: cat.label,
             latitude:  bulkHasCoords ? lat : null,
@@ -3822,10 +3822,10 @@ function _instRenderAuditTable() {
     page.map(function(e) {
       return '<tr class="inst-audit-row">' +
         '<td class="inst-audit-ts">' + (e.timestamp ? new Date(e.timestamp).toLocaleString() : '—') + '</td>' +
-        '<td><span class="inst-audit-action-badge">' + (tl[e.action] || e.action || '—') + '</span></td>' +
-        '<td class="inst-audit-user">' + (e.user || e.workspace || e.key || '—') + '</td>' +
-        '<td class="inst-audit-patient">' + (e.patient_number || e.record_id || '—') + '</td>' +
-        '<td class="inst-audit-detail">' + (e.detail || e.note || '') + '</td>' +
+        '<td><span class="inst-audit-action-badge">' + _esc(tl[e.action] || e.action || '—') + '</span></td>' +
+        '<td class="inst-audit-user">' + _esc(e.user || e.workspace || e.key || '—') + '</td>' +
+        '<td class="inst-audit-patient">' + _esc(e.patient_number || e.record_id || '—') + '</td>' +
+        '<td class="inst-audit-detail">' + _esc(e.detail || e.note || '') + '</td>' +
         '</tr>';
     }).join('') +
     '</tbody></table><div class="inst-audit-count">Showing ' + (start + 1) + '–' + Math.min(start + _AUDIT_PAGE_SIZE, total) + ' of ' + total + '</div>';

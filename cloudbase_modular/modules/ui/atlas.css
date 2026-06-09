@@ -559,6 +559,8 @@ html:not([data-theme="light"]) #screen-entry .entry-content-col{background:#060e
 .cite-modal-close:hover{border-color:var(--border2);color:var(--bright);}
 /* ── Touch target minimums (WCAG 2.5.5 / 44px) ── */
 button,[role="button"],input[type="submit"],input[type="button"]{min-height:44px;min-width:44px;}
+a.btn,.btn,.lang-btn,.path-card,[tabindex="0"],input[type="checkbox"],input[type="radio"]{min-height:44px;}
+a.btn,.btn,.lang-btn,[tabindex="0"]{min-width:44px;}
 .cite-modal-close,.ivm-modal-close,.modal-close-btn,button[aria-label="Dismiss"],button[aria-label="Close"]{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;}
 .cite-modal-intro{font-size:0.84rem;color:var(--muted);line-height:1.6;margin-bottom:22px;}
 .cite-block{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;position:relative;}
@@ -655,7 +657,7 @@ button,[role="button"],input[type="submit"],input[type="button"]{min-height:44px
 .lang-select{background:#0e1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:var(--r);padding:10px 14px;font-family:var(--font-body);font-size:0.88rem;color:#c8d8ea;width:100%;max-width:340px;outline:none;cursor:pointer;transition:border-color 0.2s;}
 .lang-select:focus{border-color:rgba(78,156,245,0.4);}
 /* ── Keyboard focus ring (WCAG 2.4.7) ── */
-:focus{outline:none;}
+:focus:not(:focus-visible){outline:none;}
 :focus-visible{outline:2px solid var(--accent,#4e9cf5);outline-offset:2px;border-radius:3px;}
 @media (forced-colors:active){:focus-visible{outline:3px solid ButtonText;}}
 [data-theme="light"] .lang-select{background:#ffffff;color:#2c3a4a;border-color:rgba(0,0,0,0.15);}
@@ -2939,8 +2941,9 @@ body.patient-mode #screen-peacs{display:none!important;}
   /* Nav tabs — larger touch target */
   .dash-nav-tab, .ws-tab { min-height: 44px; font-size: 0.78rem; padding: 0 14px; }
 
-  /* Buttons — minimum 44px tap target (Apple HIG) */
-  button, .btn, [role="button"] { min-height: 44px; }
+  /* Buttons and interactive elements — minimum 44px tap target (Apple HIG / WCAG 2.5.5) */
+  button, .btn, [role="button"], a, .lang-btn, .path-card, [tabindex="0"], input[type="checkbox"], input[type="radio"] { min-height: 44px; }
+  button, .btn, [role="button"], .lang-btn, [tabindex="0"] { min-width: 44px; }
 
   /* Form inputs — prevents iOS Safari zoom on focus */
   input, select, textarea { font-size: 16px; }
@@ -3303,3 +3306,13 @@ body.patient-mode #screen-peacs{display:none!important;}
 .sla-ticket{margin-top:.5rem}
 .sla-ticket-btn{display:inline-block;background:transparent;border:1px solid var(--base,#4e9cf5);color:var(--base,#4e9cf5);border-radius:8px;padding:.5rem 1.1rem;font-family:'IBM Plex Mono',monospace;font-size:.78rem;text-decoration:none;transition:all .2s}
 .sla-ticket-btn:hover{background:rgba(78,156,245,.1)}
+
+/* ── Accessibility: keyboard focus-visible equivalents for inline-style hover ── */
+/* These mirror the onmouseover/onmouseout effects in index.html for keyboard users */
+.path-card:focus-visible,
+.entry-featured-card:focus-visible,
+.lang-btn:focus-visible {
+  outline: 2px solid var(--accent, #4e9cf5);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(78, 156, 245, 0.15);
+}
