@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Institution Command Center Runbook · ATLAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_shared.css"/>
+<style>
+.runbook-step{background:var(--card);border:1px solid var(--border2);border-left:3px solid var(--blue);border-radius:8px;padding:16px 20px;margin:10px 0;}
+.runbook-step h4{color:var(--blue);font-family:var(--font-m);font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;margin:0 0 8px;}
+.procedure{counter-reset:proc;}
+.procedure .proc-step{display:flex;gap:12px;margin-bottom:14px;counter-increment:proc;}
+.procedure .proc-step::before{content:counter(proc);width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:0.70rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.procedure .proc-body{font-size:0.84rem;color:var(--text);line-height:1.6;}
+.procedure .proc-body strong{color:var(--bright);}
+.dashboard-map{background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:20px 24px;margin:16px 0;}
+.dashboard-map h4{margin-top:0;color:var(--blue);}
+</style>
+</head>
+<body>
+<nav class="doc-nav">
+  <div class="doc-nav-brand">Adherence <em>Cartography</em> · Docs</div>
+  <div class="doc-nav-links">
+    <a href="index.html">← Library</a>
+    <a href="https://atlas.adherence.cc">ATLAS Platform</a>
+    <a href="mailto:info@adherence.cc">Support</a>
+  </div>
+</nav>
+
+<div class="doc-container">
+  <div class="doc-header">
+    <div class="doc-eyebrow">Institution Tiers · Operational Runbook</div>
+    <h1>Command Center Runbook</h1>
+    <p style="font-size:0.95rem;color:var(--muted);margin-top:10px;line-height:1.7;">Operational procedures for staff managing the ATLAS Population Health Command Center. Covers daily monitoring, Sentinel alert triage, site management, dashboard interpretation, and escalation protocols. Applies to all three institution tiers: Academic, Health System, and Academic Medical Center (AMC).</p>
+    <div class="doc-meta">Version 2026.05 · Institution tiers (Academic · Health System · AMC) · For: Clinical Informatics, Research Coordinators, Population Health Managers</div>
+  </div>
+
+  <div class="callout info">
+    <strong>Who this document is for</strong>
+    This runbook is for the person who has been given the institutional workspace key and responsibility for monitoring the ATLAS Command Center. You may be a clinical informatics coordinator, a research operations manager, a pharmacy director, or a department head. You do not need to be technical — this document covers everything operationally without assuming technical background.
+  </div>
+
+  <div class="section" id="tier-overview" style="margin-bottom:0;">
+    <h2 style="margin-top:0;">Institution Tier Overview — Three Types</h2>
+    <p>As of v2026.05, the ATLAS institution plan is split into three distinct tiers. Each has its own key format, pricing, seat allocation, and feature set. Identify your tier below — feature availability throughout this runbook varies by tier.</p>
+    <table>
+      <tr>
+        <th>Tier</th>
+        <th>Role type / examples</th>
+        <th>Key format</th>
+        <th>Pricing</th>
+        <th>Included seats</th>
+      </tr>
+      <tr>
+        <td><strong>Academic</strong><br/><code>institution_academic</code></td>
+        <td>University · Research Program · School of Pharmacy</td>
+        <td><code>INST-ACAD-XXXX-2026</code></td>
+        <td>$399/mo · $3,990/yr</td>
+        <td>2 PI · 3 Researcher · 10 Student · 1 Observer</td>
+      </tr>
+      <tr>
+        <td><strong>Health System</strong><br/><code>institution_health</code></td>
+        <td>Hospital · FQHC · Pharmacy Chain</td>
+        <td><code>INST-HLTH-XXXX-2026</code></td>
+        <td>$599/mo · $5,990/yr</td>
+        <td>2 PI · 3 Researcher · 10 Student · 1 Observer</td>
+      </tr>
+      <tr>
+        <td><strong>Academic Medical Center</strong><br/><code>institution_amc</code></td>
+        <td>Research Hospital · AMC</td>
+        <td><code>INST-AMC-XXXX-2026</code></td>
+        <td>$799/mo · $7,990/yr</td>
+        <td>3 PI · 5 Researcher · 15 Student · 2 Observer</td>
+      </tr>
+    </table>
+
+    <h3>Feature availability by tier</h3>
+    <table>
+      <tr>
+        <th>Feature</th>
+        <th>Academic</th>
+        <th>Health System</th>
+        <th>AMC</th>
+      </tr>
+      <tr>
+        <td>Cross-Study Research Hub</td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>Grant Reporting Dashboard (NIH/NSF)</td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>Student Thesis Module</td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>Native psychometrics (Cronbach's α, ICC, SEM)</td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>CONSORT flow · protocol amendment log</td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>Care Gap Monitor (MMAS-8 alerts, 30-day overdue)</td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>MTM Billing Log (CPT 99605–99607)</td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>Population Health Command Center</td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>ZOE SOAP AI · ZOE Remote Mode</td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>B2B API</td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>BAA &amp; DUA</td>
+        <td><span class="badge green">Yes (Academic)</span></td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>Dedicated CSM</td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+      <tr>
+        <td>Priority support</td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge red">No</span></td>
+        <td><span class="badge green">Yes</span></td>
+      </tr>
+    </table>
+
+    <h3>Tab gating in the Command Center</h3>
+    <p>Your dashboard tabs are gated to your tier. The superadmin "View As" panel now shows three separate institution buttons — <strong>Institution · Health System</strong>, <strong>Institution · Academic</strong>, and <strong>Institution · Academic Med Ctr</strong> — for testing and support purposes.</p>
+    <table>
+      <tr><th>Tab / panel</th><th>Academic</th><th>Health System</th><th>AMC</th></tr>
+      <tr><td>Research Hub tab</td><td><span class="badge green">Visible</span></td><td><span class="badge red">Hidden</span></td><td><span class="badge green">Visible</span></td></tr>
+      <tr><td>Grants tab</td><td><span class="badge green">Visible</span></td><td><span class="badge red">Hidden</span></td><td><span class="badge green">Visible</span></td></tr>
+      <tr><td>Thesis tab</td><td><span class="badge green">Visible</span></td><td><span class="badge red">Hidden</span></td><td><span class="badge green">Visible</span></td></tr>
+      <tr><td>Billing tab (MTM)</td><td><span class="badge red">Hidden</span></td><td><span class="badge green">Visible</span></td><td><span class="badge green">Visible</span></td></tr>
+      <tr><td>Care Gap panel</td><td><span class="badge red">Hidden</span></td><td><span class="badge green">Visible</span></td><td><span class="badge green">Visible</span></td></tr>
+    </table>
+  </div>
+
+  <div class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#tier-overview">0. Institution tier overview — Academic · Health System · AMC</a></li>
+      <li><a href="#getting-started">1. Getting Started — first week checklist</a></li>
+      <li><a href="#overview">2. Command Center overview</a></li>
+      <li><a href="#daily">3. Daily monitoring routine</a></li>
+      <li><a href="#sentinel-triage">4. Sentinel alert triage protocol — 3-stage escalation workflow</a></li>
+      <li><a href="#dashboard">5. Reading the population health dashboards</a></li>
+      <li><a href="#adding-sites">6. Adding and managing sites</a></li>
+      <li><a href="#bulk-upload">7. Bulk data upload procedure</a></li>
+      <li><a href="#exports">8. Export and reporting procedures</a></li>
+      <li><a href="#access">9. Access management — keys and roles</a></li>
+      <li><a href="#pub-rights">9a. Publication rights for institution researchers</a></li>
+      <li><a href="#escalation">10. Escalation and incident procedures</a></li>
+      <li><a href="#maintenance">11. Platform maintenance and updates</a></li>
+      <li><a href="#clinical-study">12. Clinical Study Module — research operations</a></li>
+      <li><a href="#irb-assistant">13. IRB Submission Assistant</a></li>
+      <li><a href="#global-report">14. Annual Global Adherence Report</a></li>
+    </ol>
+  </div>
+
+  <div class="section" id="getting-started">
+    <h2>1. Getting Started — First Week Checklist</h2>
+    <p>New to the ATLAS Command Center? Work through this checklist in order. Most items are one-time setup tasks — once complete, your daily operation is covered by the <a href="#daily">Daily Monitoring Routine</a>.</p>
+
+    <div class="runbook-step">
+      <h4>Day 1 — Sign in and orient yourself</h4>
+      <p>Open <strong>atlas.adherence.cc</strong>, click <strong>Tracks A+B · Researcher</strong>, and enter your institutional key. The key format depends on your tier: <code>INST-ACAD-XXXX-2026</code> (Academic), <code>INST-HLTH-XXXX-2026</code> (Health System), or <code>INST-AMC-XXXX-2026</code> (AMC). Check your registered email for the 6-digit verification code and enter it. You are now in the Command Center. Spend 15 minutes reviewing each section of the dashboard — Pulse Bar, MMAS-8 Panel, PEACS Panel, Sentinel Feed, Site Benchmarking, Active Patients table, and the <strong>PE Domain Analysis</strong> panel (expand it under the MMAS-8 section — this shows your institution's PE domain profile and per-site constraint breakdown). Nothing you view here changes any data.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>Day 1 — Provision your site coordinator keys</h4>
+      <p>Each site that collects data needs its own Researcher-tier workspace key, issued with your institutional key as the <strong>Parent Institution Key</strong>. Email <strong>info@adherence.cc</strong> with: your institutional key prefix, each site name, and each coordinator's name and email. Keys are provisioned within 24 business hours. Once issued, coordinator submissions will appear in your Command Center automatically — no further setup required on your end. <a href="#adding-sites">Full site setup procedure →</a></p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>Day 2 — Confirm coordinator onboarding</h4>
+      <p>Ask each site coordinator to sign in to their workspace and submit one test assessment using <strong>Start New Patient Session</strong>. In the session modal, they select the appropriate instrument (MMAS-8 Only, PEACS Only, or MMAS-8 + PEACS), click <strong>Continue to Informed Consent →</strong>, complete a test run, and note the auto-generated Patient ID. Verify the test record appears in your Command Center under their site key. Then email info@adherence.cc to delete the test records.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>Day 3 — Set up the daily monitoring routine</h4>
+      <p>Block 15 minutes each morning during active collection periods for the <a href="#daily">Daily Monitoring Routine</a>. Create an operations journal (a simple spreadsheet is fine) to log: date, submission count, Sentinel alerts actioned, and any anomalies. This log supports JC documentation and IRB progress reports.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>Week 1 — Establish escalation contacts</h4>
+      <p>Confirm who receives Sentinel alert notifications at each site, who the clinical lead is for urgent (red) alerts, and who handles platform issues. Record these contacts in your operations journal. Share the <a href="pharmacist-guide.html">Clinician Deep Reference Guide</a> with site coordinators who are new to ATLAS — they should use the Getting Started section and familiarise themselves with the patient session workflow before their first data collection session.</p>
+    </div>
+
+    <div class="callout tip">
+      <strong>Patient session workflow — what your coordinators do per patient</strong>
+      Site coordinators start every assessment with <strong>Start New Patient Session</strong> in their dashboard. They select the instrument in the modal, click <strong>Continue to Informed Consent →</strong>, and note the auto-generated Patient ID (e.g. <code>PT-A3F7</code>) in their CRF. The patient is then guided through consent and the selected instrument(s). Results appear in your Command Center dashboard in real time as submissions come in across all sites.
+    </div>
+  </div>
+
+  <div class="section" id="overview">
+    <h2>2. Command Center Overview</h2>
+    <p>The ATLAS Population Health Command Center is the institutional view of all medication adherence activity across your sites. It is accessible to the holder of the institutional workspace key (formats: <code>INST-ACAD-XXXX-2026</code> · <code>INST-HLTH-XXXX-2026</code> · <code>INST-AMC-XXXX-2026</code> depending on your tier). Note: the MTM Audit Log and Care Gap panel are only visible to Health System and AMC tiers; the Research Hub, Grants, and Thesis tabs are only visible to Academic and AMC tiers.</p>
+
+    <div class="dashboard-map">
+      <h4>What you see in the Command Center</h4>
+      <table>
+        <tr><th>Section</th><th>What it shows</th><th>Update frequency</th></tr>
+        <tr><td>Pulse Bar (top)</td><td>Live totals: all assessments across all sites, countries, global average</td><td>Real-time</td></tr>
+        <tr><td>MMAS-8 Panel</td><td>Aggregate MMAS-8 data for your institution: total submissions, mean score, INA/UNA/Mixed/High breakdown</td><td>Real-time</td></tr>
+        <tr><td>PEACS Panel</td><td>Aggregate PEACS data: total assessments, mean PE, zone distribution (Optimal/Good/Moderate/Poor)</td><td>Real-time</td></tr>
+        <tr><td>Site Benchmarking</td><td>Score distribution comparison across your sites and against global ATLAS average</td><td>On load</td></tr>
+        <tr><td>Sentinel Feed (right)</td><td>Active alerts requiring clinical attention — sorted by urgency</td><td>Real-time</td></tr>
+        <tr><td>Longitudinal Trajectories</td><td>Score trends over time for patients with multiple assessments</td><td>On load</td></tr>
+        <tr><td>Drug · Condition Stratification</td><td>Mean adherence score by drug class and medical condition across your population</td><td>On load</td></tr>
+        <tr><td>Active Patients table</td><td>All individual patient records across all sites with search and filter</td><td>Real-time</td></tr>
+        <tr><td>PE Domain Analysis panel</td><td>MAP PE domain scores for your full institution: cohort avg PE, Architecture / Execution / Context averages, per-site PE breakdown table showing which site is Architecture-, Execution-, or Context-constrained</td><td>On load</td></tr>
+        <tr><td>MTM Audit Log</td><td>CMS-formatted encounter documentation with CPT codes across all sites</td><td>Real-time</td></tr>
+      </table>
+    </div>
+
+    <h3>The institutional key vs site keys — how the hierarchy works</h3>
+    <p>Your institutional key (e.g. <code>INST-HOSP-2026</code>) is the parent. Each site coordinator or researcher has their own workspace key (e.g. <code>RES-HOSP-AB12-2026</code>) that was issued with your institutional key set as the <strong>Parent Institution Key</strong>. This link is stored in the site key's profile at issuance time.</p>
+    <p>When a coordinator submits an assessment, ATLAS stamps the Firebase record with <code>parent_institution: "INST-HOSP-2026"</code>. Your institutional dashboard scans for all records bearing your key as parent institution — this is how everything from across your sites appears in your Command Center automatically, in real time, with no manual aggregation needed.</p>
+    <p>Site coordinators see only their own records — the hierarchy is enforced at the database level. A coordinator cannot see another site's data even if they know the institutional key format.</p>
+    <div class="callout tip"><strong>New site added later?</strong> When the new coordinator's key is issued with your institution key as parent, their submissions will appear in your dashboard from their very first assessment. No reconfiguration required on your end.</div>
+  </div>
+
+  <div class="section" id="daily">
+    <h2>3. Daily Monitoring Routine</h2>
+    <p>This routine should take 10–15 minutes and covers the most important operational checks. It should be completed at the start of each working day during active data collection periods.</p>
+
+    <div class="runbook-step">
+      <h4>Step 1 — Sign in with your institutional key and email verification</h4>
+      <p>Open <strong>atlas.adherence.cc</strong>, enter your institutional workspace key (format: <code>INST-XXXX-2026</code>), and press <strong>Verify Access</strong>. An <strong>Identity Verification</strong> panel appears and a 6-digit one-time code is sent to your registered email. Enter the code to complete sign-in. The code expires after 10 minutes — if it expires, press <strong>Resend Code</strong>.</p>
+      <p>Once signed in, navigate to the <strong>Sentinel</strong> feed on the right side of the Command Center. Any red (Urgent) alerts require same-day response. See <a href="#sentinel-triage">Sentinel Triage Protocol</a> below.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>Step 2 — Review submission volume</h4>
+      <p>Check the submission counter against expected daily volume from each site. If a site shows no submissions for 3+ consecutive days during an active collection period, contact that site coordinator. Log the gap in your operations journal.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>Step 3 — Review aggregate score trends</h4>
+      <p>The mean score should remain broadly stable across days unless a new patient population is being enrolled. A sudden drop may indicate a new high-risk cohort being added or a data quality issue. Review new submissions from that day if you see an unexpected shift.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>Step 4 — Check INA proportion</h4>
+      <p>If the INA (Intentional Non-Adherence) count increases materially week-over-week, this is a clinically significant trend. Bring it to the attention of the clinical lead. INA patients require motivational intervention — reminders and pill organisers will not address this pattern.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>Step 5 — Log completion and any actions</h4>
+      <p>Record in your operations journal: date, submission count, Sentinel alerts actioned, any anomalies noted. This log is important for quality audits and JC documentation.</p>
+    </div>
+  </div>
+
+  <div class="section" id="sentinel-triage">
+    <h2>4. Sentinel Alert Triage Protocol</h2>
+    <p>Sentinel alerts are generated automatically when ATLAS detects adherence patterns that warrant clinical attention. Your role is to ensure alerts are seen, assigned, and actioned within the required timeframes.</p>
+
+    <h3>Triage categories</h3>
+    <table>
+      <tr><th>Alert type</th><th>Trigger</th><th>Response required</th><th>By whom</th><th>Timeframe</th></tr>
+      <tr>
+        <td><span class="badge red">Urgent · Red</span></td>
+        <td>MMAS-8 score &lt; 4, INA pattern, ZOE clinical flag, or rapid screen &lt; 2/3</td>
+        <td>Site coordinator contacts patient. Documents intervention attempted.</td>
+        <td>Site coordinator (primary), clinical lead (if uncontactable)</td>
+        <td>Within 7 days</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);">Moderate · Amber</span></td>
+        <td>MMAS-8 score 4–6, follow-up due, medium adherence</td>
+        <td>Schedule follow-up assessment. No immediate clinical action required.</td>
+        <td>Site coordinator</td>
+        <td>Within 14 days</td>
+      </tr>
+      <tr>
+        <td><span class="badge green">Routine · Green</span></td>
+        <td>Follow-up reminder for high-adherence patient (30-day cycle)</td>
+        <td>Schedule next assessment. Document in patient record.</td>
+        <td>Site coordinator or admin</td>
+        <td>Within 30 days</td>
+      </tr>
+      <tr>
+        <td><span class="badge blue">ZOE Requested</span></td>
+        <td>Pharmacist flagged patient for full ZOE assessment from Daily Intake</td>
+        <td>Ensure full MMAS-8 + ZOE assessment is completed at next patient contact</td>
+        <td>Site coordinator</td>
+        <td>Next patient contact</td>
+      </tr>
+    </table>
+
+    <div class="callout info">
+      <strong>Sentinel Escalation Workflow (3 stages)</strong>
+      <p>Sentinel alerts now use a structured 3-stage escalation workflow rather than a simple "Mark Reviewed" button.</p>
+      <p><strong>Stage 1 — Assign:</strong> Enter the name of the staff member responsible for follow-up in the Assign field and click <strong>Assign</strong>. The alert card updates to show the assigned staff member and timestamp.</p>
+      <p><strong>Stage 2 — Contact Outcome:</strong> Once contact is attempted, record the outcome using one of four buttons: <strong>Reached · No Answer · Declined · Referred</strong>. The timestamp and outcome are logged automatically.</p>
+      <p><strong>Stage 3 — Resolve:</strong> After the patient situation is addressed, click <strong>Resolve</strong>. The alert is marked resolved with a full audit trail (assigned to, contact outcome, resolved by, timestamp chain).</p>
+      <p>Escalation state persists in localStorage so it survives page refresh. Use the Resolve button only when clinical follow-up is complete — resolved alerts are removed from the active Sentinel queue.</p>
+    </div>
+
+    <h3>Triage procedure</h3>
+    <div class="procedure">
+      <div class="proc-step">
+        <div class="proc-body"><strong>Identify the alert patient.</strong> The Sentinel card shows Patient ID, score, pattern, condition, and whether a ZOE session was used. Click the card to expand full details including ZOE transcript excerpt if available.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body"><strong>Stage 1 — Assign to site coordinator.</strong> Enter the responsible staff member's name in the Assign field and click <strong>Assign</strong>. The alert card updates to show the assignee and timestamp. Also notify the coordinator via your normal clinical communication channel with the Patient ID and alert details.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body"><strong>Stage 2 — Record contact outcome.</strong> Once contact is attempted, click the appropriate outcome button on the alert card: <strong>Reached · No Answer · Declined · Referred</strong>. The timestamp and outcome are logged automatically to the audit trail.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body"><strong>Stage 3 — Resolve.</strong> After the patient situation is addressed and clinical follow-up is complete, click <strong>Resolve</strong>. The alert is marked resolved with a full audit trail and removed from the active Sentinel queue. If the coordinator has not actioned an Urgent alert within 3 days, escalate to the clinical lead and log the escalation in your operations journal.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body"><strong>Export the sentinel log monthly.</strong> Use the "Export Sentinel Log" button at the bottom of the sentinel feed. File in your quality documentation. This export covers all alerts including resolved ones with their full audit trail.</div>
+      </div>
+    </div>
+
+    <div class="callout critical">
+      <strong>Patient safety note</strong>
+      ATLAS Sentinel alerts are clinical triage tools, not emergency response systems. If a patient expresses immediate distress, harm to self or others, or a medical emergency during a ZOE assessment, normal clinical emergency protocols apply — call emergency services or activate your institution's rapid response process. ATLAS does not have direct patient contact capability.
+    </div>
+  </div>
+
+  <div class="section" id="dashboard">
+    <h2>5. Reading the Population Health Dashboards</h2>
+
+    <h3>Site Benchmarking panel</h3>
+    <p>The benchmarking panel compares score distributions across your sites against each other and against the global ATLAS average. A site whose distribution skews significantly lower than others may be collecting data from a genuinely higher-risk population, or may have a data collection issue (assessments being completed by proxy rather than patients themselves). Investigate outliers before drawing clinical conclusions.</p>
+
+    <h3>Drug · Condition Stratification</h3>
+    <p>This panel shows mean adherence score by drug class (antihypertensives, diabetes medications, statins, etc.) and medical condition. Use this to identify which therapeutic areas have the lowest adherence in your institution's population — this informs where to direct pharmacist counseling resources and where to prioritise ZOE-assisted intake.</p>
+
+    <h3>PEACS population view</h3>
+    <p>The PEACS panel in institutional view shows the distribution of patients across the four PE zones (Optimal, Good, Moderate, Poor). A high proportion in the Poor zone warrants a STRATA review — social determinants barriers are likely the primary driver and require systemic intervention beyond clinical counseling.</p>
+
+    <h3>PE Domain Analysis panel — per-site breakdown</h3>
+    <p>The institution tier adds a <strong>PE Domain Analysis</strong> panel to the Command Center — an institution-specific view that applies the Theory of Predictive Emergence (TPE) to your MAP data. PE = (A × E × C)<sup>1/3</sup> where <strong>A</strong> is Architecture (Q2, Q3, Q6 — belief and motivation), <strong>E</strong> is Execution (Q1, Q4, Q5, Q8 — habitual reliability), and <strong>C</strong> is Context (Q7 — regimen burden).</p>
+    <p>The institution panel goes beyond the cohort-level view available to individual researchers: it includes a <strong>per-site breakdown table</strong> sorted by lowest PE first, with columns for Site Name, Avg PE, Avg A, Avg E, Avg C, Constraint Label, and patient count. This lets you answer the strategic question: <em>which sites in my institution are Architecture-constrained (motivational problems), which are Execution-constrained (habit and systems problems), and which are Context-constrained (regimen burden problems)?</em> The answer determines where to direct different types of intervention resources.</p>
+    <p>The panel also shows a constraint summary banner for the institution overall — for example: "67% of your population is Execution-constrained. Habit formation and adherence packaging are the highest-leverage interventions across your sites."</p>
+    <div class="callout tip">
+      <strong>No additional data collection required</strong>
+      PE is computed from Q1–Q8 already stored on every assessment — including all historical records. The moment you open the PE Domain Analysis panel, it processes your entire dataset retroactively. New assessments include <code>mmas_pe</code>, <code>mmas_a</code>, <code>mmas_e</code>, and <code>mmas_c</code> fields stored directly on the record, which appear in all CSV exports.
+    </div>
+
+    <h3>Benchmark Comparison Strip</h3>
+    <p>Below the cohort summary statistics, a benchmark strip shows your cohort mean score alongside two reference points: the published literature mean (Morisky et al., <em>Journal of Clinical Hypertension</em>, 2008: mean 5.93, 31.4% high adherence) and the ATLAS global dataset mean (2026: 6.21, 34.2% high adherence). This contextualises whether your population sits above or below both the historical baseline and the current global ATLAS cohort.</p>
+
+    <h3>Longitudinal Trajectories</h3>
+    <p>This panel requires patients to have completed 2 or more assessments under the same Patient ID. It shows whether individual patients are improving, stable, or deteriorating over time. Use it to evaluate the effectiveness of interventions — if a cohort received a pharmacist intervention and reassessed 30 days later, this panel shows whether adherence scores improved.</p>
+  </div>
+
+  <div class="section" id="adding-sites">
+    <h2>6. Adding and Managing Sites</h2>
+
+    <h3>Adding a new site</h3>
+    <div class="procedure">
+      <div class="proc-step">
+        <div class="proc-body">Email info@adherence.cc with: new site name, coordinator name and email, approximate patient volume, and your institutional key prefix.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Adherence Inc. provisions a Researcher-tier key linked to your institutional key. The coordinator receives their key, Letter of Permission, and a welcome email with login instructions within 24 business hours.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Coordinate with the new coordinator to complete onboarding: confirm they can log into ATLAS, submit a test assessment, and see their data in their dashboard. Verify the test record appears in your institutional view under their site key.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Request deletion of test records (email info@adherence.cc). Add the new site to your operations documentation.</div>
+      </div>
+    </div>
+
+    <h3>Suspending a site</h3>
+    <p>If a site coordinator leaves, is unavailable, or a site closes: email info@adherence.cc requesting that the site's workspace key be revoked. The existing data remains accessible to you via the institutional key. The revoked coordinator can no longer log in or submit data. Data already submitted is never deleted — revocation is access-only.</p>
+
+    <h3>Changing a site coordinator</h3>
+    <p>When a coordinator changes, the key profile needs to be updated with the new person's name and email. This can be done by your ATLAS superadmin via the <strong>Keys → Edit</strong> function in ATLAS Control, or by emailing info@adherence.cc with the current site key, the new coordinator's name, and their email address. The incoming coordinator will receive a new welcome email with the key and can log in immediately via MFA. The data and Patient IDs remain unchanged.</p>
+
+    <h3>Site Activation Tracker</h3>
+    <div class="callout info">
+      <strong>Site Activation Tracker</strong>
+      <p>The <strong>Study</strong> tab in the Institution dashboard includes a world map (Mapbox) showing all registered study sites. Each site is plotted as a coloured pin: <strong>grey = Pending</strong>, <strong>green = Active</strong>, <strong>red = Closed</strong>.</p>
+      <p>To add a site: click <strong>Add Site</strong>, enter the site name, city, country, latitude/longitude (or approximate), and initial status. The site appears immediately on the map and in the table below it.</p>
+      <p>Site data is stored locally (<code>atlas_study_sites</code>). When you download a fresh bulk upload template after adding sites, the Timeline &amp; Sites section of the IRB Submission Assistant will automatically include the site list.</p>
+    </div>
+  </div>
+
+  <div class="section" id="bulk-upload">
+    <h2>7. Bulk Data Upload Procedure</h2>
+    <p>All keyed workspace tiers (Student, Researcher, PI, and Institution) support bulk upload via an XLSM template. This allows you to import data collected on paper, in REDCap, or from other electronic systems into ATLAS in a single operation.</p>
+
+    <h3>When to use bulk upload</h3>
+    <ul>
+      <li>Retrospective data entry — converting legacy paper CRF data to digital</li>
+      <li>Site migration — moving data from an existing system into ATLAS</li>
+      <li>High-volume entry by a research coordinator who collected data offline</li>
+      <li>Longitudinal studies — recording the same patients across multiple assessment timepoints</li>
+    </ul>
+
+    <h3>Bulk upload procedure</h3>
+    <div class="procedure">
+      <div class="proc-step">
+        <div class="proc-body"><strong>Download the XLSM template.</strong> In ATLAS, click the <strong>↓ Template</strong> button below the MMAS-8 panel. The template has one row per patient assessment, one highlighted example row, and macro buttons for validation and cleanup.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">
+          <strong>Unblock the file before opening.</strong> Windows flags downloaded <code>.xlsm</code> files and blocks macros by default — a red security bar appears in Excel when the file is opened in a blocked state. To prevent this: <strong>right-click the downloaded file</strong> → <strong>Properties</strong> → tick <strong>Unblock</strong> at the bottom of the General tab → click <strong>OK</strong>. Then open the file. If you already see the red bar, close Excel, unblock the file via Properties, and re-open it.
+        </div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body"><strong>Delete the example row.</strong> The template includes one highlighted example row showing the correct format. Delete it before entering your data — use the <strong>Remove Example Row</strong> macro button at the top of the sheet, or select and delete the row manually.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">
+          <strong>Complete the template.</strong> Each row is one patient assessment. Key columns:
+          <table style="margin-top:8px;font-size:0.82rem;">
+            <tr><th>Column</th><th>Notes</th></tr>
+            <tr><td><code>Patient_Number</code></td><td>Your anonymised patient ID. Recommended — required for longitudinal tracking and source data verification.</td></tr>
+            <tr><td><code>Assessment_Date</code></td><td>Date of assessment in <strong>YYYY-MM-DD</strong> format (e.g. <code>2026-01-15</code>). Used as the record timestamp in ATLAS. Required for longitudinal data; leave blank for single-visit records (upload timestamp is used instead).</td></tr>
+            <tr><td><code>Q1</code>–<code>Q7</code></td><td>Required. Select YES or NO from the dropdown. Q5 is reverse-scored.</td></tr>
+            <tr><td><code>Q8_Frequency</code></td><td>Required. Select from the dropdown: Never / Rarely / Sometimes / Usually / All of the time.</td></tr>
+            <tr><td><code>Country</code>, <code>Condition</code>, <code>Drug_Name</code>, etc.</td><td>Recommended but optional.</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body"><strong>Validate before upload.</strong> Click the <strong>Validate</strong> macro button — red cells indicate errors. Common errors: out-of-range Q8 scores, missing Q responses, invalid date format. Resolve all errors before uploading.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body"><strong>Upload the file.</strong> Click the <strong>📤 Bulk Upload</strong> button in your ATLAS dashboard. When the file selector opens, the file type filter defaults to <strong>Custom Files</strong> — change it to <strong>All Files</strong> so the <code>.xlsm</code> template is visible. Select your completed file. ATLAS processes each row, displays a progress bar, and shows results (uploaded / errors / skipped) when complete.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body"><strong>Review the results.</strong> Check the error report for any rows that were skipped and why. Export a fresh CSV after upload to verify all records are present and scored correctly.</div>
+      </div>
+    </div>
+
+    <h3>Longitudinal patient tracking</h3>
+    <p>To record the same patient at multiple timepoints, enter a separate row for each visit using the <strong>same <code>Patient_Number</code></strong> and a <strong>different <code>Assessment_Date</code></strong> for each row. ATLAS links these rows by Patient_Number and orders them chronologically by Assessment_Date.</p>
+    <table>
+      <tr><th>Patient_Number</th><th>Assessment_Date</th><th>Q1…Q8</th><th>MMAS8_Score</th></tr>
+      <tr><td><code>PT-001</code></td><td><code>2026-01-15</code></td><td>Baseline</td><td>6.75</td></tr>
+      <tr><td><code>PT-001</code></td><td><code>2026-04-15</code></td><td>3-month</td><td>7.75</td></tr>
+      <tr><td><code>PT-001</code></td><td><code>2026-07-15</code></td><td>6-month</td><td>5.75</td></tr>
+    </table>
+    <p>In the exported CSV, sort or filter by <code>patient_number</code> to group all timepoints per patient. Use <code>patient_number</code> as your subject ID and <code>timestamp</code> as your time variable for repeated-measures or mixed-model analyses in SPSS, R, or Stata.</p>
+
+    <div class="callout warn">
+      <strong>Bulk upload is irreversible without support.</strong>
+      Records uploaded via bulk upload are tagged with your workspace key and the upload timestamp. If a batch was uploaded with errors, contact info@adherence.cc with your workspace key prefix, the upload date, and the Patient IDs of affected records.
+    </div>
+
+    <div class="callout info">
+      <strong>v2 Template — Study Provenance Required</strong>
+      <p>The current CSV upload template (v2) requires study metadata in the header block (rows 2–7): Study Title, Principal Investigator, Institution, IRB Number, ClinicalTrials.gov ID, Protocol Version. The system validates Study Title, PI, and Institution and rejects uploads missing any of these. Download the template after completing Study Config to have these fields pre-filled automatically.</p>
+    </div>
+  </div>
+
+  <div class="section" id="exports">
+    <h2>8. Export and Reporting Procedures</h2>
+
+    <h3>Monthly reporting package</h3>
+    <p>Recommended monthly export procedure for institutions with active population health programs:</p>
+    <ol>
+      <li>Export MMAS CSV (all sites) → file in data repository dated folder. Includes PE domain columns: <code>mmas_pe</code>, <code>mmas_a</code>, <code>mmas_e</code>, <code>mmas_c</code></li>
+      <li>Export PEACS CSV → same folder</li>
+      <li>Export Sentinel Log CSV → file separately for quality/JC documentation</li>
+      <li>Export MTM Audit PDF → submit to billing department for reimbursement processing <em>(Health System and AMC tiers only — Billing tab must be visible)</em></li>
+      <li>Generate Session Certificate → file in regulatory binder</li>
+    </ol>
+
+    <h3>IRB progress report data</h3>
+    <p>For annual or interim IRB progress reports, the MMAS CSV provides all required data elements. The Site Benchmarking panel can be screenshotted as a visual summary. The Session Certificate provides a timestamped count of total submissions for the reporting period.</p>
+
+    <h3>Quality improvement reporting</h3>
+    <p>For JC (Joint Commission) or equivalent quality documentation, the Sentinel Log export provides evidence of adherence screening activity, alert identification, and clinical follow-up. The MTM Audit Log provides documentation of pharmacist consultation encounters with CPT codes for reimbursement audit.</p>
+
+    <h3>Annual Global Adherence Report</h3>
+    <p>See <a href="#global-report">Section 14</a> for full documentation. The report is available in the <strong>ACC Data &amp; Export</strong> panel and generates directly from the global ATLAS dataset.</p>
+  </div>
+
+  <div class="section" id="access">
+    <h2>9. Access Management — Seats, Keys, and Pricing</h2>
+
+    <h3>Institution tier pricing at a glance</h3>
+    <table>
+      <tr><th>Tier</th><th>Monthly</th><th>Annual</th><th>Key format</th><th>Annual saving</th></tr>
+      <tr><td><strong>Academic</strong> (<code>institution_academic</code>)</td><td>$399/mo</td><td>$3,990/yr</td><td><code>INST-ACAD-XXXX-2026</code></td><td>~$798 (≈2 months free)</td></tr>
+      <tr><td><strong>Health System</strong> (<code>institution_health</code>)</td><td>$599/mo</td><td>$5,990/yr</td><td><code>INST-HLTH-XXXX-2026</code></td><td>~$1,198 (≈2 months free)</td></tr>
+      <tr><td><strong>Academic Medical Center</strong> (<code>institution_amc</code>)</td><td>$799/mo</td><td>$7,990/yr</td><td><code>INST-AMC-XXXX-2026</code></td><td>~$1,598 (≈2 months free)</td></tr>
+    </table>
+    <div class="callout tip">
+      <strong>Annual billing</strong> — Annual pricing saves approximately two months of fees versus monthly billing across all tiers. All additional seat charges are prorated to the same billing cycle and appear on one invoice.
+    </div>
+
+    <h3>What your plan includes — by tier</h3>
+    <table>
+      <tr><th>Item</th><th>Academic</th><th>Health System</th><th>AMC</th></tr>
+      <tr><td>Institution dashboard key (Command Center)</td><td>1</td><td>1</td><td>1</td></tr>
+      <tr><td>PI workspace seats (included)</td><td>2</td><td>2</td><td>3</td></tr>
+      <tr><td>Researcher workspace seats (included)</td><td>3</td><td>3</td><td>5</td></tr>
+      <tr><td>Student workspace seats (included)</td><td>10</td><td>10</td><td>15</td></tr>
+      <tr><td>Observer seats (included, read-only)</td><td>1</td><td>1</td><td>2</td></tr>
+      <tr><td>BAA &amp; DUA</td><td>Included</td><td>Included</td><td>Included</td></tr>
+      <tr><td>Dedicated CSM</td><td>—</td><td>Included</td><td>Included</td></tr>
+      <tr><td>Priority support</td><td>—</td><td>—</td><td>Included</td></tr>
+    </table>
+
+    <div class="callout tip">
+      <strong>Standalone subscriptions</strong> — If researchers or students at your institution already have individual ATLAS subscriptions, contact info@adherence.cc to migrate them under your institutional account. Their cohort data and history are preserved.
+    </div>
+
+    <h3>Volume pricing for additional PI/Researcher seats (Health System tier)</h3>
+    <p>The Health System tier supports volume pricing on additional PI and Researcher seats: seats 11–25 are $79/seat/month; 26+ are negotiated. Contact info@adherence.cc for a volume quote.</p>
+
+    <h3>Provisioning included seats — self-service</h3>
+    <p>Included seats are provisioned by your institution administrator directly from the ATLAS dashboard. No support ticket or email is required. Each seat holder receives their own unique workspace key by email — the key is automatically linked to your institution so their data appears in your Command Center.</p>
+
+    <div class="procedure">
+      <div class="proc-step">
+        <div class="proc-body">Log in to ATLAS at <strong>atlas.adherence.cc</strong> with your institutional key (<code>INST-ACAD-</code>, <code>INST-HLTH-</code>, or <code>INST-AMC-</code> depending on your tier).</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Open the <strong>🪑 Seat Management</strong> tab in the institution dashboard (third tab, next to MTM Services).</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">The quota cards (PI · Clinician · Researcher · Student · Observer) display how many included seats have been used and how many remain. A progress bar shows utilisation at a glance.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Click <strong>+ Provision Seat</strong> on the card for the seat type you want to issue. Enter the seat holder's full name and institutional email address, then click <strong>Issue Seat Key →</strong>.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">The seat holder receives a welcome email containing their workspace key. They can begin using ATLAS immediately. Their cohort data will roll up into your institution Overview tab automatically.</div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <strong>Tip — provision seats before your first data collection day.</strong> Seat keys take effect instantly but welcome emails may take a few minutes to arrive. Give seat holders at least 30 minutes to locate the email and test their key before a live session.
+    </div>
+
+    <h3>Purchasing additional seats beyond the included allowance</h3>
+    <p>When all included seats of a given type are in use, the <strong>+ Provision Seat</strong> button changes to <strong>Purchase More →</strong> and opens <code>keys.adherence.cc</code>. Enter your institutional key (<code>INST-ACAD-</code>, <code>INST-HLTH-</code>, or <code>INST-AMC-</code>) in the Seat Purchase section, select the seat type and quantity, and complete the Stripe checkout. Additional seats are provisioned and emailed within seconds of payment. They are tracked separately from your included quota and appear in the Provisioned Seats table tagged as <em>Purchased</em>.</p>
+
+    <table>
+      <tr><th>Quantity</th><th>PI</th><th>Clinician · Researcher</th><th>Student</th><th>Observer</th></tr>
+      <tr><td>1–10</td><td>$99/seat/mo</td><td>$49/seat/mo</td><td>$19/seat/mo</td><td>$19/seat/mo</td></tr>
+      <tr><td>11–25</td><td>$79/seat/mo</td><td>$79/seat/mo</td><td>$19/seat/mo</td><td>$19/seat/mo</td></tr>
+      <tr><td>26+</td><td colspan="4" style="text-align:center;">Contact info@adherence.cc for negotiated rate</td></tr>
+    </table>
+
+    <h3>Revoking a seat</h3>
+    <p>To revoke a seat — for example when a researcher leaves the project — go to <strong>ATLAS Control → Keys → Active Keys</strong> and locate the seat key in the table. Click <strong>Revoke</strong>. The key is deactivated immediately; the seat holder cannot log in after the next validation attempt. Data already submitted by that seat holder is never deleted. Revoking an included seat frees the quota slot — you can re-provision it to a new person without purchasing an additional seat.</p>
+
+    <div class="callout warning">
+      <strong>Do not revoke a seat on the last day of a data collection window.</strong> Revocation is immediate and cannot be undone. If the seat holder still has work in progress, coordinate timing with them before revoking.
+    </div>
+
+    <h3>Key security policy</h3>
+    <ul>
+      <li>The institutional key should be held by no more than 3 named individuals</li>
+      <li>Do not email the full institutional key — share the prefix only in email and provide the last segment verbally or via secure message</li>
+      <li>When a key-holder leaves your organisation, email info@adherence.cc immediately to revoke their access and issue a new key</li>
+      <li>Do not store the institutional key in shared documents or ticketing systems</li>
+    </ul>
+
+    <h3>Onboarding a new Command Center administrator</h3>
+    <div class="procedure">
+      <div class="proc-step">
+        <div class="proc-body">Provide the new administrator with this runbook and the institutional key (via secure channel).</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Walk them through a dashboard review session — show them the Sentinel feed, site breakdowns, and export workflow.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Have them complete the daily monitoring routine independently on day 2 and compare observations with you.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Email info@adherence.cc to add their name to the institutional account contact list for support communications.</div>
+      </div>
+    </div>
+
+    <h3>Offboarding</h3>
+    <p>When a Command Center administrator leaves: immediately email info@adherence.cc requesting key rotation. Provide the name and email of the replacement. New key is issued within 24 business hours. Old key is revoked simultaneously.</p>
+  </div>
+
+  <div class="section" id="pub-rights">
+    <h2>9a. Publication Rights for Institution Researchers</h2>
+
+    <h3>Letter of Permission — what it covers</h3>
+    <p>Every seat holder under your institution plan has a Letter of Permission tied to their workspace key. The LOP records the <strong>seat activation date</strong> and covers data collected while that seat subscription is active. It does not reach backward before the activation date and expires if the seat is revoked or the institutional subscription lapses.</p>
+    <div class="callout warning">
+      <strong>Retroactive coverage does not exist.</strong> Provisioning a seat today to cover a researcher's prior data collection does not license that prior data. The activation date is recorded on every Letter of Permission and is publicly verifiable at <strong>keys.adherence.cc/verify</strong>. Provision seats before data collection begins, not after.
+    </div>
+
+    <h3>Publication rights by seat type</h3>
+    <table>
+      <tr><th>Seat type</th><th>Publication rights path</th><th>How to obtain</th></tr>
+      <tr>
+        <td>PI · Researcher · Clinician</td>
+        <td>Letter of Permission — included with active seat</td>
+        <td>Download from seat holder's dashboard → Publish tab. Valid while seat is active.</td>
+      </tr>
+      <tr>
+        <td>Student (institutional seat)</td>
+        <td>Letter of Permission — included with active seat. If seat has lapsed: Student Publication License (flat rate)</td>
+        <td>Active seat: dashboard → Publish tab. Lapsed: atlas.adherence.cc?publish=1 ($49–$249)</td>
+      </tr>
+      <tr>
+        <td>PI — study predates institution subscription</td>
+        <td>Duration-based publication rights — email required</td>
+        <td>Contact info@adherence.cc with study title, funding source, IRB number, and data-collection dates.</td>
+      </tr>
+    </table>
+
+    <h3>Student researchers under your institution account</h3>
+    <p>Student seat holders whose institutional seat is active already have their Letter of Permission included — they do not need to purchase a Publication License separately. If a student seat has been revoked before the student's thesis is submitted, they can obtain a standalone Student Publication License at <strong>atlas.adherence.cc?publish=1</strong> (flat rate $49–$249 depending on participant count, permanent, issued instantly).</p>
+
+    <h3>Funded PI studies with data collected before ATLAS subscription</h3>
+    <p>If a PI under your institution ran a grant-funded study before your institution subscribed to ATLAS and now needs publication rights covering that prior period, the flat-rate Student Publication License is not available to them. Email <strong>info@adherence.cc</strong> with the study details and funding source. Publication rights for funded studies are priced by study duration rather than a flat rate. Annual review checklist item: verify all active LOPs at keys.adherence.cc/verify and confirm all publishing researchers have active seat coverage.</p>
+
+    <div class="callout tip">
+      <strong>Best practice for multi-year studies:</strong> Keep seat subscriptions active for the full data-collection period. If budget cycles require a gap, coordinate with info@adherence.cc before revoking seats — a brief lapse creates a gap in LOP coverage that may need to be addressed before the manuscript is submitted.
+    </div>
+  </div>
+
+  <div class="section" id="escalation">
+    <h2>10. Escalation and Incident Procedures</h2>
+
+    <h3>Platform outage</h3>
+    <div class="runbook-step">
+      <h4>If ATLAS is unavailable</h4>
+      <p>1. Check atlas.adherence.cc — if the page loads but login fails, try clearing browser cache. 2. Try a different browser. 3. If unavailable across all devices and browsers, email info@adherence.cc with subject line "Platform unavailability — [your institution name]". 4. Activate paper backup CRF procedure for sites with active collection. 5. Document downtime period in operations journal. Data collected on paper during downtime can be bulk uploaded when platform is restored.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>If data appears in wrong cohort</h4>
+      <p>If records appear in your institutional dashboard that do not belong to your institution (wrong workspace key used by a site), email info@adherence.cc immediately. Do not attempt to export or use this data. Include your institutional key prefix and the approximate timestamp of the records in question.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>If a workspace key is compromised</h4>
+      <p>If you believe a site key has been shared unauthorised or used by someone outside your organisation, email info@adherence.cc requesting immediate revocation. A new key will be issued within 2 business hours. Log as a security incident per your institution's information security policy.</p>
+    </div>
+
+    <h3>Escalation contacts</h3>
+    <table>
+      <tr><th>Issue type</th><th>First contact</th><th>Response time</th></tr>
+      <tr><td>Platform technical issue</td><td>info@adherence.cc — subject: "Platform issue [institution]"</td><td>24 hours</td></tr>
+      <tr><td>Data access / security concern</td><td>info@adherence.cc — subject: "Security [institution]"</td><td>2 business hours</td></tr>
+      <tr><td>Included seat provisioning</td><td>Self-service via ATLAS dashboard — 🪑 Seat Management tab</td><td>Instant</td></tr>
+      <tr><td>Additional seat purchase</td><td>Self-service via keys.adherence.cc — Seat Purchase section</td><td>Instant (Stripe)</td></tr>
+      <tr><td>Institutional key rotation / compromise</td><td>info@adherence.cc — subject: "Key request [institution]"</td><td>24 business hours</td></tr>
+      <tr><td>Billing / subscription</td><td>info@adherence.cc — subject: "Billing [institution]"</td><td>48 business hours</td></tr>
+      <tr><td>IRB / compliance documentation</td><td>info@adherence.cc — subject: "Compliance docs [institution]"</td><td>48 business hours</td></tr>
+    </table>
+
+    <div class="callout tip">
+      <strong>Include in all support emails</strong>
+      Your institutional key prefix (first 8 characters only — never the full key), your institution name, and the approximate time of the incident. This allows the support team to identify your account immediately without requiring the full key.
+    </div>
+  </div>
+
+  <div class="section" id="maintenance">
+    <h2>11. Platform Maintenance and Updates</h2>
+    <p>ATLAS is a continuously deployed platform — updates are released without downtime. The changelog and release notes are available at docs.adherence.cc. Key updates that affect operations will be communicated to institutional contacts via email.</p>
+
+    <h3>What updates may affect you operationally</h3>
+    <ul>
+      <li><strong>New MMAS-8 translation available</strong> — Site coordinators can immediately use new languages without any configuration change</li>
+      <li><strong>New PEACS feature</strong> — New dashboard panels appear automatically; existing data is not affected</li>
+      <li><strong>Export format changes</strong> — Notified by email 14 days in advance; existing exports are not affected</li>
+      <li><strong>Firebase rules changes</strong> — Transparent to users; may affect data access patterns</li>
+    </ul>
+
+    <h3>Annual review checklist</h3>
+    <ol>
+      <li>Review all site coordinator access — remove departures, add new coordinators</li>
+      <li>Export full year's data to institutional repository</li>
+      <li>Review Sentinel alert response rates — calculate % actioned within timeframe</li>
+      <li>Update this runbook if operational procedures have changed</li>
+      <li>Re-sign PI SOP if study is ongoing</li>
+      <li>Verify Letter of Permission certificate is still active at keys.adherence.cc/verify</li>
+      <li>Review MTM audit completeness for billing reconciliation</li>
+    </ol>
+  </div>
+
+  <div class="section" id="clinical-study">
+    <h2>12. Clinical Study Module — Research Operations</h2>
+    <p>Access via the <strong>Study</strong> tab. The module provides a unified research operations view:</p>
+    <div class="runbook-step">
+      <h4>Enrollment Tracking</h4>
+      <p>Active vs. enrolled vs. target with progress visualisation. Monitor enrollment velocity across all sites and identify sites that are behind pace against the enrollment target.</p>
+    </div>
+    <div class="runbook-step">
+      <h4>LTFU Tracking</h4>
+      <p>Patients overdue for follow-up based on visit window are flagged automatically. Review the LTFU list weekly during active collection periods and coordinate with site coordinators to recapture patients before they drop out.</p>
+    </div>
+    <div class="runbook-step">
+      <h4>Protocol Deviations</h4>
+      <p>Log and track deviations with free-text notes. Each logged deviation includes a timestamp and staff entry. Export the deviation log for IRB progress reports and site monitoring visits.</p>
+    </div>
+    <div class="runbook-step">
+      <h4>Study Config</h4>
+      <p>Set study metadata: PI name, IRB number, ClinicalTrials.gov ID, enrollment target, and visit schedule. This data flows automatically into bulk upload templates (v2 header block) and the IRB Submission Assistant. Always complete Study Config before downloading the bulk upload template or generating IRB documents.</p>
+    </div>
+    <div class="runbook-step">
+      <h4>Site Activation Tracker</h4>
+      <p>World map (Mapbox) showing all registered study sites with status pins. See <a href="#adding-sites">Section 6</a> for full documentation.</p>
+    </div>
+  </div>
+
+  <div class="section" id="irb-assistant">
+    <h2>13. IRB Submission Assistant</h2>
+    <p>Access via the <strong>Open IRB Assistant</strong> button in the Study tab export area. The assistant auto-populates a structured IRB submission document from your Study Config and site list.</p>
+
+    <div class="dashboard-map">
+      <h4>IRB Assistant tabs</h4>
+      <table>
+        <tr><th>Tab</th><th>Content</th></tr>
+        <tr><td>Protocol Summary</td><td>Study title, objectives, design, overview</td></tr>
+        <tr><td>Informed Consent</td><td>Purpose statement, procedures, confidentiality</td></tr>
+        <tr><td>Risks &amp; Benefits</td><td>Risk characterisation, benefit statement, alternatives</td></tr>
+        <tr><td>Privacy &amp; Data</td><td>Data collection scope, storage/security, sharing policy</td></tr>
+        <tr><td>Timeline &amp; Sites</td><td>Study timeline milestones, enrolled sites list</td></tr>
+      </table>
+    </div>
+
+    <div class="procedure">
+      <div class="proc-step">
+        <div class="proc-body">Complete <strong>Study Config</strong> in the Study tab before opening the IRB Assistant. The assistant draws PI name, IRB number, ClinicalTrials.gov ID, and enrollment data from Study Config.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Click <strong>Open IRB Assistant</strong>. Each of the five tabs is pre-populated from your Study Config and site list. Review each section — the text is fully editable.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Click <strong>↻ Regenerate</strong> on any section to re-populate from the latest Study Config data. Use this if you have updated Study Config after initially opening the assistant.</div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-body">Click <strong>Export IRB Document</strong> to download a structured <code>.txt</code> file ready for paste into your IRB portal.</div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <strong>Sites in the Timeline &amp; Sites tab</strong>
+      The Timeline &amp; Sites tab automatically includes all sites from the Site Activation Tracker. Add sites via <strong>Add Site</strong> in the Study tab map before generating the IRB document to ensure the site list is complete.
+    </div>
+  </div>
+
+  <div class="section" id="global-report">
+    <h2>14. Annual Global Adherence Report</h2>
+    <p>Available in the <strong>ACC Data &amp; Export</strong> panel. Click <strong>Generate Report</strong> on the report banner.</p>
+
+    <div class="runbook-step">
+      <h4>What the report computes</h4>
+      <p>The report computes from the global ATLAS dataset: total N, mean adherence score, high/medium/low distribution, top 20 countries by submission volume, top 15 conditions, and INA/UNA/Mixed/High adherence pattern counts.</p>
+    </div>
+
+    <div class="runbook-step">
+      <h4>Exporting the report</h4>
+      <p>Click <strong>Export Report</strong> to download a plain-text annual report suitable for institutional reporting, board presentations, or publication appendices.</p>
+    </div>
+
+    <div class="callout tip">
+      <strong>Use cases</strong>
+      The Annual Global Adherence Report is appropriate for: annual quality reports, JC documentation of population health program scope, IRB progress report appendices, grant applications requiring epidemiological context, and board-level presentations on adherence population trends.
+    </div>
+  </div>
+
+  <div class="section" id="cfr11">
+    <h2>15. 21 CFR Part 11 — Electronic Records &amp; Electronic Signatures</h2>
+    <p>For institutions conducting FDA-regulated studies (IND, NDA, 510(k)) or GCP-compliant clinical research through ATLAS, the platform is compliant with FDA 21 CFR Part 11. This section summarises the relevant controls active in the platform and the steps required to complete compliance at the infrastructure level.</p>
+
+    <h3>Platform-built controls (active now)</h3>
+    <table>
+      <tr><th>Control</th><th>Regulatory basis</th><th>Status</th></tr>
+      <tr><td>Immutable audit trail — every clinical record create / update / delete logged with actor UID, email, timestamp, and SHA-256 payload hash</td><td>§11.10(d)(e)</td><td>Platform Built</td></tr>
+      <tr><td>Two-component electronic signature on data submission and record deletion</td><td>§11.200(b) / §11.50</td><td>Platform Built</td></tr>
+      <tr><td><code>signature_id</code> stored on signed records — cryptographic link between signature and record</td><td>§11.70</td><td>Platform Built</td></tr>
+      <tr><td>30-minute inactivity session timeout with audit entry on expiry</td><td>§11.10(f)</td><td>Platform Built</td></tr>
+      <tr><td>Failed login events logged to audit trail</td><td>§11.10(d)</td><td>Platform Built</td></tr>
+      <tr><td>Read-only Audit Log Viewer (superadmin) — no delete or edit controls</td><td>§11.10(d)</td><td>Platform Built</td></tr>
+      <tr><td>System validation docs: IQ / OQ / PQ / SRS / RTM prepared</td><td>§11.10(a)</td><td>Awaiting PI Sign-Off</td></tr>
+    </table>
+
+    <h3>Owner-action items (AWS infrastructure)</h3>
+    <table>
+      <tr><th>Action</th><th>Path</th></tr>
+      <tr><td>DynamoDB audit table: add IAM Deny on <code>DeleteItem</code> / <code>UpdateItem</code> for all principals</td><td>AWS Console → IAM → Lambda execution role → add Deny statement</td></tr>
+      <tr><td>Enable DynamoDB Point-in-Time Recovery (PITR) on <code>atlas-audit-log</code> table</td><td>AWS Console → DynamoDB → Tables → atlas-audit-log → Backups → Enable PITR</td></tr>
+      <tr><td>Enable AWS CloudTrail across all regions, log to S3 bucket <code>atlas-cloudtrail-logs</code></td><td>AWS Console → CloudTrail → Create trail → All regions</td></tr>
+      <tr><td>PI signature on IQ / OQ / PQ validation documents</td><td>Contact info@adherence.cc to obtain the validation document package</td></tr>
+    </table>
+
+    <div class="callout tip">
+      <strong>Requesting validation documentation</strong>
+      Email <a href="mailto:info@adherence.cc">info@adherence.cc</a> with subject "CFR-11 validation docs — [institution name]" to receive the IQ/OQ/PQ package for your regulatory binder. Include your workspace key prefix and the study title. Response within 48 business hours.
+    </div>
+  </div>
+
+  <footer class="doc-footer">
+    Institution Command Center Runbook v2026.05.1 · ATLAS Platform · Adherence Cartography · Adherence Inc.<br/>
+    Institution tiers: Academic (INST-ACAD) · Health System (INST-HLTH) · Academic Medical Center (INST-AMC)<br/>
+    MAP © Adherence Inc. · MMAS-8® © Dr. Donald E. Morisky · TX 8-632-533 · PEACS © Philip Morisky<br/>
+    Support: <a href="mailto:info@adherence.cc">info@adherence.cc</a> · Platform: <a href="https://atlas.adherence.cc">atlas.adherence.cc</a> · Certificate verification: <a href="https://keys.adherence.cc/verify">keys.adherence.cc/verify</a>
+  </footer>
+</div>
+</body>
+</html>

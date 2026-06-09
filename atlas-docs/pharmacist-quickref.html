@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Clinician Quick-Reference Card · ATLAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#09101f;--card:#111e32;--border:rgba(255,255,255,0.1);
+  --gold:#d4a843;--blue:#4e9cf5;--green:#2ec98a;--purple:#8b6ff5;--red:#ef4444;--amber:#f59e0b;
+  --text:#c8d6e8;--muted:#6b8099;--bright:#e8f0f8;--dim:#4a5f78;
+  --font:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+body{background:var(--ink);color:var(--text);font-family:var(--font);font-size:11px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+/* Print setup — two A4 pages */
+@media print{
+  body{background:#fff;color:#000;font-size:10px;}
+  .page{page-break-after:always;background:#fff;border:none;padding:18mm;}
+  .print-btn{display:none;}
+  h2,h3{color:#000;}
+  .col-header{color:#000;border-color:#000;}
+  .step-num{background:#000;color:#fff;}
+  td,th{border-color:#ccc;}
+  .code-pill{background:#f0f0f0;color:#000;border:1px solid #ccc;}
+  .tag{background:#f0f0f0;color:#333;border:1px solid #ccc;}
+  .warn-box{background:#fff8e7;border-color:#d4a843;}
+  .tip-box{background:#f0fff8;border-color:#2ec98a;}
+}
+
+.print-btn{position:fixed;top:20px;right:20px;z-index:100;background:var(--purple);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:var(--mono);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;}
+.page{max-width:780px;margin:0 auto 40px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:28px 32px;}
+
+/* Page header */
+.page-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:2px solid var(--purple);margin-bottom:20px;}
+.page-brand{font-family:var(--mono);font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);}
+.page-title{font-size:16px;font-weight:600;color:var(--bright);}
+.page-subtitle{font-size:10px;color:var(--muted);margin-top:2px;}
+.page-num{font-family:var(--mono);font-size:9px;color:var(--dim);text-align:right;}
+
+/* Two-column layout */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+/* Section blocks */
+.block{margin-bottom:16px;}
+.col-header{font-family:var(--mono);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--purple);border-bottom:1px solid rgba(139,111,245,0.3);padding-bottom:5px;margin-bottom:10px;}
+.col-header.gold{color:var(--gold);border-color:rgba(212,168,67,0.3);}
+.col-header.green{color:var(--green);border-color:rgba(46,201,138,0.3);}
+.col-header.red{color:var(--red);border-color:rgba(239,68,68,0.3);}
+.col-header.blue{color:var(--blue);border-color:rgba(78,156,245,0.3);}
+
+/* Steps */
+.steps{display:flex;flex-direction:column;gap:7px;}
+.step{display:flex;align-items:flex-start;gap:8px;}
+.step-num{width:18px;height:18px;border-radius:50%;background:var(--purple);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-num.gold{background:var(--gold);color:#09101f;}
+.step-num.green{background:var(--green);color:#09101f;}
+.step-body{font-size:10px;color:var(--text);line-height:1.5;}
+.step-body strong{color:var(--bright);}
+
+/* Code pills */
+.code-pill{display:inline-block;font-family:var(--mono);font-size:9px;background:rgba(139,111,245,0.12);border:1px solid rgba(139,111,245,0.25);color:var(--purple);border-radius:3px;padding:1px 5px;margin:0 2px;}
+.code-pill.gold{background:rgba(212,168,67,0.1);border-color:rgba(212,168,67,0.25);color:var(--gold);}
+.code-pill.green{background:rgba(46,201,138,0.1);border-color:rgba(46,201,138,0.25);color:var(--green);}
+.code-pill.red{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.25);color:var(--red);}
+
+/* Tags */
+.tag{display:inline-block;font-family:var(--mono);font-size:8px;letter-spacing:0.08em;text-transform:uppercase;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin:2px 2px 2px 0;color:var(--muted);}
+
+/* Alert boxes */
+.warn-box{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-left:2px solid var(--amber);border-radius:4px;padding:8px 10px;font-size:9px;color:var(--text);line-height:1.5;margin:8px 0;}
+.tip-box{background:rgba(46,201,138,0.05);border:1px solid rgba(46,201,138,0.2);border-left:2px solid var(--green);border-radius:4px;padding:8px 10px;font-size:9px;color:var(--text);line-height:1.5;margin:8px 0;}
+.warn-box strong,.tip-box strong{display:block;font-family:var(--mono);font-size:8px;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:3px;}
+.warn-box strong{color:var(--amber);}
+.tip-box strong{color:var(--green);}
+
+/* Score table */
+.score-table{width:100%;border-collapse:collapse;font-size:9.5px;margin-top:6px;}
+.score-table th{font-family:var(--mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:5px 6px;border-bottom:1px solid var(--border);text-align:left;}
+.score-table td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top;}
+.score-high{color:var(--green);font-weight:600;}
+.score-med{color:var(--amber);font-weight:600;}
+.score-low{color:var(--red);font-weight:600;}
+
+/* CPT table */
+.cpt-table{width:100%;border-collapse:collapse;font-size:9.5px;}
+.cpt-table th{font-family:var(--mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:5px 6px;border-bottom:1px solid var(--border);text-align:left;}
+.cpt-table td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top;}
+.cpt-code{font-family:var(--mono);font-size:10px;color:var(--purple);font-weight:600;}
+
+/* Pattern box */
+.pattern-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;}
+.pattern-card{border-radius:4px;padding:7px 9px;}
+.pattern-card.ina{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);}
+.pattern-card.una{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);}
+.pattern-card.mixed{background:rgba(139,111,245,0.06);border:1px solid rgba(139,111,245,0.2);}
+.pattern-card.high{background:rgba(46,201,138,0.06);border:1px solid rgba(46,201,138,0.2);}
+.pattern-label{font-family:var(--mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px;}
+.pattern-card.ina .pattern-label{color:var(--red);}
+.pattern-card.una .pattern-label{color:var(--amber);}
+.pattern-card.mixed .pattern-label{color:var(--purple);}
+.pattern-card.high .pattern-label{color:var(--green);}
+.pattern-body{font-size:9px;color:var(--muted);line-height:1.45;}
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">🖨 Print &amp; Laminate</button>
+
+<!-- ══ PAGE 1 — DAILY WORKFLOW ══════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-brand">Adherence Cartography · ATLAS Platform</div>
+      <div class="page-title">Clinician Quick-Reference Card</div>
+      <div class="page-subtitle">Daily workflow · NP · PA · RN · MD · PharmD · CC · Researcher tier · keys.adherence.cc</div>
+    </div>
+    <div class="page-num">Page 1 of 2<br/>Version 2026.04</div>
+  </div>
+
+  <div class="two-col">
+
+    <!-- LEFT: Daily Workflow -->
+    <div>
+      <div class="block">
+        <div class="col-header">1. Log in to your workspace</div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">Open <strong>atlas.adherence.cc</strong> in Chrome or Edge</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">Click <strong>Tracks A+B · Researcher</strong> card</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">Enter your key (prefix matches your role: <code style="font-family:var(--mono);font-size:9px;color:var(--gold);">NP- · PA- · RN- · MD- · PHRM- · CC- · RES-</code>) → Verify Access</div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <strong>Time-saving tip</strong>
+          Bookmark atlas.adherence.cc?key=YOUR-KEY to skip the entry screen entirely.
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="col-header">2. Log a patient (Daily Intake Panel)</div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">Click <strong>⚕ Daily Intake · Quick Entry</strong> at the top of your dashboard to expand it</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">Enter <strong>Patient ID</strong> (your internal code, e.g. PT-042)</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">Add <strong>Medication</strong> and <strong>Condition</strong> (optional but recommended for billing)</div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">Answer the <strong>rapid 3-item screen</strong> (30 seconds). Score &lt;2 auto-triggers Sentinel flag</div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">Add clinical notes. Tick <strong>"Flag for full ZOE"</strong> if full MMAS-8 needed today</div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-body">Click <strong>Log Patient →</strong>. Entry appears in MTM Audit Log instantly</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="col-header">3. Run a full ZOE voice assessment</div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">Click <strong>New Assessment →</strong> in the MMAS-8 panel</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">Patient enters country, medication, condition on consent screen</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">Click <strong>🎙 Start with ZOE</strong> — hand device to patient or hold near them</div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">ZOE speaks each question. Patient responds naturally. ZOE interprets and scores</div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">After Q8, ZOE generates a <strong>SOAP clinical note</strong> automatically (2–3 seconds)</div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-body">A <strong>follow-up card</strong> appears showing next assessment date (7/14/30 days by score)</div>
+          </div>
+        </div>
+        <div class="warn-box">
+          <strong>ZOE requires mic permission</strong>
+          Chrome will ask for microphone access the first time. Click Allow. ZOE will not work in Safari.
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Score interpretation + patterns -->
+    <div>
+      <div class="block">
+        <div class="col-header gold">MMAS-8 Score Reference</div>
+        <table class="score-table">
+          <tr><th>Score</th><th>Level</th><th>Action</th></tr>
+          <tr><td class="score-high">8</td><td>High adherence</td><td>Maintenance. Follow-up 30 days</td></tr>
+          <tr><td class="score-med">6–7.99</td><td>Medium adherence</td><td>Targeted counseling. Follow-up 14 days</td></tr>
+          <tr><td class="score-low">Below 6</td><td>Low adherence</td><td>Intervention required. Follow-up 7 days</td></tr>
+        </table>
+      </div>
+
+      <div class="block">
+        <div class="col-header gold">Adherence Patterns</div>
+        <div class="pattern-grid">
+          <div class="pattern-card ina">
+            <div class="pattern-label">INA · Intentional</div>
+            <div class="pattern-body">Patient chooses not to take medication. Side effects, doubts, cost. Needs motivational counseling — reminders alone will not work.</div>
+          </div>
+          <div class="pattern-card una">
+            <div class="pattern-label">UNA · Unintentional</div>
+            <div class="pattern-body">Patient intends to take but forgets or has access barriers. Pill organiser, alarm, blister pack. Most common pattern.</div>
+          </div>
+          <div class="pattern-card mixed">
+            <div class="pattern-label">Mixed Pattern</div>
+            <div class="pattern-body">Both INA and UNA present. Often polypharmacy. Address barriers first, then motivation.</div>
+          </div>
+          <div class="pattern-card high">
+            <div class="pattern-label">High Adherence</div>
+            <div class="pattern-body">Fully adherent. Positive reinforcement. Document for clinical record. Follow-up 30 days.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="col-header green">Sentinel Alerts — When they fire</div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num" style="background:var(--red);">!</div>
+            <div class="step-body"><strong>Urgent (red)</strong> — INA pattern, score &lt;4, or ZOE clinical flag. Act within 7 days.</div>
+          </div>
+          <div class="step">
+            <div class="step-num" style="background:var(--amber);">!</div>
+            <div class="step-body"><strong>Moderate (amber)</strong> — Medium adherence. Follow-up in 14 days.</div>
+          </div>
+          <div class="step">
+            <div class="step-num" style="background:var(--green);">✓</div>
+            <div class="step-body"><strong>Routine (green)</strong> — High adherence. Scheduled 30-day reassessment.</div>
+          </div>
+        </div>
+        <p style="font-size:9px;color:var(--dim);margin-top:6px;">Sentinel alerts appear in the right sidebar of your dashboard. Click "Mark Reviewed" when actioned to clear the queue.</p>
+      </div>
+
+      <div class="block">
+        <div class="col-header green">Follow-Up Link</div>
+        <p style="font-size:9px;color:var(--muted);line-height:1.5;">After every ZOE session, click <strong>"📋 Copy reminder link"</strong> on the follow-up card. Paste into SMS, email, or patient portal. The link opens a pre-filled ATLAS assessment for that patient.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 2 — MTM BILLING + PEACS + EXPORTS ══════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-brand">Adherence Cartography · ATLAS Platform</div>
+      <div class="page-title">Clinician Quick-Reference Card</div>
+      <div class="page-subtitle">MTM billing · PEACS · Exports · Troubleshooting</div>
+    </div>
+    <div class="page-num">Page 2 of 2<br/>Version 2026.04</div>
+  </div>
+
+  <div class="two-col">
+
+    <!-- LEFT: MTM Billing -->
+    <div>
+      <div class="block">
+        <div class="col-header">MTM Billing — CMS CPT Codes</div>
+        <table class="cpt-table">
+          <tr><th>Code</th><th>When to use</th><th>Time</th></tr>
+          <tr>
+            <td><span class="cpt-code">99605</span></td>
+            <td>Initial comprehensive MTM encounter — first time seeing this patient for adherence. ATLAS auto-assigns on first log.</td>
+            <td>First 15 min</td>
+          </tr>
+          <tr>
+            <td><span class="cpt-code">99606</span></td>
+            <td>Follow-up targeted MTM — patient seen before. ATLAS auto-assigns after first encounter.</td>
+            <td>First 15 min</td>
+          </tr>
+          <tr>
+            <td><span class="cpt-code">99607</span></td>
+            <td>Additional time — INA pattern or complex cases requiring extended counseling. ATLAS auto-assigns for INA + score &lt;4.</td>
+            <td>Each add. 15 min</td>
+          </tr>
+        </table>
+        <div class="tip-box">
+          <strong>Auto-assignment logic</strong>
+          ATLAS automatically suggests the correct CPT code in the MTM Audit Log based on whether this is a first or follow-up encounter and the adherence pattern. Always verify against your payer's current requirements before submission.
+        </div>
+
+        <div class="col-header" style="margin-top:14px;">Export for Billing</div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num gold">1</div>
+            <div class="step-body">Scroll to <strong>MTM Audit Log</strong> section at the bottom of your dashboard</div>
+          </div>
+          <div class="step">
+            <div class="step-num gold">2</div>
+            <div class="step-body">Use the <strong>CPT filter</strong> dropdown to see specific encounter types</div>
+          </div>
+          <div class="step">
+            <div class="step-num gold">3</div>
+            <div class="step-body">Click <strong>↓ Export PDF</strong> for a print-ready audit document, or <strong>↓ Export CSV</strong> for electronic submission</div>
+          </div>
+          <div class="step">
+            <div class="step-num gold">4</div>
+            <div class="step-body">The PDF includes patient ID, date, CPT code, score, adherence level, pattern, condition, intervention documented, and instrument name with license reference</div>
+          </div>
+        </div>
+
+        <div class="col-header" style="margin-top:14px;font-family:var(--mono);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--blue);border-color:rgba(78,156,245,0.3);">International Equivalents</div>
+        <table class="cpt-table">
+          <tr><th>Country</th><th>Equivalent service</th></tr>
+          <tr><td>United Kingdom</td><td>MUR (Medicines Use Review) · NMS (New Medicine Service)</td></tr>
+          <tr><td>Australia</td><td>HMR (Home Medicines Review) · RMR (Residential Medication Management Review)</td></tr>
+          <tr><td>Canada</td><td>MedsCheck · Annual Pharmaceutical Opinion</td></tr>
+          <tr><td>EU / EEA</td><td>Pharmacist consultation codes — varies by member state</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT: PEACS + Exports + Troubleshooting -->
+    <div>
+      <div class="block">
+        <div class="col-header" style="color:var(--gold);border-color:rgba(212,168,67,0.3);">MAP PE Domain Analysis</div>
+        <p style="font-size:9.5px;color:var(--muted);margin-bottom:6px;">Available Researcher tier+. Every MAP result shows a <strong style="color:var(--bright);">PE Domain Profile</strong> — composite score + three domain bars. Formula: PE = (A × E × C)<sup>1/3</sup>.</p>
+        <table class="score-table">
+          <tr><th>Domain</th><th>Source questions</th><th>What it measures</th></tr>
+          <tr><td style="color:#4e9cf5;font-weight:600;">A · Architecture</td><td style="font-size:9px;">Q2, Q3, Q6</td><td style="font-size:9px;">Belief, motivation, intentional skipping</td></tr>
+          <tr><td style="color:#8b6ff5;font-weight:600;">E · Execution</td><td style="font-size:9px;">Q1, Q4, Q5, Q8</td><td style="font-size:9px;">Habitual reliability, everyday behaviour</td></tr>
+          <tr><td style="color:#2ec98a;font-weight:600;">C · Context</td><td style="font-size:9px;">Q7</td><td style="font-size:9px;">Perceived regimen burden and friction</td></tr>
+        </table>
+        <div class="tip-box" style="margin-top:6px;">
+          <strong>Constraint label on result screen</strong>
+          After every MMAS-8 submission, the result modal shows which domain is lowest: <em>Architecture-constrained</em> → motivational counseling; <em>Execution-constrained</em> → habit systems; <em>Context-constrained</em> → regimen simplification. CSV export adds <code style="font-family:var(--mono);font-size:8.5px;">mmas_pe · mmas_a · mmas_e · mmas_c</code> columns automatically.
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="col-header">PEACS — Predictive Emergence</div>
+        <p style="font-size:9.5px;color:var(--muted);margin-bottom:8px;">PE = (BASE × MVMT × STRATA)<sup>1/3</sup>. Scores range 0–1. Above 0.70 predicts sustained adherence.</p>
+        <table class="score-table">
+          <tr><th>Dimension</th><th>What it measures</th><th>Window</th></tr>
+          <tr>
+            <td style="color:#4e9cf5;font-weight:600;">BASE</td>
+            <td style="font-size:9px;">Foundation — how consistently patient follows regimen under normal conditions</td>
+            <td style="font-size:9px;">30 days</td>
+          </tr>
+          <tr>
+            <td style="color:#8b6ff5;font-weight:600;">MVMT</td>
+            <td style="font-size:9px;">Flexibility — adherence maintained across disruptions (travel, illness, schedule changes)</td>
+            <td style="font-size:9px;">7 days</td>
+          </tr>
+          <tr>
+            <td style="color:#2ec98a;font-weight:600;">STRATA</td>
+            <td style="font-size:9px;">Social determinants — housing, transport, support, health literacy, treatment beliefs</td>
+            <td style="font-size:9px;">90 days</td>
+          </tr>
+        </table>
+        <table class="score-table" style="margin-top:8px;">
+          <tr><th>PE Zone</th><th>Score</th><th>Clinical meaning</th></tr>
+          <tr><td style="color:var(--green);">Optimal</td><td>≥ 0.85</td><td style="font-size:9px;">High predicted stability — routine follow-up</td></tr>
+          <tr><td style="color:var(--blue);">Good</td><td>0.70–0.84</td><td style="font-size:9px;">Generally stable — light monitoring</td></tr>
+          <tr><td style="color:var(--amber);">Moderate</td><td>0.55–0.69</td><td style="font-size:9px;">Instability risk — targeted intervention</td></tr>
+          <tr><td style="color:var(--red);">Poor</td><td>&lt; 0.55</td><td style="font-size:9px;">High risk — priority intervention, check STRATA</td></tr>
+        </table>
+      </div>
+
+      <div class="block">
+        <div class="col-header" style="color:var(--green);border-color:rgba(46,201,138,0.3);">SDoH Intelligence — Pre-fill Quick Reference</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;">
+          <div style="font-size:9.5px;color:var(--text);"><span class="code-pill" style="background:rgba(212,168,67,0.1);border-color:rgba(212,168,67,0.25);color:var(--gold);">Gold badge</span> Pre-filled from MAP answers (automatic inference)</div>
+          <div style="font-size:9.5px;color:var(--text);"><span class="code-pill" style="background:rgba(78,156,245,0.1);border-color:rgba(78,156,245,0.25);color:var(--blue);">Blue badge</span> Pre-filled from intake social support fields</div>
+          <div style="font-size:9.5px;color:var(--text);"><span class="code-pill green">Green badge</span> Pre-filled from home postal code geo-scoring (OpenStreetMap)</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;">
+          <div style="font-size:9.5px;color:var(--muted);">All pre-fills are overridable — overrides are logged automatically.</div>
+          <div style="font-size:9.5px;color:var(--muted);">A banner at the top of PEACS shows the total pre-fill count for that session.</div>
+        </div>
+        <div class="tip-box">
+          <strong>Geo-scoring tip</strong>
+          Enter the patient's <strong style="color:var(--bright);">home</strong> postal code in the MAP intake form — not the clinic address. Geocoding runs client-side via Nominatim and is never stored to the server.
+        </div>
+        <div style="font-size:9.5px;color:var(--muted);margin-top:6px;">In <strong style="color:var(--text);">SDoH Globe</strong> → click <strong style="color:var(--text);">"Add POI"</strong> to contribute local pharmacies and clinics to the verified infrastructure map. Two confirmations required for verification.</div>
+      </div>
+
+      <div class="block">
+        <div class="col-header green">Data Exports</div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="font-size:9.5px;color:var(--text);"><span class="code-pill green">Export MMAS CSV</span> All MMAS-8 cohort records with individual Q scores, patterns, demographics</div>
+          <div style="font-size:9.5px;color:var(--text);"><span class="code-pill green">Export PEACS CSV</span> PEACS records with BASE, MVMT, STRATA dimensions and PE score</div>
+          <div style="font-size:9.5px;color:var(--text);"><span class="code-pill">MTM Audit PDF</span> Formatted audit document for CMS / payer submission</div>
+          <div style="font-size:9.5px;color:var(--text);"><span class="code-pill">MTM Audit CSV</span> Spreadsheet for electronic billing system import</div>
+          <div style="font-size:9.5px;color:var(--text);"><span class="code-pill">SOAP Note</span> Individual patient SOAP note generated by ZOE — copy into patient record</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="col-header red">Troubleshooting</div>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <div class="warn-box">
+            <strong>Cannot reach validation server</strong>
+            Check internet connection. ATLAS requires active connection. Try mobile data hotspot.
+          </div>
+          <div class="warn-box">
+            <strong>ZOE not responding to voice</strong>
+            Microphone permission must be allowed in Chrome. Check browser settings → Privacy → Microphone. ZOE does not work in Safari or Firefox.
+          </div>
+          <div class="warn-box">
+            <strong>Patient submitted under wrong workspace</strong>
+            Contact info@adherence.cc with your key prefix and the approximate timestamp. Records can be moved between workspaces.
+          </div>
+          <div class="tip-box">
+            <strong>Export shows zero records</strong>
+            Ensure you are logged in with your workspace key (green chip top-left shows your key). Explorer mode does not allow export.
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;padding:10px 12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:5px;">
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">Support</div>
+        <div style="font-size:9.5px;color:var(--muted);line-height:1.7;">
+          <strong style="color:var(--text);">Email:</strong> info@adherence.cc<br/>
+          <strong style="color:var(--text);">Platform:</strong> atlas.adherence.cc<br/>
+          <strong style="color:var(--text);">Keys:</strong> keys.adherence.cc<br/>
+          <strong style="color:var(--text);">Verify cert:</strong> keys.adherence.cc/verify<br/>
+          <strong style="color:var(--text);">Docs:</strong> docs.adherence.cc<br/>
+          Include your key prefix (first 8 chars) in support emails.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-family:var(--mono);font-size:8px;color:var(--dim);">MMAS-8R® © Dr. Donald E. Morisky · TX 8-632-533 · Licensed to Adherence Inc.</div>
+    <div style="font-family:var(--mono);font-size:8px;color:var(--dim);">ATLAS © Adherence Cartography · adherence.cc · v2026.04</div>
+  </div>
+</div>
+
+</body>
+</html>

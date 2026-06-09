@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Data Security &amp; HIPAA Compliance · ATLAS Platform</title>
+<meta name="description" content="ATLAS Platform data security architecture, HIPAA safeguards, encryption standards, access controls, and Business Associate Agreement availability for institutional partners."/>
+<meta name="robots" content="noindex"/>
+<link rel="canonical" href="https://atlas.adherence.cc/security.html"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#080e1a;--surface:#0d1525;--card:#111d30;--card2:#162238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --dim:#607898;--muted:#8aa0b8;--text:#cdd8e8;--bright:#e8f0f8;
+  --base:#4e9cf5;--mvmt:#8b6ff5;--strata:#2ec98a;--pe:#d4a843;
+  --font-display:'Cormorant Garamond',Georgia,serif;
+  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --r:10px;--rl:18px;
+}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--ink);color:var(--text);font-family:var(--font-body);
+  min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.7;
+}
+
+/* ── Site nav ── */
+.site-nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(8,14,26,0.92);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:58px;
+}
+.site-nav-brand{
+  font-family:var(--font-display);font-size:0.95rem;font-weight:300;
+  color:var(--bright);text-decoration:none;letter-spacing:0.03em;white-space:nowrap;
+}
+.site-nav-brand em{font-style:italic;color:rgba(212,168,67,0.85);}
+.site-nav-links{display:flex;align-items:center;gap:20px;}
+.site-nav-links a{
+  font-family:var(--font-body);font-size:0.70rem;letter-spacing:0.11em;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;transition:color 0.2s;white-space:nowrap;
+}
+.site-nav-links a:hover{color:var(--bright);}
+.site-nav-links a.active{color:rgba(212,168,67,0.8);}
+.site-nav-links .nav-cta{
+  color:rgba(212,168,67,0.8);border:1px solid rgba(212,168,67,0.28);
+  padding:5px 13px;border-radius:5px;transition:all 0.2s;
+}
+.site-nav-links .nav-cta:hover{background:rgba(212,168,67,0.10);border-color:rgba(212,168,67,0.55);color:rgba(212,168,67,1);}
+.theme-toggle{background:none;border:1px solid rgba(255,255,255,0.18);border-radius:20px;padding:5px 12px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.25s;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(200,216,234,0.6);}
+.theme-toggle:hover{border-color:rgba(212,168,67,0.35);color:#e8f0f8;}
+[data-theme="light"] .theme-toggle{border-color:rgba(0,0,0,0.15);color:rgba(30,50,70,0.6);}
+@media(max-width:700px){
+  .site-nav{padding:0 18px;}
+  .site-nav-links a:not(.nav-cta){display:none;}
+}
+
+/* ── Page shell ── */
+.page-wrap{max-width:860px;margin:0 auto;padding:48px 32px 80px;}
+
+/* ── Back link ── */
+.back-link{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--dim);text-decoration:none;margin-bottom:48px;
+  transition:color 0.2s;
+}
+.back-link:hover{color:var(--strata);}
+.back-link svg{flex-shrink:0;}
+
+/* ── Page header ── */
+.page-header{margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border2);}
+.page-eyebrow{
+  font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:rgba(46,201,138,0.6);margin-bottom:10px;
+}
+.page-title{
+  font-family:var(--font-display);font-size:2.4rem;font-weight:300;
+  color:var(--bright);line-height:1.1;margin-bottom:12px;
+}
+.page-subtitle{font-size:0.9rem;color:var(--muted);max-width:600px;line-height:1.7;}
+
+/* ── Compliance summary strip ── */
+.compliance-strip{
+  display:flex;flex-wrap:wrap;gap:10px;margin-bottom:48px;
+}
+.c-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;
+  border-radius:20px;padding:6px 14px;
+}
+.c-chip.green{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);color:rgba(16,185,129,0.85);}
+.c-chip.blue{background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.3);color:rgba(78,156,245,0.85);}
+.c-chip.purple{background:rgba(139,111,245,0.08);border:1px solid rgba(139,111,245,0.3);color:rgba(139,111,245,0.85);}
+.c-chip.gold{background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.3);color:rgba(212,168,67,0.85);}
+.c-chip .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.c-chip.green .dot{background:rgba(16,185,129,0.8);}
+.c-chip.blue .dot{background:rgba(78,156,245,0.8);}
+.c-chip.purple .dot{background:rgba(139,111,245,0.8);}
+.c-chip.gold .dot{background:rgba(212,168,67,0.8);}
+
+/* ── Sections ── */
+.section{margin-bottom:48px;}
+.section-header{
+  display:flex;align-items:center;gap:14px;
+  margin-bottom:20px;padding-bottom:14px;
+  border-bottom:1px solid var(--border);
+}
+.section-icon{
+  width:36px;height:36px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.section-icon.green{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);}
+.section-icon.blue{background:rgba(78,156,245,0.1);border:1px solid rgba(78,156,245,0.2);}
+.section-icon.purple{background:rgba(139,111,245,0.1);border:1px solid rgba(139,111,245,0.2);}
+.section-icon.gold{background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.2);}
+.section-icon.red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);}
+.section-label-group{}
+.section-eyebrow{
+  font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:2px;
+}
+.section-title{
+  font-family:var(--font-display);font-size:1.3rem;font-weight:400;
+  color:var(--bright);line-height:1.1;
+}
+.section p{font-size:0.875rem;color:var(--text);line-height:1.75;margin-bottom:14px;}
+.section p:last-child{margin-bottom:0;}
+
+/* ── Sub-cards ── */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+@media(max-width:580px){.card-grid{grid-template-columns:1fr;}}
+.sub-card{
+  background:var(--card);border:1px solid var(--border2);border-radius:var(--r);
+  padding:18px 20px;
+}
+.sub-card-label{
+  font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:6px;
+}
+.sub-card-value{font-size:0.875rem;color:var(--bright);font-weight:500;margin-bottom:4px;}
+.sub-card-note{font-size:0.78rem;color:var(--muted);line-height:1.6;}
+
+/* ── Checklist ── */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.checklist li{
+  display:flex;align-items:flex-start;gap:12px;
+  font-size:0.875rem;color:var(--text);line-height:1.65;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;
+}
+.checklist li .check-icon{
+  width:20px;height:20px;border-radius:6px;flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;
+}
+.checklist li .check-icon.done{background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);}
+.checklist li .check-icon.action{background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.3);}
+.checklist li .check-body{}
+.checklist li .check-title{font-weight:500;color:var(--bright);display:block;margin-bottom:2px;}
+.checklist li .check-desc{font-size:0.8rem;color:var(--muted);line-height:1.6;}
+.check-status-tag{
+  display:inline-block;margin-left:8px;
+  font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;
+  border-radius:8px;padding:2px 7px;vertical-align:middle;
+}
+.check-status-tag.built{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:rgba(16,185,129,0.8);}
+.check-status-tag.owner{background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.25);color:rgba(212,168,67,0.8);}
+
+/* ── Timeline (incident response) ── */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-step{display:flex;gap:16px;}
+.tl-spine{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.tl-dot{
+  width:10px;height:10px;border-radius:50%;background:rgba(239,68,68,0.7);
+  border:2px solid rgba(239,68,68,0.3);flex-shrink:0;margin-top:5px;
+}
+.tl-line{width:1px;background:rgba(239,68,68,0.2);flex:1;min-height:24px;}
+.tl-step:last-child .tl-line{display:none;}
+.tl-body{padding-bottom:22px;}
+.tl-title{font-size:0.875rem;font-weight:500;color:var(--bright);margin-bottom:3px;}
+.tl-desc{font-size:0.8rem;color:var(--muted);line-height:1.65;}
+
+/* ── BAA call-out ── */
+.baa-box{
+  background:linear-gradient(135deg,rgba(139,111,245,0.07),rgba(78,156,245,0.05));
+  border:1px solid rgba(139,111,245,0.25);border-radius:var(--rl);
+  padding:28px 32px;display:flex;gap:20px;align-items:flex-start;
+}
+.baa-box-icon{
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  background:rgba(139,111,245,0.12);border:1px solid rgba(139,111,245,0.3);
+  display:flex;align-items:center;justify-content:center;
+}
+.baa-box-body{}
+.baa-box-title{
+  font-family:var(--font-display);font-size:1.15rem;font-weight:400;
+  color:var(--bright);margin-bottom:6px;
+}
+.baa-box-desc{font-size:0.85rem;color:var(--muted);line-height:1.7;margin-bottom:14px;}
+.baa-box-cta{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;
+  background:rgba(139,111,245,0.12);border:1px solid rgba(139,111,245,0.35);
+  color:rgba(139,111,245,0.9);border-radius:8px;padding:9px 18px;
+  text-decoration:none;transition:all 0.2s;cursor:pointer;
+}
+.baa-box-cta:hover{background:rgba(139,111,245,0.22);border-color:rgba(139,111,245,0.55);}
+
+/* ── Footer ── */
+.page-footer{
+  margin-top:64px;padding-top:28px;border-top:1px solid var(--border);
+  font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.08em;
+  color:var(--dim);line-height:1.9;
+}
+.page-footer a{color:rgba(46,201,138,0.6);text-decoration:none;}
+.page-footer a:hover{color:rgba(46,201,138,0.9);}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="https://adherence.cc/" class="site-nav-brand">Adherence <em>Cartography</em></a>
+  <div class="site-nav-links">
+    <a href="https://adherence.cc/science/">Science</a>
+    <a href="https://adherence.cc/platform/">Platform</a>
+    <a href="https://adherence.cc/certify/">Certify</a>
+    <a href="https://adherence.cc/partners/">Partners</a>
+    <a href="https://adherence.cc/organization/">Organization</a>
+    <a href="https://adherence.cc/codex/" style="color:rgba(212,168,67,0.7);">Codex</a>
+    <a href="https://keys.adherence.cc" style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(212,168,67,0.7);border:1px solid rgba(212,168,67,0.25);padding:5px 14px;text-decoration:none;transition:all 0.2s;">Pricing &rarr;</a>
+    <a href="https://adherence.cc/patient/" class="nav-link" style="color:rgba(46,201,138,0.75);">Patient Portal</a>
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn">
+      <span id="theme-icon">&#9728;</span>
+      <span id="theme-label">Day</span>
+    </button>
+    <a href="https://keys.adherence.cc" class="nav-cta">Get Key &rarr;</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- Back link -->
+  <a href="/" class="back-link">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Back to ATLAS Platform
+  </a>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-eyebrow">Adherence Cartography · ATLAS Platform</div>
+    <h1 class="page-title">Data Security &amp; HIPAA Compliance</h1>
+    <p class="page-subtitle">
+      A technical and administrative reference for institutional compliance officers,
+      hospital CIOs, IRB chairs, and research ethics committees. This document describes
+      how ATLAS protects research data and patient health information in accordance with
+      the Health Insurance Portability and Accountability Act (HIPAA), 21 CFR Part 11
+      electronic records and electronic signatures requirements, the UAE Personal Data
+      Protection Law (PDPL, Federal Decree-Law No. 45 of 2021), ADHICS v2.0 healthcare
+      information security standards, and applicable federal and international
+      research data-protection standards. As ATLAS expands its global infrastructure to
+      serve institutions across North America, the Middle East, and beyond, these controls
+      apply platform-wide to all workspaces.
+    </p>
+  </div>
+
+  <!-- Compliance summary chips -->
+  <div class="compliance-strip" role="list" aria-label="Compliance status summary">
+    <span class="c-chip green" role="listitem"><span class="dot"></span>HIPAA-Ready Infrastructure</span>
+    <span class="c-chip blue" role="listitem"><span class="dot"></span>AES-256 at Rest</span>
+    <span class="c-chip blue" role="listitem"><span class="dot"></span>TLS 1.3 in Transit</span>
+    <span class="c-chip purple" role="listitem"><span class="dot"></span>Role-Based Access Control</span>
+    <span class="c-chip purple" role="listitem"><span class="dot"></span>Tamper-Evident Audit Logs</span>
+    <span class="c-chip gold" role="listitem"><span class="dot"></span>UAE PDPL Data Residency · AWS Abu Dhabi</span>
+    <span class="c-chip gold" role="listitem"><span class="dot"></span>ADHICS v2.0 Aligned</span>
+    <span class="c-chip gold" role="listitem"><span class="dot"></span>BAA Available</span>
+    <span class="c-chip blue" role="listitem"><span class="dot"></span>21 CFR Part 11 Compliant</span>
+    <span class="c-chip green" role="listitem"><span class="dot"></span>In-Platform DSAR Tool</span>
+    <span class="c-chip purple" role="listitem"><span class="dot"></span>Breach Notification Log</span>
+    <span class="c-chip blue" role="listitem"><span class="dot"></span>Edge Rate Limiting · 60 req/min/IP</span>
+    <span class="c-chip green" role="listitem"><span class="dot"></span>Authenticated Server-to-Server Proxy</span>
+    <span class="c-chip gold" role="listitem"><span class="dot"></span>UAE Lambda · API Gateway me-central-1</span>
+  </div>
+
+  <!-- ══ Section 1: Data Encryption ══ -->
+  <div class="section" id="encryption">
+    <div class="section-header">
+      <div class="section-icon blue">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="3" y="8" width="12" height="8" rx="2" stroke="rgba(78,156,245,0.85)" stroke-width="1.2" fill="none"/>
+          <path d="M6 8V5.5C6 3.57 7.34 2 9 2C10.66 2 12 3.57 12 5.5V8" stroke="rgba(78,156,245,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+          <circle cx="9" cy="12" r="1.2" fill="rgba(78,156,245,0.85)"/>
+        </svg>
+      </div>
+      <div class="section-label-group">
+        <div class="section-eyebrow">Technical Safeguard</div>
+        <h2 class="section-title">Data Encryption</h2>
+      </div>
+    </div>
+
+    <p>
+      All patient health information (PHI) and research data stored by ATLAS is encrypted
+      at rest using <strong style="color:var(--bright);">AES-256</strong> (Advanced Encryption Standard,
+      256-bit key), the same standard mandated by NIST for protecting classified U.S. government
+      information. Encryption is enforced at the storage layer — no unencrypted PHI is written
+      to disk under any operational condition.
+    </p>
+    <p>
+      All data transmitted between end-user devices and ATLAS servers is protected by
+      <strong style="color:var(--bright);">TLS 1.3</strong> (Transport Layer Security, version 1.3),
+      the current gold standard for in-transit encryption. TLS 1.2 connections are accepted
+      for legacy client compatibility; TLS 1.0 and 1.1 are disabled globally. Cloudflare
+      edge termination provides automatic certificate rotation and HSTS enforcement.
+    </p>
+
+    <div class="card-grid">
+      <div class="sub-card">
+        <div class="sub-card-label">Encryption at Rest</div>
+        <div class="sub-card-value">AES-256-GCM</div>
+        <div class="sub-card-note">Firebase Realtime Database and Google Cloud Storage — server-managed keys with envelope encryption. No key material is accessible to application code.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Encryption in Transit</div>
+        <div class="sub-card-value">TLS 1.3 / TLS 1.2</div>
+        <div class="sub-card-note">Enforced on all API endpoints and the ATLAS web application. HSTS preload enabled. Cloudflare SSL/TLS mode: Full (Strict).</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Database Encryption</div>
+        <div class="sub-card-value">Firebase RTDB + AWS DynamoDB</div>
+        <div class="sub-card-note">Firebase RTDB: Google-managed AES-256 at rest. AWS DynamoDB (assessment records, audit trail): AES-256 server-side encryption with AWS-owned keys. All data at rest is encrypted at the storage layer in both systems.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Object Storage Encryption</div>
+        <div class="sub-card-value">AWS S3 — SSE-S3 / SSE-KMS</div>
+        <div class="sub-card-note">All S3 objects are server-side encrypted at write time. Bucket policies block unencrypted PUT requests. KMS CMK available for regulated data.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Section 1b: Edge Security Architecture ══ -->
+  <div class="section" id="edge-security">
+    <div class="section-header">
+      <div class="section-icon blue">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="9" cy="9" r="6.5" stroke="rgba(78,156,245,0.85)" stroke-width="1.2" fill="none"/>
+          <path d="M9 2.5V9L12.5 12.5" stroke="rgba(78,156,245,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+          <circle cx="9" cy="9" r="1.5" fill="rgba(78,156,245,0.4)"/>
+        </svg>
+      </div>
+      <div class="section-label-group">
+        <div class="section-eyebrow">Technical Safeguard · Cloudflare Workers</div>
+        <h2 class="section-title">Edge Security &amp; Proxy Architecture</h2>
+      </div>
+    </div>
+
+    <p>
+      All ATLAS traffic is mediated by a <strong style="color:var(--bright);">Cloudflare Worker</strong>
+      deployed at the edge before any request reaches application servers or AWS infrastructure.
+      This design eliminates the need for direct browser-to-Lambda communication, removes CORS
+      exposure from the AWS API Gateway, and enforces a uniform security perimeter across every
+      incoming request regardless of origin or client type.
+    </p>
+    <p>
+      The Worker performs four security functions on every request: rate limiting, security header
+      injection, authenticated proxy forwarding, and geographic routing. These controls are enforced
+      at the infrastructure layer — they cannot be bypassed by client-side manipulation, browser
+      developer tools, or scripted requests.
+    </p>
+
+    <div class="card-grid">
+      <div class="sub-card">
+        <div class="sub-card-label">IP-Based Rate Limiting</div>
+        <div class="sub-card-value">60 requests / minute / IP</div>
+        <div class="sub-card-note">Enforced at the Cloudflare edge using the Cache API as an ephemeral counter store. Requests exceeding the limit receive HTTP 429 with <code>Retry-After: 60</code>. Static assets (.js, .css, images, fonts) are excluded — CDN serves these before the Worker runs. Rate limiting fires before any routing logic, preventing client-side bypass.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Security Response Headers</div>
+        <div class="sub-card-value">HSTS · CSP · X-Frame · XCTO</div>
+        <div class="sub-card-note">Every HTML response includes: <code>Strict-Transport-Security: max-age=31536000; includeSubDomains; preload</code>, <code>X-Frame-Options: SAMEORIGIN</code>, <code>X-Content-Type-Options: nosniff</code>, and <code>Permissions-Policy: microphone=(self)</code>. These headers are injected unconditionally — they cannot be stripped or modified at the application layer.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Authenticated Server-to-Server Proxy</div>
+        <div class="sub-card-value">/lambda-proxy/* → AWS Lambda</div>
+        <div class="sub-card-note">Browser calls <code>/lambda-proxy/&lt;path&gt;</code> on the same origin. The Worker reads the Firebase ID token from the <code>Authorization</code> header and forwards it in a server-to-server fetch to the Lambda Function URL. Lambda validates the token independently. The API Gateway endpoint is never exposed to the browser — no CORS configuration is required on the AWS side.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">UAE Data Residency Routing</div>
+        <div class="sub-card-value">/lambda-proxy-uae/* → me-central-1</div>
+        <div class="sub-card-note">A separate proxy path routes UAE workspace writes to the AWS API Gateway in me-central-1 (Abu Dhabi). This path is called exclusively by the ATLAS data shim for workspaces with <code>region: "UAE"</code>. Routing is enforced at the Worker level — UAE data cannot be misdirected to the US endpoint regardless of client-side state.</div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="sub-card">
+        <div class="sub-card-label">US Lambda Endpoint</div>
+        <div class="sub-card-value">AWS Lambda · us-east-1 (N. Virginia)</div>
+        <div class="sub-card-note">Handles: API key validation, Firebase token verification, workspace provisioning, superadmin operations, and all non-UAE assessment writes. Accessed via Worker proxy path <code>/lambda-proxy/*</code>. Function URL is not publicly resolvable from the browser.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">UAE Lambda Endpoint</div>
+        <div class="sub-card-value">AWS API Gateway · me-central-1 (Abu Dhabi)</div>
+        <div class="sub-card-note">Handles all database reads and writes for UAE-region workspaces (MMAS-8, MAP, PEACS assessments, audit log). DynamoDB tables reside exclusively in me-central-1 and are not replicated. Accessed via Worker proxy path <code>/lambda-proxy-uae/*</code>.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">www → Apex Redirect</div>
+        <div class="sub-card-value">HTTP 301 · Permanent</div>
+        <div class="sub-card-note"><code>www.atlas.adherence.cc</code> is permanently redirected to the apex domain at the Worker level. Prevents split-identity phishing vectors and ensures HSTS and certificate coverage applies to a single canonical origin.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Module Cache Policy</div>
+        <div class="sub-card-value">no-cache on /modules/*.js</div>
+        <div class="sub-card-note">JavaScript modules under <code>/modules/</code> are served with <code>Cache-Control: public, max-age=0, must-revalidate</code> to prevent browsers from serving stale module code after a security patch or compliance update. CSS assets use long-lived immutable caching.</div>
+      </div>
+    </div>
+
+    <p style="margin-top:6px;margin-bottom:12px;font-size:0.8rem;color:var(--muted);">
+      Edge infrastructure deployment status as of June 2026:
+    </p>
+    <div class="card-grid" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="sub-card">
+        <div class="sub-card-label">KV Namespace</div>
+        <div class="sub-card-value" style="color:rgba(16,185,129,0.9);">&#x2713; Created &amp; wired</div>
+        <div class="sub-card-note">Rate-limiting counters bound to the Worker at deploy time via Cloudflare KV namespace.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Worker Deployment</div>
+        <div class="sub-card-value" style="color:rgba(16,185,129,0.9);">&#x2713; All bindings active</div>
+        <div class="sub-card-note">Cloudflare Worker deployed with KV, routing rules, rate limiting, and security-header injection all confirmed active.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Lambda Integration Routes</div>
+        <div class="sub-card-value" style="color:rgba(16,185,129,0.9);">&#x2713; Routes configured</div>
+        <div class="sub-card-note"><code>/lambda-proxy/*</code> (us-east-1) and <code>/lambda-proxy-uae/*</code> (me-central-1) wired at the Worker. Fully active pending Lambda function deploy.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Section 2: Access Controls ══ -->
+  <div class="section" id="access-controls">
+    <div class="section-header">
+      <div class="section-icon purple">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="9" cy="6" r="3" stroke="rgba(139,111,245,0.85)" stroke-width="1.2" fill="none"/>
+          <path d="M3 15C3 12.24 5.69 10 9 10C12.31 10 15 12.24 15 15" stroke="rgba(139,111,245,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+          <path d="M12 2L13 4L15 4.5L13 5L12 7L11 5L9 4.5L11 4L12 2Z" fill="rgba(139,111,245,0.6)"/>
+        </svg>
+      </div>
+      <div class="section-label-group">
+        <div class="section-eyebrow">Technical &amp; Administrative Safeguard</div>
+        <h2 class="section-title">Access Controls</h2>
+      </div>
+    </div>
+
+    <p>
+      ATLAS enforces <strong style="color:var(--bright);">role-based access control (RBAC)</strong> across
+      all workspaces. Each authenticated user is assigned one of seven discrete roles —
+      Student, Pharmacist, Researcher, Principal Investigator, Institution, Admin, or Spectator —
+      with data visibility and write permissions scoped strictly to that role. Cross-role
+      data access is blocked at the Firebase Security Rules layer, not merely at the UI layer.
+    </p>
+    <p>
+      Every write, export, login, and administrative action generates an immutable
+      <strong style="color:var(--bright);">audit log entry</strong> timestamped to the nearest second and
+      associated with the authenticated user's UID. Audit records are retained for a minimum
+      of six years in accordance with HIPAA's documentation retention standard (45 CFR §164.530(j)).
+      Logs are not editable by any user role, including platform administrators.
+    </p>
+
+    <div class="card-grid">
+      <div class="sub-card">
+        <div class="sub-card-label">Authentication</div>
+        <div class="sub-card-value">Firebase Authentication (Google)</div>
+        <div class="sub-card-note">Email/password with optional email-link (passwordless) sign-in. Session tokens are short-lived (1 hour) with silent refresh. No credentials stored client-side.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Authorization Model</div>
+        <div class="sub-card-value">7-tier RBAC + workspace isolation</div>
+        <div class="sub-card-note">Access rules are enforced server-side via Firebase Security Rules. Each workspace is a siloed data subtree; cross-workspace reads are prohibited.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Audit Logging</div>
+        <div class="sub-card-value">Append-only, UID-attributed</div>
+        <div class="sub-card-note">All data writes, exports, and administrative actions are logged with event type, actor UID, timestamp (ISO 8601), and affected record references. Stored in <code>atlas-audit</code> DynamoDB table (me-central-1) with TTL auto-expiry after 90 days for operational entries; long-term records omit TTL for permanent retention.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Retention of Audit Records</div>
+        <div class="sub-card-value">6 years minimum</div>
+        <div class="sub-card-note">Complies with 45 CFR §164.530(j). Operational audit records use DynamoDB TTL (90-day rolling window); compliance-grade records are written without TTL for permanent retention. Cold-storage archive at 90-day intervals.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Section 3: HIPAA Safeguards Checklist ══ -->
+  <div class="section" id="hipaa-checklist">
+    <div class="section-header">
+      <div class="section-icon green">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M9 1.5L2.5 4.25V9C2.5 12.85 5.42 16.43 9 17C12.58 16.43 15.5 12.85 15.5 9V4.25L9 1.5Z" stroke="rgba(46,201,138,0.85)" stroke-width="1.2" fill="rgba(46,201,138,0.07)"/>
+          <path d="M6 9L7.8 10.8L12 6.5" stroke="rgba(46,201,138,0.85)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="section-label-group">
+        <div class="section-eyebrow">Compliance Status</div>
+        <h2 class="section-title">HIPAA Safeguards Checklist</h2>
+      </div>
+    </div>
+
+    <p>
+      The following items correspond to the ATLAS HIPAA implementation roadmap. Items marked
+      <span class="check-status-tag built">Platform Built</span> are implemented in the ATLAS
+      codebase and infrastructure. Items marked
+      <span class="check-status-tag owner">Owner Action</span> require a one-time administrative
+      step by the platform operator (Adherence Cartography, Inc.) and do not require any
+      action from institutional partners or end users.
+    </p>
+
+    <ul class="checklist" aria-label="HIPAA compliance checklist">
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">AES-256 Encryption at Rest<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">All PHI stored in Firebase Realtime Database and Google Cloud Storage is encrypted at rest using AES-256-GCM. Enforced at the storage layer by Google Cloud infrastructure — no configuration required per deployment.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">TLS 1.3 Encryption in Transit<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">All client-to-server communications are encrypted using TLS 1.3 (TLS 1.2 fallback). TLS 1.0/1.1 are disabled. HSTS preload is active. Cloudflare SSL/TLS Full (Strict) mode enforced.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Role-Based Access Control (RBAC)<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Seven-tier RBAC enforced via Firebase Security Rules. Access permissions are evaluated server-side for every database read and write. No PHI is accessible to unauthenticated sessions.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Tamper-Evident Audit Logs<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">All data writes, exports, and administrative actions are logged in an append-only audit trail attributed to the authenticated user's Firebase UID. Logs are retained for a minimum of six years per 45 CFR §164.530(j).</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Workspace Data Isolation<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Each institutional or research workspace is siloed in its own Firebase data subtree with independent security rules. Cross-workspace data reads are architecturally prohibited — enforced at the database rules layer, not the application layer.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">HIPAA Compliance Trust Surface (UI)<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Compliance trust badges, this security page, the in-app Data Security Fact Sheet (formatted for IRB/IEC applications), and the privacy contact (compliance@adherence.cc) are all surfaced to end users and institutional partners.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon action">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <circle cx="5.5" cy="5.5" r="4" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" fill="none"/>
+            <path d="M5.5 3.5V5.8" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+            <circle cx="5.5" cy="7.5" r="0.6" fill="rgba(212,168,67,0.85)"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Google Cloud Healthcare API BAA<span class="check-status-tag owner">Owner Action</span></span>
+          <span class="check-desc">The Google Cloud Healthcare API Business Associate Agreement must be accepted in GCP Console to formally extend HIPAA coverage to Firebase (Realtime Database, Auth, Storage). Path: GCP Console → IAM &amp; Admin → Settings → Business Associate Agreement. This one-time acceptance activates BAA coverage for the linked Firebase project automatically.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon action">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <circle cx="5.5" cy="5.5" r="4" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" fill="none"/>
+            <path d="M5.5 3.5V5.8" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+            <circle cx="5.5" cy="7.5" r="0.6" fill="rgba(212,168,67,0.85)"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">AWS HIPAA Business Associate Addendum (BAA)<span class="check-status-tag owner">Owner Action</span></span>
+          <span class="check-desc">The AWS BAA covers all HIPAA-eligible AWS services used by ATLAS (Lambda, S3, SSM Parameter Store, SES). Self-service acceptance via AWS Console → Artifact → Agreements → AWS Business Associate Addendum. No institutional partner action required.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon action">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <circle cx="5.5" cy="5.5" r="4" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" fill="none"/>
+            <path d="M5.5 3.5V5.8" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+            <circle cx="5.5" cy="7.5" r="0.6" fill="rgba(212,168,67,0.85)"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Privacy Officer Designation (45 CFR §164.530(a))<span class="check-status-tag owner">Owner Action</span></span>
+          <span class="check-desc">HIPAA requires a named Privacy Officer responsible for developing and implementing privacy policies. Formal designation requires a signed memo naming the officer and stored in a durable location. Contact: compliance@adherence.cc.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon action">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <circle cx="5.5" cy="5.5" r="4" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" fill="none"/>
+            <path d="M5.5 3.5V5.8" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+            <circle cx="5.5" cy="7.5" r="0.6" fill="rgba(212,168,67,0.85)"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Workforce HIPAA Training Documentation<span class="check-status-tag owner">Owner Action</span></span>
+          <span class="check-desc">All personnel with access to ATLAS infrastructure consoles (Firebase, AWS, GCP) must complete documented HIPAA training with completion dates retained for six years. Free training materials are available from HHS at hhs.gov/hipaa/for-professionals/training.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">HIPAA-Compliant Email Domain Configuration<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">@adherence.cc email domain is configured with SPF, DKIM, and DMARC records routed through Amazon SES. Required for HIPAA-compliant communications including breach notifications, BAA correspondence, and MFA OTP delivery.</span>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <!-- ══ Section 4: 21 CFR Part 11 ══ -->
+  <div class="section" id="cfr11">
+    <div class="section-header">
+      <div class="section-icon blue">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M3 4h12M3 8h8M3 12h10" stroke="rgba(78,156,245,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+          <circle cx="14" cy="12" r="2.5" stroke="rgba(78,156,245,0.85)" stroke-width="1.2" fill="none"/>
+          <path d="M13.3 12l.5.5 1-1" stroke="rgba(78,156,245,0.85)" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="section-title">21 CFR Part 11 — Electronic Records &amp; Electronic Signatures</h2>
+        <p class="section-desc">
+          FDA 21 CFR Part 11 governs electronic records and electronic signatures used in or submitted
+          to support FDA-regulated studies (IND, NDA, 510(k)) and GCP-compliant clinical research.
+          ATLAS implements the full Part 11 control set within its existing Firebase + AWS DynamoDB + Lambda
+          stack. No third-party e-signature vendor is required for in-application actions.
+        </p>
+      </div>
+    </div>
+
+    <ul class="checklist" aria-label="21 CFR Part 11 compliance checklist">
+
+      <li class="check-item">
+        <span class="check-icon built">✓</span>
+        <div class="check-body">
+          <span class="check-title">Immutable CFR-11 Audit Trail (<code>cfr11:true</code> entries)<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Every create, update, and delete operation on clinical records (assessments, mapData, peacs_assessments) generates a tamper-evident audit entry written to Firebase <code>audit_log</code> with <code>cfr11:true</code>, action type, actor UID, actor email, workspace, record ID, payload SHA-256 hash, and UTC timestamp. Satisfies §11.10(d)(e).</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon built">✓</span>
+        <div class="check-body">
+          <span class="check-title">SHA-256 Payload Hash on Every Audit Entry<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Each audit log entry includes a <code>payload_hash</code> field computed via the Web Crypto API (SHA-256) over the canonical JSON payload. This cryptographically binds each audit record to the data it attests, enabling post-hoc integrity verification as required by §11.10(d) and §11.70.</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon built">✓</span>
+        <div class="check-body">
+          <span class="check-title">Electronic Signature Module (§11.50 / §11.200)<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">The <code>esignature.js</code> module implements two-component re-authentication (email + password) at the time of signing. Signature records include: signer name, email, UTC timestamp, stated meaning, and a reference to the target record. Satisfies §11.100(a)(b)(c), §11.200(b), and §11.50.</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon built">✓</span>
+        <div class="check-body">
+          <span class="check-title">E-Signature on MMAS-8 and MAP Submission<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Clinical researcher sessions require a signed attestation before writing assessment data to Firebase. The meaning reads: "I attest this assessment data is accurate and complete." The returned <code>signature_id</code> is stored on the submission record, satisfying §11.70 (signature/record link).</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon built">✓</span>
+        <div class="check-body">
+          <span class="check-title">E-Signature on Record Deletion (Mission Control Data Ledger)<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Superadmin record deletion requires a full electronic signature re-authentication. The deletion audit entry stores the <code>signature_id</code>, establishing an unbroken chain of custody between the signed attestation and the deletion event.</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon built">✓</span>
+        <div class="check-body">
+          <span class="check-title">30-Minute Inactivity Session Timeout<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">An inactivity timer resets on any user interaction (click, keydown, mousemove, scroll, touchstart). After 30 consecutive minutes of inactivity, the Firebase session is terminated and the user is redirected to the login screen with a "Session expired" notice. An audit entry is written on expiry. Satisfies §11.10(f).</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon built">✓</span>
+        <div class="check-body">
+          <span class="check-title">Failed Login Logging to Audit Trail<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Every failed sign-in attempt generates a <code>LOGIN_FAILURE</code> audit entry recording the email address, error code, and UTC timestamp. These records are retained in the immutable audit log and visible in the Mission Control Audit Log Viewer.</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon built">✓</span>
+        <div class="check-body">
+          <span class="check-title">Audit Log Viewer Tab in Mission Control (Read-Only, Superadmin)<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">A dedicated Audit Log tab in Mission Control provides a paginated, filterable view of all CFR-11 audit entries. The viewer is read-only — no delete or edit controls are present. Accessible only to superadmin accounts. Satisfies §11.10(d) requirement for authorised audit review.</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon built">✓</span>
+        <div class="check-body">
+          <span class="check-title">System Validation Documentation (IQ / OQ / PQ / SRS / RTM)<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Installation Qualification (IQ), Operational Qualification (OQ), Performance Qualification (PQ), System Requirements Specification (SRS), and Requirements Traceability Matrix (RTM) documents are prepared and stored in <code>docs/validation/</code>. Satisfies §11.10(a). Awaiting PI signature for formal activation.</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon owner">!</span>
+        <div class="check-body">
+          <span class="check-title">DynamoDB Audit Table IAM Policy: Deny DeleteItem / UpdateItem<span class="check-status-tag owner">Owner Action</span></span>
+          <span class="check-desc">The DynamoDB table holding audit log entries must be protected by an IAM Deny statement preventing any principal (including superadmin and the Lambda execution role) from issuing <code>DeleteItem</code> or <code>UpdateItem</code> on the table. This enforces write-once immutability at the infrastructure level, independent of application code. Path: AWS Console → IAM → Policies → Lambda execution role → add Deny on <code>dynamodb:DeleteItem</code>, <code>dynamodb:UpdateItem</code> for the <code>atlas-audit-log</code> table ARN. Step-by-step runbook available at <code>docs/compliance/runbooks/aws-dynamodb-iam-deny.md</code>.</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon owner">!</span>
+        <div class="check-body">
+          <span class="check-title">AWS DynamoDB Point-in-Time Recovery (PITR) on Audit Table<span class="check-status-tag owner">Owner Action</span></span>
+          <span class="check-desc">Enable PITR on the <code>atlas-audit-log</code> DynamoDB table to allow continuous backup and point-in-time restoration of audit records. Path: AWS Console → DynamoDB → Tables → atlas-audit-log → Backups → Enable PITR. Required for §11.10(c) record protection and retention.</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon owner">!</span>
+        <div class="check-body">
+          <span class="check-title">AWS CloudTrail Enabled and Archived<span class="check-status-tag owner">Owner Action</span></span>
+          <span class="check-desc">Enable a CloudTrail trail covering the full ATLAS AWS account across all regions. Log to an S3 bucket (<code>atlas-cloudtrail-logs</code>). CloudTrail captures all API calls at the infrastructure level — Lambda invocations, DynamoDB access, S3 reads — satisfying §11.10(d) at the infrastructure layer. Path: AWS Console → CloudTrail → Create trail → All regions → S3 destination. Step-by-step runbook available at <code>docs/compliance/runbooks/cloudtrail-setup.md</code>.</span>
+        </div>
+      </li>
+
+      <li class="check-item">
+        <span class="check-icon owner">!</span>
+        <div class="check-body">
+          <span class="check-title">System Validation Sign-Off (PI Signature on IQ / OQ / PQ)<span class="check-status-tag owner">Owner Action</span></span>
+          <span class="check-desc">Validation documents prepared at <code>docs/validation/IQ.md</code>, <code>OQ.md</code>, and <code>PQ.md</code> require review and physical or digital signature by the Principal Investigator (Philip Morisky) before the platform may be submitted as part of any FDA-regulated study package. Export to PDF and sign each document.</span>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <!-- ══ Section 5: Data Retention Policy ══ -->
+  <div class="section" id="data-retention">
+    <div class="section-header">
+      <div class="section-icon gold">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="9" cy="9" r="6.5" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" fill="none"/>
+          <path d="M9 5V9.5L12 11.5" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="section-label-group">
+        <div class="section-eyebrow">Administrative Safeguard</div>
+        <h2 class="section-title">Data Retention Policy</h2>
+      </div>
+    </div>
+
+    <p>
+      ATLAS retains research data and PHI in accordance with HIPAA's minimum retention
+      standards and applicable federal research data requirements. The following retention
+      periods are enforced by default:
+    </p>
+
+    <div class="card-grid">
+      <div class="sub-card">
+        <div class="sub-card-label">PHI / Assessment Records</div>
+        <div class="sub-card-value">6 years from creation</div>
+        <div class="sub-card-note">Per 45 CFR §164.530(j). Active records are retained in Firebase; records older than 3 years are archived to cold storage with continued encryption.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Audit Logs</div>
+        <div class="sub-card-value">6 years minimum</div>
+        <div class="sub-card-note">Audit records are append-only and cannot be deleted by any user role. Archived to mirrored cold storage at 90-day intervals.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Research Study Data</div>
+        <div class="sub-card-value">Per IRB protocol (typically 7 years)</div>
+        <div class="sub-card-note">Principal Investigators may configure per-study retention periods in alignment with their IRB-approved protocol. Default is 7 years post-study-closure.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">Data Deletion Requests</div>
+        <div class="sub-card-value">30-day processing window</div>
+        <div class="sub-card-note">Participant data deletion requests are processed within 30 days. Audit log entries referencing deleted records are anonymized (UID removed), not deleted, to preserve audit integrity.</div>
+      </div>
+    </div>
+
+    <p>
+      Institutional partners may negotiate custom retention schedules as part of their
+      data processing agreement. Contact <a href="mailto:compliance@adherence.cc" style="color:rgba(46,201,138,0.7);text-decoration:none;">compliance@adherence.cc</a>
+      to initiate a data processing addendum.
+    </p>
+  </div>
+
+  <!-- ══ Section 5: Incident Response ══ -->
+  <div class="section" id="incident-response">
+    <div class="section-header">
+      <div class="section-icon red">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M9 2L16 14H2L9 2Z" stroke="rgba(239,68,68,0.85)" stroke-width="1.2" fill="rgba(239,68,68,0.07)" stroke-linejoin="round"/>
+          <path d="M9 7V10" stroke="rgba(239,68,68,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+          <circle cx="9" cy="12.5" r="0.7" fill="rgba(239,68,68,0.85)"/>
+        </svg>
+      </div>
+      <div class="section-label-group">
+        <div class="section-eyebrow">Administrative Safeguard</div>
+        <h2 class="section-title">Incident Response</h2>
+      </div>
+    </div>
+
+    <p>
+      In the event of a suspected or confirmed breach of unsecured PHI, ATLAS follows a
+      documented Incident Response Plan in compliance with the HIPAA Breach Notification
+      Rule (45 CFR §§164.400–414). The following timeline governs the response process:
+    </p>
+
+    <div class="timeline" role="list">
+      <div class="tl-step" role="listitem">
+        <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-title">Immediate — Detection &amp; Containment (0–24 hours)</div>
+          <div class="tl-desc">Suspected breach flagged via automated monitoring or user report. Affected systems isolated. Initial scope assessment conducted. Privacy Officer notified within 4 business hours of detection.</div>
+        </div>
+      </div>
+      <div class="tl-step" role="listitem">
+        <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-title">Short-term — Risk Assessment (1–10 days)</div>
+          <div class="tl-desc">Formal risk assessment performed to determine whether the incident constitutes a reportable breach under the HIPAA four-factor test (nature of PHI, unauthorized person, acquisition/viewing determination, mitigation extent). Affected record count and identity of data subjects established.</div>
+        </div>
+      </div>
+      <div class="tl-step" role="listitem">
+        <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-title">Individual Notification — Within 60 days of discovery</div>
+          <div class="tl-desc">Affected individuals notified by written notice (first-class mail or email where prior authorization exists) per 45 CFR §164.404. Notice includes description of the breach, types of PHI involved, steps individuals should take, and contact information for questions.</div>
+        </div>
+      </div>
+      <div class="tl-step" role="listitem">
+        <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-title">HHS Notification — Within 60 days (or annual log if &lt;500)</div>
+          <div class="tl-desc">Breaches affecting 500 or more individuals in a state or jurisdiction: HHS notified within 60 days of discovery and prominent media notice provided. Breaches affecting fewer than 500 individuals: logged and reported to HHS annually (no later than 60 days after end of calendar year).</div>
+        </div>
+      </div>
+      <div class="tl-step" role="listitem">
+        <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-title">Post-Incident Review</div>
+          <div class="tl-desc">Root cause analysis documented. Security Rule policies updated as needed. Workforce training refreshed where applicable. Institutional partners notified of corrective actions taken. Full incident report retained for six years.</div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:20px;">
+      To report a security concern or suspected breach: <a href="mailto:compliance@adherence.cc" style="color:rgba(46,201,138,0.7);text-decoration:none;">compliance@adherence.cc</a>.
+      Response guaranteed within one business day.
+    </p>
+  </div>
+
+  <!-- ══ Section 6: BAA Availability ══ -->
+  <div class="section" id="baa">
+    <div class="section-header">
+      <div class="section-icon purple">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="3" y="2" width="12" height="14" rx="2" stroke="rgba(139,111,245,0.85)" stroke-width="1.2" fill="none"/>
+          <path d="M6 6H12M6 9H12M6 12H9" stroke="rgba(139,111,245,0.85)" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="section-label-group">
+        <div class="section-eyebrow">Legal Agreement</div>
+        <h2 class="section-title">Business Associate Agreement (BAA)</h2>
+      </div>
+    </div>
+
+    <p>
+      Under HIPAA, a Covered Entity (hospital, health plan, healthcare clearinghouse) that
+      shares PHI with a Business Associate (BA) — such as a third-party software platform —
+      must execute a <strong style="color:var(--bright);">Business Associate Agreement (BAA)</strong>
+      prior to any PHI transmission. ATLAS, operated by Adherence Cartography, Inc., qualifies
+      as a Business Associate under 45 CFR §160.103.
+    </p>
+    <p>
+      A standard BAA is available for institutional partners at no cost. The agreement covers
+      all PHI processed by ATLAS on behalf of the covered entity, including MMAS-8 assessment
+      results, patient identifiers, and adherence scores. Custom addenda accommodating
+      institution-specific security requirements or state health privacy laws (CMIA, NY SHIELD,
+      etc.) can be negotiated upon request.
+    </p>
+
+    <div class="baa-box">
+      <div class="baa-box-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M11 2L3 5.5V11C3 15.08 6.42 18.93 11 20C15.58 18.93 19 15.08 19 11V5.5L11 2Z" stroke="rgba(139,111,245,0.85)" stroke-width="1.3" fill="rgba(139,111,245,0.1)"/>
+          <path d="M7.5 11L9.8 13.3L14.5 8.5" stroke="rgba(139,111,245,0.85)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="baa-box-body">
+        <div class="baa-box-title">Request a Business Associate Agreement</div>
+        <div class="baa-box-desc">
+          To initiate a BAA with Adherence Cartography, Inc., contact our compliance team
+          with your institution's legal name, EIN/tax ID, and the name and email address
+          of your authorized signatory. We will respond within two business days with a
+          draft agreement for review by your legal or privacy counsel.
+        </div>
+        <a href="mailto:compliance@adherence.cc?subject=BAA%20Request%20%E2%80%94%20ATLAS%20Platform" class="baa-box-cta">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <path d="M1 3L6.5 7.5L12 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="1" y="3" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2" fill="none"/>
+          </svg>
+          Email compliance@adherence.cc
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Section 7: Data Residency — UAE / PDPL ══ -->
+  <div class="section" id="data-residency">
+    <div class="section-header">
+      <div class="section-icon gold">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="9" cy="9" r="6.5" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" fill="none"/>
+          <path d="M9 2.5C9 2.5 6 6 6 9C6 12 9 15.5 9 15.5C9 15.5 12 12 12 9C12 6 9 2.5 9 2.5Z" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" fill="none"/>
+          <path d="M2.5 9H15.5" stroke="rgba(212,168,67,0.85)" stroke-width="1.2"/>
+        </svg>
+      </div>
+      <div class="section-label-group">
+        <div class="section-eyebrow">Data Sovereignty &amp; Regional Compliance</div>
+        <h2 class="section-title">Data Residency — UAE &amp; PDPL</h2>
+      </div>
+    </div>
+
+    <p>
+      As part of ATLAS's global infrastructure expansion, UAE-region workspaces store all
+      patient records, adherence scores, and audit logs in the
+      <strong style="color:var(--bright);">AWS me-central-1 region (Abu Dhabi, UAE)</strong> —
+      ensuring data never leaves the United Arab Emirates. This architecture satisfies the
+      data localization requirements of the
+      <strong style="color:var(--bright);">UAE Personal Data Protection Law (PDPL, Federal Decree-Law No. 45 of 2021)</strong>,
+      DOH Data Privacy Standard, and
+      <strong style="color:var(--bright);">ADHICS v2.0</strong> (Abu Dhabi Healthcare Information &amp; Cyber Security) for
+      healthcare and research institutions operating in the UAE.
+    </p>
+    <p>
+      ATLAS uses a <strong style="color:var(--bright);">workspace-aware dual-proxy architecture</strong>:
+      every assessment write is routed through the ATLAS data shim layer, which calls the
+      appropriate Cloudflare Worker proxy path based on workspace region. UAE-region workspaces
+      are directed to <code>/lambda-proxy-uae/</code> → AWS API Gateway me-central-1 (Abu Dhabi);
+      all other workspaces use <code>/lambda-proxy/</code> → AWS Lambda us-east-1. Geographic
+      routing is enforced at two independent layers: the client-side data shim and the Cloudflare
+      Worker — UAE data cannot reach the US endpoint regardless of application-layer state.
+      No application-level configuration is required from institutional users; residency is
+      enforced automatically based on the workspace region attribute.
+    </p>
+    <p>
+      The following DynamoDB tables reside exclusively in me-central-1 and are never
+      replicated to other AWS regions:
+    </p>
+
+    <div class="card-grid">
+      <div class="sub-card">
+        <div class="sub-card-label">atlas-assessments</div>
+        <div class="sub-card-value">MAP &amp; MMAS-8 Submissions</div>
+        <div class="sub-card-note">Every MAP Tri-Domain and MMAS-8 assessment record. Partitioned by workspace key; GSI on patient number for longitudinal lookups.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">atlas-peacs</div>
+        <div class="sub-card-value">PEACS Assessment Records</div>
+        <div class="sub-card-note">Full PEACS submission records including PE scores and dimension source data. Same key pattern as atlas-assessments.</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">atlas-peacs-dim</div>
+        <div class="sub-card-value">Current Dimension Scores</div>
+        <div class="sub-card-note">Live Base / Movement / Strata dimension scores per patient. One row per patient+dimension; overwritten on each KYBOS submit (SET semantics).</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">atlas-audit</div>
+        <div class="sub-card-value">Immutable Audit Trail</div>
+        <div class="sub-card-note">All admin and clinician actions. Append-only; TTL auto-expiry on operational records (90 days). Compliance-grade entries written without TTL for permanent retention.</div>
+      </div>
+    </div>
+
+    <p>
+      All DynamoDB operations are executed by an AWS Lambda function fronted by an
+      API Gateway HTTP endpoint (me-central-1). The browser never communicates with
+      DynamoDB directly — all reads and writes are mediated through Lambda, which enforces
+      Firebase authentication, workspace isolation, and rate limiting before any database
+      operation is performed.
+    </p>
+    <p>
+      Institutions in the UAE requiring a Data Processing Agreement (DPA) under PDPL may
+      contact <a href="mailto:compliance@adherence.cc" style="color:rgba(46,201,138,0.7);text-decoration:none;">compliance@adherence.cc</a>.
+    </p>
+  </div>
+
+  <!-- ══ Section 8: ADHICS v2.0 & Compliance Hub ══ -->
+  <div class="section" id="adhics">
+    <div class="section-header">
+      <div class="section-icon gold">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M9 1.5L2.5 4.25V9C2.5 12.85 5.42 16.43 9 17C12.58 16.43 15.5 12.85 15.5 9V4.25L9 1.5Z" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" fill="rgba(212,168,67,0.07)"/>
+          <path d="M6 9L7.8 10.8L12 6.5" stroke="rgba(212,168,67,0.85)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="section-label-group">
+        <div class="section-eyebrow">UAE Healthcare Compliance</div>
+        <h2 class="section-title">ADHICS v2.0 &amp; In-Platform Compliance Tools</h2>
+      </div>
+    </div>
+
+    <p>
+      ATLAS Mission Control includes a built-in <strong style="color:var(--bright);">Compliance Hub</strong>
+      — a suite of tools that enables institutional administrators to manage their data
+      protection obligations directly within the platform, without requiring external
+      tooling or manual processes. These tools are aligned with
+      <strong style="color:var(--bright);">ADHICS v2.0</strong> (Abu Dhabi Healthcare Information &amp;
+      Cyber Security Standard, version 2.0), UAE PDPL, and HIPAA requirements simultaneously.
+    </p>
+
+    <ul class="checklist" aria-label="ADHICS compliance tools checklist">
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Data Localisation Indicator<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">A live infrastructure status panel in the Compliance Hub displays the current data storage region for each table (DynamoDB me-central-1 · Abu Dhabi), the dual-write status, and a recommended action plan for achieving full UAE data residency. Satisfies ADHICS v2.0 Annex 2 control DS-1 (Data Classification) and PDPL Article 10 (data localisation obligation).</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Data Subject Access Request (DSAR) Tool<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Administrators can search all workspace records by patient number or email, preview all data held on that individual, export a structured JSON package for subject access requests, and anonymise records in place — replacing identifiers with irreversible SHA-256 hashes. Satisfies PDPL Article 15 (data subject rights), GDPR Article 15–17 equivalents, and ADHICS v2.0 DS-6. Responses are logged to the platform audit trail for accountability.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Workspace Export &amp; Certified Deletion<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">Institutional administrators can export the full workspace dataset as a timestamped JSON archive, then initiate a certified deletion that wipes all workspace records from Firebase and issues a deletion request to DynamoDB. A deletion certificate (workspace, timestamp, record count, requesting admin) is written to the audit trail. Satisfies PDPL Article 16 (right to erasure) and ADHICS v2.0 IS-11 (media sanitisation).</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Breach Notification Log (72-Hour Timeline)<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">A structured breach incident log in Mission Control allows administrators to record, track, and generate regulatory breach notification letters. The tool enforces the ADHICS v2.0 / UAE PDPL 72-hour notification timeline (stricter than HIPAA's 60-day window) with a countdown display. Generated notifications reference the incident ID, affected record count, data categories involved, and corrective actions taken. All entries are written to the immutable platform audit trail. Satisfies PDPL Article 14 (breach notification), ADHICS v2.0 IR-1 through IR-4, and HIPAA 45 CFR §§164.400–414.</span>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-icon done">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2 5.5L4.5 8L9 3" stroke="rgba(16,185,129,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="check-body">
+          <span class="check-title">Technical &amp; Organisational Measures (TOMs) Attestation<span class="check-status-tag built">Platform Built</span></span>
+          <span class="check-desc">A complete TOMs checklist covering all 22 ADHICS v2.0 Annex 2 controls is built into the Compliance Hub. Administrators review and attest each control (Platform Implemented / Policy Confirmed / Not Applicable), then generate a signed attestation certificate with timestamp, attesting admin name, and overall compliance score. Certificates are stored in the platform audit trail and can be exported as evidence for regulatory inspections, DPA signings, and institutional due diligence reviews.</span>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <!-- ══ Instrument Suite section - BP-MAP-03 ══ -->
+  <section style="margin-bottom:64px;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.55);margin-bottom:10px;">Instrument Suite</div>
+    <h2 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.8rem;font-weight:300;color:var(--bright,#e8f0f8);margin-bottom:8px;">Three instruments. One platform.</h2>
+    <p style="font-size:0.88rem;color:var(--muted,#6b8099);line-height:1.75;margin-bottom:32px;max-width:640px;">ATLAS operationalizes a validated adherence instrument suite designed to move beyond measurement into behavioral phenotyping and matched intervention.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+      <div style="background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.18);border-top:2px solid rgba(212,168,67,0.45);border-radius:12px;padding:24px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(212,168,67,0.7);margin-bottom:8px;">Primary Instrument</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.15rem;font-weight:300;color:var(--bright,#e8f0f8);margin-bottom:8px;">MAP</div>
+        <div style="font-size:0.76rem;color:var(--muted,#6b8099);line-height:1.75;margin-bottom:12px;">Multidimensional Adherence Parameters. 8 independently authored items. Grade 6 literacy. 60+ languages. Distinguishes intentional from unintentional non-adherence at the item level — classifying patients into INA, UNA, PA, or A phenotypes.</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;color:rgba(212,168,67,0.6);">Included with every workspace key</div>
+      </div>
+      <div style="background:rgba(78,156,245,0.04);border:1px solid rgba(78,156,245,0.18);border-top:2px solid rgba(78,156,245,0.45);border-radius:12px;padding:24px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(78,156,245,0.7);margin-bottom:8px;">Scoring Engine</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.15rem;font-weight:300;color:var(--bright,#e8f0f8);margin-bottom:8px;">PEACS</div>
+        <div style="font-size:0.76rem;color:var(--muted,#6b8099);line-height:1.75;margin-bottom:12px;">Predictive Emergence Framework. MAP feeds PEACS to produce BASE (30-day behavioral), MVMT (7-day execution), and STRATA (90-day context) domain profiles. Not a snapshot — a longitudinal behavioral signal that predicts outcomes before they occur.</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;color:rgba(78,156,245,0.6);">Included with keyed workspaces</div>
+      </div>
+      <div style="background:rgba(46,201,138,0.04);border:1px solid rgba(46,201,138,0.18);border-top:2px solid rgba(46,201,138,0.45);border-radius:12px;padding:24px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(46,201,138,0.7);margin-bottom:8px;">Validated Companion</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.15rem;font-weight:300;color:var(--bright,#e8f0f8);margin-bottom:8px;">MMAS-8</div>
+        <div style="font-size:0.76rem;color:var(--muted,#6b8099);line-height:1.75;margin-bottom:12px;">Morisky Medication Adherence Scale. Validated in 40+ languages across Novartis, Pfizer, AstraZeneca, AbbVie, and Janssen clinical trials. Required under license for publication. MAP ↔ MMAS-8 paired scoring and validation analytics included at PI tier.</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;color:rgba(46,201,138,0.6);">PI tier and above</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="page-footer">
+    <div>ATLAS Platform · Data Security &amp; HIPAA Compliance · 21 CFR Part 11 · UAE PDPL · ADHICS v2.0 · Version 8.8.0 · Updated June 2026</div>
+    <div>Adherence Cartography, Inc. · <a href="mailto:compliance@adherence.cc">compliance@adherence.cc</a> · <a href="/">atlas.adherence.cc</a></div>
+    <div style="margin-top:6px;color:rgba(96,120,152,0.6);">
+      This document is provided for informational purposes to institutional compliance officers, IRB chairs, and legal counsel.
+      It does not constitute legal advice. Specific regulatory interpretations should be reviewed with qualified HIPAA counsel.
+      MMAS-8 instrument licensed from Donald E. Morisky, ScD, MSPH, PhD.
+    </div>
+    <!-- BP-LEGAL-04: Subprocessor disclosure -->
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.05);">
+      <div style="font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(96,120,152,0.5);margin-bottom:6px;">Third-Party Subprocessors</div>
+      <div style="color:rgba(96,120,152,0.55);line-height:1.9;font-size:0.60rem;">
+        <strong style="color:rgba(96,120,152,0.7);">Google LLC (Firebase)</strong> — Authentication, Realtime Database, Cloud Storage (US / EU) ·
+        <strong style="color:rgba(96,120,152,0.7);">Amazon Web Services, Inc.</strong> — Lambda, DynamoDB, S3, SES, API Gateway (us-east-1 · me-central-1) ·
+        <strong style="color:rgba(96,120,152,0.7);">Cloudflare, Inc.</strong> — Content Delivery Network, edge compute, TLS termination, DDoS protection (<a href="https://www.cloudflare.com/gdpr/subprocessors/" style="color:rgba(46,201,138,0.5);text-decoration:none;">Cloudflare DPA</a>) ·
+        <strong style="color:rgba(96,120,152,0.7);">Stripe, Inc.</strong> — Payment processing
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<script>
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('atlas-theme', next);
+  const icon = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (icon) icon.textContent = next === 'light' ? '☾' : '☀';
+  if (label) label.textContent = next === 'light' ? 'Night' : 'Day';
+}
+(function() {
+  const saved = localStorage.getItem('atlas-theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    const icon = document.getElementById('theme-icon');
+    const label = document.getElementById('theme-label');
+    if (icon) icon.textContent = saved === 'light' ? '☾' : '☀';
+    if (label) label.textContent = saved === 'light' ? 'Night' : 'Day';
+  }
+})();
+</script>
+</body>
+</html>

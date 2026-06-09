@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ATLAS Documentation · Adherence Cartography</title>
+<meta name="description" content="Learning library and documentation for the ATLAS platform — guides for students, pharmacists, NPs, PAs, RNs, physicians, care coordinators, researchers, PIs, and institutions."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_shared.css"/>
+<style>
+.hero{text-align:center;padding:72px 28px 48px;}
+.hero-sub{font-size:0.90rem;color:var(--muted);max-width:560px;margin:16px auto 0;line-height:1.8;}
+.guides-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:48px;}
+.guide-card{background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:26px 24px;display:flex;flex-direction:column;gap:10px;transition:border-color 0.2s,transform 0.2s;}
+.guide-card:hover{transform:translateY(-2px);}
+.guide-card.student{border-top:3px solid var(--green);}
+.guide-card.pharmacist{border-top:3px solid var(--purple);}
+.guide-card.pi{border-top:3px solid var(--gold);}
+.guide-card.institution{border-top:3px solid var(--blue);}
+.guide-tier{font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:2px;}
+.guide-tier.green{color:var(--green);}
+.guide-tier.purple{color:var(--purple);}
+.guide-tier.gold{color:var(--gold);}
+.guide-tier.blue{color:var(--blue);}
+.guide-title{font-family:var(--font-d);font-size:1.25rem;font-weight:300;color:var(--bright);}
+.guide-desc{font-size:0.80rem;color:var(--muted);line-height:1.65;flex:1;}
+.guide-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.guide-link{display:inline-block;margin-top:4px;font-family:var(--font-m);font-size:0.70rem;letter-spacing:0.1em;text-transform:uppercase;padding:7px 14px;border-radius:6px;transition:all 0.2s;text-decoration:none;}
+.guide-link.green{background:rgba(46,201,138,0.08);border:1px solid rgba(46,201,138,0.25);color:var(--green);}
+.guide-link.green:hover{background:rgba(46,201,138,0.16);}
+.guide-link.purple{background:rgba(139,111,245,0.08);border:1px solid rgba(139,111,245,0.25);color:var(--purple);}
+.guide-link.purple:hover{background:rgba(139,111,245,0.16);}
+.guide-link.gold{background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.25);color:var(--gold);}
+.guide-link.gold:hover{background:rgba(212,168,67,0.16);}
+.guide-link.blue{background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.25);color:var(--blue);}
+.guide-link.blue:hover{background:rgba(78,156,245,0.16);}
+.quick-links{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:22px 24px;margin-bottom:40px;}
+.quick-links h3{margin-top:0;}
+.quick-links ul{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.quick-links li a{font-size:0.80rem;color:var(--muted);}
+.quick-links li a:hover{color:var(--bright);}
+@media(max-width:520px){.quick-links ul{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<nav class="doc-nav">
+  <div class="doc-nav-brand">Adherence <em>Cartography</em> · Docs</div>
+  <div class="doc-nav-links">
+    <a href="https://atlas.adherence.cc">← ATLAS Platform</a>
+    <a href="https://keys.adherence.cc">Get a Key</a>
+    <a href="mailto:info@adherence.cc">Support</a>
+  </div>
+</nav>
+
+<div class="doc-container">
+  <div class="hero">
+    <div style="font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:14px;">ATLAS Learning Library</div>
+    <h1>Documentation &amp; Guides</h1>
+    <p class="hero-sub">Everything you need to use the ATLAS platform — from your first patient assessment to multi-site population health governance. Find the guide for your role below.</p>
+  </div>
+
+  <div class="quick-links" style="margin-bottom:36px;border-top:3px solid var(--gold);">
+    <h3 style="color:var(--gold);font-family:var(--font-d);font-size:1.1rem;font-weight:300;letter-spacing:normal;text-transform:none;">New to ATLAS? Pick your path.</h3>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">Every session in ATLAS — regardless of your role — begins with <strong style="color:var(--bright);">Start New Patient Session</strong> in your dashboard. The session modal asks which instrument to administer (MMAS-8 Only, PEACS Only, or MMAS-8 + PEACS), then auto-generates a Patient ID and routes the patient through consent. Find your role below for a step-by-step first session.</p>
+    <ul style="display:grid;grid-template-columns:1fr 1fr;gap:8px;list-style:none;padding:0;">
+      <li><a href="student-guide.html#getting-started" style="color:var(--green);">→ Student — first patient in 5 steps</a></li>
+      <li><a href="pharmacist-guide.html#getting-started" style="color:var(--purple);">→ Clinician (NP · PA · RN · MD · PharmD · CC) — first clinical session</a></li>
+      <li><a href="pi-sop.html" style="color:var(--gold);">→ PI — pre-enrollment checklist</a></li>
+      <li><a href="institution-runbook.html#getting-started" style="color:var(--blue);">→ Institution (Academic · Health System · AMC) — first week checklist</a></li>
+    </ul>
+  </div>
+
+  <div style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.25);border-left:4px solid var(--gold);border-radius:10px;padding:22px 26px;margin-bottom:32px;">
+    <div style="font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">What's New</div>
+    <h3 style="margin:0 0 14px;font-family:var(--font-d);font-size:1.15rem;font-weight:300;color:var(--bright);">What's New in v2026.05</h3>
+    <ul style="margin:0;padding-left:20px;font-size:0.82rem;color:var(--muted);line-height:2.1;">
+      <li><strong style="color:var(--bright);">3 institution tiers</strong> — Academic (INST-ACAD, $399/mo: Research Hub · Grants · Thesis), Health System (INST-HLTH, $599/mo: Care Gap Monitor · MTM Billing · Command Center), and AMC (INST-AMC, $799/mo: all features). Superadmin "View As" panel now shows three institution buttons.</li>
+      <li><strong style="color:var(--bright);">3 instruments</strong> — MMAS-8 (public screening), MAP (institutional cross-sectional, 8-item), PEACS (longitudinal 22-item: BASE / MVMT / STRATA)</li>
+      <li><strong style="color:var(--bright);">Clinical Study Module</strong> — Site Activation Tracker and IRB Submission Assistant for funded PIs</li>
+      <li><strong style="color:var(--bright);">Patient Portal</strong> — patients can view their own score history</li>
+      <li><strong style="color:var(--bright);">ZOE Remote Mode</strong> — SMS-delivered independent assessment without clinic attendance</li>
+      <li><strong style="color:var(--bright);">Multilingual UI</strong> — interface available in EN / ES / FR / DE / PT; consent, labels, and results all update automatically</li>
+      <li><strong style="color:var(--bright);">Benchmark comparison</strong> — every result screen shows the published literature mean (Morisky et al., 2008) and current ATLAS global dataset mean alongside the patient's score</li>
+      <li><strong style="color:var(--bright);">Annual State of Global Adherence Report</strong> — institution-tier aggregated population health publication</li>
+      <li><strong style="color:var(--bright);">Cartographic design language</strong> — PE Triangle visualisation for Architecture · Execution · Context domain profiles</li>
+      <li><strong style="color:var(--bright);">SDoH Intelligence System</strong> — Three automated inference engines pre-fill up to 22 PEACS questions from MAP responses, intake social support data, and OpenStreetMap geo-scoring (pharmacy/healthcare density from home postal code). Patient burden reduced by up to 60%.</li>
+      <li><strong style="color:var(--bright);">Home Postal Code Field</strong> — Optional field in MAP intake form. Geocoded client-side via Nominatim; never stored to server. Enables geo-inference regardless of clinic vs. home setting.</li>
+      <li><strong style="color:var(--bright);">Verified POI Network</strong> — Crowd-sourced infrastructure map. Authenticated users contribute pharmacies, hospitals, clinics, transport, food banks, and community centers. Two confirmations required for verification. Verified POIs appear on the SDoH Globe and feed PEACS geo-scoring.</li>
+      <li><strong style="color:var(--bright);">Cinematic Globe</strong> — Now stays still unless a new assessment is submitted in real-time; globe flies to each new submission location as it arrives.</li>
+    </ul>
+  </div>
+
+  <div class="guides-grid">
+
+    <div class="guide-card student">
+      <div class="guide-tier green">Student · $19/mo tier</div>
+      <div class="guide-title">Student Guide</div>
+      <p class="guide-desc">First time using digital data collection? Coming from REDCap or paper CRFs? This guide walks through every step — entering your workspace key, the consent flow, administering the MMAS-8 and PEACS, and exporting your dataset for your thesis or coursework. Includes benchmark comparison and multilingual support.</p>
+      <div class="guide-tags">
+        <span class="badge green">First use</span>
+        <span class="badge green">IRB docs</span>
+        <span class="badge green">Export</span>
+        <span class="badge green">Benchmark</span>
+        <span class="badge green">Multilingual</span>
+      </div>
+      <a href="student-guide.html" class="guide-link green">Read Student Guide →</a>
+    </div>
+
+    <div class="guide-card pharmacist">
+      <div class="guide-tier purple">Clinician · Researcher · $49/mo tier — NP · PA · RN · MD · PharmD · CC</div>
+      <div class="guide-title">Clinician Quick-Reference Card</div>
+      <p class="guide-desc">Two pages. Print it. Laminate it. The six things you do every day — logging a patient, running ZOE, reading the Sentinel feed, MTM billing codes, exporting for reimbursement, and scheduling follow-up. Applies to all clinical roles: NP, PA, RN, MD, PharmD, and Care Coordinator.</p>
+      <div class="guide-tags">
+        <span class="badge purple">Print-ready</span>
+        <span class="badge purple">MTM billing</span>
+        <span class="badge purple">Daily use</span>
+      </div>
+      <a href="pharmacist-quickref.html" class="guide-link purple">Print Quick-Ref Card →</a>
+    </div>
+
+    <div class="guide-card pharmacist">
+      <div class="guide-tier purple">Clinician · Researcher · $49/mo tier — NP · PA · RN · MD · PharmD · CC</div>
+      <div class="guide-title">Clinician Deep Reference Guide</div>
+      <p class="guide-desc">The complete feature reference for all clinical roles and independent researchers. Covers the daily intake panel, ZOE voice assessments, SOAP note generation, MTM audit log, Sentinel follow-up flags, PEACS longitudinal tracking, MAP PE Domain Analysis (Architecture · Execution · Context), and all export formats. Includes ZOE Remote Mode, Sentinel escalation workflow, and Patient Portal.</p>
+      <div class="guide-tags">
+        <span class="badge purple">Full reference</span>
+        <span class="badge purple">ZOE</span>
+        <span class="badge purple">PEACS</span>
+        <span class="badge purple">PE Domain</span>
+      </div>
+      <a href="pharmacist-guide.html" class="guide-link purple">Read Deep Guide →</a>
+    </div>
+
+    <div class="guide-card pi">
+      <div class="guide-tier gold">Funded PI · $149/mo tier</div>
+      <div class="guide-title">PI Governance SOP</div>
+      <p class="guide-desc">Standard operating procedure for grant-funded principal investigators. Covers self-service site provisioning, the PI Research Dashboard (enrollment velocity, cross-site PE heatmap, dataset lock, workspace audit log), IRB-grade and blinded export formats, the IRB Study Package generator, escalation matrix, and the specific language needed for grant reporting and journal submission. Includes Clinical Study Module, Site Activation Tracker, and IRB Submission Assistant.</p>
+      <div class="guide-tags">
+        <span class="badge gold">IRB-ready</span>
+        <span class="badge gold">Multi-site</span>
+        <span class="badge gold">Dataset Lock</span>
+        <span class="badge gold">PE Domain</span>
+        <span class="badge gold">Clinical Study Module</span>
+      </div>
+      <a href="pi-sop.html" class="guide-link gold">Read PI SOP →</a>
+    </div>
+
+    <div class="guide-card institution">
+      <div class="guide-tier blue">Institution tiers — Academic · Health System · AMC</div>
+      <div class="guide-title">Institution Command Center Runbook</div>
+      <p class="guide-desc">Operational procedures for the clinician, research coordinator, or informatics staff managing the ATLAS Command Center. Covers all three institution tiers: <strong>Academic</strong> (university/research program, $399/mo — Research Hub, Grants, Thesis), <strong>Health System</strong> (hospital/FQHC/pharmacy chain, $599/mo — Care Gap Monitor, MTM Billing, Command Center), and <strong>Academic Medical Center / AMC</strong> ($799/mo — all features from both). Includes Sentinel alert triage, site management, PE Domain per-site breakdown, bulk upload, IRB Assistant, Annual Report, and escalation protocols.</p>
+      <div class="guide-tags">
+        <span class="badge blue">Academic</span>
+        <span class="badge blue">Health System</span>
+        <span class="badge blue">AMC</span>
+        <span class="badge blue">Sentinel</span>
+        <span class="badge blue">PE Domain</span>
+      </div>
+      <a href="institution-runbook.html" class="guide-link blue">Read Runbook →</a>
+    </div>
+
+    <div class="guide-card" style="border-top:3px solid var(--muted);">
+      <div class="guide-tier" style="color:var(--muted);">Explorer · No key required</div>
+      <div class="guide-title">Explorer Mode</div>
+      <p class="guide-desc">No workspace key, no registration. Click Explorer on the ATLAS entry screen for instant access to the full MMAS-8 + PEACS experience. Your data contributes to the global pool — not a private cohort. Use this to trial the platform before requesting a key, or for anonymous public collection. Use Start New Patient Session in the Explorer dashboard exactly as you would in a keyed workspace.</p>
+      <div class="guide-tags">
+        <span class="badge" style="background:rgba(107,128,153,0.12);color:var(--muted);border:1px solid rgba(107,128,153,0.25);">No key needed</span>
+        <span class="badge" style="background:rgba(107,128,153,0.12);color:var(--muted);border:1px solid rgba(107,128,153,0.25);">Global pool</span>
+        <span class="badge" style="background:rgba(107,128,153,0.12);color:var(--muted);border:1px solid rgba(107,128,153,0.25);">Trial use</span>
+      </div>
+      <a href="https://atlas.adherence.cc" class="guide-link" style="background:rgba(107,128,153,0.08);border:1px solid rgba(107,128,153,0.25);color:var(--muted);">Open ATLAS → Explorer →</a>
+    </div>
+
+  </div>
+
+  <div class="quick-links">
+    <h3>Quick Reference Links</h3>
+    <ul>
+      <li><a href="student-guide.html#getting-started">→ Student — first patient session (5 steps)</a></li>
+      <li><a href="pharmacist-guide.html#getting-started">→ Clinician / Pharmacist — first clinical session</a></li>
+      <li><a href="institution-runbook.html#getting-started">→ Institution (Academic · Health System · AMC) — first week checklist</a></li>
+      <li><a href="student-guide.html#step3">→ Patient session modal — instrument selection</a></li>
+      <li><a href="student-guide.html#step1">→ Setting up your workspace key</a></li>
+      <li><a href="pharmacist-guide.html#mtm-billing">→ MTM billing codes (CPT 99605–99607)</a></li>
+      <li><a href="student-guide.html#irb">→ IRB / ethics committee documentation</a></li>
+      <li><a href="pharmacist-guide.html#zoe">→ Running a ZOE voice assessment</a></li>
+      <li><a href="pi-sop.html#site-setup">→ Adding a research site (self-service provisioning)</a></li>
+      <li><a href="pharmacist-guide.html#sentinel">→ Responding to a Sentinel alert</a></li>
+      <li><a href="pi-sop.html#export">→ IRB-grade data export and dataset lock</a></li>
+      <li><a href="institution-runbook.html#sentinel-triage">→ Sentinel triage protocol</a></li>
+      <li><a href="student-guide.html#citation">→ How to cite MAP, MMAS-8, and ATLAS</a></li>
+      <li><a href="pharmacist-guide.html#peacs">→ Understanding PEACS BASE · MVMT · STRATA</a></li>
+      <li><a href="pharmacist-guide.html#mmas-pe">→ MAP PE Domain Analysis — Architecture · Execution · Context</a></li>
+      <li><a href="institution-runbook.html#dashboard">→ Institution per-site PE breakdown panel</a></li>
+      <li><a href="pi-sop.html#pi-dashboard">→ PI Research Dashboard — velocity · heatmap · dataset lock · audit log</a></li>
+      <li><a href="pi-sop.html#pi-dashboard">→ Locking a dataset for IRB interim analysis</a></li>
+      <li><a href="pi-sop.html#export">→ Generating the IRB Study Package</a></li>
+    </ul>
+  </div>
+
+  <footer class="doc-footer">
+    ATLAS Platform © Adherence Cartography · Adherence Inc. · Long Beach, California<br/>
+    MMAS-8® · MAP® — Licensed instruments · © Dr. Donald E. Morisky / Philip Morisky · TX 8-632-533 · All rights reserved<br/>
+    PEACS v2.0 · Theory of Predictive Emergence © Philip Morisky · Zenodo DOI 10.5281/zenodo.18209699<br/>
+    Documentation version: 2026.05 · Updated: What's New v2026.05 — MAP, PEACS, Clinical Study Module, Patient Portal, ZOE Remote Mode, Multilingual UI, Benchmark comparison, Annual Report, SDoH Intelligence System, Home Postal Code Field, Verified POI Network, Cinematic Globe · For corrections or additions: <a href="mailto:info@adherence.cc">info@adherence.cc</a>
+  </footer>
+</div>
+</body>
+</html>

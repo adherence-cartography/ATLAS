@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Certificate Verification · Adherence Cartography</title>
+<meta name="description" content="Verify an ATLAS Letter of Permission certificate number issued by Adherence Cartography."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#09101f;--surface:#0d1829;--card:#111e32;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --muted:#6b8099;--text:#c8d6e8;--bright:#e8f0f8;
+  --gold:#d4a843;--blue:#4e9cf5;--green:#2ec98a;--red:#ef4444;--amber:#f59e0b;
+  --font-d:'Cormorant Garamond',Georgia,serif;
+  --font-b:'IBM Plex Sans',system-ui,sans-serif;
+  --font-m:'IBM Plex Mono',monospace;
+}
+body{background:var(--ink);color:var(--text);font-family:var(--font-b);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(9,16,31,0.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:60px;}
+.nav-brand{font-family:var(--font-d);font-size:1rem;font-weight:300;color:var(--bright);letter-spacing:0.04em;}
+.nav-brand em{font-style:italic;color:rgba(212,168,67,0.85);}
+.nav-back{font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+.nav-back:hover{color:var(--bright);}
+
+/* MAIN */
+main{max-width:680px;margin:0 auto;padding:64px 24px 80px;}
+
+/* LOOKUP FORM */
+.lookup-section{text-align:center;margin-bottom:56px;}
+.lookup-eyebrow{font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:16px;}
+.lookup-title{font-family:var(--font-d);font-size:2.2rem;font-weight:300;color:var(--bright);margin-bottom:10px;}
+.lookup-sub{font-size:0.84rem;color:var(--muted);line-height:1.7;margin-bottom:36px;max-width:480px;margin-left:auto;margin-right:auto;}
+.lookup-form{display:flex;gap:10px;max-width:540px;margin:0 auto;flex-wrap:wrap;}
+.lookup-input{flex:1;min-width:220px;background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:12px 16px;font-family:var(--font-m);font-size:0.84rem;color:var(--bright);letter-spacing:0.06em;outline:none;transition:border-color 0.2s;}
+.lookup-input::placeholder{color:var(--muted);font-size:0.75rem;letter-spacing:0.08em;}
+.lookup-input:focus{border-color:rgba(212,168,67,0.45);}
+.lookup-btn{background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.35);color:rgba(212,168,67,0.9);font-family:var(--font-m);font-size:0.76rem;letter-spacing:0.14em;text-transform:uppercase;padding:12px 22px;border-radius:6px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.lookup-btn:hover{background:rgba(212,168,67,0.2);}
+.lookup-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* RESULT CARD */
+.result{display:none;background:var(--card);border:1px solid var(--border2);border-radius:12px;overflow:hidden;animation:fadeUp 0.3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.result-header{padding:22px 28px;display:flex;align-items:center;gap:16px;}
+.result-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:bold;flex-shrink:0;}
+.result-icon.valid{background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.3);}
+.result-icon.revoked{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.25);}
+.result-icon.invalid{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.25);}
+.result-status-label{font-family:var(--font-m);font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:4px;}
+.result-status-label.valid{color:var(--green);}
+.result-status-label.revoked{color:var(--red);}
+.result-status-label.invalid{color:var(--amber);}
+.result-cert-num{font-family:var(--font-m);font-size:0.78rem;color:var(--muted);letter-spacing:0.06em;}
+
+.result-divider{height:1px;background:var(--border);}
+
+.result-body{padding:24px 28px;}
+.result-table{width:100%;border-collapse:collapse;font-size:0.84rem;margin-bottom:20px;}
+.result-table tr:last-child td{border-bottom:none;}
+.result-table td{padding:9px 0;border-bottom:1px solid var(--border);vertical-align:top;}
+.result-table td:first-child{color:var(--muted);width:40%;font-size:0.78rem;letter-spacing:0.04em;padding-right:16px;}
+.result-table td:last-child{color:var(--bright);}
+
+.result-note{font-size:0.80rem;color:var(--muted);line-height:1.75;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;margin-top:4px;}
+.result-note.valid{border-color:rgba(16,185,129,0.15);background:rgba(16,185,129,0.04);}
+.result-note.revoked{border-color:rgba(239,68,68,0.15);background:rgba(239,68,68,0.04);color:rgba(239,68,68,0.7);}
+
+.result-footer{padding:16px 28px;border-top:1px solid var(--border);font-family:var(--font-m);font-size:0.65rem;color:var(--muted);letter-spacing:0.06em;line-height:1.8;}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:32px;font-family:var(--font-m);font-size:0.75rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);}
+.loading::after{content:'';display:inline-block;width:12px;height:12px;border:2px solid rgba(212,168,67,0.3);border-top-color:rgba(212,168,67,0.8);border-radius:50%;animation:spin 0.8s linear infinite;margin-left:10px;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* INFO SECTION */
+.info-section{margin-top:56px;padding-top:40px;border-top:1px solid var(--border);}
+.info-title{font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.5);margin-bottom:20px;}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px 20px;}
+.info-card-title{font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.info-card-text{font-size:0.78rem;color:var(--muted);line-height:1.7;}
+
+@media(max-width:520px){
+  nav{padding:0 20px;}
+  main{padding:40px 16px 60px;}
+  .lookup-form{flex-direction:column;}
+  .lookup-btn{width:100%;}
+  .result-header,.result-body,.result-footer{padding-left:20px;padding-right:20px;}
+}
+
+/* THEME TOGGLE */
+.theme-toggle{background:none;border:1px solid var(--border2);border-radius:20px;padding:5px 12px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.25s;font-family:var(--font-m);font-size:0.42rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.theme-toggle:hover{border-color:rgba(212,168,67,0.35);color:var(--bright);}
+.theme-toggle-icon{font-size:0.75rem;line-height:1;}
+
+/* LIGHT THEME */
+[data-theme="light"]{
+  --ink:#f4f1ec;--surface:#ede9e2;--card:#ffffff;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.13);
+  --muted:#6b7a8d;--text:#2c3a4a;--bright:#0d1c2e;
+  --gold:#8a6010;--blue:#1d5fa5;--green:#0d7a52;--red:#c0392b;--amber:#b45309;
+}
+[data-theme="light"] body{background:var(--ink);color:var(--text);}
+[data-theme="light"] nav{background:rgba(244,241,236,0.97);border-bottom-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .nav-brand{color:var(--bright);}
+[data-theme="light"] .nav-brand em{color:rgba(138,96,16,0.85);}
+[data-theme="light"] .nav-back{color:var(--muted);}
+[data-theme="light"] .nav-back:hover{color:var(--bright);}
+[data-theme="light"] .theme-toggle{border-color:rgba(0,0,0,0.15);color:var(--muted);}
+[data-theme="light"] .theme-toggle:hover{border-color:rgba(138,96,16,0.35);color:var(--bright);}
+[data-theme="light"] .lookup-input{background:#fff;border-color:rgba(0,0,0,0.15);color:var(--bright);}
+[data-theme="light"] .lookup-input::placeholder{color:rgba(0,0,0,0.3);}
+[data-theme="light"] .lookup-input:focus{border-color:rgba(138,96,16,0.4);}
+[data-theme="light"] .lookup-btn{background:rgba(138,96,16,0.08);border-color:rgba(138,96,16,0.3);color:rgba(138,96,16,0.9);}
+[data-theme="light"] .lookup-btn:hover{background:rgba(138,96,16,0.15);}
+[data-theme="light"] .result{background:#fff;border-color:rgba(0,0,0,0.1);}
+[data-theme="light"] .result-divider{background:rgba(0,0,0,0.07);}
+[data-theme="light"] .result-table td{border-bottom-color:rgba(0,0,0,0.07);}
+[data-theme="light"] .result-table td:first-child{color:var(--muted);}
+[data-theme="light"] .result-table td:last-child{color:var(--bright);}
+[data-theme="light"] .result-cert-num{color:var(--muted);}
+[data-theme="light"] .result-note{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.08);color:var(--muted);}
+[data-theme="light"] .result-note.valid{background:rgba(13,122,82,0.04);border-color:rgba(13,122,82,0.2);}
+[data-theme="light"] .result-note.revoked{background:rgba(192,57,43,0.04);border-color:rgba(192,57,43,0.2);color:rgba(192,57,43,0.8);}
+[data-theme="light"] .result-footer{border-top-color:rgba(0,0,0,0.07);color:var(--muted);}
+[data-theme="light"] .info-section{border-top-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .info-card{background:#fff;border-color:rgba(0,0,0,0.1);}
+[data-theme="light"] .info-card-text{color:var(--muted);}
+
+/* Smooth transitions */
+body,nav,.result,.info-card,.lookup-input{transition:background 0.28s ease,border-color 0.28s ease,color 0.2s ease;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">Adherence <em>Cartography</em></div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <span class="theme-toggle-icon" id="theme-icon">☀</span>
+      <span id="theme-label">Day</span>
+    </button>
+    <a href="https://keys.adherence.cc" class="nav-back">← Workspace Keys</a>
+  </div>
+</nav>
+
+<main>
+  <div class="lookup-section">
+    <div class="lookup-eyebrow">ATLAS Permission Registry</div>
+    <h1 class="lookup-title">Certificate Verification</h1>
+    <p class="lookup-sub">Enter an ATLAS Letter of Permission certificate number to verify its authenticity against the authoritative registry. For IRB officers, journal editors, and ethics committees.</p>
+    <div class="lookup-form">
+      <input class="lookup-input" id="cert-input" type="text" placeholder="MAP- or PUB-XXXXXXXX-XXXXXXXX-XXXXXXXX" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/>
+      <button class="lookup-btn" id="verify-btn" onclick="verifyCert()">Verify →</button>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">Checking registry</div>
+
+  <div class="result" id="result-card">
+    <div class="result-header" id="result-header">
+      <div class="result-icon" id="result-icon"></div>
+      <div>
+        <div class="result-status-label" id="result-status-label"></div>
+        <div class="result-cert-num" id="result-cert-num"></div>
+      </div>
+    </div>
+    <div class="result-divider"></div>
+    <div class="result-body" id="result-body"></div>
+    <div class="result-footer" id="result-footer"></div>
+  </div>
+
+  <div class="info-section">
+    <div class="info-title">About this Registry</div>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-title">What is an ATLAS Certificate?</div>
+        <div class="info-card-text">Every Letter of Permission and Publication License issued by Adherence Cartography carries a unique key. Standard letters use the format <code style="font-family:monospace;color:rgba(212,168,67,0.7);">MAP-XXXX-XXXX-XXXX</code>; publication licenses use <code style="font-family:monospace;color:rgba(212,168,67,0.7);">PUB-XXXX-XXXX-XXXX</code>. Both are cryptographically generated server-side and permanently registered in this database.</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Who should use this?</div>
+        <div class="info-card-text">IRB officers, ethics committee members, journal editors, and peer reviewers who have received a Letter of Permission and want to independently confirm it is genuine and currently active before accepting it as documentation.</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Suspected Forgery?</div>
+        <div class="info-card-text">If a certificate number returns "not found" or the details do not match the letter you received, contact <a href="mailto:info@adherence.cc" style="color:rgba(212,168,67,0.7);">info@adherence.cc</a> immediately with the certificate number and a copy of the letter.</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">MAP Instrument Licensing</div>
+        <div class="info-card-text">The MAP (Medication Adherence Profile) is an independently developed medication adherence assessment authored by Adherence Cartography (Adherence Inc.). Use in research or clinical settings requires a valid, active Letter of Permission issued through the ATLAS platform.</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const LAMBDA_URL = 'https://krbqzf0ozg.execute-api.me-central-1.amazonaws.com';
+
+// Auto-fill cert from URL query param
+(function() {
+  const p = new URLSearchParams(window.location.search).get('cert');
+  if (p) {
+    document.getElementById('cert-input').value = p.trim().toUpperCase();
+    setTimeout(verifyCert, 300);
+  }
+})();
+
+document.getElementById('cert-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') verifyCert();
+});
+
+// Auto-uppercase as user types
+document.getElementById('cert-input').addEventListener('input', function() {
+  const pos = this.selectionStart;
+  this.value = this.value.toUpperCase();
+  this.setSelectionRange(pos, pos);
+});
+
+async function verifyCert() {
+  const raw  = document.getElementById('cert-input').value.trim().toUpperCase();
+  const btn  = document.getElementById('verify-btn');
+  const load = document.getElementById('loading');
+  const card = document.getElementById('result-card');
+
+  if (!raw) {
+    document.getElementById('cert-input').focus();
+    return;
+  }
+
+  // Validate format before hitting Lambda
+  if (!/^(MMAS8R?|PUB)-[A-F0-9]{8}-[A-F0-9]{8}-[A-F0-9]{8}$/.test(raw)) {
+    showResult('invalid', null, raw);
+    return;
+  }
+
+  btn.disabled = true;
+  card.style.display = 'none';
+  load.style.display = 'block';
+
+  try {
+    // GET with ?format=json — simple CORS request, no preflight needed.
+    const res = await fetch(
+      LAMBDA_URL + '/verify-cert?cert=' + encodeURIComponent(raw) + '&format=json',
+      { method: 'GET' }
+    );
+
+    load.style.display = 'none';
+
+    if (!res.ok && res.status !== 404) {
+      showResult('error', null, raw);
+      return;
+    }
+
+    let data;
+    try { data = await res.json(); } catch(e) { data = null; }
+
+    if (!data) {
+      showResult('not_found', null, raw);
+      return;
+    }
+
+    showResult(data.status || (data.certNum ? 'active' : 'not_found'), data, raw);
+
+  } catch(e) {
+    load.style.display = 'none';
+    showResult('error', null, raw);
+    console.error('Verify error:', e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showResult(status, record, certNum) {
+  const card   = document.getElementById('result-card');
+  const icon   = document.getElementById('result-icon');
+  const label  = document.getElementById('result-status-label');
+  const certEl = document.getElementById('result-cert-num');
+  const body   = document.getElementById('result-body');
+  const footer = document.getElementById('result-footer');
+
+  const isActive  = status === 'active';
+  const isRevoked = status === 'revoked';
+  const isValid   = isActive || isRevoked;
+
+  // Icon
+  icon.className = 'result-icon ' + (isActive ? 'valid' : isRevoked ? 'revoked' : 'invalid');
+  icon.textContent = isActive ? '✓' : isRevoked ? '✗' : '?';
+
+  // Label
+  label.className = 'result-status-label ' + (isActive ? 'valid' : isRevoked ? 'revoked' : 'invalid');
+  label.textContent = isActive  ? 'Valid — Permission Active'
+                    : isRevoked ? 'Revoked — Permission Withdrawn'
+                    : status === 'not_found' ? 'Not Found — Certificate Unrecognised'
+                    : status === 'error'     ? 'Error — Could Not Reach Registry'
+                    : 'Invalid — Certificate Format Not Recognised';
+
+  certEl.textContent = certNum;
+
+  // Body
+  if (isValid && record) {
+    const issuedDate = record.issued_at
+      ? new Date(record.issued_at).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })
+      : '—';
+    const isPubLic = record.key_type === 'publication_license';
+    let rows, note;
+    if (isPubLic) {
+      const countriesStr = Array.isArray(record.countries)
+        ? record.countries.join(', ')
+        : (record.countries || '—');
+      rows = [
+        ['Principal Investigator', record.pi || record.name || '—'],
+        ['Institution',            record.institution || '—'],
+        ['Study Title',            record.study_title || '—'],
+        ['Patient Population',     record.population  || '—'],
+        ['Validated N',            record.n_validated ? record.n_validated + ' participants' : '—'],
+        ['Data Collection Period', record.date_range  || '—'],
+        ['Countries / Sites',      countriesStr],
+        ['IRB Reference',          record.irb     || '—'],
+        ['Issue Date',             issuedDate],
+        ['License Type',           'Publication License (Permanent)'],
+        ['Status',                 isActive ? 'Active — Permanent' : 'Revoked'],
+      ].filter(([,v]) => v && v !== '—').map(([k,v]) => `<tr><td>${k}</td><td>${escHtml(v)}</td></tr>`).join('');
+      const pubTool = record.tool || 'MMAS-8';
+      note = isActive
+        ? `This is a <strong>permanent Publication License</strong> issued by Adherence Cartography (Adherence Inc.). It authorises the named principal investigator to publish research using the <strong>${escHtml(pubTool)}</strong> for the study described above. This license does not expire and is not tied to a subscription. Dataset provenance was verified through the ATLAS platform prior to issuance.`
+        : `This publication license has been revoked. The ${escHtml(pubTool)} may not be used for publication under this license. Contact <a href="mailto:info@adherence.cc" style="color:rgba(239,68,68,0.8);">info@adherence.cc</a> for further information.`;
+    } else {
+      const lopTool = record.tool || 'MMAS-8';
+      rows = [
+        ['Issued To',    record.name       || '—'],
+        ['Institution',  record.institution || '—'],
+        ['Study Title',  record.study_title || '—'],
+        ['Issue Date',   issuedDate],
+        ['Instrument',   lopTool],
+        ['Permission Type', record.role ? record.role.charAt(0).toUpperCase() + record.role.slice(1) : '—'],
+        ['Status',       isActive ? 'Active' : 'Revoked'],
+      ].map(([k,v]) => `<tr><td>${k}</td><td>${escHtml(v)}</td></tr>`).join('');
+      note = isActive
+        ? `This Letter of Permission was issued by Adherence Cartography (Adherence Inc.) and authorises the named individual to use the <strong>${escHtml(lopTool)}</strong> for the study described above. This registry entry is authoritative. Permission remains valid while the ATLAS workspace subscription is active.`
+        : `This permission has been revoked. The ${escHtml(lopTool)} may not be used under this certificate. Contact <a href="mailto:info@adherence.cc" style="color:rgba(239,68,68,0.8);">info@adherence.cc</a> for further information.`;
+    }
+
+    body.innerHTML = `
+      <table class="result-table">${rows}</table>
+      <div class="result-note ${isActive ? 'valid' : 'revoked'}">${note}</div>`;
+  } else {
+    body.innerHTML = `
+      <div class="result-note" style="border-color:rgba(245,158,11,0.2);background:rgba(245,158,11,0.04);">
+        ${status === 'error'
+          ? 'The registry could not be reached. Please try again in a moment. If the problem persists, contact <a href="mailto:info@adherence.cc" style="color:rgba(212,168,67,0.7);">info@adherence.cc</a>.'
+          : 'The certificate number <strong style="font-family:monospace;">' + escHtml(certNum) + '</strong> was not found in the ATLAS Permission Registry. If you believe this certificate is genuine, contact <a href="mailto:info@adherence.cc" style="color:rgba(212,168,67,0.7);">info@adherence.cc</a> with the full certificate number and a copy of the letter.'
+        }
+      </div>`;
+  }
+
+  footer.innerHTML = 'Verified against ATLAS Permission Registry · ' + new Date().toUTCString()
+    + '<br/>MAP® © Adherence Cartography · Adherence Inc. · All rights reserved'
+    + '<br/>Registry maintained by <a href="https://adherence.cc" style="color:rgba(212,168,67,0.5);">Adherence Cartography · Adherence Inc.</a>';
+
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleTheme() {
+  const html    = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  const next    = isLight ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  const icon  = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (next === 'light') {
+    if (icon)  icon.textContent  = '☾';
+    if (label) label.textContent = 'Night';
+  } else {
+    if (icon)  icon.textContent  = '☀';
+    if (label) label.textContent = 'Day';
+  }
+  try { localStorage.setItem('atlas_keys_theme', next); } catch(e) {}
+}
+
+(function restoreTheme() {
+  try {
+    const saved = localStorage.getItem('atlas_keys_theme');
+    if (saved === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.addEventListener('DOMContentLoaded', () => {
+        const icon  = document.getElementById('theme-icon');
+        const label = document.getElementById('theme-label');
+        if (icon)  icon.textContent  = '☾';
+        if (label) label.textContent = 'Night';
+      });
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

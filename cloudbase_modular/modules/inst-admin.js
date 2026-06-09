@@ -1,0 +1,182 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// Institution Admin — Self-service member provisioning for institution accounts
+// BP-FOCUS-02: Eliminates the need to email ATLAS support for every team change
+// ══════════════════════════════════════════════════════════════════════════════
+
+'use strict';
+
+/** @type {Object[]|null} Cached list of workspace members */
+let _instAdminMembers = null;
+
+/**
+ * Renders the institution self-service admin panel.
+ * @param {HTMLElement} container
+ */
+async function renderInstAdmin(container) {
+  if (!container) return;
+  container.innerHTML = `
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:6px;">Institution · Team Management</div>
+    <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:300;color:var(--bright,#e8f0f8);margin-bottom:6px;">Manage Your Team</div>
+    <p style="font-size:0.84rem;color:var(--muted,#6b8099);line-height:1.75;margin-bottom:20px;">Add, remove, and configure team members without contacting ATLAS support. Changes take effect immediately.</p>
+    <div id="inst-admin-body">
+      <div style="font-size:0.84rem;color:var(--muted,#6b8099);">Loading members…</div>
+    </div>`;
+
+  await _loadInstMembers(container.querySelector('#inst-admin-body'));
+}
+
+async function _loadInstMembers(body) {
+  try {
+    const token = await _accGetToken();
+    const res = await fetch(LAMBDA_URL + '/admin/list-keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ parent_inst: currentWorkspace })
+    });
+    const data = await res.json();
+    _instAdminMembers = (data.keys || []).filter(k => k.parent_inst === currentWorkspace);
+    _renderMemberTable(body);
+  } catch(e) {
+    if (body) body.innerHTML = `<div style="color:rgba(239,68,68,0.8);font-size:0.84rem;">Error loading members: ${e.message}</div>`;
+  }
+}
+
+function _renderMemberTable(body) {
+  const members = _instAdminMembers || [];
+  const roleColors = { researcher:'rgba(139,111,245,0.8)', clinician:'rgba(78,156,245,0.8)', student:'rgba(46,201,138,0.8)', observer:'rgba(255,255,255,0.3)', pi:'rgba(212,168,67,0.8)' };
+
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--muted,#6b8099);">${members.length} member${members.length !== 1 ? 's' : ''}</div>
+      <button onclick="openAddMemberModal()" style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.3);color:rgba(212,168,67,0.9);padding:8px 16px;border-radius:7px;cursor:pointer;transition:all 0.2s;">+ Add Member</button>
+    </div>
+    ${members.length === 0 ? '<div style="font-size:0.84rem;color:var(--muted,#6b8099);padding:24px 0;text-align:center;">No sub-workspace members yet. Add your first team member.</div>' : `
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+            ${['Name','Email','Role','Key','Expiry','Last Active',''].map(h=>`<th style="text-align:left;padding:8px 10px;font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.25);font-weight:400;">${h}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${members.map(m => {
+            const rc = roleColors[m.role] || 'rgba(255,255,255,0.5)';
+            const expiry = m.expiry ? new Date(m.expiry).toLocaleDateString() : '—';
+            const lastSeen = m.lastActive ? (Date.now()-m.lastActive < 86400000 ? Math.floor((Date.now()-m.lastActive)/3600000)+'h ago' : new Date(m.lastActive).toLocaleDateString()) : 'Never';
+            return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.12s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+              <td style="padding:9px 10px;font-size:0.84rem;color:var(--text,#c8d6e8);">${m.name || '—'}</td>
+              <td style="padding:9px 10px;font-size:0.78rem;color:var(--muted,#6b8099);">${m.email || '—'}</td>
+              <td style="padding:9px 10px;"><span style="font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:${rc}18;border:1px solid ${rc}44;color:${rc};">${m.role || '?'}</span></td>
+              <td style="padding:9px 10px;font-size:0.72rem;color:rgba(212,168,67,0.7);">${m.key || '—'}</td>
+              <td style="padding:9px 10px;font-size:0.78rem;color:var(--muted,#6b8099);">${expiry}</td>
+              <td style="padding:9px 10px;font-size:0.78rem;color:var(--muted,#6b8099);">${lastSeen}</td>
+              <td style="padding:9px 10px;">
+                <div style="display:flex;gap:5px;">
+                  <button onclick="revokeInstMember('${m.key}')" style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;text-transform:uppercase;background:none;border:1px solid rgba(239,68,68,0.3);color:rgba(239,68,68,0.7);padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='none'">Revoke</button>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`}`;
+}
+
+function openAddMemberModal() {
+  const overlay = document.createElement('div');
+  overlay.id = 'inst-add-member-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(2,6,18,0.88);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = `
+    <div style="background:var(--card,#111e32);border:1px solid var(--border2,rgba(255,255,255,0.13));border-top:2px solid rgba(212,168,67,0.5);border-radius:14px;max-width:480px;width:100%;padding:36px;">
+      <h3 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;font-weight:300;color:var(--bright,#e8f0f8);margin-bottom:20px;">Add Team Member</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted,#6b8099);display:block;margin-bottom:4px;">First Name</label>
+            <input id="iam-fname" placeholder="First" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;color:var(--bright,#e8f0f8);font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+          </div>
+          <div>
+            <label style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted,#6b8099);display:block;margin-bottom:4px;">Last Name</label>
+            <input id="iam-lname" placeholder="Last" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;color:var(--bright,#e8f0f8);font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+          </div>
+        </div>
+        <div>
+          <label style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted,#6b8099);display:block;margin-bottom:4px;">Email *</label>
+          <input id="iam-email" type="email" placeholder="colleague@institution.edu" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;color:var(--bright,#e8f0f8);font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+        </div>
+        <div>
+          <label style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted,#6b8099);display:block;margin-bottom:4px;">Role *</label>
+          <select id="iam-role" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;color:var(--bright,#e8f0f8);outline:none;">
+            <option value="researcher">Researcher</option>
+            <option value="clinician">Clinician</option>
+            <option value="student">Student</option>
+            <option value="observer">Observer (read-only)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted,#6b8099);display:block;margin-bottom:4px;">Key Expiry (optional)</label>
+          <input id="iam-expiry" type="date" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;color:var(--bright,#e8f0f8);font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+        </div>
+        <div id="iam-err" style="font-size:0.78rem;color:rgba(239,68,68,0.9);display:none;"></div>
+        <div style="display:flex;gap:10px;margin-top:6px;">
+          <button onclick="submitAddMember()" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.3);color:rgba(212,168,67,0.9);padding:10px;border-radius:7px;cursor:pointer;">Provision Key & Send Email →</button>
+          <button onclick="document.getElementById('inst-add-member-overlay').remove()" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;background:none;border:1px solid rgba(255,255,255,0.12);color:var(--muted,#6b8099);padding:10px 14px;border-radius:7px;cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function submitAddMember() {
+  const fname  = document.getElementById('iam-fname')?.value.trim();
+  const lname  = document.getElementById('iam-lname')?.value.trim();
+  const email  = document.getElementById('iam-email')?.value.trim();
+  const role   = document.getElementById('iam-role')?.value;
+  const expiry = document.getElementById('iam-expiry')?.value;
+  const errEl  = document.getElementById('iam-err');
+
+  if (!email || !email.includes('@')) { if (errEl) { errEl.textContent = 'Valid email required.'; errEl.style.display = 'block'; } return; }
+
+  try {
+    const token = await _accGetToken();
+    const res = await fetch(LAMBDA_URL + '/admin/provision-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ fname, lname, email, role, parent_inst: currentWorkspace, expiry: expiry || null })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Provisioning failed');
+
+    document.getElementById('inst-add-member-overlay')?.remove();
+    if (typeof showToast === 'function') showToast('Key provisioned and sent to ' + email, 4000);
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('INST_MEMBER_ADDED', { email, role, key: data.key });
+
+    // Refresh member list
+    _instAdminMembers = null;
+    const body = document.getElementById('inst-admin-body');
+    if (body) await _loadInstMembers(body);
+
+  } catch(e) {
+    if (errEl) { errEl.textContent = 'Error: ' + e.message; errEl.style.display = 'block'; }
+  }
+}
+
+async function revokeInstMember(key) {
+  if (!key || !confirm('Revoke access for key ' + key + '? This cannot be undone.')) return;
+
+  try {
+    const token = await _accGetToken();
+    await fetch(LAMBDA_URL + '/admin/revoke-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ key, revoked_by: currentWorkspace })
+    });
+    if (typeof showToast === 'function') showToast('Access revoked for ' + key, 3000);
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('INST_MEMBER_REVOKED', { key });
+    _instAdminMembers = null;
+    const body = document.getElementById('inst-admin-body');
+    if (body) await _loadInstMembers(body);
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Revoke failed: ' + e.message, 4000);
+  }
+}

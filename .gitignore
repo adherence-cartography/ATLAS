@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Wrangler (contains account credentials - never commit these)
+.wrangler/
+
+# Backup/legacy folders - not needed in repo
+backup/
+cloudbase_modular_backup/
+firebase-fix/
+cloudbase/
+
+# Word temp files
+~$*
+
+# Build artifacts
+lambda_deploy.zip
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Test output
+playwright-report/
+test-results/
+.vitest-cache/

@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ATLAS Workspace Keys · Adherence Cartography</title>
+<meta name="description" content="Get your ATLAS workspace key — deploy the MAP instrument, isolate your research cohort, and access the full PEACS clinical toolset. From student thesis to enterprise health system."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#09101f;--surface:#0d1829;--card:#111e32;--card2:#16243a;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --muted:#6b8099;--text:#c8d6e8;--bright:#e8f0f8;
+  --gold:#d4a843;--blue:#4e9cf5;--purple:#8b6ff5;--green:#2ec98a;
+  --font-d:'Cormorant Garamond',Georgia,serif;
+  --font-b:'IBM Plex Sans',system-ui,sans-serif;
+  --font-m:'IBM Plex Mono',monospace;
+  --dim:#8a9ab0;
+  --inner-box:rgba(255,255,255,0.03);--inner-box-bd:rgba(255,255,255,0.07);
+  --hint-text:rgba(200,216,234,0.45);--hint-text-em:rgba(200,216,234,0.65);
+}
+[data-theme="light"]{
+  --ink:#f4f1ec;--surface:#ede9e2;--card:#ffffff;--card2:#f7f4ef;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.13);
+  --muted:#6b7a8d;--text:#2c3a4a;--bright:#0d1c2e;
+  --gold:#8a6010;--blue:#1d5fa5;--purple:#5b3fa8;--green:#0d7a52;
+  --dim:#9aa3af;
+  --inner-box:rgba(0,0,0,0.04);--inner-box-bd:rgba(0,0,0,0.09);
+  --hint-text:rgba(30,50,70,0.5);--hint-text-em:rgba(30,50,70,0.72);
+}
+[data-theme="light"] body{background:var(--ink);color:var(--text);}
+[data-theme="light"] canvas#stars{opacity:0;}
+[data-theme="light"] nav{background:rgba(244,241,236,0.97);border-bottom-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .nav-brand-main{color:var(--bright);}
+[data-theme="light"] .nav-brand-sub{color:rgba(138,96,16,0.55);}
+[data-theme="light"] .nav-link{color:var(--muted);}
+[data-theme="light"] .nav-link:hover{color:var(--bright);}
+[data-theme="light"] .nav-atlas{color:rgba(138,96,16,0.8);border-color:rgba(138,96,16,0.25);}
+[data-theme="light"] .nav-atlas:hover{color:var(--gold);border-color:rgba(138,96,16,0.5);}
+[data-theme="light"] .hero-title{color:var(--bright);}
+[data-theme="light"] .hero-eyebrow{color:rgba(138,96,16,0.7);}
+[data-theme="light"] .trust-item{color:rgba(0,0,0,0.45);}
+[data-theme="light"] .trust-dot{background:rgba(138,96,16,0.35);}
+[data-theme="light"] .security-band{background:rgba(29,95,165,0.05);border-color:rgba(29,95,165,0.15);}
+[data-theme="light"] .security-text{color:rgba(30,50,70,0.7);}
+[data-theme="light"] .security-text strong{color:rgba(29,95,165,0.85);}
+[data-theme="light"] .tiers-label,[data-theme="light"] .how-label,[data-theme="light"] .faq-label{color:rgba(138,96,16,0.55);}
+[data-theme="light"] .tier-card{background:#fff;border-color:rgba(0,0,0,0.1);box-shadow:0 2px 16px rgba(0,0,0,0.06);}
+[data-theme="light"] .tier-card.featured{border-color:rgba(91,63,168,0.25);box-shadow:0 4px 28px rgba(91,63,168,0.1);}
+[data-theme="light"] .tier-name{color:var(--bright);}
+[data-theme="light"] .tier-who{color:var(--muted);}
+[data-theme="light"] .tier-price-num{color:var(--bright);}
+[data-theme="light"] .tier-price-period,[data-theme="light"] .tier-price-annual{color:var(--muted);}
+[data-theme="light"] .tier-features li{color:var(--text);border-bottom-color:rgba(0,0,0,0.05);}
+[data-theme="light"] .tier-card.student .feat-check{background:rgba(13,122,82,0.1);color:var(--green);}
+[data-theme="light"] .tier-card.clinician .feat-check{background:rgba(29,95,165,0.1);color:var(--blue);}
+[data-theme="light"] .tier-card.researcher .feat-check{background:rgba(91,63,168,0.1);color:var(--purple);}
+[data-theme="light"] .tier-card.pi .feat-check{background:rgba(138,96,16,0.1);color:var(--gold);}
+[data-theme="light"] .feat-dim{color:rgba(0,0,0,0.3);}
+[data-theme="light"] .feat-dim .feat-check{background:rgba(0,0,0,0.06);color:rgba(0,0,0,0.25);}
+[data-theme="light"] .seats-field-label{color:rgba(0,0,0,0.4);}
+[data-theme="light"] .tier-card.student .tier-key-format{background:rgba(13,122,82,0.05);border-color:rgba(13,122,82,0.15);color:rgba(13,122,82,0.7);}
+[data-theme="light"] .tier-card.clinician .tier-key-format{background:rgba(29,95,165,0.05);border-color:rgba(29,95,165,0.15);color:rgba(29,95,165,0.7);}
+[data-theme="light"] .tier-card.researcher .tier-key-format{background:rgba(91,63,168,0.05);border-color:rgba(91,63,168,0.15);color:rgba(91,63,168,0.7);}
+[data-theme="light"] .tier-card.pi .tier-key-format{background:rgba(138,96,16,0.05);border-color:rgba(138,96,16,0.15);color:rgba(138,96,16,0.7);}
+[data-theme="light"] .tier-card.student .tier-btn{background:rgba(13,122,82,0.07);border-color:rgba(13,122,82,0.25);color:var(--green);}
+[data-theme="light"] .tier-card.student .tier-btn:hover:not(:disabled){background:rgba(13,122,82,0.14);}
+[data-theme="light"] .tier-card.clinician .tier-btn{background:rgba(29,95,165,0.08);border-color:rgba(29,95,165,0.28);color:var(--blue);}
+[data-theme="light"] .tier-card.clinician .tier-btn:hover:not(:disabled){background:rgba(29,95,165,0.15);}
+[data-theme="light"] .tier-card.researcher .tier-btn{background:rgba(91,63,168,0.08);border-color:rgba(91,63,168,0.28);color:var(--purple);}
+[data-theme="light"] .tier-card.researcher .tier-btn:hover:not(:disabled){background:rgba(91,63,168,0.15);}
+[data-theme="light"] .tier-card.pi .tier-btn{background:rgba(138,96,16,0.07);border-color:rgba(138,96,16,0.28);color:var(--gold);}
+[data-theme="light"] .tier-card.pi .tier-btn:hover:not(:disabled){background:rgba(138,96,16,0.13);}
+[data-theme="light"] .inst-card{background:rgba(138,96,16,0.04);border-color:rgba(138,96,16,0.15);}
+[data-theme="light"] .inst-title{color:var(--bright);}
+[data-theme="light"] .inst-label{color:rgba(138,96,16,0.65);}
+[data-theme="light"] .inst-btn{color:rgba(138,96,16,0.8);border-color:rgba(138,96,16,0.25);}
+[data-theme="light"] .inst-btn:hover{background:rgba(138,96,16,0.08);color:var(--gold);}
+[data-theme="light"] .how-step-label{color:var(--text);}
+[data-theme="light"] .how-step-num{color:rgba(138,96,16,0.4);}
+[data-theme="light"] .faq-item{border-bottom-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .faq-q{color:var(--bright);}
+[data-theme="light"] .faq-a{color:var(--muted);}
+[data-theme="light"] footer{border-top-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .footer-left,[data-theme="light"] .footer-links a{color:rgba(0,0,0,0.35);}
+[data-theme="light"] .footer-links a:hover{color:rgba(0,0,0,0.65);}
+[data-theme="light"] .reg-card{background:#fff;border-color:rgba(0,0,0,0.12);}
+[data-theme="light"] .reg-input{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.15);color:var(--bright);}
+[data-theme="light"] .reg-input::placeholder{color:rgba(0,0,0,0.25);}
+[data-theme="light"] select.reg-input{background-color:#fff;color:#0d1c2e;}
+[data-theme="light"] select.reg-input option{background-color:#fff;color:#0d1c2e;}
+/* Theme toggle button */
+.theme-toggle{background:none;border:1px solid var(--border2);border-radius:20px;padding:5px 12px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.25s;font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.theme-toggle:hover{border-color:rgba(212,168,67,0.35);color:var(--bright);}
+[data-theme="light"] .theme-toggle{border-color:rgba(0,0,0,0.15);color:var(--muted);}
+[data-theme="light"] .theme-toggle:hover{border-color:rgba(138,96,16,0.35);color:var(--bright);}
+.theme-toggle-icon{font-size:0.75rem;line-height:1;}
+/* HAMBURGER MENU */
+.hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;transition:opacity 0.2s;}
+.hamburger:hover{opacity:0.7;}
+.hamburger-bar{width:22px;height:2px;background:var(--muted);border-radius:2px;transition:all 0.28s ease;display:block;}
+.hamburger.open .hamburger-bar:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.open .hamburger-bar:nth-child(2){opacity:0;transform:scaleX(0);}
+.hamburger.open .hamburger-bar:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+.nav-drawer{position:fixed;inset:60px 0 0 0;background:rgba(9,16,31,0.98);backdrop-filter:blur(16px);z-index:99;display:flex;flex-direction:column;padding:32px 28px 40px;gap:4px;transform:translateX(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);pointer-events:none;}
+.nav-drawer.open{transform:translateX(0);pointer-events:all;}
+.drawer-link{font-family:var(--font-m);font-size:0.84rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:14px 4px;border-bottom:1px solid var(--border);transition:color 0.18s;display:flex;align-items:center;justify-content:space-between;}
+.drawer-link:last-child{border-bottom:none;}
+.drawer-link:hover{color:var(--bright);}
+.drawer-link.highlight{color:rgba(212,168,67,0.85);}
+.drawer-link.highlight:hover{color:var(--gold);}
+.drawer-link .drawer-arrow{opacity:0.35;font-size:0.9rem;}
+[data-theme="light"] .nav-drawer{background:rgba(244,241,236,0.98);}
+[data-theme="light"] .drawer-link{color:var(--muted);border-bottom-color:rgba(0,0,0,0.07);}
+[data-theme="light"] .drawer-link:hover{color:var(--bright);}
+@media(max-width:700px){
+  .hamburger{display:flex;}
+  .nav-link,.nav-atlas{display:none;}
+}
+@media(max-width:760px){
+  .map-spotlight-cols{grid-template-columns:1fr!important;}
+}
+
+/* Smooth theme transitions */
+body,nav,.tier-card,.inst-card,.reg-card,.faq-item,.security-band{
+  transition:background 0.28s ease,border-color 0.28s ease,color 0.2s ease,box-shadow 0.28s ease;
+}
+
+/* ===== CERTIFICATE VERIFY SECTION ===== */
+.vc-section{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:64px 40px 80px;text-align:center;border-top:1px solid var(--border);}
+[data-theme="light"] .vc-section{border-top-color:rgba(0,0,0,0.08);}
+.vc-label{font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:14px;}
+.vc-title{font-family:var(--font-d);font-size:1.9rem;font-weight:300;color:var(--bright);margin-bottom:10px;}
+.vc-sub{font-size:0.82rem;color:var(--muted);line-height:1.75;margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto;}
+.vc-form{display:flex;gap:10px;max-width:540px;margin:0 auto;flex-wrap:wrap;}
+.vc-input{flex:1;min-width:220px;background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:12px 16px;font-family:var(--font-m);font-size:0.84rem;color:var(--bright);letter-spacing:0.06em;outline:none;transition:border-color 0.2s;}
+.vc-input::placeholder{color:var(--muted);font-size:0.72rem;letter-spacing:0.08em;}
+.vc-input:focus{border-color:rgba(212,168,67,0.45);}
+.vc-btn{background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.35);color:rgba(212,168,67,0.9);font-family:var(--font-m);font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;padding:12px 22px;border-radius:6px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.vc-btn:hover{background:rgba(212,168,67,0.2);}
+.vc-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.vc-loading{display:none;text-align:center;padding:24px;font-family:var(--font-m);font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);}
+.vc-loading::after{content:'';display:inline-block;width:11px;height:11px;border:2px solid rgba(212,168,67,0.3);border-top-color:rgba(212,168,67,0.8);border-radius:50%;animation:spin 0.8s linear infinite;margin-left:10px;vertical-align:middle;}
+.vc-result{display:none;background:var(--card);border:1px solid var(--border2);border-radius:12px;overflow:hidden;animation:fadeUp 0.3s ease both;text-align:left;max-width:540px;margin:24px auto 0;}
+.vc-result-header{padding:20px 24px;display:flex;align-items:center;gap:14px;}
+.vc-result-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:bold;flex-shrink:0;}
+.vc-result-icon.valid{background:rgba(16,185,129,0.12);color:#2ec98a;border:1px solid rgba(16,185,129,0.3);}
+.vc-result-icon.revoked{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.25);}
+.vc-result-icon.invalid{background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);}
+.vc-result-status-label{font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:4px;}
+.vc-result-status-label.valid{color:#2ec98a;}
+.vc-result-status-label.revoked{color:#ef4444;}
+.vc-result-status-label.invalid{color:#f59e0b;}
+.vc-result-cert-num{font-family:var(--font-m);font-size:0.75rem;color:var(--muted);letter-spacing:0.06em;}
+.vc-result-divider{height:1px;background:var(--border);}
+.vc-result-body{padding:20px 24px;font-size:0.82rem;}
+.vc-result-table{width:100%;border-collapse:collapse;}
+.vc-result-table tr:last-child td{border-bottom:none;}
+.vc-result-table td{padding:8px 0;border-bottom:1px solid var(--border);vertical-align:top;}
+.vc-result-table td:first-child{color:var(--muted);width:40%;font-size:0.76rem;letter-spacing:0.04em;padding-right:14px;}
+.vc-result-table td:last-child{color:var(--bright);}
+.vc-result-note{font-size:0.78rem;color:var(--muted);line-height:1.75;padding:12px 14px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;margin-top:4px;}
+.vc-result-note.valid{border-color:rgba(16,185,129,0.15);background:rgba(16,185,129,0.04);}
+.vc-result-note.revoked{border-color:rgba(239,68,68,0.15);background:rgba(239,68,68,0.04);color:rgba(239,68,68,0.7);}
+.vc-result-footer{padding:12px 24px;border-top:1px solid var(--border);font-family:var(--font-m);font-size:0.72rem;color:var(--muted);letter-spacing:0.05em;line-height:1.75;}
+.vc-hint{margin-top:20px;font-family:var(--font-m);font-size:0.74rem;letter-spacing:0.08em;color:var(--muted);}
+.vc-hint-link{color:rgba(212,168,67,0.6);text-decoration:none;}
+.vc-hint-link:hover{color:rgba(212,168,67,0.9);}
+/* Light theme for verify section */
+[data-theme="light"] .vc-input{background:#fff;border-color:rgba(0,0,0,0.15);color:var(--bright);}
+[data-theme="light"] .vc-input::placeholder{color:rgba(0,0,0,0.3);}
+[data-theme="light"] .vc-input:focus{border-color:rgba(138,96,16,0.4);}
+[data-theme="light"] .vc-btn{background:rgba(138,96,16,0.08);border-color:rgba(138,96,16,0.3);color:rgba(138,96,16,0.9);}
+[data-theme="light"] .vc-btn:hover{background:rgba(138,96,16,0.15);}
+[data-theme="light"] .vc-result{background:#fff;border-color:rgba(0,0,0,0.1);}
+[data-theme="light"] .vc-result-divider{background:rgba(0,0,0,0.07);}
+[data-theme="light"] .vc-result-table td{border-bottom-color:rgba(0,0,0,0.07);}
+[data-theme="light"] .vc-result-table td:first-child{color:var(--muted);}
+[data-theme="light"] .vc-result-table td:last-child{color:var(--bright);}
+[data-theme="light"] .vc-result-note{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .vc-result-footer{border-top-color:rgba(0,0,0,0.07);}
+[data-theme="light"] .vc-result-cert-num{color:var(--muted);}
+@media(max-width:520px){.vc-section{padding:40px 16px 60px;}.vc-form{flex-direction:column;}.vc-btn{width:100%;}}
+html{scroll-behavior:smooth;}
+#section-tiers,#section-how,#section-faq,#verify-section{scroll-margin-top:72px;}
+body{background:var(--ink);color:var(--text);font-family:var(--font-b);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+canvas#stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.4;}
+nav{position:sticky;top:0;z-index:100;background:rgba(9,16,31,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:60px;}
+.nav-brand{display:flex;flex-direction:column;line-height:1.1;gap:1px;}
+.nav-brand-main{font-family:var(--font-d);font-size:1rem;font-weight:300;color:var(--bright);letter-spacing:0.04em;}
+.nav-brand-main em{font-style:italic;color:rgba(212,168,67,0.85);}
+.nav-brand-sub{font-family:var(--font-m);font-size:0.50rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.45);}
+.nav-right{display:flex;align-items:center;gap:20px;}
+.nav-link{font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+.nav-link:hover{color:var(--bright);}
+.nav-atlas{font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(212,168,67,0.7);border:1px solid rgba(212,168,67,0.25);padding:5px 14px;text-decoration:none;transition:all 0.2s;}
+.nav-atlas:hover{color:var(--gold);border-color:rgba(212,168,67,0.55);}
+.hero{position:relative;z-index:1;text-align:center;padding:96px 40px 72px;}
+.hero-eyebrow{font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.65);margin-bottom:20px;}
+.hero-title{font-family:var(--font-d);font-size:clamp(2.4rem,5vw,3.8rem);font-weight:300;color:var(--bright);line-height:1.12;margin-bottom:20px;}
+.hero-title em{font-style:italic;color:rgba(212,168,67,0.85);}
+.hero-sub{font-size:0.88rem;color:var(--muted);max-width:560px;margin:0 auto 48px;line-height:1.8;font-weight:300;}
+.hero-trust{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;}
+.trust-item{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.25);display:flex;align-items:center;gap:6px;}
+.trust-dot{width:3px;height:3px;border-radius:50%;background:rgba(212,168,67,0.4);}
+.security-band{position:relative;z-index:1;margin:0 auto 56px;background:rgba(78,156,245,0.05);border:1px solid rgba(78,156,245,0.15);border-radius:10px;padding:14px 24px;display:flex;align-items:center;gap:16px;max-width:760px;flex-wrap:wrap;}
+.security-icon{font-size:1.1rem;flex-shrink:0;}
+.security-text{font-size:0.87rem;color:rgba(200,214,232,0.6);line-height:1.65;}
+.security-text strong{color:rgba(78,156,245,0.85);}
+.tiers-section{position:relative;z-index:1;padding:0 40px 80px;}
+.tiers-label{font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.5);text-align:center;margin-bottom:40px;}
+.tiers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1100px;margin:0 auto;align-items:start;}
+@media(max-width:860px){.tiers-grid{grid-template-columns:1fr;max-width:480px;}}
+@media(max-width:540px){.tiers-grid{grid-template-columns:1fr;max-width:440px;}}
+.tier-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px 28px;position:relative;overflow:hidden;transition:border-color 0.25s,transform 0.2s;}
+.tier-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.tier-card.student::before{background:var(--green);}
+.tier-card.clinician::before{background:var(--blue);}
+.tier-card.researcher::before{background:var(--purple);}
+.tier-card.pi::before{background:var(--gold);}
+.tier-card.featured{border-color:rgba(139,111,245,0.3);transform:translateY(-4px);}
+.tier-card:hover{transform:translateY(-6px);}
+.tier-card.featured:hover{transform:translateY(-8px);}
+.tier-badge-wrap{height:24px;margin-bottom:16px;}
+.tier-badge{display:inline-block;font-family:var(--font-m);font-size:0.52rem;letter-spacing:0.14em;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.tier-badge.popular{background:rgba(139,111,245,0.15);border:1px solid rgba(139,111,245,0.3);color:var(--purple);}
+.tier-label{font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:8px;}
+.tier-card.student .tier-label{color:var(--green);}
+.tier-card.clinician .tier-label{color:var(--blue);}
+.tier-card.researcher .tier-label{color:var(--purple);}
+.tier-card.pi .tier-label{color:var(--gold);}
+.tier-name{font-family:var(--font-d);font-size:1.4rem;font-weight:300;color:var(--bright);margin-bottom:8px;line-height:1.2;}
+.tier-who{font-size:0.84rem;color:var(--muted);line-height:1.6;margin-bottom:24px;min-height:52px;}
+.tier-price{display:flex;align-items:baseline;gap:4px;margin-bottom:6px;}
+.tier-price-num{font-family:var(--font-d);font-size:2.6rem;font-weight:300;color:var(--bright);}
+.tier-price-period{font-size:0.84rem;color:var(--muted);}
+.tier-price-annual{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.08em;color:rgba(255,255,255,0.25);margin-bottom:24px;}
+.tier-divider{height:1px;background:var(--border);margin:20px 0;}
+.tier-features{list-style:none;padding:0;margin-bottom:28px;}
+.tier-features li{font-size:0.86rem;color:var(--text);padding:6px 0;display:flex;align-items:flex-start;gap:10px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,0.04);}
+.tier-features li:last-child{border-bottom:none;}
+.feat-check{flex-shrink:0;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.67rem;margin-top:1px;}
+.tier-card.student .feat-check{background:rgba(46,201,138,0.15);color:var(--green);}
+.tier-card.clinician .feat-check{background:rgba(78,156,245,0.15);color:var(--blue);}
+.tier-card.researcher .feat-check{background:rgba(139,111,245,0.15);color:var(--purple);}
+.tier-card.pi .feat-check{background:rgba(212,168,67,0.15);color:var(--gold);}
+.feat-dim{color:rgba(255,255,255,0.25);}
+.feat-dim .feat-check{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.2);}
+.tier-key-format{font-family:var(--font-m);font-size:0.64rem;letter-spacing:0.08em;padding:8px 12px;border-radius:6px;margin-bottom:24px;text-align:center;}
+.tier-card.student .tier-key-format{background:rgba(46,201,138,0.06);border:1px solid rgba(46,201,138,0.15);color:rgba(46,201,138,0.7);}
+.tier-card.clinician .tier-key-format{background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.15);color:rgba(78,156,245,0.7);}
+.tier-card.researcher .tier-key-format{background:rgba(139,111,245,0.06);border:1px solid rgba(139,111,245,0.15);color:rgba(139,111,245,0.7);}
+.tier-card.pi .tier-key-format{background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);color:rgba(212,168,67,0.7);}
+.tier-btn{width:100%;padding:12px;border:none;border-radius:8px;font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;position:relative;}
+.tier-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.tier-btn .btn-spinner{display:none;width:14px;height:14px;border:2px solid transparent;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto;}
+.tier-btn.loading .btn-text{display:none;}
+.tier-btn.loading .btn-spinner{display:block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.tier-card.student .tier-btn{background:rgba(46,201,138,0.1);border:1px solid rgba(46,201,138,0.3);color:var(--green);}
+.tier-card.student .tier-btn:hover:not(:disabled){background:rgba(46,201,138,0.18);border-color:rgba(46,201,138,0.55);}
+.tier-card.student .tier-btn .btn-spinner{border-top-color:var(--green);}
+.tier-card.clinician .tier-btn{background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.35);color:var(--blue);}
+.tier-card.clinician .tier-btn:hover:not(:disabled){background:rgba(78,156,245,0.2);border-color:rgba(78,156,245,0.6);}
+.tier-card.clinician .tier-btn .btn-spinner{border-top-color:var(--blue);}
+.tier-card.researcher .tier-btn{background:rgba(139,111,245,0.12);border:1px solid rgba(139,111,245,0.35);color:var(--purple);}
+.tier-card.researcher .tier-btn:hover:not(:disabled){background:rgba(139,111,245,0.2);border-color:rgba(139,111,245,0.6);}
+.tier-card.researcher .tier-btn .btn-spinner{border-top-color:var(--purple);}
+.tier-card.pi .tier-btn{background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.35);color:var(--gold);}
+.tier-card.pi .tier-btn:hover:not(:disabled){background:rgba(212,168,67,0.18);border-color:rgba(212,168,67,0.6);}
+.tier-card.pi .tier-btn .btn-spinner{border-top-color:var(--gold);}
+.result-screen{display:none;position:fixed;inset:0;z-index:200;background:rgba(9,16,31,0.97);align-items:center;justify-content:center;padding:40px;}
+.result-screen.active{display:flex;}
+.result-card{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:48px 40px;max-width:520px;width:100%;text-align:center;}
+.result-icon{font-size:2.8rem;margin-bottom:20px;}
+.result-title{font-family:var(--font-d);font-size:2rem;font-weight:300;color:var(--bright);margin-bottom:12px;}
+.result-body{font-size:0.8rem;color:var(--muted);line-height:1.8;margin-bottom:28px;}
+.result-body strong{color:var(--text);}
+.result-btn{display:inline-block;font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;padding:11px 24px;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.3);color:var(--gold);text-decoration:none;border-radius:8px;transition:all 0.2s;cursor:pointer;}
+.result-btn:hover{background:rgba(212,168,67,0.18);border-color:rgba(212,168,67,0.55);}
+.institution-band{position:relative;z-index:1;max-width:960px;margin:0 auto 80px;padding:0 40px;}
+.inst-card{background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.15);border-radius:12px;padding:28px 32px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+.inst-content{flex:1;min-width:280px;}
+.inst-label{font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:8px;}
+.inst-title{font-family:var(--font-d);font-size:1.2rem;font-weight:300;color:var(--bright);margin-bottom:6px;}
+.inst-desc{font-size:0.86rem;color:var(--muted);line-height:1.7;}
+.inst-btn{font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.3);color:rgba(212,168,67,0.8);padding:10px 20px;text-decoration:none;border-radius:8px;white-space:nowrap;transition:all 0.2s;}
+.inst-btn:hover{background:rgba(212,168,67,0.15);border-color:rgba(212,168,67,0.55);color:var(--gold);}
+.seats-section{position:relative;z-index:1;max-width:960px;margin:0 auto 80px;padding:0 40px;}
+.seats-label{font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(78,156,245,0.6);margin-bottom:10px;}
+.seats-sub{font-size:0.80rem;color:var(--muted);line-height:1.7;margin-bottom:24px;max-width:640px;}
+.seats-form{background:rgba(78,156,245,0.03);border:1px solid rgba(78,156,245,0.15);border-radius:12px;padding:28px 32px;}
+.seats-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:18px;}
+.seats-field{flex:1;min-width:180px;}
+.seats-total-field{flex:0 0 140px;}
+.seats-field-label{display:block;font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(200,214,232,0.45);margin-bottom:6px;}
+.seats-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(78,156,245,0.2);color:var(--text);padding:9px 12px;font-family:var(--font-m);font-size:0.78rem;border-radius:6px;box-sizing:border-box;transition:border-color 0.2s;}
+.seats-input:focus{outline:none;border-color:rgba(78,156,245,0.5);}
+.seats-hint{font-size:0.66rem;color:var(--dim);margin-top:4px;line-height:1.4;}
+.seats-total{font-family:var(--font-m);font-size:1.3rem;color:rgba(78,156,245,0.9);padding-top:6px;letter-spacing:0.04em;}
+.seats-volume-note{font-size:0.72rem;color:rgba(212,168,67,0.7);background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.2);border-radius:6px;padding:10px 14px;margin-bottom:16px;line-height:1.6;}
+.seats-actions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:4px;}
+.seats-btn{font-family:var(--font-m);font-size:0.64rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(78,156,245,0.1);border:1px solid rgba(78,156,245,0.35);color:rgba(78,156,245,0.9);padding:11px 26px;border-radius:8px;cursor:pointer;transition:all 0.2s;}
+.seats-btn:hover{background:rgba(78,156,245,0.18);border-color:rgba(78,156,245,0.6);}
+.seats-stripe-note{font-size:0.68rem;color:var(--dim);}
+[data-theme="light"] .seats-form{background:rgba(78,156,245,0.03);border-color:rgba(78,156,245,0.2);}
+[data-theme="light"] .seats-input{background:#fff;border-color:rgba(78,156,245,0.25);color:var(--bright);}
+.how-section{position:relative;z-index:1;max-width:760px;margin:0 auto 80px;padding:0 40px;text-align:center;}
+.how-label{font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.5);margin-bottom:36px;}
+.how-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center;}
+@media(max-width:600px){.how-steps{grid-template-columns:1fr 1fr;}}
+.how-step-num{font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.1em;color:rgba(212,168,67,0.4);margin-bottom:8px;}
+.how-step-label{font-size:0.87rem;color:var(--text);line-height:1.6;}
+.faq-section{position:relative;z-index:1;max-width:680px;margin:0 auto 80px;padding:0 40px;}
+.faq-label{font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.5);text-align:center;margin-bottom:32px;}
+.faq-item{border-bottom:1px solid var(--border);padding:18px 0;}
+.faq-q{font-size:0.82rem;color:var(--bright);font-weight:500;margin-bottom:8px;}
+.faq-a{font-size:0.76rem;color:var(--muted);line-height:1.75;}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+.footer-left{font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);}
+.footer-links{display:flex;gap:20px;}
+.footer-links a{font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);text-decoration:none;transition:color 0.2s;}
+.footer-links a:hover{color:rgba(255,255,255,0.5);}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:rgba(239,68,68,0.9);font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.08em;padding:12px 24px;border-radius:8px;transition:transform 0.3s ease;z-index:999;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── Registration modal ── */
+.reg-overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(9,16,31,0.92);backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:24px;}
+.reg-overlay.active{display:flex;}
+.reg-card{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:40px 36px;max-width:460px;width:100%;}
+.reg-eyebrow{font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:16px;}
+.reg-title{font-family:var(--font-d);font-size:1.5rem;font-weight:300;color:var(--bright);margin-bottom:6px;}
+.reg-sub{font-size:0.86rem;color:var(--muted);line-height:1.7;margin-bottom:28px;}
+.reg-field{margin-bottom:16px;}
+.reg-label{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;}
+.reg-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;font-family:var(--font-b);font-size:0.84rem;color:var(--bright);outline:none;transition:border-color 0.2s;}
+.reg-input:focus{border-color:rgba(212,168,67,0.4);}
+.reg-input::placeholder{color:rgba(255,255,255,0.2);}
+select.reg-input{background-color:#111e32;color:#e8f0f8;}
+select.reg-input option{background-color:#111e32;color:#e8f0f8;}
+select.reg-input option:disabled{color:rgba(200,214,232,0.4);}
+select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
+.reg-actions{display:flex;gap:10px;margin-top:24px;}
+.reg-submit{flex:1;padding:12px;border:none;border-radius:8px;font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.35);color:var(--gold);}
+.reg-submit:hover{background:rgba(212,168,67,0.2);border-color:rgba(212,168,67,0.6);}
+.reg-submit:disabled{opacity:0.45;cursor:not-allowed;}
+.reg-cancel{padding:12px 18px;background:none;border:1px solid var(--border);border-radius:8px;font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;}
+.reg-cancel:hover{border-color:var(--border2);color:var(--text);}
+.reg-tier-pill{display:inline-block;font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;padding:3px 10px;border-radius:10px;margin-bottom:20px;}
+.reg-tier-pill.student{background:rgba(46,201,138,0.1);border:1px solid rgba(46,201,138,0.25);color:var(--green);}
+.reg-tier-pill.clinician{background:rgba(78,156,245,0.1);border:1px solid rgba(78,156,245,0.25);color:var(--blue);}
+.reg-tier-pill.researcher{background:rgba(139,111,245,0.1);border:1px solid rgba(139,111,245,0.25);color:var(--purple);}
+.reg-tier-pill.pi{background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.25);color:var(--gold);}
+.reg-hint{font-size:0.70rem;color:var(--muted);margin-top:5px;line-height:1.5;}
+.reg-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.reg-section-label{font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.55);margin:20px 0 14px;padding-top:16px;border-top:1px solid rgba(212,168,67,0.12);}
+.reg-site-sel{display:flex;gap:6px;margin-top:4px;}
+.reg-site-btn{width:44px;height:44px;border:1px solid var(--border2);border-radius:8px;background:rgba(255,255,255,0.03);color:var(--muted);font-family:var(--font-b);font-size:0.90rem;cursor:pointer;transition:all 0.18s;}
+.reg-site-btn:hover{border-color:rgba(212,168,67,0.35);color:rgba(212,168,67,0.7);}
+.reg-site-btn.active{background:rgba(212,168,67,0.12);border-color:rgba(212,168,67,0.5);color:var(--gold);}
+.reg-card{max-height:90vh;overflow-y:auto;}
+.reg-card.pi-mode{max-width:520px;}
+
+/* ── Accordion feature toggle ── */
+.feat-more{display:none;overflow:hidden;}
+.feat-expand-btn{display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.1em;text-transform:uppercase;background:none;border:none;color:var(--muted);cursor:pointer;padding:4px 0 8px;transition:color 0.18s;}
+.feat-expand-btn:hover{color:var(--bright);}
+.tier-card.student .feat-expand-btn:hover{color:var(--green);}
+.tier-card.clinician .feat-expand-btn:hover{color:var(--blue);}
+.tier-card.pi .feat-expand-btn:hover{color:var(--gold);}
+
+/* ── Individual tier tab color variants ── */
+.inst-tab-btn.active.tab-student{border-bottom-color:var(--green);color:var(--green);}
+.inst-tab-btn.active.tab-clinician{border-bottom-color:var(--blue);color:var(--blue);}
+.inst-tab-btn.active.tab-pi{border-bottom-color:var(--gold);color:var(--gold);}
+[data-theme="light"] .inst-tab-btn.active.tab-student{color:var(--green);}
+[data-theme="light"] .inst-tab-btn.active.tab-clinician{color:var(--blue);}
+[data-theme="light"] .inst-tab-btn.active.tab-pi{color:var(--gold);}
+
+/* ── Institution tabbed card ── */
+.inst-tab-card{background:var(--card);border:1px solid rgba(212,168,67,0.18);border-radius:14px;overflow:hidden;}
+.inst-tab-bar{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border);}
+.inst-tab-btn{font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.1em;text-transform:uppercase;padding:14px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;text-align:center;margin-bottom:-1px;line-height:1.5;}
+.inst-tab-btn:hover:not(.active){color:var(--text);}
+.inst-tab-btn.active.tab-academic{border-bottom-color:var(--purple);color:var(--purple);}
+.inst-tab-btn.active.tab-health{border-bottom-color:var(--blue);color:var(--blue);}
+.inst-tab-btn.active.tab-amc{border-bottom-color:var(--gold);color:var(--gold);}
+.inst-tab-pane{display:none;padding:28px 32px;}
+.inst-tab-pane.active{display:grid;grid-template-columns:1fr 220px;gap:28px;align-items:start;}
+@media(max-width:680px){.inst-tab-pane.active{grid-template-columns:1fr;}}
+[data-theme="light"] .inst-tab-card{background:#fff;border-color:rgba(138,96,16,0.15);}
+[data-theme="light"] .inst-tab-bar{border-bottom-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .inst-tab-btn.active.tab-academic{color:var(--purple);}
+[data-theme="light"] .inst-tab-btn.active.tab-health{color:var(--blue);}
+[data-theme="light"] .inst-tab-btn.active.tab-amc{color:var(--gold);}
+/* CTO1: PO Path */
+.po-conf-eyebrow{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#4e9cf5;margin-bottom:.4rem;font-family:monospace}
+.po-conf-heading{font-size:1.3rem;margin:0 0 .5rem;color:#e8f0f8}
+.po-conf-sub{font-size:.85rem;color:#8090a8;margin-bottom:1rem;line-height:1.5}
+.po-conf-table{border:1px solid #1e2d45;border-radius:9px;overflow:hidden;margin-bottom:1rem}
+.po-conf-row{display:flex;justify-content:space-between;align-items:center;padding:.55rem .9rem;border-bottom:1px solid #1e2d45}
+.po-conf-row:last-child{border-bottom:none}
+.po-conf-lbl{font-size:.75rem;color:#8090a8;font-family:monospace}
+.po-conf-val{font-size:.83rem;color:#e8f0f8;text-align:right}
+.po-conf-po-val{font-family:monospace;color:#d4a843;font-weight:600}
+.po-conf-terms{font-size:.75rem;color:#8090a8;background:rgba(78,156,245,.06);border:1px solid rgba(78,156,245,.15);border-radius:7px;padding:.6rem .8rem;margin-bottom:.8rem}
+.po-conf-err{font-size:.78rem;color:#ef4444;margin-bottom:.6rem}
+.po-conf-btns{display:flex;gap:.7rem;justify-content:space-between}
+.po-success-icon{font-size:2.5rem;color:#10b981;margin-bottom:.8rem}
+.po-field-hint{font-size:.73rem;color:#8090a8;margin-top:.25rem;font-style:italic}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<nav>
+  <div class="nav-brand">
+    <span class="nav-brand-main">Adherence <em>Cartography</em></span>
+    <span class="nav-brand-sub">ATLAS Platform</span>
+  </div>
+  <div class="nav-right">
+    <a href="https://adherence.cc" class="nav-link">About</a>
+    <a href="/cdn-cgi/l/email-protection#a8c1c6cec7e8c9ccc0cddacdc6cbcd86cbcb" class="nav-link">Contact</a>
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <span class="theme-toggle-icon" id="theme-icon">☀</span>
+      <span id="theme-label">Day</span>
+    </button>
+    <a href="https://atlas.adherence.cc" class="nav-atlas">Open ATLAS</a>
+    <button class="hamburger" id="hamburger-btn" onclick="toggleDrawer()" aria-label="Menu" aria-expanded="false">
+      <span class="hamburger-bar"></span>
+      <span class="hamburger-bar"></span>
+      <span class="hamburger-bar"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile nav drawer -->
+<div class="nav-drawer" id="nav-drawer" aria-hidden="true">
+  <a class="drawer-link" href="#section-tiers" onclick="closeDrawer()">Pricing<span class="drawer-arrow">→</span></a>
+  <a class="drawer-link" href="#section-how" onclick="closeDrawer()">How it works<span class="drawer-arrow">→</span></a>
+  <a class="drawer-link" href="#section-faq" onclick="closeDrawer()">FAQ<span class="drawer-arrow">→</span></a>
+  <a class="drawer-link highlight" href="#verify-section" onclick="closeDrawer()">Verify a certificate<span class="drawer-arrow">→</span></a>
+  <a class="drawer-link" href="https://adherence.cc" onclick="closeDrawer()">About<span class="drawer-arrow">→</span></a>
+  <a class="drawer-link" href="https://atlas.adherence.cc" onclick="closeDrawer()" style="color:rgba(212,168,67,0.7);">Open ATLAS →<span class="drawer-arrow"></span></a>
+</div>
+<section class="hero">
+  <div class="hero-eyebrow">Workspace Keys · ATLAS Platform</div>
+  <h1 class="hero-title">Deploy MAP.<br><em>Measure what matters.</em></h1>
+  <p class="hero-sub">A workspace key gives you access to the MAP instrument — an independently developed, psychometrically precise adherence assessment — deployed through ATLAS with full PEACS scoring, cohort isolation, and IRB-ready documentation. Student, Clinician, Investigator, or Institution — pick the one that matches your work.</p>
+  <div class="hero-trust">
+    <span class="trust-item"><span class="trust-dot"></span>MAP instrument included</span>
+    <span class="trust-item"><span class="trust-dot"></span>PEACS longitudinal scoring</span>
+    <span class="trust-item"><span class="trust-dot"></span>Magic link authentication</span>
+    <span class="trust-item"><span class="trust-dot"></span>Cancel anytime</span>
+    <span class="trust-item"><span class="trust-dot"></span>Student first · LMIC program</span>
+  </div>
+</section>
+<!-- MAP spotlight band -->
+<div style="position:relative;z-index:1;max-width:960px;margin:0 auto 0;padding:0 40px 52px;">
+  <div style="background:linear-gradient(135deg,rgba(13,24,46,0.95) 0%,rgba(9,16,31,0.98) 100%);border:1px solid rgba(212,168,67,0.2);border-radius:14px;padding:36px 40px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;position:relative;overflow:hidden;" class="map-spotlight-cols">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 50% 80% at 0% 50%,rgba(212,168,67,0.06) 0%,transparent 65%);pointer-events:none;"></div>
+    <div style="position:relative;padding-right:32px;border-right:1px solid rgba(255,255,255,0.07);">
+      <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.7);margin-bottom:10px;">The Instrument</div>
+      <div style="font-family:var(--font-d);font-size:1.1rem;font-weight:300;color:#e8f0f8;margin-bottom:8px;line-height:1.3;">MAP — Multidimensional Adherence Parameters</div>
+      <p style="font-size:0.82rem;color:#8a9ab0;line-height:1.75;">Eight independently authored items. Grade 6 literacy. Idiom-free for 60+ languages. Designed to distinguish intentional from unintentional non-adherence at the item level — a construct distinction no binary instrument captures.</p>
+    </div>
+    <div style="position:relative;padding:0 32px;border-right:1px solid rgba(255,255,255,0.07);">
+      <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(78,156,245,0.7);margin-bottom:10px;">The Scoring Engine</div>
+      <div style="font-family:var(--font-d);font-size:1.1rem;font-weight:300;color:#e8f0f8;margin-bottom:8px;line-height:1.3;">PEACS — Predictive Emergence Framework</div>
+      <p style="font-size:0.82rem;color:#8a9ab0;line-height:1.75;">MAP feeds directly into PEACS, producing Architecture / Execution / Context domain profiles after every assessment. Not a snapshot score — a longitudinal behavioral signal that predicts outcomes before they occur.</p>
+    </div>
+    <div style="position:relative;padding-left:32px;">
+      <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(46,201,138,0.7);margin-bottom:10px;">The Global Network</div>
+      <div style="font-family:var(--font-d);font-size:1.1rem;font-weight:300;color:#e8f0f8;margin-bottom:8px;line-height:1.3;">Every workspace contributes to the global signal</div>
+      <p style="font-size:0.82rem;color:#8a9ab0;line-height:1.75;">Your cohort is isolated for your research — but your MAP data joins a cross-validated global dataset spanning multiple countries, disease states, and care settings. The science compounds as the network grows.</p>
+    </div>
+  </div>
+</div>
+<!-- SDoH Intelligence band -->
+<div style="position:relative;z-index:1;max-width:960px;margin:0 auto 0;padding:0 40px 40px;">
+  <div style="border:1px solid rgba(46,201,138,0.18);border-radius:14px;padding:28px 36px;background:linear-gradient(135deg,rgba(46,201,138,0.04) 0%,rgba(78,156,245,0.03) 100%);position:relative;overflow:hidden;">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 40% 100% at 100% 50%,rgba(46,201,138,0.05) 0%,transparent 70%);pointer-events:none;"></div>
+    <div style="display:flex;align-items:flex-start;gap:32px;flex-wrap:wrap;position:relative;">
+      <div style="flex:1;min-width:220px;">
+        <div style="font-family:var(--font-m);font-size:0.57rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(46,201,138,0.7);margin-bottom:8px;">New · SDoH Intelligence</div>
+        <div style="font-family:var(--font-d);font-size:1.05rem;font-weight:300;color:#e8f0f8;margin-bottom:8px;line-height:1.3;">PEACS pre-fills itself from what the patient already told you</div>
+        <p style="font-size:0.81rem;color:#8a9ab0;line-height:1.75;">Three independent inference engines read MAP answers, intake form data, and nearby infrastructure from OpenStreetMap — and pre-select up to 22 PEACS answers before the patient sees a single question. Every pre-fill is reviewable, overridable, and logged.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:200px;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.16);">
+          <span style="font-size:0.9rem;flex-shrink:0;">◈</span>
+          <div>
+            <div style="font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(212,168,67,0.8);margin-bottom:2px;">MAP Cross-Inference</div>
+            <div style="font-size:0.76rem;color:#8a9ab0;line-height:1.4;">8 MAP answers scored into PEACS dimensions automatically</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.16);">
+          <span style="font-size:0.9rem;flex-shrink:0;">◎</span>
+          <div>
+            <div style="font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(78,156,245,0.8);margin-bottom:2px;">Intake Pre-fill</div>
+            <div style="font-size:0.76rem;color:#8a9ab0;line-height:1.4;">Social support &amp; care navigation captured once, propagated forward</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;background:rgba(46,201,138,0.06);border:1px solid rgba(46,201,138,0.16);">
+          <span style="font-size:0.9rem;flex-shrink:0;">⬟</span>
+          <div>
+            <div style="font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(46,201,138,0.8);margin-bottom:2px;">Geo-Inference</div>
+            <div style="font-size:0.76rem;color:#8a9ab0;line-height:1.4;">Pharmacy &amp; healthcare density scored from patient home location</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;background:rgba(139,111,245,0.06);border:1px solid rgba(139,111,245,0.16);">
+          <span style="font-size:0.9rem;flex-shrink:0;">◬</span>
+          <div>
+            <div style="font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(139,111,245,0.8);margin-bottom:2px;">Contributor Network</div>
+            <div style="font-size:0.76rem;color:#8a9ab0;line-height:1.4;">Key holders add verified pharmacies, clinics &amp; food banks — crowdsourced infrastructure that feeds every geo-score</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="security-band">
+  <span class="security-icon">🔐</span>
+  <p class="security-text"><strong>Secured by magic link authentication.</strong> Every login to your workspace requires a one-click email verification — no passwords to manage or forget. Your key is tied to your email address and cannot be used without it.</p>
+</div>
+<section class="tiers-section" id="section-tiers">
+  <div class="tiers-label">Choose your plan</div>
+  <div style="text-align:center;margin-bottom:32px;margin-top:-16px;">
+    <a href="https://adherence.cc/platform#pricing" style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(212,168,67,0.55);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='rgba(212,168,67,0.85)'" onmouseout="this.style.color='rgba(212,168,67,0.55)'">Full feature specifications →</a>
+  </div>
+
+  <!-- ── EXPLORER FREE TIER ── -->
+  <div style="position:relative;z-index:1;max-width:1000px;margin:0 auto 28px;padding:0 40px;">
+    <div style="background:rgba(46,201,138,0.035);border:1px solid rgba(46,201,138,0.18);border-top:3px solid rgba(46,201,138,0.45);border-radius:14px;padding:28px 32px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center;">
+      <!-- Left: description -->
+      <div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--green);">Explorer</div>
+          <div style="font-family:var(--font-m);font-size:0.52rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(46,201,138,0.55);background:rgba(46,201,138,0.08);border:1px solid rgba(46,201,138,0.2);border-radius:4px;padding:2px 7px;">Free · No credit card</div>
+        </div>
+        <div style="font-family:var(--font-d);font-size:1.35rem;font-weight:300;color:var(--bright);margin-bottom:8px;line-height:1.3;">Try MAP before you commit</div>
+        <p style="font-size:0.82rem;color:var(--muted);line-height:1.75;margin-bottom:16px;max-width:560px;">Run up to 50 MAP assessments at no cost. Explorer mode gives you the full Track A experience — cinematic world map, live dashboard, and PE Triangle — so you know exactly what you're subscribing to. MMAS-8 and PEACS require a workspace key.</p>
+        <ul style="list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;">
+          <li style="display:flex;align-items:baseline;gap:7px;font-size:0.79rem;color:var(--text);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="background:rgba(46,201,138,0.12);color:var(--green);font-size:0.66rem;padding:1px 5px;border-radius:3px;flex-shrink:0;">✓</span>Up to 50 MAP assessments</li>
+          <li style="display:flex;align-items:baseline;gap:7px;font-size:0.79rem;color:var(--text);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="background:rgba(46,201,138,0.12);color:var(--green);font-size:0.66rem;padding:1px 5px;border-radius:3px;flex-shrink:0;">✓</span>MAP · Track A instrument</li>
+          <li style="display:flex;align-items:baseline;gap:7px;font-size:0.79rem;color:var(--text);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="background:rgba(46,201,138,0.12);color:var(--green);font-size:0.66rem;padding:1px 5px;border-radius:3px;flex-shrink:0;">✓</span>Cinematic world map &amp; live dashboard</li>
+          <li style="display:flex;align-items:baseline;gap:7px;font-size:0.79rem;color:var(--text);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="background:rgba(46,201,138,0.12);color:var(--green);font-size:0.66rem;padding:1px 5px;border-radius:3px;flex-shrink:0;">✓</span>PE Triangle visualisation</li>
+          <li style="display:flex;align-items:baseline;gap:7px;font-size:0.79rem;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="background:rgba(255,255,255,0.05);color:var(--dim);font-size:0.66rem;padding:1px 5px;border-radius:3px;flex-shrink:0;">–</span><span style="color:var(--dim);">MMAS-8 &amp; PEACS require a workspace key</span></li>
+          <li style="display:flex;align-items:baseline;gap:7px;font-size:0.79rem;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="background:rgba(255,255,255,0.05);color:var(--dim);font-size:0.66rem;padding:1px 5px;border-radius:3px;flex-shrink:0;">–</span><span style="color:var(--dim);">No IRB certificate · no CSV export · no Sentinel</span></li>
+        </ul>
+      </div>
+      <!-- Right: CTA -->
+      <div style="text-align:center;min-width:160px;">
+        <div style="font-family:var(--font-d);font-size:2.8rem;font-weight:300;color:var(--bright);line-height:1;">$0</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;">/month</div>
+        <div style="font-family:var(--font-m);font-size:0.54rem;color:rgba(46,201,138,0.5);margin-bottom:18px;">No card · no commitment</div>
+        <a href="https://adherence.cc/platform" style="display:inline-block;width:100%;padding:11px 0;background:rgba(46,201,138,0.1);border:1px solid rgba(46,201,138,0.3);border-radius:8px;font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.08em;color:var(--green);text-decoration:none;transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='rgba(46,201,138,0.2)';this.style.borderColor='rgba(46,201,138,0.55)'" onmouseout="this.style.background='rgba(46,201,138,0.1)';this.style.borderColor='rgba(46,201,138,0.3)'">Launch ATLAS →</a>
+        <div style="font-family:var(--font-m);font-size:0.56rem;color:var(--muted);opacity:0.55;margin-top:10px;line-height:1.6;">Explorer track · auto-enabled<br/>Upgrade anytime</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:relative;z-index:1;max-width:1000px;margin:0 auto 64px;padding:0 40px;">
+    <div class="inst-tab-card">
+
+      <!-- ── Tab bar ── -->
+      <div class="inst-tab-bar">
+        <button class="inst-tab-btn tab-student active" onclick="switchIndivTab('student')">Student<br/><span style="font-size:0.55rem;opacity:0.65;">$19/month</span></button>
+        <button class="inst-tab-btn tab-clinician" onclick="switchIndivTab('clinician')">Clinician · Care Team<br/><span style="font-size:0.55rem;opacity:0.65;">$49/month · Most Popular</span></button>
+        <button class="inst-tab-btn tab-pi" onclick="switchIndivTab('pi')">PI · Investigator<br/><span style="font-size:0.55rem;opacity:0.65;">$149/month</span></button>
+      </div>
+
+      <!-- ── STUDENT PANE ── -->
+      <div class="inst-tab-pane active" id="indiv-pane-student">
+        <div>
+          <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">Graduate &amp; Undergraduate Students · Thesis &amp; Coursework</div>
+          <p style="font-size:0.85rem;color:var(--muted);line-height:1.75;margin-bottom:16px;">MAP deployed in your cohort, IRB-ready from the day you subscribe. LMIC universities often covered under institutional umbrella.</p>
+          <ul class="tier-features" style="margin-bottom:0;">
+            <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>MAP instrument in your cohort — IRB-ready from the day you subscribe</span></li>
+            <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Private cohort isolation · your data never mingles with the global pool</span></li>
+            <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>PEACS snapshot — track adherence trajectories across visits</span></li>
+            <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>60+ languages · Grade 6 literacy · ZOE voice guide for patient accessibility</span></li>
+            <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Thesis-ready export · benchmark your cohort vs. published literature</span></li>
+            <li><span class="feat-check" style="background:rgba(139,111,245,0.15);color:var(--purple);">⬟</span><span>Contribute verified pharmacies, clinics &amp; infrastructure to the ATLAS global POI map — your submissions feed directly into patient geo-scoring worldwide</span></li>
+          </ul>
+          <button class="feat-expand-btn" onclick="toggleFeatures('student')" id="feat-btn-student" style="color:var(--green);opacity:0.7;">▸ See all features</button>
+          <div class="feat-more" id="feat-more-student">
+            <ul class="tier-features" style="margin-bottom:0;">
+              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Bulk upload · XLSM template</span></li>
+              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>CSV export · 100 records/month</span></li>
+              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Cartographic design — coordinate grid panels and PE Triangle visualisation</span></li>
+              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Benchmark comparison — cohort vs. ATLAS global average and published literature</span></li>
+              <li><span class="feat-check feat-dim">–</span><span class="feat-dim">No TPE · PE domain scoring</span></li>
+              <li><span class="feat-check feat-dim">–</span><span class="feat-dim">No MTM log · Sentinel alerts · SOAP notes</span></li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div style="background:rgba(46,201,138,0.05);border:1px solid rgba(46,201,138,0.2);border-radius:10px;padding:20px;text-align:center;margin-bottom:12px;">
+            <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">Student</div>
+            <div style="font-family:var(--font-d);font-size:2.6rem;font-weight:300;color:var(--bright);line-height:1;">$19</div>
+            <div style="font-size:0.80rem;color:var(--muted);margin-bottom:4px;">/month</div>
+            <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);opacity:0.6;margin-bottom:16px;">$199/year · cancel anytime</div>
+            <div style="font-family:var(--font-m);font-size:0.56rem;color:rgba(46,201,138,0.65);background:rgba(46,201,138,0.06);border:1px solid rgba(46,201,138,0.15);border-radius:5px;padding:5px 8px;margin-bottom:14px;letter-spacing:0.06em;">STU-[INST]-XXXX-2026</div>
+            <button class="tier-btn" id="btn-student" style="background:rgba(46,201,138,0.1);border:1px solid rgba(46,201,138,0.3);color:var(--green);" onclick="startCheckout('student')"
+              onmouseenter="this.style.background='rgba(46,201,138,0.2)'" onmouseleave="this.style.background='rgba(46,201,138,0.1)'">
+              <span class="btn-text">Get Student Key</span>
+              <span class="btn-spinner" style="border-top-color:var(--green);"></span>
+            </button>
+          </div>
+          <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">Letter of Permission included<br/>LMIC program available</div>
+        </div>
+      </div>
+
+      <!-- ── CLINICIAN PANE ── -->
+      <div class="inst-tab-pane" id="indiv-pane-clinician">
+        <div>
+          <div id="clin-tier-label" style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--blue);margin-bottom:8px;">PharmD · NP · PA · RN · MD · Care Coordinator</div>
+          <p id="clin-tier-who" style="font-size:0.85rem;color:var(--muted);line-height:1.75;margin-bottom:16px;">Replaces your MTM documentation workflow. Billing codes always visible. One MTM session covers your monthly cost. Clinical role confirmed at registration.</p>
+          <ul class="tier-features" style="margin-bottom:0;">
+            <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>Replaces your MTM documentation workflow — billing codes always visible</span></li>
+            <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>ZOE SOAP AI — chart-ready notes in seconds, editable before filing</span></li>
+            <li style="background:rgba(78,156,245,0.04);border-radius:6px;padding:7px 8px;border-bottom:none;margin-bottom:2px;"><span class="feat-check" style="background:rgba(78,156,245,0.18);color:var(--blue);">✦</span><span><strong style="color:var(--blue);">PE Domain Analysis</strong> — pinpoints whether Architecture, Execution, or Context is limiting adherence</span></li>
+            <li id="clin-feat-mtm"><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>MTM encounter log · CPT 99605 · 99606 · 99607</span></li>
+            <li id="clin-feat-sentinel"><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>Sentinel escalation workflow — 3-stage: Assign → Contact → Resolve</span></li>
+            <li><span class="feat-check" style="background:rgba(139,111,245,0.15);color:var(--purple);">⬟</span><span>Contribute verified pharmacies, clinics &amp; infrastructure to the ATLAS global POI map — your submissions improve geo-scoring for patients in your region</span></li>
+          </ul>
+          <button class="feat-expand-btn" onclick="toggleFeatures('clinician')" id="feat-btn-clinician" style="color:var(--blue);opacity:0.7;">▸ See all features</button>
+          <div class="feat-more" id="feat-more-clinician">
+            <ul class="tier-features" style="margin-bottom:0;">
+              <li id="clin-feat-soap"><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>ZOE SOAP AI notes · editable in-panel · chart-ready clinical documentation</span></li>
+              <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>ZOE Remote Mode — SMS link; patient completes MAP on their own phone</span></li>
+              <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>Patient Portal — score history, PE domain profile, personalised tips</span></li>
+              <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>Bulk upload · unlimited cohort · unlimited CSV export</span></li>
+              <li><span class="feat-check feat-dim">–</span><span class="feat-dim">No API access · no sub-workspaces · no multi-site</span></li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div style="background:rgba(78,156,245,0.05);border:1px solid rgba(78,156,245,0.25);border-radius:10px;padding:20px;text-align:center;margin-bottom:12px;">
+            <div id="clin-tier-name" style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--blue);margin-bottom:8px;">Clinician</div>
+            <div style="font-family:var(--font-d);font-size:2.6rem;font-weight:300;color:var(--bright);line-height:1;">$49</div>
+            <div style="font-size:0.80rem;color:var(--muted);margin-bottom:4px;">/month</div>
+            <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);opacity:0.6;margin-bottom:16px;">$499/year · cancel anytime</div>
+            <div id="clin-key-format" style="font-family:var(--font-m);font-size:0.56rem;color:rgba(78,156,245,0.65);background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.15);border-radius:5px;padding:5px 8px;margin-bottom:14px;letter-spacing:0.06em;">CLIN-[INST]-XXXX-2026</div>
+            <button class="tier-btn" id="btn-clinician" style="background:rgba(78,156,245,0.1);border:1px solid rgba(78,156,245,0.35);color:var(--blue);" onclick="startClinicianCheckout()"
+              onmouseenter="this.style.background='rgba(78,156,245,0.2)'" onmouseleave="this.style.background='rgba(78,156,245,0.1)'">
+              <span id="clin-btn-text" class="btn-text">Get Clinician Key</span>
+              <span class="btn-spinner" style="border-top-color:var(--blue);"></span>
+            </button>
+          </div>
+          <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">Letter of Permission included<br/>Role confirmed at registration</div>
+        </div>
+      </div>
+
+      <!-- ── PI PANE ── -->
+      <div class="inst-tab-pane" id="indiv-pane-pi">
+        <div>
+          <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Independent Researchers · Principal Investigators · Study Coordinators</div>
+          <p style="font-size:0.85rem;color:var(--muted);line-height:1.75;margin-bottom:12px;">Multi-site IRB research without the overhead. Research-only workspace — no billing clutter, no clinical noise.</p>
+          <div style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.18);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.80rem;color:var(--muted);line-height:1.65;"><strong style="color:rgba(212,168,67,0.85);">Building an independent team?</strong> Add Researcher and Student sub-keys from your PI dashboard. Researcher seats $49/mo · Student seats $19/mo.</div>
+          <ul class="tier-features" style="margin-bottom:0;">
+            <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>Every site provisioned from your dashboard — no email, no IT, no admin overhead</span></li>
+            <li style="background:rgba(78,156,245,0.04);border-radius:6px;padding:7px 8px;border-bottom:none;margin-bottom:2px;"><span class="feat-check" style="background:rgba(78,156,245,0.18);color:var(--blue);">✦</span><span><strong style="color:var(--blue);">Validation Suite</strong> — MAP ↔ MMAS-8 paired scoring, Bland-Altman, ICC, AVE/HTMT construct validity, publication-ready</span></li>
+            <li style="background:rgba(212,168,67,0.04);border-radius:6px;padding:7px 8px;border-bottom:none;margin-bottom:2px;"><span class="feat-check" style="background:rgba(212,168,67,0.18);color:var(--gold);">✦</span><span><strong style="color:var(--gold);">External Method Comparator</strong> — validate your wearable, app, or device against MMAS-8 · Bland-Altman · ROC/AUC · concurrent r · generates publication paragraph</span></li>
+            <li style="background:rgba(212,168,67,0.04);border-radius:6px;padding:7px 8px;border-bottom:none;margin-bottom:2px;"><span class="feat-check" style="background:rgba(212,168,67,0.18);color:var(--gold);">✦</span><span><strong style="color:var(--gold);">CONSORT flow auto-generated</strong> — publication-ready participant diagram, one-click export</span></li>
+            <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>Dataset lock + IRB Study Package — frozen snapshots, one-click submission bundle</span></li>
+            <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>Cross-site PE heatmap · protocol amendment log · workspace audit log</span></li>
+            <li><span class="feat-check" style="background:rgba(139,111,245,0.15);color:var(--purple);">⬟</span><span>Contribute &amp; verify infrastructure POIs across study sites — crowdsourced pharmacy and clinic data feeds directly into PEACS geo-scoring for every enrolled patient</span></li>
+          </ul>
+          <button class="feat-expand-btn" onclick="toggleFeatures('pi')" id="feat-btn-pi" style="color:var(--gold);opacity:0.7;">▸ See all features</button>
+          <div class="feat-more" id="feat-more-pi">
+            <ul class="tier-features" style="margin-bottom:0;">
+              <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>Clinical Study Module — enrollment tracking, LTFU, protocol deviations, visit schedule</span></li>
+              <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>Site Activation Tracker — Mapbox world map (Pending / Active / Closed)</span></li>
+              <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>IRB Submission Assistant — 5-tab modal, exports Protocol Summary · Consent · Risks · Privacy · Timeline</span></li>
+              <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>Bulk upload v2 · enrollment velocity · blinded export · IRB-grade headers</span></li>
+              <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>Annual State of Global Adherence Report · API read access</span></li>
+              <li><span class="feat-check feat-dim">–</span><span class="feat-dim">No MTM log · no ZOE SOAP notes · research-only workspace</span></li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div style="background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.25);border-radius:10px;padding:20px;text-align:center;margin-bottom:12px;">
+            <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Investigator</div>
+            <div style="font-family:var(--font-d);font-size:2.6rem;font-weight:300;color:var(--bright);line-height:1;">$149</div>
+            <div style="font-size:0.80rem;color:var(--muted);margin-bottom:4px;">/month</div>
+            <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);opacity:0.6;margin-bottom:16px;">$1,499/year · cancel anytime</div>
+            <div style="font-family:var(--font-m);font-size:0.56rem;color:rgba(212,168,67,0.65);background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:5px;padding:5px 8px;margin-bottom:14px;letter-spacing:0.06em;">PI-[INST]-XXXX-2026</div>
+            <button class="tier-btn" id="btn-pi" style="background:rgba(212,168,67,0.09);border:1px solid rgba(212,168,67,0.32);color:var(--gold);" onclick="startCheckout('pi')"
+              onmouseenter="this.style.background='rgba(212,168,67,0.18)'" onmouseleave="this.style.background='rgba(212,168,67,0.09)'">
+              <span class="btn-text">Get Investigator Key</span>
+              <span class="btn-spinner" style="border-top-color:var(--gold);"></span>
+            </button>
+          </div>
+          <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">Letter of Permission included<br/>Sub-keys: Researcher $49 · Student $19</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── INSTITUTION TIERS ─────────────────────────────────────────────────── -->
+<section style="position:relative;z-index:1;max-width:1000px;margin:0 auto 0;padding:0 40px;" id="section-institution">
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(78,156,245,0.6);margin-bottom:10px;">Institution · Enterprise</div>
+    <h2 style="font-family:var(--font-d);font-size:2.0rem;font-weight:300;color:var(--bright);margin-bottom:10px;">One platform. Two institutional missions.</h2>
+    <p style="font-size:0.88rem;color:var(--muted);max-width:640px;margin:0 auto;line-height:1.75;">ATLAS replaces REDCap, Excel, SPSS, R, Epic's pharmacy module, and separate billing software — unified into a single workspace your team actually uses. Select the institution type that matches your mission.</p>
+  </div>
+
+  <div class="inst-tab-card">
+    <!-- Tab bar -->
+    <div class="inst-tab-bar">
+      <button class="inst-tab-btn tab-academic active" onclick="switchInstTab('academic')">Academic<br/><span style="font-size:0.55rem;opacity:0.65;">$399/month</span></button>
+      <button class="inst-tab-btn tab-health" onclick="switchInstTab('health')">Health System<br/><span style="font-size:0.55rem;opacity:0.65;">$599/month</span></button>
+      <button class="inst-tab-btn tab-amc" onclick="switchInstTab('amc')">Academic Med Ctr<br/><span style="font-size:0.55rem;opacity:0.65;">$799/month</span></button>
+    </div>
+
+    <!-- ── ACADEMIC PANE ── -->
+    <div class="inst-tab-pane active" id="inst-pane-academic">
+      <div>
+        <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--purple);margin-bottom:8px;">University · Research Program · School of Pharmacy</div>
+        <p style="font-size:0.85rem;color:var(--muted);line-height:1.75;margin-bottom:16px;">Replaces REDCap, SPSS, R, and Excel for grant-funded multi-site research. Built for IRB-approved protocols, thesis programs, and department-level research administration.</p>
+        <ul class="tier-features" style="margin-bottom:0;">
+          <li><span class="feat-check" style="background:rgba(139,111,245,0.15);color:var(--purple);">✓</span><span><strong>2 PI + 3 Researcher + 10 Student + 1 Observer</strong> seats included</span></li>
+          <li><span class="feat-check" style="background:rgba(139,111,245,0.18);color:var(--purple);">✦</span><span><strong style="color:var(--purple);">Cross-Study Research Hub</strong> — aggregate analytics across all PI workspaces</span></li>
+          <li><span class="feat-check" style="background:rgba(139,111,245,0.18);color:var(--purple);">✦</span><span><strong style="color:var(--purple);">Grant Reporting Dashboard</strong> — NIH/NSF enrollment tracking, milestone exports</span></li>
+          <li><span class="feat-check" style="background:rgba(139,111,245,0.18);color:var(--purple);">✦</span><span><strong style="color:var(--purple);">Student Thesis Module</strong> — thesis registry, committee-ready exports</span></li>
+          <li><span class="feat-check" style="background:rgba(139,111,245,0.15);color:var(--purple);">✓</span><span>Native psychometric panel — Cronbach's α, ICC, SEM, item-total correlations</span></li>
+          <li><span class="feat-check" style="background:rgba(139,111,245,0.15);color:var(--purple);">✓</span><span>CONSORT participant flow · protocol amendment log · B2B API · DUA included</span></li>
+          <li><span class="feat-check feat-dim">–</span><span class="feat-dim">No MTM billing · no care gap monitor</span></li>
+        </ul>
+      </div>
+      <div>
+        <div style="background:rgba(139,111,245,0.06);border:1px solid rgba(139,111,245,0.2);border-radius:10px;padding:20px;text-align:center;margin-bottom:12px;">
+          <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--purple);margin-bottom:8px;">Academic</div>
+          <div style="font-family:var(--font-d);font-size:2.6rem;font-weight:300;color:var(--bright);line-height:1;">$399</div>
+          <div style="font-size:0.80rem;color:var(--muted);margin-bottom:4px;">/month</div>
+          <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);opacity:0.65;margin-bottom:16px;">$3,990/year · save $798</div>
+          <div style="font-family:var(--font-m);font-size:0.56rem;color:rgba(139,111,245,0.65);background:rgba(139,111,245,0.06);border:1px solid rgba(139,111,245,0.15);border-radius:5px;padding:5px 8px;margin-bottom:14px;letter-spacing:0.06em;">INST-ACAD-XXXX-2026</div>
+          <button class="tier-btn" style="background:rgba(139,111,245,0.12);border:1px solid rgba(139,111,245,0.35);color:var(--purple);" onclick="openInstModal('academic')"
+            onmouseenter="this.style.background='rgba(139,111,245,0.2)'" onmouseleave="this.style.background='rgba(139,111,245,0.12)'">
+            <span class="btn-text">Subscribe →</span>
+            <span class="btn-spinner" style="border-top-color:var(--purple);"></span>
+          </button>
+        </div>
+        <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">DUA included<br/>Add. PI $99 · Researcher $49 · Student $19</div>
+      </div>
+    </div>
+
+    <!-- ── HEALTH SYSTEM PANE ── -->
+    <div class="inst-tab-pane" id="inst-pane-health">
+      <div>
+        <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--blue);margin-bottom:8px;">Hospital · Health Network · FQHC · Pharmacy Chain</div>
+        <p style="font-size:0.85rem;color:var(--muted);line-height:1.75;margin-bottom:16px;">Replaces Epic's pharmacy module, HealthStream MTM tracking, and Excel-based care gap management. One MTM billing session covers your monthly subscription.</p>
+        <ul class="tier-features" style="margin-bottom:0;">
+          <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span><strong>2 PI + 3 Researcher + 10 Student + 1 Observer</strong> seats included</span></li>
+          <li><span class="feat-check" style="background:rgba(78,156,245,0.18);color:var(--blue);">✦</span><span><strong style="color:var(--blue);">Care Gap Monitor</strong> — MMAS-8 triggered alerts, 30-day overdue patient identification</span></li>
+          <li><span class="feat-check" style="background:rgba(78,156,245,0.18);color:var(--blue);">✦</span><span><strong style="color:var(--blue);">MTM Billing Log</strong> — CPT 99605–99607, structured encounter records, SOAP-ready</span></li>
+          <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>Population Health Command Center — cross-PI roll-ups, Sentinel triage</span></li>
+          <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>ZOE SOAP AI · ZOE Remote Mode · site benchmarking</span></li>
+          <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>BAA &amp; DUA included · dedicated CSM · B2B API</span></li>
+          <li><span class="feat-check" style="background:rgba(78,156,245,0.15);color:var(--blue);">✓</span><span>11–25 PI/Researcher seats — $79/mo each · 26+ negotiated</span></li>
+        </ul>
+      </div>
+      <div>
+        <div style="background:rgba(78,156,245,0.05);border:1px solid rgba(78,156,245,0.25);border-radius:10px;padding:20px;text-align:center;margin-bottom:12px;">
+          <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--blue);margin-bottom:8px;">Health System</div>
+          <div style="font-family:var(--font-d);font-size:2.6rem;font-weight:300;color:var(--bright);line-height:1;">$599</div>
+          <div style="font-size:0.80rem;color:var(--muted);margin-bottom:4px;">/month</div>
+          <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);opacity:0.65;margin-bottom:16px;">$5,990/year · save $1,198</div>
+          <div id="pmpm-health-calc" style="margin-top:8px;margin-bottom:8px;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(78,156,245,0.5);margin-bottom:5px;">PMPM Calculator</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <input id="pmpm-patients-health" type="number" value="400" min="1" max="10000"
+                oninput="updatePmpm('health')"
+                style="width:70px;background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.2);border-radius:4px;padding:4px 7px;font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:var(--bright);outline:none;text-align:center;"/>
+              <span style="font-size:0.70rem;color:var(--muted);">active patients</span>
+            </div>
+            <div id="pmpm-result-health" style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:rgba(78,156,245,0.9);">= $1.50 / patient / month</div>
+            <div style="font-size:0.60rem;color:var(--dim);margin-top:3px;line-height:1.4;">1 avoided ED visit per 10 patients = 100× ROI</div>
+          </div>
+          <div style="font-family:var(--font-m);font-size:0.56rem;color:rgba(78,156,245,0.65);background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.15);border-radius:5px;padding:5px 8px;margin-bottom:14px;letter-spacing:0.06em;">INST-HLTH-XXXX-2026</div>
+          <button class="tier-btn" style="background:rgba(78,156,245,0.1);border:1px solid rgba(78,156,245,0.35);color:var(--blue);" onclick="openInstModal('health')"
+            onmouseenter="this.style.background='rgba(78,156,245,0.2)'" onmouseleave="this.style.background='rgba(78,156,245,0.1)'">
+            <span class="btn-text">Subscribe →</span>
+            <span class="btn-spinner" style="border-top-color:var(--blue);"></span>
+          </button>
+        </div>
+        <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">BAA &amp; DUA · dedicated CSM<br/>Add. PI $99 · Researcher $49 · Student $19</div>
+      </div>
+    </div>
+
+    <!-- ── AMC PANE ── -->
+    <div class="inst-tab-pane" id="inst-pane-amc">
+      <div>
+        <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Research Hospital · AMC · Integrated Academic Health System</div>
+        <p style="font-size:0.85rem;color:var(--muted);line-height:1.75;margin-bottom:16px;">For institutions that both conduct IRB-approved research and deliver clinical care. Every feature from Academic and Health System — the complete ATLAS platform at one price.</p>
+        <ul class="tier-features" style="margin-bottom:0;">
+          <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✦</span><span><strong>Everything in Academic</strong> — Research Hub, Grants, Thesis, psychometrics, CONSORT</span></li>
+          <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✦</span><span><strong>Everything in Health System</strong> — Care Gap Monitor, MTM Billing, Sentinel triage</span></li>
+          <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span><strong>3 PI + 5 Researcher + 15 Student + 2 Observer</strong> seats included</span></li>
+          <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>Population Health Command Center + Cross-Study Research Hub</span></li>
+          <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>ZOE SOAP AI · CONSORT flow · protocol amendment log</span></li>
+          <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>BAA &amp; DUA included · dedicated CSM · priority support · B2B API</span></li>
+          <li><span class="feat-check" style="background:rgba(212,168,67,0.15);color:var(--gold);">✓</span><span>11–25 PI/Researcher seats — $79/mo each · 26+ negotiated</span></li>
+        </ul>
+      </div>
+      <div>
+        <div style="background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.25);border-radius:10px;padding:20px;text-align:center;margin-bottom:12px;">
+          <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Full Spectrum</div>
+          <div style="font-family:var(--font-d);font-size:2.6rem;font-weight:300;color:var(--bright);line-height:1;">$799</div>
+          <div style="font-size:0.80rem;color:var(--muted);margin-bottom:4px;">/month</div>
+          <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);opacity:0.65;margin-bottom:16px;">$7,990/year · save $1,598</div>
+          <div id="pmpm-amc-calc" style="margin-top:8px;margin-bottom:8px;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(212,168,67,0.5);margin-bottom:5px;">PMPM Calculator</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <input id="pmpm-patients-amc" type="number" value="400" min="1" max="10000"
+                oninput="updatePmpm('amc')"
+                style="width:70px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.2);border-radius:4px;padding:4px 7px;font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:var(--bright);outline:none;text-align:center;"/>
+              <span style="font-size:0.70rem;color:var(--muted);">active patients</span>
+            </div>
+            <div id="pmpm-result-amc" style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:rgba(212,168,67,0.9);">= $2.00 / patient / month</div>
+            <div style="font-size:0.60rem;color:var(--dim);margin-top:3px;line-height:1.4;">1 avoided ED visit per 10 patients = 100× ROI</div>
+          </div>
+          <div style="font-family:var(--font-m);font-size:0.56rem;color:rgba(212,168,67,0.65);background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:5px;padding:5px 8px;margin-bottom:14px;letter-spacing:0.06em;">INST-AMC-XXXX-2026</div>
+          <button class="tier-btn" style="background:rgba(212,168,67,0.09);border:1px solid rgba(212,168,67,0.32);color:var(--gold);" onclick="openInstModal('amc')"
+            onmouseenter="this.style.background='rgba(212,168,67,0.17)'" onmouseleave="this.style.background='rgba(212,168,67,0.09)'">
+            <span class="btn-text">Subscribe →</span>
+            <span class="btn-spinner" style="border-top-color:var(--gold);"></span>
+          </button>
+        </div>
+        <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">BAA &amp; DUA · priority support<br/>Add. PI $99 · Researcher $49 · Student $19</div>
+      </div>
+    </div>
+  </div>
+</section>
+<div style="position:relative;z-index:1;max-width:960px;margin:0 auto 48px;padding:0 40px;text-align:center;">
+  <p style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.1em;color:var(--hint-text);line-height:1.8;">Already have an Institution plan? Add seats and manage your team from <strong style="color:var(--hint-text-em);">ATLAS Control → Keys</strong>.<br/> email <a href="mailto:info@adherence.cc" style="color:rgba(212,168,67,0.7);text-decoration:none;">info@adherence.cc</a> to select your institution type.</p>
+</div>
+
+<section class="how-section" id="section-how">
+  <div class="how-label">How it works</div>
+  <div class="how-steps">
+    <div><div class="how-step-num">01</div><div class="how-step-label">Choose your tier and complete secure checkout via Stripe</div></div>
+    <div><div class="how-step-num">02</div><div class="how-step-label">Receive your workspace key and activation link by email</div></div>
+    <div><div class="how-step-num">03</div><div class="how-step-label">Click activate — your account is created and you are logged in</div></div>
+    <div><div class="how-step-num">04</div><div class="how-step-label">Each login sends a 6-digit code to your email — enter it to verify your identity and access your workspace</div></div>
+  </div>
+</section>
+
+<!-- LOP coverage notice -->
+<div style="position:relative;z-index:1;max-width:960px;margin:0 auto 48px;padding:0 40px;">
+  <div style="background:rgba(78,156,245,0.04);border:1px solid rgba(78,156,245,0.18);border-left:3px solid rgba(78,156,245,0.5);border-radius:0 10px 10px 0;padding:20px 24px;display:flex;gap:18px;align-items:flex-start;">
+    <span style="font-size:1.1rem;flex-shrink:0;opacity:0.7;margin-top:2px;">&#9432;</span>
+    <div>
+      <div style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(78,156,245,0.7);margin-bottom:6px;">What your Letter of Permission actually covers</div>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.75;margin:0;">Your Letter of Permission records your <strong style="color:var(--bright);">subscription activation date</strong>. It covers data collected during your active subscription period only — it does not reach backward. If you subscribe today to cover a study you already ran, the mismatch between your activation date and your data-collection dates will be visible to any journal editor or IRB officer who verifies your key at <strong style="color:rgba(78,156,245,0.65);">keys.adherence.cc/verify</strong>. Subscribe at the start of your study, not at the end of it.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── PUBLICATION LICENSE BAND ─────────────────────────────────────────── -->
+<section style="position:relative;z-index:1;max-width:960px;margin:0 auto 80px;padding:0 40px;" id="section-pub-license">
+
+  <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.55);margin-bottom:10px;">Publication Rights</div>
+  <h2 style="font-family:var(--font-d);font-size:1.7rem;font-weight:300;color:var(--bright);margin-bottom:8px;">Two paths. Know which one is yours.</h2>
+  <p style="font-size:0.88rem;color:var(--muted);line-height:1.75;margin-bottom:28px;max-width:680px;">Active workspace subscribers already have their Letter of Permission — it's included in the subscription. If your study is complete and you never subscribed, your path depends on whether the study was funded.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+    <!-- Left: Student flat-rate -->
+    <div style="background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.22);border-top:3px solid rgba(212,168,67,0.55);border-radius:12px;padding:30px;">
+      <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.65);margin-bottom:8px;">Student · Self-Funded · Thesis / Dissertation</div>
+      <div style="font-family:var(--font-d);font-size:1.2rem;font-weight:300;color:var(--bright);margin-bottom:10px;">Student Publication License</div>
+      <p style="font-size:0.80rem;color:var(--muted);line-height:1.75;margin-bottom:20px;">Thesis or dissertation complete and you need a Letter of Permission for your committee or journal. Upload your dataset, fill your study details, pay once. PUB key and LOP PDF issued instantly.</p>
+
+      <!-- LOP comparison row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+        <div style="background:var(--inner-box);border:1px solid var(--inner-box-bd);border-radius:8px;padding:14px;">
+          <div style="font-family:var(--font-m);font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(78,156,245,0.6);margin-bottom:8px;">Letter of Permission</div>
+          <ul style="list-style:none;padding:0;font-size:0.76rem;color:var(--muted);line-height:1.9;">
+            <li style="display:flex;gap:6px;"><span style="color:rgba(78,156,245,0.7);">✓</span> With active subscription</li>
+            <li style="display:flex;gap:6px;"><span style="color:rgba(78,156,245,0.7);">✓</span> Collection + publication</li>
+            <li style="display:flex;gap:6px;"><span style="color:rgba(155,175,198,0.35);">–</span> <span style="color:rgba(155,175,198,0.4);">Expires if sub lapses</span></li>
+          </ul>
+        </div>
+        <div style="background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.18);border-radius:8px;padding:14px;">
+          <div style="font-family:var(--font-m);font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:8px;">Publication License</div>
+          <ul style="list-style:none;padding:0;font-size:0.76rem;color:var(--muted);line-height:1.9;">
+            <li style="display:flex;gap:6px;"><span style="color:rgba(212,168,67,0.8);">✓</span> Completed study only</li>
+            <li style="display:flex;gap:6px;"><span style="color:rgba(212,168,67,0.8);">✓</span> Permanent · never expires</li>
+            <li style="display:flex;gap:6px;"><span style="color:rgba(212,168,67,0.8);">✓</span> <code style="font-family:var(--font-m);font-size:0.72em;">PUB-XXXX-XXXX</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Pricing grid -->
+      <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);opacity:0.6;margin-bottom:10px;">Student flat-rate · one-time</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;">
+        <div style="background:var(--inner-box);border:1px solid var(--inner-box-bd);border-radius:7px;padding:10px 6px;text-align:center;">
+          <div style="font-size:0.62rem;color:var(--muted);margin-bottom:3px;">10–50</div>
+          <div style="font-family:var(--font-d);font-size:1.45rem;font-weight:300;color:var(--bright);">$49</div>
+        </div>
+        <div style="background:var(--inner-box);border:1px solid var(--inner-box-bd);border-radius:7px;padding:10px 6px;text-align:center;">
+          <div style="font-size:0.62rem;color:var(--muted);margin-bottom:3px;">51–200</div>
+          <div style="font-family:var(--font-d);font-size:1.45rem;font-weight:300;color:var(--bright);">$89</div>
+        </div>
+        <div style="background:var(--inner-box);border:1px solid var(--inner-box-bd);border-radius:7px;padding:10px 6px;text-align:center;">
+          <div style="font-size:0.62rem;color:var(--muted);margin-bottom:3px;">201–500</div>
+          <div style="font-family:var(--font-d);font-size:1.45rem;font-weight:300;color:var(--bright);">$149</div>
+        </div>
+        <div style="background:var(--inner-box);border:1px solid var(--inner-box-bd);border-radius:7px;padding:10px 6px;text-align:center;">
+          <div style="font-size:0.62rem;color:var(--muted);margin-bottom:3px;">500+</div>
+          <div style="font-family:var(--font-d);font-size:1.45rem;font-weight:300;color:var(--bright);">$249</div>
+        </div>
+      </div>
+
+      <a href="https://atlas.adherence.cc?publish=1" target="_blank" rel="noopener" style="font-family:var(--font-m);font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.35);color:rgba(212,168,67,0.9);padding:11px 20px;border-radius:7px;text-decoration:none;transition:all 0.2s;display:inline-block;" onmouseover="this.style.background='rgba(212,168,67,0.18)'" onmouseout="this.style.background='rgba(212,168,67,0.1)'">Get Student Publication License →</a>
+      <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);margin-top:7px;letter-spacing:0.04em;">Instant issuance · Students and self-funded studies only</div>
+    </div>
+
+    <!-- Right: Funded researcher email path -->
+    <div style="background:rgba(78,156,245,0.03);border:1px solid rgba(78,156,245,0.18);border-top:3px solid rgba(78,156,245,0.5);border-radius:12px;padding:30px;display:flex;flex-direction:column;">
+      <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(78,156,245,0.65);margin-bottom:8px;">Funded Researcher · PI · Institution</div>
+      <div style="font-family:var(--font-d);font-size:1.2rem;font-weight:300;color:var(--bright);margin-bottom:10px;">Duration-Based Publication Rights</div>
+      <p style="font-size:0.80rem;color:var(--muted);line-height:1.75;margin-bottom:18px;">If your study ran on a grant, contract, or institutional budget, publication rights are priced by study duration — not a flat fee. A year-long funded study is not a thesis project and should not be licensed like one.</p>
+
+      <div style="background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.18);border-radius:8px;padding:16px 18px;margin-bottom:18px;flex:1;">
+        <div style="font-family:var(--font-m);font-size:0.55rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(78,156,245,0.6);margin-bottom:10px;">How it works</div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--blue);flex-shrink:0;margin-top:1px;">◆</span><span style="font-size:0.78rem;color:var(--muted);line-height:1.65;">Publication rights for funded studies are priced at a monthly rate based on your active data-collection period.</span></div>
+          <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--blue);flex-shrink:0;margin-top:1px;">◆</span><span style="font-size:0.78rem;color:var(--muted);line-height:1.65;">We confirm funding source, IRB protocol, and study duration before issuing a custom quote.</span></div>
+          <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--blue);flex-shrink:0;margin-top:1px;">◆</span><span style="font-size:0.78rem;color:var(--muted);line-height:1.65;">Active subscribers already have publication rights included — this path is only for studies with no prior subscription.</span></div>
+        </div>
+      </div>
+
+      <div style="background:rgba(78,156,245,0.04);border:1px solid rgba(78,156,245,0.15);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(78,156,245,0.6);margin-bottom:10px;">Indicative Rate Schedule</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>Study duration 1–3 months</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--bright);">$199</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>Study duration 4–6 months</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--bright);">$399</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>Study duration 7–12 months</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--bright);">$599</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>Study duration 13–24 months</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--bright);">$999</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>Study duration 25+ months</span><span style="font-family:'IBM Plex Mono',monospace;color:rgba(212,168,67,0.7);">Custom quote</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>Industry-sponsored / pharma trial</span><span style="font-family:'IBM Plex Mono',monospace;color:rgba(212,168,67,0.7);">Custom quote</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:var(--muted);padding:4px 0;"><span>Grant-funded Phase II/III trial</span><span style="font-family:'IBM Plex Mono',monospace;color:rgba(212,168,67,0.7);">Custom quote</span></div>
+        </div>
+        <div style="font-size:0.66rem;color:var(--dim);margin-top:8px;line-height:1.5;">Active subscribers: publication rights already included in your subscription — no additional charge.</div>
+      </div>
+
+      <div style="background:var(--inner-box);border-left:3px solid rgba(78,156,245,0.4);border-radius:0 7px 7px 0;padding:13px 16px;margin-bottom:20px;font-size:0.78rem;color:var(--muted);line-height:1.7;font-style:italic;">"A workspace subscription covers your data collection and your publication rights. If you collected data without subscribing, the publication fee reflects what that subscription would have cost — not a student flat rate."</div>
+
+      <a href="mailto:info@adherence.cc?subject=Publication%20Rights%20%E2%80%93%20Funded%20Study%20Inquiry" style="font-family:var(--font-m);font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(78,156,245,0.1);border:1px solid rgba(78,156,245,0.32);color:rgba(78,156,245,0.9);padding:11px 20px;border-radius:7px;text-decoration:none;transition:all 0.2s;display:inline-block;margin-top:auto;" onmouseover="this.style.background='rgba(78,156,245,0.18)'" onmouseout="this.style.background='rgba(78,156,245,0.1)'">Email for Consideration →</a>
+      <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);margin-top:7px;letter-spacing:0.04em;">Funded studies · Priced by study duration</div>
+    </div>
+
+  </div>
+
+  <div style="font-size:0.74rem;color:var(--muted);opacity:0.7;line-height:1.75;padding:14px 18px;border:1px solid var(--border);border-radius:8px;">
+    Both the Letter of Permission and the Publication License are accepted by journal editors, IRB officers, and ethics committees, and are verifiable at <strong style="color:rgba(212,168,67,0.55);">keys.adherence.cc/verify</strong>. Participant count is validated automatically from your uploaded dataset — no self-reporting.
+  </div>
+
+</section>
+<section class="faq-section" id="section-faq">
+  <div class="faq-label">Frequently asked questions</div>
+  <div class="faq-item">
+    <div class="faq-q">What is a workspace key?</div>
+    <div class="faq-a">A workspace key is a unique alphanumeric code that activates your research environment on the ATLAS platform. It isolates your patient cohort from the global pool, deploys the MAP instrument for your study, enables full PEACS scoring and data export, and includes your Letter of Permission for publication. Your key follows the format TIER-INSTITUTION-SEQUENCE-YEAR.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What adherence instrument is included with a workspace key?</div>
+    <div class="faq-a">Every paid workspace key includes full access to the MAP instrument — Multidimensional Adherence Parameters — deployed through ATLAS. MAP is an independently developed, psychometrically precise adherence assessment designed for institutional and research use, with 8 independently authored items, Grade 6 reading level, and 60+ language support. A Letter of Permission covering both data collection and publication is issued automatically with your subscription and is verifiable at keys.adherence.cc.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">How does sign-in work?</div>
+    <div class="faq-a">ATLAS uses a two-step sign-in for all workspace keys. Enter your workspace key on the ATLAS entry screen, then check your registered email for a 6-digit one-time code. Enter the code to complete sign-in. The code expires in 10 minutes. No passwords, no app to install. This applies to all keyed roles — Student, Pharmacist, Researcher, PI, Institution, and Observer.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Which tier is right for me?</div>
+    <div class="faq-a">Student ($19/mo) is for thesis and coursework projects — full MAP instrument, bulk upload, APE phenotyping, PEACS snapshot, and up to 100 record CSV exports per month. Clinician ($49/mo) is for practicing clinicians (PharmD, NP, PA, RN, MD, Care Coordinator) who need MTM encounter logging (CPT 99605–99607), ZOE SOAP AI notes, Sentinel alerts, and the full TPE · PE Domain Analysis suite. PI · Multi-Site ($149/mo) is a research-only workspace for PIs running IRB-approved protocols — adds Validation Study Tools, self-service sub-workspace management, cross-site benchmarking, IRB Submission Assistant, dataset lock, IRB-grade export headers, CONSORT participant flow, and protocol amendment log. Institution tiers are for organisations deploying MAP at scale: Academic ($399/mo) replaces REDCap, SPSS, R, and Excel for university research programs — includes Cross-Study Research Hub, Grant Reporting Dashboard, Student Thesis Module, and native psychometric panel. Health System ($599/mo) replaces Epic MTM modules and Excel-based care gap management for hospitals and health networks — includes Care Gap Monitor (MMAS-8 triggered alerts), MTM Billing Log (CPT 99605–99607), and Population Health Command Center. Academic Medical Center ($799/mo) combines both for research hospitals and AMCs with clinical and academic missions.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What is included in each Institution base plan?</div>
+    <div class="faq-a">All three institution tiers include a shared seat structure: 1 Institution dashboard key, plus 2 PI + 3 Researcher + 10 Student + 1 Observer workspace seats (Academic Medical Center includes 3 PI + 5 Researcher + 15 Student + 2 Observer). Each seat is a fully independent workspace key with its own MFA login and cohort — linked to your institution dashboard automatically. Academic ($399/mo, $3,990/yr) adds the Cross-Study Research Hub, Grant Reporting Dashboard, Student Thesis Module, and native psychometric panel (Cronbach's α, ICC, SEM). Health System ($599/mo, $5,990/yr) adds the Care Gap Monitor and MTM Billing Log (CPT 99605–99607), plus BAA and dedicated CSM. Academic Medical Center ($799/mo, $7,990/yr) includes all features from both tiers, with an expanded seat base and priority support.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">How much do additional seats cost?</div>
+    <div class="faq-a">Additional PI seats are $99/month each. Additional Researcher seats are $49/month each. Student seats are $19/month each — the same as self-serve, so there is no incentive to umbrella students under a single institutional account rather than issuing individual keys. Observer seats are $19/month each. For institutions with 11–25 combined PI and Researcher seats the rate drops to $79/month per seat. For 26 or more, contact us for a negotiated volume rate. All additional seats are billed on your institutional invoice — one line item, one payment.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Can I upgrade my tier later?</div>
+    <div class="faq-a">Yes. Contact info@adherence.cc to upgrade. Your cohort data, submissions, and history are preserved. Upgrades are prorated to your billing cycle.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What is an Observer seat?</div>
+    <div class="faq-a">Observer seats give board members, funders, and study sponsors full read-only visibility into the platform — global analytics, cohort dashboards, and live data — without write access or the ability to enter assessments. One Observer seat is included in the Institution base plan. Additional Observer seats are $19/month each. Observer login requires the same MFA (key + OTP email) as all other roles.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Do researchers and students need their own subscriptions under an Institution account?</div>
+    <div class="faq-a">No. Seats issued under an Institution account are covered by the institutional subscription — researchers and students do not pay separately. The institution manages and pays for all seats centrally. Individuals who already have standalone subscriptions can be migrated to the institutional account — contact info@adherence.cc to consolidate.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What happens to my data if I cancel?</div>
+    <div class="faq-a">Your data remains in the ATLAS system for 90 days after cancellation. You can export a full CSV of your cohort at any time during this period. After 90 days inactive data is archived. Reactivating your subscription restores full access.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">I am at an LMIC university. Do I need to pay?</div>
+    <div class="faq-a">Not individually. ATLAS has a partnership program for universities in low and lower-middle income countries. Your institution can apply for subsidized or free access. Email info@adherence.cc with your institution name and country.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What is the difference between a Letter of Permission and a Publication License?</div>
+    <div class="faq-a">A <strong>Letter of Permission (LOP)</strong> is issued automatically to all paid workspace subscribers as part of their subscription. It covers both ongoing data collection and publication rights, and remains valid while the subscription is active. It expires if the subscription lapses. A <strong>Publication License</strong> is a separate product for studies that are already complete and had no prior subscription. For students and self-funded researchers, it is a one-time flat rate ($49–$249) issued instantly. For funded researchers and PIs, publication rights are priced by study duration — not a flat fee — because a grant-funded study is not equivalent to a thesis project. Funded researchers should email info@adherence.cc for a custom quote. Both documents are accepted by journal editors, IRB officers, and ethics committees, and both are verifiable at keys.adherence.cc. If you have an active workspace subscription, you already have your Letter of Permission and do not need a Publication License.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Can I subscribe for one month to get a Letter of Permission for data I already collected?</div>
+    <div class="faq-a">No. A workspace subscription is not a retroactive publication permit. Your Letter of Permission records your subscription activation date — the date you first subscribed — and covers only data collected while your subscription was active. If your study ran for twelve months and you subscribed on the final day, your LOP reflects one day of covered activity. Journal editors and IRB officers who verify your key at keys.adherence.cc/verify see your activation date, your subscription history, and your data-collection dates. The mismatch is immediately apparent. If your study is already complete, the correct path is the Student Publication License (for thesis and self-funded work) or the duration-based funded study inquiry (for grant or institutionally funded research) — not a subscription opened after the fact.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">I already collected my data without a subscription. How do I get a letter for my journal?</div>
+    <div class="faq-a">It depends on how your study was funded. If you are a <strong>student or self-funded researcher</strong> with a completed thesis or dissertation, the standalone Publication License is the right product — a flat one-time payment ($49–$249 by participant count), uploaded at <a href="https://atlas.adherence.cc?publish=1" style="color:var(--gold);">atlas.adherence.cc?publish=1</a>, with your PUB key and Letter of Permission issued instantly. If your study was <strong>grant-funded, institutionally funded, or contract-funded</strong>, publication rights are priced by study duration rather than a flat rate. Email <a href="mailto:info@adherence.cc?subject=Publication%20Rights%20%E2%80%93%20Funded%20Study%20Inquiry" style="color:var(--blue);">info@adherence.cc</a> with your study title, funding source, IRB number, and data-collection dates. A workspace subscription covers both data collection and publication rights — if you collected data without subscribing, the publication fee reflects the duration of that coverage.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">How does a journal editor verify a Publication License?</div>
+    <div class="faq-a">Enter the PUB-XXXX-XXXX-XXXX key in the verification form at the bottom of this page (or at keys.adherence.cc/verify). The registry will confirm the principal investigator name, institution, study title, validated participant count, countries, and issue date. Publication licenses are permanent — they remain active in the registry indefinitely and the verification URL can be shared directly with the editorial office.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What is the difference between MAP and PEACS?</div>
+    <div class="faq-a"><strong>MAP</strong> (Multidimensional Adherence Parameters) is an 8-item cross-sectional adherence instrument — independently authored, psychometrically designed for institutional and research deployment, and optimized for accuracy, literacy accessibility, and translational portability across 60+ languages. MAP captures adherence at a point in time and is the recommended instrument when a validated, publication-ready measure is needed. It is the instrument deployed through ATLAS at every workspace tier. <strong>PEACS</strong> (Predictive Emergence Assessment for Clinical Services) is a 22-item longitudinal instrument that tracks adherence trajectories over time across three subscales: BASE (7 items, monthly), MVMT (7 items, weekly), and STRATA (8 items, quarterly). PEACS calculates the Theory of Predictive Emergence score — PE = (Architecture × Execution × Context)^(1/3) — and is the primary engine for Clinician, Researcher, PI, and Institution tiers. MAP feeds into the PEACS Execution domain, making the two instruments complementary: MAP delivers a precise cross-sectional adherence signal; PEACS builds a longitudinal predictive profile over time.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Can patients access their own results?</div>
+    <div class="faq-a">Yes, with a Clinician / Researcher tier key or higher. The <strong>Patient Portal</strong> is accessible via a <code style="font-family:'IBM Plex Mono',monospace;font-size:0.88em;">?portal=&lt;patient_id&gt;</code> URL and shows the patient their own score history, PE domain profile, personalised adherence tips, and care team contact information. The portal link is included automatically when a coordinator copies the reminder link from the follow-up card, so no manual URL construction is needed. Patients never see other patients' data — access is scoped to a single patient record by the portal token.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Does ATLAS support IRB submission preparation?</div>
+    <div class="faq-a">Yes, for PI tier subscribers. The <strong>IRB Submission Assistant</strong> is a 5-tab modal inside the Clinical Study Module (Study tab) that auto-populates from your Study Config. It generates a structured document covering: Protocol Summary, Informed Consent language, Risks &amp; Benefits, Privacy &amp; Data handling, and Timeline &amp; Sites. The document exports as a .txt file ready for attachment to your IRB application. Study Config captures Study Name, Principal Investigator, Institution, Sponsor, IRB Number, ClinicalTrials.gov ID, Protocol Version, Start Date, Data Lock Date, Target N, Follow-up Window, and Visit Schedule — all of which flow through to the IRB export and to IRB-grade export headers on your data files.</div>
+  </div>
+</section>
+
+<!-- CERTIFICATE VERIFICATION SECTION -->
+<section class="vc-section" id="verify-section">
+  <div class="vc-label">ATLAS Permission Registry</div>
+  <h2 class="vc-title">Verify a Certificate</h2>
+  <p class="vc-sub">Confirm that a Letter of Permission or Publication License is genuine. For IRB officers, ethics committees, and journal editors. Enter a <code style="font-family:var(--font-m);font-size:0.85em;color:rgba(78,156,245,0.75);">MAP-</code> or <code style="font-family:var(--font-m);font-size:0.85em;color:rgba(212,168,67,0.75);">PUB-</code> key below.</p>
+  <div class="vc-form">
+    <input class="vc-input" id="vc-cert-input" type="text" placeholder="MAP- or PUB-XXXXXXXX-XXXXXXXX-XXXXXXXX" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/>
+    <button class="vc-btn" id="vc-verify-btn" onclick="vcVerifyCert()">Verify →</button>
+  </div>
+  <div class="vc-loading" id="vc-loading">Checking registry</div>
+  <div class="vc-result" id="vc-result-card">
+    <div class="vc-result-header" id="vc-result-header">
+      <div class="vc-result-icon" id="vc-result-icon"></div>
+      <div>
+        <div class="vc-result-status-label" id="vc-result-status-label"></div>
+        <div class="vc-result-cert-num" id="vc-result-cert-num"></div>
+      </div>
+    </div>
+    <div class="vc-result-divider"></div>
+    <div class="vc-result-body" id="vc-result-body"></div>
+    <div class="vc-result-footer" id="vc-result-footer"></div>
+  </div>
+  <div class="vc-hint">Full verification page: <a href="https://keys.adherence.cc/verify" class="vc-hint-link">keys.adherence.cc/verify</a></div>
+</section>
+
+<footer>
+  <div class="footer-left">© 2026 Adherence Cartography · Adherence Inc. · Long Beach, CA · MMAS-8 © TX 8-632-533</div>
+  <div class="footer-links">
+    <a href="https://adherence.cc">adherence.cc</a>
+    <a href="https://atlas.adherence.cc">ATLAS Platform</a>
+    <a href="/cdn-cgi/l/email-protection#177e7971785776737f726572797472397474">Contact</a>
+  </div>
+</footer>
+<div class="result-screen" id="screen-success">
+  <div class="result-card">
+    <div class="result-icon">✓</div>
+    <div class="result-title">Payment confirmed</div>
+    <div class="result-body">Your workspace key is being generated now. <strong>Check your email</strong> — you will receive your key and an activation link within the next few minutes.<br><br>Once you click the activation link you will be logged directly into ATLAS with your tier active.</div>
+    <a href="https://atlas.adherence.cc" class="result-btn">Open ATLAS</a>
+  </div>
+</div>
+<div class="result-screen" id="screen-seat-success">
+  <div class="result-card">
+    <div class="result-icon" style="color:rgba(78,156,245,0.9);">✓</div>
+    <div class="result-title">Seats provisioned</div>
+    <div class="result-body">Your seat keys are being generated now. <strong>Check your email</strong> — you will receive a single email listing all your new workspace keys within the next few minutes.<br><br>Use <strong>ATLAS Control → Keys → Edit</strong> to assign names and emails to each seat before distributing them.</div>
+    <a href="https://atlas.adherence.cc" class="result-btn">Open ATLAS</a>
+  </div>
+</div>
+<div class="result-screen" id="screen-cancel">
+  <div class="result-card">
+    <div class="result-icon">←</div>
+    <div class="result-title">Payment cancelled</div>
+    <div class="result-body">No charge was made. You can try again below, or email <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fd94939b92bd9c9995988f98939e98d39e9e">[email&#160;protected]</a></strong> if you need help completing your purchase.</div>
+    <button class="result-btn" onclick="document.getElementById('screen-cancel').classList.remove('active')">Back to plans</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- Institution checkout modal -->
+<div class="reg-overlay" id="inst-modal" style="display:none;" onclick="if(event.target===this)closeInstModal()">
+  <div class="reg-card" style="max-width:500px;" onclick="event.stopPropagation()">
+    <div class="reg-eyebrow" id="inst-modal-eyebrow">Institution · Enterprise</div>
+    <div class="reg-title" id="inst-modal-title">Start Institution Subscription</div>
+    <button class="reg-close" onclick="closeInstModal()" aria-label="Close">×</button>
+
+    <!-- CTO1: Main form screen -->
+    <div id="screen-form" class="reg-screen">
+    <!-- Institution type selector -->
+    <div class="reg-field">
+      <label class="reg-label">Institution Type</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;" id="inst-type-selector">
+        <label id="inst-type-lbl-academic" style="display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(139,111,245,0.06);border:1px solid rgba(139,111,245,0.2);border-radius:8px;padding:10px 6px;cursor:pointer;font-size:0.76rem;text-align:center;transition:all 0.18s;">
+          <input type="radio" name="inst-type" value="academic" style="accent-color:var(--purple);margin-bottom:1px;"/>
+          <span style="font-family:var(--font-m);color:var(--purple);font-size:0.60rem;letter-spacing:0.1em;text-transform:uppercase;">Academic</span>
+          <span style="color:var(--bright);font-family:var(--font-d);font-size:1.1rem;font-weight:300;">$399<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/mo</span></span>
+        </label>
+        <label id="inst-type-lbl-health" style="display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.25);border-radius:8px;padding:10px 6px;cursor:pointer;font-size:0.76rem;text-align:center;transition:all 0.18s;">
+          <input type="radio" name="inst-type" value="health" style="accent-color:var(--blue);margin-bottom:1px;"/>
+          <span style="font-family:var(--font-m);color:var(--blue);font-size:0.60rem;letter-spacing:0.1em;text-transform:uppercase;">Health System</span>
+          <span style="color:var(--bright);font-family:var(--font-d);font-size:1.1rem;font-weight:300;">$599<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/mo</span></span>
+        </label>
+        <label id="inst-type-lbl-amc" style="display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.2);border-radius:8px;padding:10px 6px;cursor:pointer;font-size:0.76rem;text-align:center;transition:all 0.18s;">
+          <input type="radio" name="inst-type" value="amc" style="accent-color:var(--gold);margin-bottom:1px;"/>
+          <span style="font-family:var(--font-m);color:var(--gold);font-size:0.60rem;letter-spacing:0.1em;text-transform:uppercase;">Acad. Med. Ctr</span>
+          <span style="color:var(--bright);font-family:var(--font-d);font-size:1.1rem;font-weight:300;">$799<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/mo</span></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="reg-field">
+      <label class="reg-label" for="inst-name">Institution / Organisation Name</label>
+      <input class="reg-input" id="inst-name" type="text" placeholder="Stanford University Medical Center" autocomplete="organization"/>
+    </div>
+
+    <div class="reg-field">
+      <label class="reg-label" for="inst-billing-name">Billing Contact Name</label>
+      <input class="reg-input" id="inst-billing-name" type="text" placeholder="Dr. Jane Smith" autocomplete="name"/>
+    </div>
+
+    <div class="reg-field">
+      <label class="reg-label" for="inst-billing-email">Billing Email</label>
+      <input class="reg-input" id="inst-billing-email" type="email" placeholder="billing@institution.edu" autocomplete="email"/>
+      <div class="reg-hint">Your INST- key and seat keys will be delivered here.</div>
+    </div>
+
+    <div class="reg-field">
+      <label class="reg-label">Billing Cycle</label>
+      <div style="display:flex;gap:12px;margin-top:6px;">
+        <label style="flex:1;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:12px 14px;cursor:pointer;font-size:0.83rem;">
+          <input type="radio" name="inst-plan" value="monthly" checked style="accent-color:var(--gold);"/>
+          <span><strong>Monthly</strong><br/><span id="inst-price-monthly" style="opacity:0.6;font-size:0.78rem;">$399/month</span></span>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:12px 14px;cursor:pointer;font-size:0.83rem;">
+          <input type="radio" name="inst-plan" value="annual" style="accent-color:var(--gold);"/>
+          <span><strong>Annual</strong><br/><span id="inst-price-annual" style="opacity:0.6;font-size:0.78rem;">$3,990/year · save $798</span></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="reg-field">
+      <label class="reg-label" for="inst-po">PO Number <span style="opacity:0.45;font-weight:400;">(optional)</span></label>
+      <input class="reg-input" id="inst-po" type="text" placeholder="PO-2026-1234" autocomplete="off"/>
+      <div class="po-field-hint">If provided, we'll issue a formal invoice instead of processing payment via card. Net-30 terms.</div>
+    </div>
+
+    <div id="inst-reg-err" style="display:none;color:#ff6b6b;font-size:0.82rem;margin-bottom:12px;padding:8px 12px;background:rgba(255,107,107,0.08);border-radius:6px;border:1px solid rgba(255,107,107,0.2);"></div>
+    <div id="inst-error" style="display:none;color:#ff6b6b;font-size:0.82rem;margin-bottom:12px;padding:8px 12px;background:rgba(255,107,107,0.08);border-radius:6px;border:1px solid rgba(255,107,107,0.2);"></div>
+
+    <button class="reg-submit" id="inst-submit-btn" onclick="_instHandleRegistration(document.querySelector('input[name=\'inst-type\']:checked')?.value||'academic')" style="width:100%;margin-top:4px;">
+      Continue →
+    </button>
+    <div style="font-size:0.75rem;opacity:0.45;text-align:center;margin-top:10px;">
+      Secure payment via Stripe · Cancel anytime · BAA &amp; DUA included
+    </div>
+    </div><!-- /screen-form -->
+
+    <!-- CTO1: PO Confirmation Screen -->
+    <div id="screen-po-confirm" class="reg-screen" style="display:none">
+      <div class="po-conf-eyebrow">Purchase Order Path</div>
+      <h3 class="po-conf-heading">Invoice Request Summary</h3>
+      <p class="po-conf-sub">Review the details below. We will email a formal invoice to your billing contact within 1 business day. Your ATLAS key will be activated upon payment confirmation.</p>
+      <div class="po-conf-table">
+        <div class="po-conf-row"><span class="po-conf-lbl">Institution</span><span id="po-conf-inst" class="po-conf-val">—</span></div>
+        <div class="po-conf-row"><span class="po-conf-lbl">Plan</span><span id="po-conf-tier" class="po-conf-val">—</span></div>
+        <div class="po-conf-row"><span class="po-conf-lbl">Annual Price</span><span id="po-conf-price" class="po-conf-val">—</span></div>
+        <div class="po-conf-row"><span class="po-conf-lbl">PO Number</span><span id="po-conf-po" class="po-conf-val po-conf-po-val">—</span></div>
+        <div class="po-conf-row"><span class="po-conf-lbl">Billing Email</span><span id="po-conf-billing" class="po-conf-val">—</span></div>
+        <div class="po-conf-row"><span class="po-conf-lbl">Contact</span><span id="po-conf-contact" class="po-conf-val">—</span></div>
+        <div class="po-conf-row"><span class="po-conf-lbl">Request Date</span><span id="po-conf-date" class="po-conf-val">—</span></div>
+        <div class="po-conf-row"><span class="po-conf-lbl">Invoice Due</span><span id="po-conf-due" class="po-conf-val">—</span></div>
+      </div>
+      <div class="po-conf-terms">Net-30 payment terms. Invoice will reference your PO number. Key activation within 24 hours of payment confirmation.</div>
+      <div id="po-conf-err" class="po-conf-err" style="display:none"></div>
+      <div class="po-conf-btns">
+        <button class="reg-cancel" onclick="document.querySelectorAll('.reg-screen').forEach(s=>s.style.display='none');document.getElementById('screen-form')?.style&&(document.getElementById('screen-form').style.display='block')">← Back</button>
+        <button class="reg-submit" id="po-submit-btn" onclick="instSubmitPORequest()">Send Invoice Request →</button>
+      </div>
+    </div>
+
+    <!-- CTO1: PO Success Screen -->
+    <div id="screen-po-success" class="reg-screen" style="display:none">
+      <div class="po-success-icon">✓</div>
+      <h3 class="po-conf-heading">Invoice Request Sent</h3>
+      <p class="po-conf-sub">Your invoice request has been received. A formal invoice will be emailed to your billing contact within 1 business day, referencing your PO number.</p>
+      <p class="po-conf-sub">Questions? Email <a href="mailto:billing@adherence.cc" style="color:var(--blue,#4e9cf5)">billing@adherence.cc</a> or <a href="mailto:info@adherence.cc" style="color:var(--blue,#4e9cf5)">info@adherence.cc</a>.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- Registration modal — fires before Stripe checkout -->
+<div class="reg-overlay" id="reg-modal">
+  <div class="reg-card">
+    <div class="reg-eyebrow" id="reg-eyebrow-text">Before we proceed</div>
+    <div class="reg-title" id="reg-title-text">Tell us about your work</div>
+    <span class="reg-tier-pill" id="reg-tier-pill"></span>
+    <p class="reg-sub" id="reg-sub-text">Your workspace key will be generated automatically after payment and emailed to you. We need your details to create it.</p>
+    <div id="reg-inst-note" style="display:none;margin-bottom:18px;padding:10px 14px;background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.2);border-radius:6px;font-size:0.78rem;color:rgba(78,156,245,0.8);line-height:1.65;">
+      <strong style="color:rgba(78,156,245,0.95);">At a university or health system?</strong> Your institution may have already purchased a seat for you. Check with your research office or department admin before subscribing individually — institutional seats are covered by your institution's plan at no cost to you.
+    </div>
+    <div class="reg-field">
+      <label class="reg-label" for="reg-name">Full name</label>
+      <input class="reg-input" id="reg-name" type="text" placeholder="Dr. Sarah Chen" autocomplete="name"/>
+    </div>
+    <div class="reg-field">
+      <label class="reg-label" for="reg-email">Email address</label>
+      <input class="reg-input" id="reg-email" type="email" placeholder="s.chen@university.edu" autocomplete="email"/>
+    </div>
+    <div class="reg-field" id="reg-clin-role-field" style="display:none;">
+      <label class="reg-label" for="reg-clin-role">Your clinical role <span style="color:rgba(239,68,68,0.6);font-size:0.9em;">*required</span></label>
+      <select class="reg-input" id="reg-clin-role" style="cursor:pointer;">
+        <option value="pharmacist">PharmD · Clinical Pharmacist</option>
+        <option value="np">NP · Nurse Practitioner</option>
+        <option value="pa">PA · Physician Assistant</option>
+        <option value="rn">RN · Registered Nurse</option>
+        <option value="md">MD/DO · Physician</option>
+        <option value="care_coordinator">Care Coordinator</option>
+      </select>
+    </div>
+    <div class="reg-field">
+      <label class="reg-label" for="reg-institution" id="reg-institution-label">Institution or organisation</label>
+      <input class="reg-input" id="reg-institution" type="text" placeholder="Harvard Medical School" autocomplete="organization"/>
+    </div>
+    <div class="reg-field" id="reg-study-field">
+      <label class="reg-label" for="reg-study">Study title <span style="color:rgba(239,68,68,0.6);font-size:0.9em;">*required</span></label>
+      <input class="reg-input" id="reg-study" type="text" placeholder="Medication adherence in hypertension patients"/>
+    </div>
+
+    <!-- PI-only extended fields — shown only when tier === 'pi' -->
+    <div id="reg-pi-fields" style="display:none;">
+      <div class="reg-section-label">IRB · Ethics Configuration</div>
+      <div class="reg-field">
+        <label class="reg-label" for="reg-irb-protocol">IRB / Ethics Protocol Number <span style="color:rgba(239,68,68,0.6);font-size:0.9em;">*</span></label>
+        <input class="reg-input" id="reg-irb-protocol" type="text" placeholder="IRB-2026-00142"/>
+        <div class="reg-hint">Appears verbatim on your IRB-grade permission letter</div>
+      </div>
+      <div class="reg-field">
+        <label class="reg-label" for="reg-irb-board">Ethics Board / IRB Name <span style="color:rgba(239,68,68,0.6);font-size:0.9em;">*</span></label>
+        <input class="reg-input" id="reg-irb-board" type="text" placeholder="Institutional Review Board · University of Southern California"/>
+      </div>
+      <div class="reg-row-2">
+        <div class="reg-field" style="margin-bottom:0;">
+          <label class="reg-label" for="reg-study-start">Study Start Date <span style="color:rgba(239,68,68,0.6);font-size:0.9em;">*</span></label>
+          <input class="reg-input" id="reg-study-start" type="date"/>
+        </div>
+        <div class="reg-field" style="margin-bottom:0;">
+          <label class="reg-label" for="reg-study-end">Expected End Date <span style="opacity:0.5;font-size:0.8em;">(optional)</span></label>
+          <input class="reg-input" id="reg-study-end" type="date"/>
+          <div class="reg-hint">Leave blank for ongoing / rolling enrolment</div>
+        </div>
+      </div>
+      <div class="reg-field">
+        <label class="reg-label">Number of Sites <span style="color:rgba(239,68,68,0.6);font-size:0.9em;">*</span> <span style="opacity:0.5;text-transform:none;letter-spacing:0;font-size:0.80em;"> — up to 5 child workspaces</span></label>
+        <div class="reg-site-sel" id="reg-site-sel">
+          <button type="button" class="reg-site-btn active" onclick="setSiteCount(1)">1</button>
+          <button type="button" class="reg-site-btn" onclick="setSiteCount(2)">2</button>
+          <button type="button" class="reg-site-btn" onclick="setSiteCount(3)">3</button>
+          <button type="button" class="reg-site-btn" onclick="setSiteCount(4)">4</button>
+          <button type="button" class="reg-site-btn" onclick="setSiteCount(5)">5</button>
+        </div>
+        <input type="hidden" id="reg-num-sites" value="1"/>
+      </div>
+      <div class="reg-field">
+        <label class="reg-label" for="reg-funding-source">Primary Funding Source <span style="color:rgba(239,68,68,0.6);font-size:0.9em;">*</span></label>
+        <select class="reg-input" id="reg-funding-source" style="cursor:pointer;">
+          <option value="">— Select funding source —</option>
+          <option value="nih">NIH (National Institutes of Health)</option>
+          <option value="nsf">NSF (National Science Foundation)</option>
+          <option value="dod">DoD / CDMRP (Congressionally Directed Medical Research)</option>
+          <option value="pcori">PCORI (Patient-Centred Outcomes Research Institute)</option>
+          <option value="institutional">Institutional / internal grant</option>
+          <option value="foundation">Private foundation (non-federal)</option>
+          <option value="industry">Industry-sponsored / pharmaceutical company</option>
+          <option value="international">International funding body</option>
+          <option value="unfunded">Self-funded · no external funding</option>
+        </select>
+      </div>
+      <div class="reg-field">
+        <label class="reg-label" for="reg-grant-num">Grant / Award Number <span style="opacity:0.5;font-size:0.8em;">(optional)</span></label>
+        <input class="reg-input" id="reg-grant-num" type="text" placeholder="R01AG012345"/>
+        <div class="reg-hint">Included on your permission letter if provided</div>
+      </div>
+    </div>
+
+    <div class="reg-field">
+      <label class="reg-label" for="reg-intended-use">Intended use <span style="color:rgba(239,68,68,0.6);font-size:0.9em;">*required</span></label>
+      <select class="reg-input" id="reg-intended-use" style="cursor:pointer;">
+        <option value="">— Select the nature of your use —</option>
+        <option value="thesis" class="use-researcher">Thesis or dissertation (degree requirement, non-commercial)</option>
+        <option value="coursework" class="use-researcher">Coursework or class project (non-commercial, educational)</option>
+        <option value="independent" class="use-researcher">Independent academic research (unfunded or self-funded)</option>
+        <option value="mtm_practice" class="use-pharmacist">MTM practice / Medication therapy management (CMS reimbursement)</option>
+        <option value="clinical_practice" class="use-pharmacist use-researcher">Clinical practice quality improvement (non-publication)</option>
+        <option value="funded_research" class="use-researcher use-pi">Funded research — grant, contract, or institutional budget</option>
+        <option value="clinical_trial" class="use-pi">Clinical trial / prospective cohort (IND or IRB-approved protocol)</option>
+        <option value="institutional_qa" class="use-pi">Institutional QA / multi-site programme evaluation</option>
+        <option value="commercial" class="use-researcher use-pi">Commercial, corporate, or industry-sponsored research</option>
+      </select>
+      <div id="reg-use-warning" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.25);border-radius:6px;font-size:0.72rem;color:rgba(212,168,67,0.85);line-height:1.6;"></div>
+    </div>
+    <div class="reg-actions">
+      <button class="reg-cancel" onclick="closeRegModal()">Cancel</button>
+      <button class="reg-submit" id="reg-submit-btn" onclick="submitRegistration()">
+        Continue to Payment →
+      </button>
+    </div>
+  </div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+function toggleFeatures(tier) {
+  const more = document.getElementById('feat-more-' + tier);
+  const btn  = document.getElementById('feat-btn-' + tier);
+  if (!more || !btn) return;
+  const open = more.style.display === 'block';
+  more.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '▸ See all features' : '▴ Hide features';
+}
+
+function switchInstTab(type) {
+  ['academic','health','amc'].forEach(t => {
+    const pane = document.getElementById('inst-pane-' + t);
+    const btn  = document.querySelector('.inst-tab-btn.tab-' + t);
+    if (pane) pane.classList.toggle('active', t === type);
+    if (btn)  btn.classList.toggle('active', t === type);
+  });
+}
+
+function switchIndivTab(type) {
+  ['student','clinician','pi'].forEach(t => {
+    const pane = document.getElementById('indiv-pane-' + t);
+    const btn  = document.querySelector('.inst-tab-btn.tab-' + t);
+    if (pane) pane.classList.toggle('active', t === type);
+    if (btn)  btn.classList.toggle('active', t === type);
+  });
+}
+
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51TGPZZRf2uX0wyVtDoP4TuVo3jc4cGGx2ONUSykas4krorZwyeuWY0kGMnTkUR7Kc3WxvNLCWNFq7vb3LZXO8WHx004XxAxR2Q';
+const PRICE_IDS = {
+  student:    'price_1TJlSoRf2uX0wyVt7AmzYfD0',
+  researcher: 'price_1TJlT1Rf2uX0wyVtIfwYDSMs',
+  pi:         'price_1TJlStRf2uX0wyVtL4kYQzmF',
+};
+// Seat price IDs — set after creating products in Stripe dashboard
+// Lambda reads these from env vars (STRIPE_PRICE_SEAT_RESEARCHER etc.)
+// No price IDs needed client-side — Lambda resolves seat type → price ID server-side
+const SEAT_RATES = { pi: 99, pharmacist: 49, np: 49, pa: 49, rn: 49, md: 49, care_coordinator: 49, researcher: 49, student: 19, observer: 19 };
+const SEAT_VOLUME = { pi: { threshold: 10, rate: 79 }, researcher: { threshold: 10, rate: 79 } }; // 11–25 PI/Researcher → $79; 26+ negotiated
+const LAMBDA_URL = 'https://krbqzf0ozg.execute-api.me-central-1.amazonaws.com';
+
+// Current tier being registered
+let _pendingTier = null;
+let _pendingRole = 'pharmacist'; // role sent to /issue-key; covers all clinician + researcher roles
+let _parentPi   = null;          // set from ?pi= URL param when arriving via PI referral link
+
+// Role metadata for all $49 tier options
+const ROLE_PROFILES = {
+  pharmacist: {
+    label: 'Pharmacist · Clinician', name: 'PharmD · Clinical Pharmacist',
+    keyFmt: 'PHRM-[INST]-XXXX-2027', btnText: 'Get Pharmacist Key',
+    who: 'Built for community pharmacists documenting MTM consultations and managing patient panels. Includes MTM encounter logging (CPT 99605–99607), CCM (99490–99491), RTM (98976–98981), Sentinel alerts, and full PE Domain analysis.',
+    mtm:      '<span class="feat-check">✓</span><span>MTM · CCM · RTM · TCM encounter log · CMS billing codes</span>',
+    sentinel: '<span class="feat-check">✓</span><span>Sentinel follow-up alerts · patient scheduling</span>',
+    soap:     '<span class="feat-check">✓</span><span>ZOE SOAP AI notes · chart-ready clinical documentation</span>',
+  },
+  np: {
+    label: 'NP · Clinician', name: 'Nurse Practitioner',
+    keyFmt: 'NP-[INST]-XXXX-2027', btnText: 'Get NP Key',
+    who: 'Built for nurse practitioners managing chronic care panels. Includes CCM (99490–99491), RTM (98976–98981), and MTM supervision billing, Sentinel alerts, ZOE SOAP notes, and full PE Domain analysis.',
+    mtm:      '<span class="feat-check">✓</span><span>CCM · RTM · MTM (supervised) · CMS billing codes</span>',
+    sentinel: '<span class="feat-check">✓</span><span>Sentinel follow-up alerts · patient scheduling</span>',
+    soap:     '<span class="feat-check">✓</span><span>ZOE SOAP AI notes · chart-ready clinical documentation</span>',
+  },
+  pa: {
+    label: 'PA · Clinician', name: 'Physician Assistant',
+    keyFmt: 'PA-[INST]-XXXX-2027', btnText: 'Get PA Key',
+    who: 'Built for physician assistants managing chronic care and medication adherence. Includes CCM (99490–99491), RTM (98976–98981), MTM supervision billing, Sentinel alerts, ZOE SOAP notes, and full PE Domain analysis.',
+    mtm:      '<span class="feat-check">✓</span><span>CCM · RTM · MTM (supervised) · CMS billing codes</span>',
+    sentinel: '<span class="feat-check">✓</span><span>Sentinel follow-up alerts · patient scheduling</span>',
+    soap:     '<span class="feat-check">✓</span><span>ZOE SOAP AI notes · chart-ready clinical documentation</span>',
+  },
+  rn: {
+    label: 'RN · Clinician', name: 'Registered Nurse',
+    keyFmt: 'RN-[INST]-XXXX-2027', btnText: 'Get RN Key',
+    who: 'Built for registered nurses coordinating chronic care management and medication adherence monitoring. Includes RTM (98976–98981), CCM support billing, Sentinel alerts, ZOE SOAP notes, and PE Domain analysis.',
+    mtm:      '<span class="feat-check">✓</span><span>RTM · CCM (support) · CMS billing codes</span>',
+    sentinel: '<span class="feat-check">✓</span><span>Sentinel follow-up alerts · patient scheduling</span>',
+    soap:     '<span class="feat-check">✓</span><span>ZOE SOAP AI notes · chart-ready clinical documentation</span>',
+  },
+  md: {
+    label: 'MD/DO · Clinician', name: 'Physician (MD/DO)',
+    keyFmt: 'MD-[INST]-XXXX-2027', btnText: 'Get Physician Key',
+    who: 'Built for physicians supervising chronic care and medication adherence programs. Includes full CCM (99490–99491), RTM (98976–98981), TCM (99495–99496), MTM supervision, Sentinel alerts, ZOE SOAP notes, and PE Domain analysis.',
+    mtm:      '<span class="feat-check">✓</span><span>CCM · RTM · TCM · MTM (supervision) · CMS billing codes</span>',
+    sentinel: '<span class="feat-check">✓</span><span>Sentinel follow-up alerts · patient scheduling</span>',
+    soap:     '<span class="feat-check">✓</span><span>ZOE SOAP AI notes · chart-ready clinical documentation</span>',
+  },
+  care_coordinator: {
+    label: 'Care Coordinator', name: 'Care Coordinator',
+    keyFmt: 'CC-[INST]-XXXX-2027', btnText: 'Get Care Coordinator Key',
+    who: 'Built for care coordinators managing chronic disease populations and tracking medication adherence at scale. Includes RTM (98976–98981), CCM support billing, Sentinel alerts, ZOE SOAP notes, and PE Domain analysis.',
+    mtm:      '<span class="feat-check">✓</span><span>RTM · CCM (support) · CMS billing codes</span>',
+    sentinel: '<span class="feat-check">✓</span><span>Sentinel follow-up alerts · patient scheduling</span>',
+    soap:     '<span class="feat-check">✓</span><span>ZOE SOAP AI notes · chart-ready clinical documentation</span>',
+  },
+  researcher: {
+    label: 'Researcher', name: 'Researcher',
+    keyFmt: 'RES-[INST]-XXXX-2027', btnText: 'Get Researcher Key',
+    who: 'Research workspace for investigators running patient cohorts. Full PEACS longitudinal tracking, unlimited CSV export with PE domain columns, and Sentinel protocol follow-up flags.',
+    mtm:      '<span class="feat-check">✓</span><span>Cohort stratification · PE domain sub-group analysis</span>',
+    sentinel: '<span class="feat-check">✓</span><span>Sentinel follow-up flags · protocol compliance monitoring</span>',
+    soap:     '<span class="feat-check feat-dim">–</span><span class="feat-dim">No ZOE SOAP notes · no MTM log</span>',
+  },
+};
+
+// Clinician card role selector — updates card display for each clinical role
+function setClinicianPath(role) {
+  _pendingRole = role;
+  const p = ROLE_PROFILES[role] || ROLE_PROFILES['pharmacist'];
+
+  const keyFmt      = document.getElementById('clin-key-format');
+  const btnText     = document.getElementById('clin-btn-text');
+  const label       = document.getElementById('clin-tier-label');
+  const name        = document.getElementById('clin-tier-name');
+  const who         = document.getElementById('clin-tier-who');
+  const featMtm     = document.getElementById('clin-feat-mtm');
+  const featSentinel= document.getElementById('clin-feat-sentinel');
+  const featSoap    = document.getElementById('clin-feat-soap');
+
+  if (keyFmt)       keyFmt.textContent       = p.keyFmt;
+  if (btnText)      btnText.textContent      = p.btnText;
+  if (label)        label.textContent        = p.label || 'Clinician';
+  if (name)         name.textContent         = p.name;
+  if (who)          who.textContent          = p.who;
+  if (featMtm)      featMtm.innerHTML        = p.mtm;
+  if (featSentinel) featSentinel.innerHTML   = p.sentinel;
+  if (featSoap)     featSoap.innerHTML       = p.soap;
+}
+
+// Opens the checkout modal for the clinician card
+function startClinicianCheckout() {
+  _pendingRole = 'pharmacist'; // default; user confirms role in registration modal
+  startCheckout('researcher'); // same $49 price ID
+}
+
+// Legacy alias — kept for any external callers
+function setResearcherPath(role) { setClinicianPath(role); }
+
+(function checkRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('status') === 'success') {
+    document.getElementById('screen-success').classList.add('active');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  if (params.get('status') === 'cancel') {
+    document.getElementById('screen-cancel').classList.add('active');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  if (params.get('seat_success') === '1') {
+    document.getElementById('screen-seat-success').classList.add('active');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  if (params.get('seat_cancel') === '1') {
+    document.getElementById('screen-cancel').classList.add('active');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+})();
+
+// Clinical roles — same UX as pharmacist: no study title, practice name for institution
+const CLINICAL_ROLES = new Set(['pharmacist','np','pa','rn','md','care_coordinator']);
+
+// Step 1: Button click opens registration modal
+function startCheckout(tier) {
+  _pendingTier = tier;
+  const isPi         = tier === 'pi';
+  const isClinical   = tier === 'researcher' && CLINICAL_ROLES.has(_pendingRole);
+
+  const pill = document.getElementById('reg-tier-pill');
+  const p    = ROLE_PROFILES[_pendingRole] || ROLE_PROFILES['pharmacist'];
+  const resLabel = isClinical ? (p.label + ' · $49/mo') : 'Researcher · $49/mo';
+  const labels   = { student: 'Student · $19/mo', researcher: resLabel, pi: 'Investigator · $149/mo' };
+  pill.textContent = labels[tier] || tier;
+  // Pill colour: use 'clinician' class for clinical roles, 'researcher' for research role
+  const pillClass = (tier === 'researcher' && isClinical) ? 'clinician' : tier;
+  pill.className   = 'reg-tier-pill ' + pillClass;
+
+  // Show institutional seat note for student and researcher (not PI — PI is typically the one issuing seats)
+  const instNote = document.getElementById('reg-inst-note');
+  if (instNote) instNote.style.display = (!isPi) ? '' : 'none';
+
+  // Swap modal copy for PI
+  const eyebrow = document.getElementById('reg-eyebrow-text');
+  const title   = document.getElementById('reg-title-text');
+  const sub     = document.getElementById('reg-sub-text');
+  const card    = document.querySelector('.reg-card');
+  if (isPi) {
+    if (eyebrow) eyebrow.textContent = 'Set up your research programme';
+    if (title)   title.textContent   = 'Investigator · IRB Configuration';
+    if (sub)     sub.textContent     = 'Your PI workspace key and IRB-grade permission letter will be emailed after payment. These details appear verbatim on your certified permission letter.';
+    if (card)    card.classList.add('pi-mode');
+  } else {
+    if (eyebrow) eyebrow.textContent = 'Before we proceed';
+    if (title)   title.textContent   = 'Tell us about your work';
+    if (sub)     sub.textContent     = 'Your workspace key will be generated automatically after payment and emailed to you. We need your details to create it.';
+    if (card)    card.classList.remove('pi-mode');
+  }
+
+  // Show/hide PI extended fields; reset site count
+  const piFields = document.getElementById('reg-pi-fields');
+  if (piFields) piFields.style.display = isPi ? '' : 'none';
+  if (isPi) setSiteCount(1);
+
+  // Show/hide study title (clinical roles don't need it — they're managing patients, not running studies)
+  const studyField = document.getElementById('reg-study-field');
+  if (studyField) studyField.style.display = isClinical ? 'none' : '';
+  if (studyField) { const input = document.getElementById('reg-study'); if (input && isClinical) input.value = ''; }
+
+  // Show/hide clinical role selector (shown for clinician tier; role was moved from card to modal)
+  const clinRoleField = document.getElementById('reg-clin-role-field');
+  if (clinRoleField) clinRoleField.style.display = isClinical ? '' : 'none';
+
+  // Institution label / placeholder — varies by role
+  const instLabel = document.getElementById('reg-institution-label');
+  const instInput = document.getElementById('reg-institution');
+  if (isPi) {
+    if (instLabel) instLabel.textContent = 'Home institution / University';
+    if (instInput) instInput.placeholder = 'University of Southern California';
+  } else if (isClinical) {
+    const practiceLabels = {
+      pharmacist:       'Pharmacy or practice name',
+      np: 'Clinic or health system name', pa: 'Clinic or health system name',
+      rn: 'Clinic or health system name', md: 'Clinic or health system name',
+      care_coordinator: 'Organization or health system name',
+    };
+    if (instLabel) instLabel.textContent = practiceLabels[_pendingRole] || 'Practice or clinic name';
+    if (instInput) instInput.placeholder = 'City Pharmacy · Long Beach, CA';
+  } else {
+    if (instLabel) instLabel.textContent = 'Institution or organisation';
+    if (instInput) instInput.placeholder = 'Harvard Medical School';
+  }
+
+  // Filter intended-use options by tier
+  const useSelect = document.getElementById('reg-intended-use');
+  if (useSelect) {
+    useSelect.value = '';
+    [...useSelect.options].forEach(opt => {
+      if (!opt.value) { opt.style.display = ''; return; } // keep placeholder
+      const forPhrm = opt.classList.contains('use-pharmacist');
+      const forRes  = opt.classList.contains('use-researcher');
+      const forPi   = opt.classList.contains('use-pi');
+      if (isPi)          opt.style.display = forPi   ? '' : 'none';
+      else if (isClinical) opt.style.display = forPhrm ? '' : 'none';
+      else               opt.style.display = forRes  ? '' : 'none';
+    });
+  }
+
+  document.getElementById('reg-modal').classList.add('active');
+  setTimeout(() => document.getElementById('reg-name').focus(), 100);
+}
+
+function setSiteCount(n) {
+  document.getElementById('reg-num-sites').value = n;
+  [...document.querySelectorAll('.reg-site-btn')].forEach((b, i) => {
+    b.classList.toggle('active', i + 1 === n);
+  });
+}
+
+function closeRegModal() {
+  document.getElementById('reg-modal').classList.remove('active');
+  _pendingTier = null;
+}
+
+// Step 2: Validate form and proceed to Stripe
+// Warn if intended use doesn't match tier
+function checkIntendedUse() {
+  const tier        = _pendingTier;
+  const role        = _pendingRole;
+  const use         = document.getElementById('reg-intended-use').value;
+  const warn        = document.getElementById('reg-use-warning');
+  if (!use) { warn.style.display = 'none'; return; }
+
+  const warnings = {
+    student: {
+      funded_research: 'The Student tier is intended for thesis and coursework studies. Funded research under a grant or institutional budget requires the PI · Multi-Site tier ($149/mo). Selecting the wrong tier may result in your permission letter being invalid for grant reporting or journal submission.',
+      commercial:      'Commercial or industry-sponsored research requires the PI · Multi-Site tier ($149/mo) or an Institution contract. Student keys are not valid for commercial use and will not be honoured in journal or IRB submissions.',
+    },
+    researcher: {
+      funded_research: 'If your work is funded by a grant or institutional budget, the PI · Multi-Site tier ($149/mo) provides IRB-grade export headers, sub-workspace management, and a permission letter appropriate for grant reporting.',
+      commercial:      'Commercial or industry-sponsored research should use the PI · Multi-Site tier ($149/mo) or an Institution contract to ensure your permission letter covers commercial application.',
+    },
+    pharmacist: {
+      funded_research: 'If your MTM programme is operating under a grant or institutional contract, the PI · Multi-Site tier ($149/mo) adds IRB-grade export headers and sub-workspace management appropriate for funded clinical projects.',
+    },
+    pi: {
+      commercial: 'Commercial or industry-sponsored research using an academic IRB protocol may require additional institutional review. Ensure your IRB approval explicitly covers commercial application and that your institutional conflicts-of-interest policy is satisfied.',
+      unfunded: 'If this project is self-funded with no external grant, consider whether the Researcher tier ($49/mo) may be sufficient — the PI tier is optimised for funded, IRB-registered multi-site studies.',
+    },
+  };
+
+  const effectiveRole = tier === 'pi' ? 'pi' : (tier === 'researcher' && CLINICAL_ROLES.has(role)) ? 'pharmacist' : tier;
+  const msg = warnings[effectiveRole]?.[use];
+  if (msg) {
+    warn.textContent = '⚠ ' + msg;
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+async function submitRegistration() {
+  const name         = document.getElementById('reg-name').value.trim();
+  const email        = document.getElementById('reg-email').value.trim();
+  const institution  = document.getElementById('reg-institution').value.trim();
+  const study_title  = document.getElementById('reg-study').value.trim();
+  const intended_use = document.getElementById('reg-intended-use').value;
+
+  const isPi         = _pendingTier === 'pi';
+  const isClinical   = _pendingTier === 'researcher' && CLINICAL_ROLES.has(_pendingRole);
+
+  if (!name)         { showToast('Please enter your full name.'); return; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+                     { showToast('Please enter a valid email address.'); return; }
+  if (!institution)  { showToast('Please enter your institution or practice name.'); return; }
+  if (!isClinical && !study_title) { showToast('Please enter your study title — this appears on your permission letter.'); return; }
+  if (!intended_use) { showToast('Please select your intended use.'); return; }
+
+  // PI-specific field collection and validation
+  let irb_protocol = '', irb_board = '', study_start = '', study_end = '', num_sites = 1, funding_source = '', grant_num = '';
+  if (isPi) {
+    irb_protocol   = (document.getElementById('reg-irb-protocol')?.value  || '').trim();
+    irb_board      = (document.getElementById('reg-irb-board')?.value     || '').trim();
+    study_start    =  document.getElementById('reg-study-start')?.value   || '';
+    study_end      =  document.getElementById('reg-study-end')?.value     || '';
+    num_sites      = parseInt(document.getElementById('reg-num-sites')?.value || '1', 10);
+    funding_source =  document.getElementById('reg-funding-source')?.value || '';
+    grant_num      = (document.getElementById('reg-grant-num')?.value     || '').trim();
+
+    if (!irb_protocol)   { showToast('Please enter your IRB / ethics protocol number.'); return; }
+    if (!irb_board)      { showToast('Please enter your ethics board or IRB name.'); return; }
+    if (!study_start)    { showToast('Please enter your study start date.'); return; }
+    if (!funding_source) { showToast('Please select your primary funding source.'); return; }
+  }
+
+  const btn = document.getElementById('reg-submit-btn');
+  btn.disabled    = true;
+  btn.textContent = 'Redirecting to Stripe…';
+
+  // If clinician tier, read role from modal selector
+  const clinRoleEl = document.getElementById('reg-clin-role');
+  if (clinRoleEl && clinRoleEl.closest('#reg-clin-role-field') && document.getElementById('reg-clin-role-field').style.display !== 'none') {
+    _pendingRole = clinRoleEl.value || _pendingRole;
+  }
+
+  try {
+    const res = await fetch(LAMBDA_URL + '/create-checkout-session', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        price_id:    PRICE_IDS[_pendingTier],
+        name,
+        email,
+        institution,
+        study_title,
+        intended_use,
+        role: _pendingTier === 'researcher' ? _pendingRole : _pendingTier,
+        ...(isPi ? { irb_protocol, irb_board, study_start, study_end, num_sites, funding_source, grant_num } : {}),
+        ...(_parentPi ? { parent_pi: _parentPi } : {}),
+        success_url: window.location.origin + window.location.pathname + '?status=success',
+        cancel_url:  window.location.origin + window.location.pathname + '?status=cancel',
+      }),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Could not create checkout session');
+    }
+    const { url, session_id } = await res.json();
+
+    document.getElementById('reg-modal').classList.remove('active');
+
+    if (url) {
+      window.location.href = url;
+    } else {
+      throw new Error('No checkout URL returned');
+    }
+  } catch(err) {
+    console.error('[checkout]', err.message);
+    showToast((err.message && err.message !== 'Could not create checkout session')
+      ? 'Checkout error: ' + err.message
+      : 'Could not start checkout. Please try again or email info@adherence.cc');
+    btn.disabled    = false;
+    btn.textContent = 'Continue to Payment →';
+  }
+}
+
+// Allow Enter key to submit the modal form
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('reg-modal').classList.contains('active')) {
+    submitRegistration();
+  }
+  if (e.key === 'Escape' && document.getElementById('reg-modal').classList.contains('active')) {
+    closeRegModal();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('reg-intended-use').addEventListener('change', checkIntendedUse);
+
+  // ── PI referral link handling (?tier=student|researcher&pi=PIKEY) ──────────
+  const urlParams = new URLSearchParams(window.location.search);
+  const refTier   = urlParams.get('tier');
+  const refPi     = urlParams.get('pi');
+
+  if (refPi) {
+    _parentPi = refPi.trim().toUpperCase();
+
+    // Show referral banner beneath hero
+    const banner = document.createElement('div');
+    banner.id = 'pi-referral-banner';
+    banner.innerHTML = `
+      <div style="max-width:960px;margin:0 auto;padding:0 40px;">
+        <div style="background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.25);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:14px;">
+          <div style="font-size:1.2rem;">🔗</div>
+          <div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:rgba(212,168,67,0.9);margin-bottom:2px;">Invited by your PI</div>
+            <div style="font-size:0.84rem;color:var(--text);line-height:1.5;">Your key will be automatically linked to workspace <strong style="color:rgba(212,168,67,0.8);font-family:'IBM Plex Mono',monospace;" id="pi-ref-key-label"></strong> — your submissions will appear in your PI's multi-site dashboard.</div>
+          </div>
+        </div>
+      </div>`;
+    banner.style.cssText = 'position:relative;z-index:1;padding:0 0 24px;';
+
+    // Safely set the PI key text (avoid innerHTML injection)
+    const keyLabelEl = banner.querySelector('#pi-ref-key-label');
+    if (keyLabelEl) keyLabelEl.textContent = _parentPi;
+
+    // Insert after the hero section
+    const hero = document.querySelector('.hero');
+    if (hero && hero.nextSibling) {
+      hero.parentNode.insertBefore(banner, hero.nextSibling);
+    }
+
+    // Auto-scroll to and highlight the correct tier card
+    const tierMap = { student: 'btn-student', researcher: 'btn-pi' /* researcher maps to clinician card */ };
+    if (refTier === 'student') {
+      setTimeout(() => {
+        const card = document.getElementById('btn-student')?.closest('.tier-card');
+        if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.style.outline = '2px solid rgba(212,168,67,0.5)'; }
+      }, 400);
+    } else if (refTier === 'researcher') {
+      setTimeout(() => {
+        // Clinician card is for researcher role
+        const clinBtn = document.querySelector('.tier-btn[onclick*="startClinicianCheckout"]');
+        const card = clinBtn?.closest('.tier-card');
+        if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.style.outline = '2px solid rgba(212,168,67,0.5)'; }
+      }, 400);
+    }
+  }
+});
+
+// ── Institution checkout ──────────────────────────────────────────────────────
+const INST_PRICING = {
+  academic: { monthly: 399,  annual: 3990,  save: 798  },
+  health:   { monthly: 599,  annual: 5990,  save: 1198 },
+  amc:      { monthly: 799,  annual: 7990,  save: 1598 },
+};
+const INST_LABELS = {
+  academic: 'Institution · Academic',
+  health:   'Institution · Health System',
+  amc:      'Institution · Academic Medical Center',
+};
+
+function _instUpdatePricing() {
+  const type = document.querySelector('input[name="inst-type"]:checked')?.value || 'academic';
+  const p    = INST_PRICING[type];
+  const mEl  = document.getElementById('inst-price-monthly');
+  const aEl  = document.getElementById('inst-price-annual');
+  const tEl  = document.getElementById('inst-modal-title');
+  if (mEl) mEl.textContent = `$${p.monthly}/month`;
+  if (aEl) aEl.textContent = `$${p.annual.toLocaleString()}/year · save $${p.save.toLocaleString()}`;
+  if (tEl) tEl.textContent = INST_LABELS[type] || 'Start Institution Subscription';
+}
+
+function openInstModal(type) {
+  const m = document.getElementById('inst-modal');
+  m.style.display = 'flex';
+  document.getElementById('inst-error').style.display = 'none';
+  const btn = document.getElementById('inst-submit-btn');
+  btn.disabled = false;
+  btn.querySelector ? (btn.querySelector('.btn-text') || btn).textContent = 'Continue to Stripe →' : (btn.textContent = 'Continue to Stripe →');
+  // Pre-select the institution type that was clicked
+  const t = type || 'academic';
+  const radio = document.querySelector(`input[name="inst-type"][value="${t}"]`);
+  if (radio) { radio.checked = true; }
+  _instUpdatePricing();
+  // Wire the type radios to update pricing live
+  document.querySelectorAll('input[name="inst-type"]').forEach(r => {
+    r.onchange = _instUpdatePricing;
+  });
+}
+
+function closeInstModal() {
+  document.getElementById('inst-modal').style.display = 'none';
+}
+
+async function submitInstCheckout() {
+  const inst_name      = document.getElementById('inst-name').value.trim();
+  const billing_name   = document.getElementById('inst-billing-name').value.trim();
+  const billing_email  = document.getElementById('inst-billing-email').value.trim();
+  const inst_type      = document.querySelector('input[name="inst-type"]:checked')?.value || 'academic';
+  const plan_type      = document.querySelector('input[name="inst-plan"]:checked')?.value || 'monthly';
+  const po_number      = document.getElementById('inst-po').value.trim();
+  const errEl          = document.getElementById('inst-error');
+  const btn            = document.getElementById('inst-submit-btn');
+
+  errEl.style.display = 'none';
+  const showErr = msg => { errEl.textContent = msg; errEl.style.display = 'block'; };
+
+  if (!inst_type)     return showErr('Select an institution type.');
+  if (!inst_name)     return showErr('Enter your institution or organisation name.');
+  if (!billing_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billing_email))
+    return showErr('Enter a valid billing email address.');
+
+  btn.disabled = true;
+  btn.textContent = 'Redirecting to Stripe…';
+
+  try {
+    const res = await fetch(LAMBDA_URL + '/institution-checkout', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inst_name, billing_name, billing_email, inst_type, plan_type, po_number }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Could not create checkout session');
+    if (data.url) { window.location.href = data.url; return; }
+    throw new Error('No checkout URL returned');
+  } catch(e) {
+    showErr(e.message || 'Could not start checkout. Email info@adherence.cc for help.');
+    btn.disabled = false;
+    btn.textContent = 'Continue to Stripe →';
+  }
+}
+
+
+// ── Seat checkout ─────────────────────────────────────────────────────────────
+function updateSeatPrice() {
+  const type = document.getElementById('seat-type').value;
+  const qty  = parseInt(document.getElementById('seat-qty').value) || 1;
+  const totalEl  = document.getElementById('seat-total');
+  const volumeEl = document.getElementById('seat-volume-note');
+  if (!type) { totalEl.textContent = '—'; volumeEl.style.display = 'none'; return; }
+  let rate = SEAT_RATES[type] || 0;
+  let useVolume = false;
+  const _clinicalSeatTypes = new Set(['pharmacist','np','pa','rn','md','care_coordinator','researcher']);
+  if (type === 'pi' && qty > 10) {
+    rate = SEAT_VOLUME['pi']?.rate || rate; useVolume = true;
+  } else if (_clinicalSeatTypes.has(type) && qty > 10) {
+    rate = SEAT_VOLUME['researcher']?.rate || rate; useVolume = true;
+  }
+  const total = rate * qty;
+  totalEl.textContent = `$${total.toLocaleString()}/mo`;
+  volumeEl.style.display = useVolume ? 'block' : 'none';
+}
+
+async function submitSeatCheckout() {
+  const inst_key      = document.getElementById('seat-inst-key').value.trim().toUpperCase();
+  const contact_name  = document.getElementById('seat-contact-name').value.trim();
+  const contact_email = document.getElementById('seat-contact-email').value.trim();
+  const seat_type     = document.getElementById('seat-type').value;
+  const quantity      = parseInt(document.getElementById('seat-qty').value) || 1;
+  const errEl         = document.getElementById('seat-error');
+
+  errEl.style.display = 'none';
+  const showErr = msg => { errEl.textContent = msg; errEl.style.display = 'block'; };
+
+  if (!inst_key || !inst_key.startsWith('INST-'))
+    return showErr('Enter your institution key — it should start with INST-');
+  if (!contact_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email))
+    return showErr('Enter a valid contact email address.');
+  if (!seat_type)
+    return showErr('Select a seat type.');
+
+  const btn = document.querySelector('.seats-btn');
+  btn.disabled = true;
+  btn.textContent = 'Redirecting to Stripe…';
+
+  try {
+    const res = await fetch(LAMBDA_URL + '/seat-checkout', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inst_key, contact_name, contact_email, seat_type, quantity }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Could not create seat checkout');
+    if (data.url) { window.location.href = data.url; return; }
+    throw new Error('No checkout URL returned');
+  } catch(e) {
+    showErr(e.message || 'Could not start checkout. Email info@adherence.cc for help.');
+    btn.disabled = false;
+    btn.textContent = 'Purchase Seats →';
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 5000);
+}
+
+// Handle post-institution-checkout redirects
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('inst_success')) {
+    showToast('Institution subscription active — check your email for your INST- key and included seat keys.');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  if (params.has('inst_cancel')) {
+    showToast('Institution checkout cancelled.');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+})();
+
+// ===== CERTIFICATE VERIFY =====
+(function() {
+  const inp = document.getElementById('vc-cert-input');
+  if (!inp) return;
+  inp.addEventListener('keydown', function(e){ if(e.key==='Enter') vcVerifyCert(); });
+  inp.addEventListener('input', function(){
+    const pos = this.selectionStart;
+    this.value = this.value.toUpperCase();
+    this.setSelectionRange(pos, pos);
+  });
+  // Auto-fill from ?cert= param
+  const certParam = new URLSearchParams(window.location.search).get('cert');
+  if (certParam) {
+    inp.value = certParam.trim().toUpperCase();
+    setTimeout(vcVerifyCert, 300);
+  }
+})();
+
+async function vcVerifyCert() {
+  const raw  = document.getElementById('vc-cert-input').value.trim().toUpperCase();
+  const btn  = document.getElementById('vc-verify-btn');
+  const load = document.getElementById('vc-loading');
+  const card = document.getElementById('vc-result-card');
+  if (!raw) { document.getElementById('vc-cert-input').focus(); return; }
+  if (!/^(MAP|MMAS8R?|PUB)-[A-F0-9]{8}-[A-F0-9]{8}-[A-F0-9]{8}$/.test(raw)) {
+    vcShowResult('invalid', null, raw); return;
+  }
+  btn.disabled = true;
+  card.style.display = 'none';
+  load.style.display = 'block';
+  try {
+    // GET with ?format=json — simple CORS request, no preflight needed.
+    const res = await fetch(
+      LAMBDA_URL + '/verify-cert?cert=' + encodeURIComponent(raw) + '&format=json',
+      { method: 'GET' }
+    );
+    load.style.display = 'none';
+    let data;
+    try { data = await res.json(); } catch(e) { data = null; }
+    if (!data) { vcShowResult('not_found', null, raw); return; }
+    vcShowResult(data.status || (data.certNum ? 'active' : 'not_found'), data, raw);
+  } catch(e) {
+    load.style.display = 'none';
+    vcShowResult('error', null, raw);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function vcShowResult(status, record, certNum) {
+  const card   = document.getElementById('vc-result-card');
+  const icon   = document.getElementById('vc-result-icon');
+  const label  = document.getElementById('vc-result-status-label');
+  const certEl = document.getElementById('vc-result-cert-num');
+  const body   = document.getElementById('vc-result-body');
+  const footer = document.getElementById('vc-result-footer');
+  const isActive  = status === 'active';
+  const isRevoked = status === 'revoked';
+  const isValid   = isActive || isRevoked;
+  icon.className = 'vc-result-icon ' + (isActive ? 'valid' : isRevoked ? 'revoked' : 'invalid');
+  icon.textContent = isActive ? '✓' : isRevoked ? '✗' : '?';
+  label.className = 'vc-result-status-label ' + (isActive ? 'valid' : isRevoked ? 'revoked' : 'invalid');
+  label.textContent = isActive  ? 'Valid — Permission Active'
+                    : isRevoked ? 'Revoked — Permission Withdrawn'
+                    : status === 'not_found' ? 'Not Found — Certificate Unrecognised'
+                    : status === 'error'     ? 'Error — Could Not Reach Registry'
+                    : 'Invalid — Certificate Format Not Recognised';
+  certEl.textContent = certNum;
+  if (isValid && record) {
+    const issuedDate = record.issued_at
+      ? new Date(record.issued_at).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})
+      : '—';
+    const isPubLic = record.key_type === 'publication_license';
+    let rows, note;
+    if (isPubLic) {
+      const countriesStr = Array.isArray(record.countries)
+        ? record.countries.join(', ')
+        : (record.countries || '—');
+      rows = [
+        ['Principal Investigator', record.pi || record.name || '—'],
+        ['Institution',            record.institution || '—'],
+        ['Study Title',            record.study_title || '—'],
+        ['Patient Population',     record.population  || '—'],
+        ['Validated N',            record.n_validated ? record.n_validated + ' participants' : '—'],
+        ['Data Collection Period', record.date_range  || '—'],
+        ['Countries / Sites',      countriesStr],
+        ['IRB Reference',          record.irb     || '—'],
+        ['Issue Date',             issuedDate],
+        ['License Type',           'Publication License (Permanent)'],
+        ['Status',                 isActive ? 'Active — Permanent' : 'Revoked'],
+      ].filter(([,v]) => v && v !== '—').map(([k,v]) => `<tr><td>${k}</td><td>${vcEscHtml(v)}</td></tr>`).join('');
+      const pubTool = record.tool || 'MMAS-8';
+      note = isActive
+        ? `This is a <strong>permanent Publication License</strong> issued by Adherence Cartography. It authorises the named principal investigator to publish research using the <strong>${vcEscHtml(pubTool)}</strong> for the described study. This license does not expire and is not contingent on an active subscription. Dataset provenance was verified through the ATLAS platform.`
+        : `This publication license has been revoked. Contact <a href="mailto:info@adherence.cc" style="color:rgba(239,68,68,0.8);">info@adherence.cc</a> for further information.`;
+    } else {
+      const lopTool = record.tool || 'MMAS-8';
+      rows = [
+        ['Issued To',    record.name       || '—'],
+        ['Institution',  record.institution || '—'],
+        ['Study Title',  record.study_title || '—'],
+        ['Issue Date',   issuedDate],
+        ['Instrument',   lopTool],
+        ['Permission Type', record.role ? record.role.charAt(0).toUpperCase()+record.role.slice(1) : '—'],
+        ['Status',       isActive ? 'Active' : 'Revoked'],
+      ].map(([k,v]) => `<tr><td>${k}</td><td>${vcEscHtml(v)}</td></tr>`).join('');
+      note = isActive
+        ? `This Letter of Permission was issued by Adherence Cartography and authorises the named individual to use the <strong>${vcEscHtml(lopTool)}</strong> for the described study. Permission remains valid while the workspace subscription is active.`
+        : `This permission has been revoked. Contact <a href="mailto:info@adherence.cc" style="color:rgba(239,68,68,0.8);">info@adherence.cc</a> for further information.`;
+    }
+    body.innerHTML = `<table class="vc-result-table">${rows}</table>
+      <div class="vc-result-note ${isActive?'valid':'revoked'}">${note}</div>`;
+  } else {
+    body.innerHTML = `<div class="vc-result-note" style="border-color:rgba(245,158,11,0.2);background:rgba(245,158,11,0.04);">
+      ${status==='error'
+        ? 'Registry could not be reached. Please try again. If the problem persists, contact <a href="mailto:info@adherence.cc" style="color:rgba(212,168,67,0.7);">info@adherence.cc</a>.'
+        : 'The certificate <strong style="font-family:monospace;">' + vcEscHtml(certNum) + '</strong> was not found in the ATLAS Permission Registry. Contact <a href="mailto:info@adherence.cc" style="color:rgba(212,168,67,0.7);">info@adherence.cc</a> if you believe this certificate is genuine.'}
+    </div>`;
+  }
+  footer.innerHTML = 'Verified · ' + new Date().toUTCString()
+    + '<br/>ATLAS Permission Registry · Adherence Cartography · adherence.cc';
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function vcEscHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Hamburger / nav drawer ────────────────────────────────────────────────────
+function toggleDrawer() {
+  const btn    = document.getElementById('hamburger-btn');
+  const drawer = document.getElementById('nav-drawer');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) { closeDrawer(); } else { openDrawer(); }
+}
+function openDrawer() {
+  const btn    = document.getElementById('hamburger-btn');
+  const drawer = document.getElementById('nav-drawer');
+  btn.classList.add('open');
+  btn.setAttribute('aria-expanded', 'true');
+  drawer.classList.add('open');
+  drawer.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  const btn    = document.getElementById('hamburger-btn');
+  const drawer = document.getElementById('nav-drawer');
+  btn.classList.remove('open');
+  btn.setAttribute('aria-expanded', 'false');
+  drawer.classList.remove('open');
+  drawer.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+// Close drawer on Escape key or backdrop tap
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDrawer(); });
+
+function toggleTheme() {
+  const html    = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  const next    = isLight ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  const icon  = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (next === 'light') {
+    if (icon)  icon.textContent  = '☾';
+    if (label) label.textContent = 'Night';
+  } else {
+    if (icon)  icon.textContent  = '☀';
+    if (label) label.textContent = 'Day';
+  }
+  try { localStorage.setItem('atlas_keys_theme', next); } catch(e) {}
+}
+
+// Restore saved theme preference on load
+(function restoreTheme() {
+  try {
+    const saved = localStorage.getItem('atlas_keys_theme');
+    if (saved === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.addEventListener('DOMContentLoaded', () => {
+        const icon  = document.getElementById('theme-icon');
+        const label = document.getElementById('theme-label');
+        if (icon)  icon.textContent  = '☾';
+        if (label) label.textContent = 'Night';
+      });
+    }
+  } catch(e) {}
+})();
+
+(function initStars() {
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.2 + 0.3,
+      o: Math.random() * 0.5 + 0.1,
+    }));
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,216,240,${s.o})`;
+      ctx.fill();
+    });
+  }
+  resize(); draw();
+  window.addEventListener('resize', () => { resize(); draw(); });
+})();
+
+// ── CTO1: PO Path Branch ──────────────────────────────────────────────────
+function _instHandleRegistration(tier) {
+  const po = (document.getElementById('inst-po')?.value || '').trim();
+  const billingEmail = (document.getElementById('inst-billing-email')?.value || '').trim();
+  const instName = (document.getElementById('inst-name')?.value || '').trim();
+  const contactName = (document.getElementById('inst-billing-name')?.value || '').trim();
+  const contactEmail = billingEmail;
+
+  const errEl = document.getElementById('inst-reg-err');
+  const clearErr = () => { if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; } };
+  const showErr = msg => { if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; } };
+  clearErr();
+
+  if (!instName || !billingEmail) {
+    showErr('Institution name and billing email are required.');
+    return;
+  }
+
+  if (po) {
+    _instShowPOConfirmation({ po, billingEmail, instName, contactName, contactEmail, tier });
+  } else {
+    _instProceedToStripe(tier);
+  }
+}
+
+function _instProceedToStripe(tier) {
+  // Delegate to existing Stripe checkout function
+  submitInstCheckout();
+}
+
+const _INST_TIER_PRICES = {
+  academic: { monthly: '$399', annual: '$3,990', label: 'Academic Institution' },
+  health:   { monthly: '$599', annual: '$5,990', label: 'Health System' },
+  amc:      { monthly: '$799', annual: '$7,990', label: 'Academic Medical Center' }
+};
+
+function _instShowPOConfirmation({ po, billingEmail, instName, contactName, contactEmail, tier }) {
+  const tierInfo = _INST_TIER_PRICES[tier] || { monthly: 'Custom', annual: 'Custom', label: tier };
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const screen = document.getElementById('screen-po-confirm');
+  if (!screen) return;
+
+  document.getElementById('po-conf-inst').textContent = instName;
+  document.getElementById('po-conf-tier').textContent = tierInfo.label;
+  document.getElementById('po-conf-price').textContent = tierInfo.annual + '/year';
+  document.getElementById('po-conf-po').textContent = po;
+  document.getElementById('po-conf-billing').textContent = billingEmail || contactEmail;
+  document.getElementById('po-conf-contact').textContent = contactName || contactEmail;
+  document.getElementById('po-conf-date').textContent = today;
+  document.getElementById('po-conf-due').textContent = dueDate;
+
+  window._poSubmitPayload = { po, billingEmail, instName, contactName, contactEmail, tier, tierInfo };
+
+  document.querySelectorAll('.reg-screen').forEach(s => s.style.display = 'none');
+  screen.style.display = 'block';
+}
+
+async function instSubmitPORequest() {
+  const btn = document.getElementById('po-submit-btn');
+  if (btn) btn.disabled = true;
+
+  const payload = window._poSubmitPayload;
+  if (!payload) return;
+
+  try {
+    const subject = encodeURIComponent(`ATLAS Institutional PO Request — ${payload.instName}`);
+    const body = encodeURIComponent(`
+ATLAS Institutional Subscription — Purchase Order Request
+
+Institution: ${payload.instName}
+Tier: ${payload.tierInfo.label}
+Annual Price: ${payload.tierInfo.annual}
+PO Number: ${payload.po}
+Billing Email: ${payload.billingEmail || payload.contactEmail}
+Contact: ${payload.contactName || payload.contactEmail}
+Contact Email: ${payload.contactEmail}
+Requested: ${new Date().toISOString()}
+
+Please issue a formal invoice to the billing email above referencing the PO number.
+Net-30 payment terms. Key will be activated upon payment confirmation.
+    `.trim());
+
+    window.open(`mailto:billing@adherence.cc?subject=${subject}&body=${body}`, '_blank');
+
+    document.querySelectorAll('.reg-screen').forEach(s => s.style.display = 'none');
+    const success = document.getElementById('screen-po-success');
+    if (success) success.style.display = 'block';
+
+  } catch(err) {
+    if (btn) btn.disabled = false;
+    const errEl = document.getElementById('po-conf-err');
+    if (errEl) { errEl.textContent = 'Submission failed. Please email billing@adherence.cc directly with your PO number.'; errEl.style.display = 'block'; }
+  }
+}
+window.instSubmitPORequest = instSubmitPORequest;
+window._instHandleRegistration = _instHandleRegistration;
+
+// BP-PRC-04: PMPM Calculator
+function updatePmpm(tier) {
+  const prices = { health: 599, amc: 799 };
+  const patients = parseInt(document.getElementById('pmpm-patients-' + tier)?.value || '400');
+  const pmpm = patients > 0 ? (prices[tier] / patients).toFixed(2) : '—';
+  const el = document.getElementById('pmpm-result-' + tier);
+  if (el) el.textContent = '= $' + pmpm + ' / patient / month';
+}
+window.updatePmpm = updatePmpm;
+</script>
+</body>
+</html>

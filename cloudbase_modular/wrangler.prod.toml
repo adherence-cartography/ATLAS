@@ -1,0 +1,15 @@
+name = "atlas"
+main = "_worker.js"
+compatibility_date = "2024-09-02"
+
+[assets]
+directory = "./"
+binding = "ASSETS"
+
+[vars]
+LAMBDA_URL = "https://fv3y62xuce6w3t37oj73x5gzcq0uwdqo.lambda-url.us-east-1.on.aws"
+LAMBDA_URL_UAE = "https://krbqzf0ozg.execute-api.me-central-1.amazonaws.com"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "5d74bb2df64d44ea8f58d707c924f780"

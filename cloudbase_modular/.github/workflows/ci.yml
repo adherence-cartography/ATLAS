@@ -1,0 +1,186 @@
+name: ATLAS CI
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'fix/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Unit Tests & Coverage ──────────────────────────────────────────────────
+  unit-test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests with coverage
+        run: npx vitest run --coverage --reporter=verbose
+
+      - name: Enforce coverage threshold (70%)
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct' 2>/dev/null || echo "0")
+          echo "Coverage: ${COVERAGE}%"
+          if [ "$(echo "$COVERAGE < 70" | bc -l)" = "1" ]; then
+            echo "❌ Coverage ${COVERAGE}% is below the 70% minimum threshold"
+            exit 1
+          fi
+          echo "✅ Coverage ${COVERAGE}% meets minimum threshold"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+  # ── Security Audit ─────────────────────────────────────────────────────────
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit (high severity)
+        run: npm audit --audit-level=high
+        continue-on-error: false
+
+      - name: Check for hardcoded secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+  # ── Worker Syntax Validation ───────────────────────────────────────────────
+  worker-validate:
+    name: Cloudflare Worker Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Validate worker syntax (dry run)
+        run: wrangler deploy --dry-run --outdir dist/
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Check worker bundle size
+        run: |
+          SIZE=$(wc -c < dist/_worker.js 2>/dev/null || echo "0")
+          LIMIT=$((1024 * 1024)) # 1MB Cloudflare limit
+          if [ "$SIZE" -gt "$LIMIT" ]; then
+            echo "❌ Worker bundle size ${SIZE}B exceeds Cloudflare 1MB limit"
+            exit 1
+          fi
+          echo "✅ Worker bundle size: ${SIZE}B"
+
+  # ── Firebase Rules Validation ──────────────────────────────────────────────
+  firebase-rules:
+    name: Firebase Security Rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Validate Firebase rules syntax
+        run: |
+          cd firebase
+          firebase database:rules:get --project placeholder 2>&1 | grep -v "Error" || true
+          # Validate rules JSON is parseable
+          node -e "JSON.parse(require('fs').readFileSync('database.rules.json','utf8')); console.log('✅ Firebase rules JSON valid')"
+
+  # ── E2E Smoke Tests ────────────────────────────────────────────────────────
+  e2e:
+    name: E2E Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [unit-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E smoke tests
+        run: npx playwright test tests/e2e/ --reporter=html
+        env:
+          ATLAS_TEST_KEY: ${{ secrets.ATLAS_TEST_KEY }}
+          ATLAS_TEST_URL: ${{ vars.ATLAS_TEST_URL || 'https://atlas.adherence.cc' }}
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  # ── Security Headers Check ─────────────────────────────────────────────────
+  security-headers:
+    name: Security Headers
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check security headers in worker
+        run: |
+          node -e "
+            const worker = require('fs').readFileSync('_worker.js','utf8');
+            const required = ['X-Frame-Options','X-Content-Type-Options','Strict-Transport-Security'];
+            const missing = required.filter(h => !worker.includes(h));
+            if (missing.length) { console.error('Missing security headers:', missing); process.exit(1); }
+            console.log('✅ All required security headers present');
+          "

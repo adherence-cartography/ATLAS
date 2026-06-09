@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>My Adherence · ATLAS Patient Portal</title>
+<meta name="description" content="View your medication adherence scores and personalized tips."/>
+<meta name="theme-color" content="#0d1525"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="My Adherence"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+
+<!-- Firebase compat SDKs (same versions as index.html) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" integrity="sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0" crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" integrity="sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p" crossorigin="anonymous"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#080e1a;--surface:#0d1525;--card:#111d30;--card2:#162238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --dim:#607898;--muted:#8aa0b8;--text:#cdd8e8;--bright:#e8f0f8;
+  --base:#4e9cf5;--mvmt:#8b6ff5;--strata:#2ec98a;--pe:#d4a843;
+  --optimal:#10b981;--good:#3b82f6;--moderate:#f59e0b;--poor:#ef4444;
+  --font-display:'Cormorant Garamond',Georgia,serif;
+  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --r:10px;
+}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--ink);
+  color:var(--text);
+  font-family:var(--font-body);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ── Layout ────────────────────────────────────────────────────── */
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* ── Login screen ─────────────────────────────────────────────── */
+#screen-login{
+  min-height:100vh;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:24px 16px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(46,201,138,0.06) 0%,transparent 70%);
+}
+#screen-login.active{display:flex;}
+
+.login-card{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-top:2px solid rgba(46,201,138,0.4);
+  border-radius:16px;
+  padding:36px 28px 32px;
+  width:100%;
+  max-width:380px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.4);
+}
+.login-eyebrow{
+  font-family:var(--font-mono);
+  font-size:0.52rem;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  color:rgba(46,201,138,0.65);
+  margin-bottom:8px;
+}
+.login-title{
+  font-family:var(--font-display);
+  font-size:1.75rem;
+  font-weight:300;
+  color:var(--bright);
+  line-height:1.15;
+  margin-bottom:6px;
+}
+.login-subtitle{
+  font-size:0.85rem;
+  color:var(--muted);
+  line-height:1.6;
+  margin-bottom:28px;
+}
+.field-label{
+  font-family:var(--font-mono);
+  font-size:0.56rem;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:5px;
+}
+.field-input{
+  width:100%;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:8px;
+  padding:10px 13px;
+  color:var(--bright);
+  font-family:var(--font-mono);
+  font-size:0.92rem;
+  letter-spacing:0.12em;
+  outline:none;
+  transition:border-color 0.2s;
+  margin-bottom:14px;
+}
+.field-input:focus{border-color:rgba(46,201,138,0.45);}
+.field-input::placeholder{color:var(--dim);letter-spacing:0.04em;}
+.pin-input{
+  font-size:1.4rem;
+  letter-spacing:0.32em;
+  text-align:center;
+}
+.btn-primary{
+  width:100%;
+  background:rgba(46,201,138,0.12);
+  border:1px solid rgba(46,201,138,0.35);
+  color:rgba(46,201,138,0.95);
+  font-family:var(--font-mono);
+  font-size:0.72rem;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  padding:13px;
+  border-radius:9px;
+  cursor:pointer;
+  transition:all 0.18s;
+  margin-top:6px;
+}
+.btn-primary:hover{background:rgba(46,201,138,0.22);border-color:rgba(46,201,138,0.55);}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+.login-error{
+  display:none;
+  background:rgba(239,68,68,0.08);
+  border:1px solid rgba(239,68,68,0.25);
+  border-radius:7px;
+  padding:10px 13px;
+  font-size:0.82rem;
+  color:#fca5a5;
+  margin-bottom:14px;
+  line-height:1.5;
+}
+.login-divider{
+  text-align:center;
+  font-size:0.75rem;
+  color:var(--dim);
+  margin:18px 0 0;
+  line-height:1.6;
+}
+
+/* ── Portal screen ────────────────────────────────────────────── */
+#screen-portal{
+  min-height:100vh;
+  display:none;
+}
+#screen-portal.active{display:block;}
+
+.portal-header{
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:16px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+.portal-logo{
+  font-family:var(--font-display);
+  font-size:1.1rem;
+  font-weight:300;
+  color:var(--bright);
+}
+.portal-logo span{
+  font-family:var(--font-mono);
+  font-size:0.52rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:rgba(46,201,138,0.6);
+  display:block;
+  margin-bottom:1px;
+}
+.btn-logout{
+  background:none;
+  border:1px solid var(--border2);
+  border-radius:7px;
+  color:var(--dim);
+  font-family:var(--font-mono);
+  font-size:0.62rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  padding:6px 12px;
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.btn-logout:hover{color:var(--text);border-color:rgba(255,255,255,0.25);}
+
+.portal-body{
+  max-width:600px;
+  margin:0 auto;
+  padding:24px 16px 60px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.p-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+}
+.p-card-eyebrow{
+  font-family:var(--font-mono);
+  font-size:0.52rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-bottom:6px;
+}
+.p-card-title{
+  font-family:var(--font-display);
+  font-size:1.15rem;
+  font-weight:300;
+  color:var(--bright);
+  margin-bottom:14px;
+  line-height:1.3;
+}
+
+/* ── Adherence badge ─────────────────────────────────────────── */
+.phenotype-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 14px;
+  border-radius:20px;
+  font-family:var(--font-mono);
+  font-size:0.7rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+.badge-a   {background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);color:#6ee7b7;}
+.badge-pa  {background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;}
+.badge-una {background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#fcd34d;}
+.badge-ina {background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;}
+
+.phenotype-explain{
+  font-size:0.88rem;
+  color:var(--text);
+  line-height:1.65;
+  margin-bottom:0;
+}
+
+/* ── Progress bars ──────────────────────────────────────────── */
+.pbar-row{
+  margin-bottom:14px;
+}
+.pbar-row:last-child{margin-bottom:0;}
+.pbar-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:5px;
+}
+.pbar-label{
+  font-family:var(--font-mono);
+  font-size:0.72rem;
+  color:var(--text);
+}
+.pbar-value{
+  font-family:var(--font-mono);
+  font-size:0.72rem;
+  color:var(--muted);
+}
+.pbar-track{
+  height:6px;
+  background:rgba(255,255,255,0.06);
+  border-radius:3px;
+  overflow:hidden;
+}
+.pbar-fill{
+  height:100%;
+  border-radius:3px;
+  transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ── History chart ──────────────────────────────────────────── */
+.history-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+  gap:10px;
+}
+.history-item{
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:12px 10px;
+  text-align:center;
+}
+.history-score{
+  font-family:var(--font-mono);
+  font-size:1.6rem;
+  font-weight:500;
+  line-height:1;
+  margin-bottom:4px;
+}
+.history-date{
+  font-family:var(--font-mono);
+  font-size:0.60rem;
+  color:var(--dim);
+  letter-spacing:0.06em;
+  margin-bottom:6px;
+}
+.history-bar-wrap{
+  height:4px;
+  background:rgba(255,255,255,0.05);
+  border-radius:2px;
+  overflow:hidden;
+  margin-top:6px;
+}
+.history-bar-fill{
+  height:100%;
+  border-radius:2px;
+}
+
+/* ── Coaching tip ───────────────────────────────────────────── */
+.tip-card{
+  border-left:3px solid rgba(46,201,138,0.45);
+}
+.tip-text{
+  font-size:0.92rem;
+  color:var(--text);
+  line-height:1.7;
+}
+
+/* ── Reminder card ──────────────────────────────────────────── */
+.reminder-card{
+  border-left:3px solid rgba(78,156,245,0.45);
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.reminder-icon{
+  font-size:1.6rem;
+  flex-shrink:0;
+}
+.reminder-date{
+  font-family:var(--font-mono);
+  font-size:0.9rem;
+  color:var(--bright);
+  margin-top:3px;
+}
+.reminder-sub{
+  font-size:0.8rem;
+  color:var(--muted);
+  margin-top:2px;
+}
+
+/* ── Loading state ──────────────────────────────────────────── */
+.loading-spinner{
+  width:28px;height:28px;
+  border:2px solid rgba(46,201,138,0.2);
+  border-top-color:rgba(46,201,138,0.7);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+  margin:40px auto;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{
+  text-align:center;
+  font-family:var(--font-mono);
+  font-size:0.72rem;
+  letter-spacing:0.1em;
+  color:var(--dim);
+  margin-top:10px;
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.empty-state{
+  text-align:center;
+  padding:36px 20px;
+  color:var(--muted);
+  font-size:0.88rem;
+  line-height:1.6;
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.portal-footer{
+  text-align:center;
+  font-family:var(--font-mono);
+  font-size:0.56rem;
+  letter-spacing:0.12em;
+  color:var(--dim);
+  margin-top:8px;
+  line-height:1.8;
+}
+
+@media(max-width:480px){
+  .login-card{padding:28px 18px 24px;}
+  .portal-body{padding:16px 12px 48px;}
+  .p-card{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════════════════════════ -->
+<div id="screen-login" class="active">
+  <div class="login-card">
+    <div class="login-eyebrow">Patient Portal · ATLAS</div>
+    <h1 class="login-title">Check Your<br>Adherence Score</h1>
+    <p class="login-subtitle">Sign in to see how well you have been taking your medicine and get tips to help.</p>
+
+    <div id="login-error" class="login-error">
+      That patient number or PIN is not correct. Please check and try again, or ask your care team for help.
+    </div>
+
+    <label class="field-label" for="input-patient-number">Your Patient Number</label>
+    <input id="input-patient-number" class="field-input" type="text"
+      placeholder="e.g. PT-001" autocomplete="username" autocapitalize="characters"
+      aria-label="Patient number" inputmode="text"/>
+
+    <label class="field-label" for="input-pin">Your 6-Digit PIN</label>
+    <input id="input-pin" class="field-input pin-input" type="password"
+      placeholder="••••••" maxlength="6" autocomplete="current-password"
+      aria-label="6-digit PIN" inputmode="numeric"
+      onkeydown="if(event.key==='Enter')portalLogin()"/>
+
+    <button class="btn-primary" id="login-btn" onclick="portalLogin()">
+      Sign In →
+    </button>
+
+    <p class="login-divider">
+      Forgot your PIN? Ask your pharmacist or doctor for help.<br>
+      <span style="color:rgba(255,255,255,0.18);">·</span>
+      <a href="https://adherence.cc" target="_blank" rel="noopener"
+        style="color:var(--dim);text-decoration:none;">adherence.cc</a>
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PORTAL SCREEN
+════════════════════════════════════════════════════════════════ -->
+<div id="screen-portal">
+  <header class="portal-header">
+    <div class="portal-logo">
+      <span>My Adherence</span>
+      ATLAS Portal
+    </div>
+    <button class="btn-logout" onclick="portalLogout()">Sign Out</button>
+  </header>
+
+  <main class="portal-body" id="portal-body" role="main" aria-live="polite">
+    <div class="loading-spinner" id="portal-loading"></div>
+    <p class="loading-text" id="portal-loading-text">Loading your results…</p>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     FIREBASE CONFIG — Replace with your actual config values
+════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Firebase Configuration ────────────────────────────────────────────────────
+// PLACEHOLDER: Replace these values with your project's Firebase config.
+// Find these in: Firebase Console → Project Settings → Your Apps → SDK setup
+const FIREBASE_CONFIG = {
+  apiKey:            "REPLACE_WITH_YOUR_API_KEY",
+  authDomain:        "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
+  databaseURL:       "https://REPLACE_WITH_YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId:         "REPLACE_WITH_YOUR_PROJECT",
+  storageBucket:     "REPLACE_WITH_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
+  appId:             "REPLACE_WITH_YOUR_APP_ID"
+};
+
+// ── Initialise Firebase ───────────────────────────────────────────────────────
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+} catch(e) {
+  console.warn('[Patient Portal] Firebase already initialised or config placeholder — portal running in demo mode.');
+}
+
+const _db = (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length)
+  ? firebase.database()
+  : null;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let _portalPatientNumber = null;
+let _portalWorkspace     = null;
+
+// ── Phenotype data ────────────────────────────────────────────────────────────
+const PHENOTYPE_DATA = {
+  INA: {
+    label: 'Intentional Non-Adherence',
+    badgeClass: 'badge-ina',
+    dot: '#ef4444',
+    explain: 'Your results show that there are times you choose not to take your medicine. This could be because of side effects, cost, or how you feel about the treatment. These are very common concerns — your care team wants to hear about them.',
+    tip: 'Talk to your pharmacist or doctor about how your medication makes you feel. Your feelings about your medicine matter, and they want to help.'
+  },
+  UNA: {
+    label: 'Unintentional Non-Adherence',
+    badgeClass: 'badge-una',
+    dot: '#f59e0b',
+    explain: 'Your results show that you sometimes forget or miss doses by accident — not on purpose. This is very common and easy to improve with small habit changes.',
+    tip: 'Setting a daily alarm on your phone for the same time every day can help you remember. Even 2 minutes after breakfast works great.'
+  },
+  PA: {
+    label: 'Partial Adherence',
+    badgeClass: 'badge-pa',
+    dot: '#3b82f6',
+    explain: 'You are doing well most of the time! You take your medicine on most days, but there are some days that are harder. Having a backup plan can help on those tough days.',
+    tip: 'You\'re doing well most days! Having a backup plan for busy days — like keeping an extra dose at work — can help on tough days.'
+  },
+  A: {
+    label: 'High Adherence',
+    badgeClass: 'badge-a',
+    dot: '#10b981',
+    explain: 'You are doing great! You take your medicine as directed most of the time. Keep up your good habits.',
+    tip: 'You\'re doing great! Keep up what you\'re doing. Your next check-in is coming up — we\'ll send you a reminder.'
+  }
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function _scoreColor(score) {
+  if (score >= 7)  return '#10b981';
+  if (score >= 5)  return '#3b82f6';
+  if (score >= 3)  return '#f59e0b';
+  return '#ef4444';
+}
+
+function _scoreLabel(score) {
+  if (score >= 7)  return 'High';
+  if (score >= 5)  return 'Medium';
+  if (score >= 3)  return 'Low';
+  return 'Very Low';
+}
+
+function _classifyPhenotype(records) {
+  // Use the most recent record with phenotype data
+  for (let i = records.length - 1; i >= 0; i--) {
+    const r = records[i];
+    if (!r) continue;
+    const score = r.score || 0;
+    if (score === 8) return 'A';
+    if (score >= 6)  return 'PA';
+    // Try to read MAP phenotype or classify from questions
+    if (r.map_phenotype) {
+      const ph = String(r.map_phenotype).toUpperCase();
+      if (ph === 'INA' || ph === 'UNA' || ph === 'PA' || ph === 'A') return ph;
+    }
+    if (score >= 4) return 'UNA';
+    return 'INA';
+  }
+  return 'UNA';
+}
+
+function _nextAssessmentDate(records) {
+  if (!records || !records.length) return null;
+  const latest = records.reduce((a, b) => ((a.timestamp||0) > (b.timestamp||0) ? a : b), records[0]);
+  if (!latest || !latest.timestamp) return null;
+  const d = new Date(latest.timestamp);
+  d.setDate(d.getDate() + 90); // standard 90-day follow-up
+  return d;
+}
+
+function _pct(val) {
+  return Math.round((val || 0) * 100);
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function portalLogin() {
+  const patNum = (document.getElementById('input-patient-number').value || '').trim().toUpperCase();
+  const pin    = (document.getElementById('input-pin').value || '').trim();
+  const errEl  = document.getElementById('login-error');
+  const btnEl  = document.getElementById('login-btn');
+
+  errEl.style.display = 'none';
+
+  if (!patNum || !pin) {
+    errEl.textContent = 'Please enter both your patient number and your PIN.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+    errEl.textContent = 'Your PIN must be exactly 6 numbers.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btnEl.disabled = true;
+  btnEl.textContent = 'Checking…';
+
+  try {
+    if (!_db) {
+      // Demo mode — no Firebase config
+      await _portalLoadDemo(patNum);
+      return;
+    }
+
+    // Read all workspaces/assessments for this patient_number
+    // Data path: assessments/{workspace}/{record_key}
+    const allSnap = await _db.ref('assessments').once('value');
+    const allWS   = allSnap.val();
+
+    if (!allWS) {
+      _portalShowError('No records found. Please check your patient number or ask your care team.');
+      return;
+    }
+
+    let matchedRecords  = [];
+    let matchedWorkspace = null;
+
+    // Search across all workspace nodes
+    Object.entries(allWS).forEach(([wsKey, wsRecords]) => {
+      if (!wsRecords || typeof wsRecords !== 'object') return;
+      Object.values(wsRecords).forEach(record => {
+        if (!record) return;
+        const recPatNum = String(record.patient_number || '').trim().toUpperCase();
+        if (recPatNum === patNum) {
+          // Verify PIN: stored as patient_pin field (6-digit numeric string)
+          const storedPin = String(record.patient_pin || '').trim();
+          if (storedPin && storedPin === pin) {
+            matchedRecords.push(record);
+            if (!matchedWorkspace) matchedWorkspace = wsKey;
+          }
+        }
+      });
+    });
+
+    if (!matchedRecords.length) {
+      _portalShowError('That patient number or PIN is not correct. Please check and try again, or ask your care team for help.');
+      return;
+    }
+
+    _portalPatientNumber = patNum;
+    _portalWorkspace     = matchedWorkspace;
+    _portalShowDashboard(patNum, matchedRecords);
+
+  } catch(err) {
+    console.error('[Portal] Login error:', err);
+    _portalShowError('Something went wrong. Please try again in a moment.');
+  }
+}
+
+function _portalShowError(msg) {
+  const errEl = document.getElementById('login-error');
+  const btnEl = document.getElementById('login-btn');
+  errEl.textContent = msg;
+  errEl.style.display = 'block';
+  btnEl.disabled = false;
+  btnEl.textContent = 'Sign In →';
+}
+
+// ── Demo mode (no Firebase) ───────────────────────────────────────────────────
+async function _portalLoadDemo(patNum) {
+  const demoRecords = [
+    { patient_number: patNum, score: 5.5, timestamp: Date.now() - 270*24*3600*1000, adherence_level: 'Medium', pe: 0.55, base_score: 0.65, mvmt_score: 0.50, strata_score: 0.48, patient_pin: '000000' },
+    { patient_number: patNum, score: 6.0, timestamp: Date.now() - 180*24*3600*1000, adherence_level: 'Medium', pe: 0.60, base_score: 0.68, mvmt_score: 0.55, strata_score: 0.52, patient_pin: '000000' },
+    { patient_number: patNum, score: 6.5, timestamp: Date.now() - 90*24*3600*1000,  adherence_level: 'High',   pe: 0.68, base_score: 0.75, mvmt_score: 0.62, strata_score: 0.59, patient_pin: '000000' },
+    { patient_number: patNum, score: 7.0, timestamp: Date.now(),                    adherence_level: 'High',   pe: 0.74, base_score: 0.80, mvmt_score: 0.70, strata_score: 0.65, patient_pin: '000000' },
+  ];
+  _portalPatientNumber = patNum;
+  _portalWorkspace     = 'DEMO';
+  _portalShowDashboard(patNum, demoRecords);
+}
+
+// ── Render dashboard ──────────────────────────────────────────────────────────
+function _portalShowDashboard(patNum, records) {
+  // Switch screens
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-portal').style.display = 'block';
+
+  const body = document.getElementById('portal-body');
+
+  // Sort records oldest → newest
+  records.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+  const latest    = records[records.length - 1] || {};
+  const phenotype = _classifyPhenotype(records);
+  const phData    = PHENOTYPE_DATA[phenotype] || PHENOTYPE_DATA.UNA;
+  const last4     = records.slice(-4);
+  const nextDate  = _nextAssessmentDate(records);
+
+  const latestBase   = latest.base_score   ?? (latest.a ?? null);
+  const latestMvmt   = latest.mvmt_score   ?? (latest.e ?? null);
+  const latestStrata = latest.strata_score ?? (latest.c ?? null);
+
+  const haspeacs = latestBase !== null && latestMvmt !== null && latestStrata !== null;
+
+  body.innerHTML = `
+    <!-- ── Welcome ─────────────────────────────────────────────── -->
+    <div class="p-card" style="border-top:2px solid rgba(46,201,138,0.4);">
+      <div class="p-card-eyebrow">Welcome Back</div>
+      <div class="p-card-title">Hello, ${_esc(patNum)}</div>
+      <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;">
+        Here are your most recent medication adherence results.
+        Bring this page to your next appointment to talk with your care team.
+      </p>
+    </div>
+
+    <!-- ── Phenotype badge + explanation ─────────────────────── -->
+    <div class="p-card">
+      <div class="p-card-eyebrow">Your Adherence Type</div>
+      <div class="phenotype-badge ${phData.badgeClass}">
+        <span style="width:7px;height:7px;border-radius:50%;background:${phData.dot};flex-shrink:0;display:inline-block;"></span>
+        ${_esc(phData.label)}
+      </div>
+      <p class="phenotype-explain">${phData.explain}</p>
+    </div>
+
+    <!-- ── Score history ─────────────────────────────────────── -->
+    <div class="p-card">
+      <div class="p-card-eyebrow">Your Scores Over Time</div>
+      <div class="p-card-title" style="font-size:0.95rem;margin-bottom:10px;">Last ${last4.length} Check-In${last4.length !== 1 ? 's' : ''}</div>
+      ${last4.length ? `
+        <div class="history-grid">
+          ${last4.map((r, i) => {
+            const sc    = r.score || 0;
+            const pct   = Math.round((sc / 8) * 100);
+            const color = _scoreColor(sc);
+            const label = _scoreLabel(sc);
+            const date  = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '—';
+            const isLatest = i === last4.length - 1;
+            return `
+              <div class="history-item" style="${isLatest ? 'border-color:rgba(46,201,138,0.3);background:rgba(46,201,138,0.04);' : ''}">
+                ${isLatest ? '<div style="font-family:var(--font-mono);font-size:0.50rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(46,201,138,0.65);margin-bottom:4px;">Latest</div>' : ''}
+                <div class="history-score" style="color:${color};">${sc.toFixed(1)}</div>
+                <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--dim);margin-bottom:2px;">/8</div>
+                <div style="font-family:var(--font-mono);font-size:0.60rem;color:${color};opacity:0.8;">${label}</div>
+                <div class="history-bar-wrap">
+                  <div class="history-bar-fill" style="width:${pct}%;background:${color};"></div>
+                </div>
+                <div class="history-date">${date}</div>
+              </div>`;
+          }).join('')}
+        </div>
+        <p style="font-size:0.76rem;color:var(--dim);margin-top:12px;line-height:1.5;">
+          Score of 8/8 = excellent. Score of 6–7 = good. Score under 6 means there is room to improve.
+        </p>
+      ` : '<div class="empty-state">No check-in scores on file yet.</div>'}
+    </div>
+
+    <!-- ── PEACS domain scores ────────────────────────────────── -->
+    ${haspeacs ? `
+    <div class="p-card">
+      <div class="p-card-eyebrow">What Your Score Measures</div>
+      <div class="p-card-title" style="font-size:0.95rem;margin-bottom:14px;">Three Areas of Adherence</div>
+      <div class="pbar-row">
+        <div class="pbar-header">
+          <span class="pbar-label" style="color:rgba(78,156,245,0.9);">BASE — Your Habits</span>
+          <span class="pbar-value">${_pct(latestBase)}%</span>
+        </div>
+        <div class="pbar-track">
+          <div class="pbar-fill" style="width:${_pct(latestBase)}%;background:rgba(78,156,245,0.75);"></div>
+        </div>
+        <p style="font-size:0.72rem;color:var(--dim);margin-top:4px;">How consistent you are with taking medicine every day.</p>
+      </div>
+      <div class="pbar-row">
+        <div class="pbar-header">
+          <span class="pbar-label" style="color:rgba(139,111,245,0.9);">MVMT — Your Routine</span>
+          <span class="pbar-value">${_pct(latestMvmt)}%</span>
+        </div>
+        <div class="pbar-track">
+          <div class="pbar-fill" style="width:${_pct(latestMvmt)}%;background:rgba(139,111,245,0.75);"></div>
+        </div>
+        <p style="font-size:0.72rem;color:var(--dim);margin-top:4px;">How well you fit medicine into your daily life and schedule.</p>
+      </div>
+      <div class="pbar-row">
+        <div class="pbar-header">
+          <span class="pbar-label" style="color:rgba(46,201,138,0.9);">STRATA — Your Mindset</span>
+          <span class="pbar-value">${_pct(latestStrata)}%</span>
+        </div>
+        <div class="pbar-track">
+          <div class="pbar-fill" style="width:${_pct(latestStrata)}%;background:rgba(46,201,138,0.75);"></div>
+        </div>
+        <p style="font-size:0.72rem;color:var(--dim);margin-top:4px;">How you feel about taking your medicine and whether you believe it helps.</p>
+      </div>
+    </div>` : ''}
+
+    <!-- ── Coaching tip ───────────────────────────────────────── -->
+    <div class="p-card tip-card">
+      <div class="p-card-eyebrow">A Tip Just for You</div>
+      <p class="tip-text">${_esc(phData.tip)}</p>
+    </div>
+
+    <!-- ── Next assessment reminder ──────────────────────────── -->
+    <div class="p-card reminder-card">
+      <div class="reminder-icon">📅</div>
+      <div>
+        <div class="p-card-eyebrow">Your Next Check-In</div>
+        <div class="reminder-date">
+          ${nextDate
+            ? nextDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
+            : 'Ask your care team for your next appointment date'}
+        </div>
+        <div class="reminder-sub">Your care team will review your score with you at this visit.</div>
+      </div>
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <div class="portal-footer">
+      ATLAS Adherence Cartography Platform · adherence.cc<br>
+      This page is for information only. Always follow your doctor or pharmacist's advice.
+    </div>
+  `;
+}
+
+// ── Escape helper ─────────────────────────────────────────────────────────────
+function _esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Logout ────────────────────────────────────────────────────────────────────
+function portalLogout() {
+  _portalPatientNumber = null;
+  _portalWorkspace     = null;
+  document.getElementById('screen-portal').style.display = 'none';
+  document.getElementById('screen-login').classList.add('active');
+  document.getElementById('input-patient-number').value = '';
+  document.getElementById('input-pin').value = '';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').textContent = 'Sign In →';
+}
+</script>
+</body>
+</html>

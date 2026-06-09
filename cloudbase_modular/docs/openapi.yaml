@@ -1,0 +1,1099 @@
+openapi: "3.0.3"
+
+info:
+  title: ATLAS Adherence Platform API
+  version: "8.0.0"
+  description: |
+    ATLAS is the Adherence Tracking & Longitudinal Assessment System, built by
+    Adherence Inc. It delivers MMAS-8 and PEACS assessments, workspace-scoped
+    data storage via Firebase Realtime Database, and bulk-upload tooling for
+    clinical research.
+
+    ## Authentication
+    Most operations require a Firebase ID token obtained after completing one of
+    the three authentication flows (Magic Link, MFA/OTP, or Anonymous). Pass the
+    token as a Bearer credential in the `Authorization` header.
+
+    ## Firebase paths as pseudo-REST
+    Firebase Realtime Database does not expose a traditional REST API at the
+    application layer; the client SDK calls the database directly. The paths
+    below are documented using `x-firebase-path` extensions so that developers
+    can understand the access model and write server-side integrations using the
+    Firebase Admin SDK or the Firebase REST API
+    (`https://adherence-project-2026-default-rtdb.firebaseio.com/<path>.json`).
+
+    ## Rate limiting
+    The Cloudflare Worker enforces **60 requests / minute per IP** on all
+    non-static paths. Exceeding this limit returns `429 Too Many Requests` with
+    a `Retry-After: 60` header.
+
+    ## License
+    MMAS-8 © Donald E. Morisky. Licensed exclusively to Adherence Inc.
+    ATLAS platform © Adherence Inc. Unauthorized use prohibited.
+    See: https://adherence.cc/license
+
+  contact:
+    name: Adherence Inc. Support
+    email: info@adherence.cc
+    url: https://adherence.cc
+
+  license:
+    name: Proprietary — All Rights Reserved
+    url: https://adherence.cc/license
+
+servers:
+  - url: https://atlas.adherence.cc
+    description: Production (Cloudflare Workers + Firebase)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAGS
+# ─────────────────────────────────────────────────────────────────────────────
+tags:
+  - name: spa
+    description: Single-page application HTML entry points served by the Cloudflare Worker.
+  - name: downloads
+    description: Static file downloads proxied through the Worker.
+  - name: assessments
+    description: |
+      MMAS-8 medication adherence assessments. Stored under
+      `/assessments/{workspaceKey}/{id}` in Firebase Realtime Database.
+      Access is workspace-scoped; superadmin and parent-institution keys
+      can read across workspaces.
+  - name: peacs
+    description: |
+      PEACS (Patient Engagement and Adherence Composite Score) assessments.
+      Stored under `/peacs_assessments/{workspaceKey}/{id}`.
+  - name: workspace
+    description: Workspace configuration profiles and per-workspace audit logs.
+  - name: public
+    description: Publicly readable aggregate statistics and site-wide data requiring no authentication.
+  - name: admin
+    description: Superadmin-only paths. Requires `role === "superadmin"` in the Firebase custom-token claims.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECURITY SCHEMES
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    FirebaseJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Firebase ID token obtained after `firebase.auth().signInWithCustomToken(token)`.
+        The token is issued by the ATLAS Lambda after key validation and (if required)
+        MFA/OTP or magic-link verification. The JWT carries custom claims:
+        - `role`: one of `superadmin | institution | pi | researcher | clinician | student | spectator`
+        - `workspace_key`: the caller's workspace identifier
+        - `parent_institution`: set for sub-workspaces; grants read access to the parent's data
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # SCHEMAS
+  # ───────────────────────────────────────────────────────────────────────────
+  schemas:
+
+    # ── MMAS-8 Assessment ────────────────────────────────────────────────────
+    MmasAssessment:
+      type: object
+      required:
+        - q1
+        - q2
+        - q3
+        - q4
+        - q5
+        - q6
+        - q7
+        - q8
+        - mmas_score
+        - ts
+      properties:
+        q1:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: "Q1 — Forget medication (0 = Never/Rarely, 1 = Sometimes/Usually/Always)"
+        q2:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: "Q2 — Careless about taking (0 = No, 1 = Yes)"
+        q3:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: "Q3 — Stopped when felt worse (0 = No, 1 = Yes)"
+        q4:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: "Q4 — Stopped when felt better (0 = No, 1 = Yes)"
+        q5:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: "Q5 — Trouble taking yesterday (0 = No, 1 = Yes)"
+        q6:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: "Q6 — Stop when symptoms controlled (0 = No, 1 = Yes)"
+        q7:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: "Q7 — Ever feel hassled by regimen (0 = No, 1 = Yes)"
+        q8:
+          type: integer
+          minimum: 0
+          maximum: 4
+          description: "Q8 — Difficulty remembering all medications (0 = Never … 4 = All the time)"
+        mmas_score:
+          type: number
+          minimum: 0
+          maximum: 8
+          description: "Total MMAS-8 score (Q1–Q7 each contribute 1 point when answered with non-adherent response; Q8 is normalized to 0–1)"
+        adherence_tier:
+          type: string
+          enum: [high, medium, low]
+          description: "Adherence classification: high = 8, medium = 6–<8, low = <6"
+        patient_number:
+          type: string
+          description: "De-identified participant identifier assigned by the researcher"
+        workspace_key:
+          type: string
+          description: "Workspace the assessment belongs to"
+        study_id:
+          type: string
+          description: "Optional study/protocol identifier"
+        site_id:
+          type: string
+          description: "Site identifier within a multi-site study"
+        site_name:
+          type: string
+          description: "Human-readable site name"
+        parent_institution:
+          type: string
+          description: "Parent institution key (for sub-workspace records)"
+        condition:
+          type: string
+          description: "Primary medical condition being managed"
+        medication:
+          type: string
+          description: "Medication name or class"
+        age:
+          type: integer
+          description: "Participant age in years"
+        age_range:
+          type: string
+          description: "Discretized age range (e.g. 18-24)"
+        gender:
+          type: string
+          description: "Participant gender"
+        education:
+          type: string
+          description: "Education level (SDOH)"
+        insurance:
+          type: string
+          description: "Insurance status (SDOH)"
+        employment:
+          type: string
+          description: "Employment status (SDOH)"
+        income:
+          type: string
+          description: "Household income band (SDOH)"
+        housing:
+          type: string
+          description: "Housing stability (SDOH)"
+        transport:
+          type: string
+          description: "Transportation access (SDOH)"
+        support:
+          type: string
+          description: "Social support level (SDOH)"
+        country:
+          type: string
+          description: "Full country name"
+        country_iso2:
+          type: string
+          pattern: "^[A-Z]{2}$"
+          description: "ISO 3166-1 alpha-2 country code"
+        region:
+          type: string
+          description: "Region or state"
+        city:
+          type: string
+          description: "City of assessment"
+        latitude:
+          type: number
+          format: double
+          description: "GPS latitude (derived from geolocation at time of submission)"
+        longitude:
+          type: number
+          format: double
+          description: "GPS longitude"
+        language:
+          type: string
+          description: "BCP47 language code used for the assessment (e.g. en, es, ar)"
+        collection_method:
+          type: string
+          enum: [direct, qr_scan, bulk_upload, remote]
+          description: "How the assessment was administered"
+        institution_code:
+          type: string
+          description: "Institution/partner code (used for spectator map partner-site counts)"
+        campaign_id:
+          type: string
+          description: "Campaign identifier if the assessment was collected under a campaign"
+        ts:
+          type: integer
+          format: int64
+          description: "Submission timestamp — Unix epoch milliseconds (UTC)"
+        submitted_at:
+          type: string
+          format: date-time
+          description: "Submission timestamp in ISO 8601 format (UTC)"
+        timestamp:
+          type: integer
+          format: int64
+          description: "Alias of ts used in some older records and mapData node"
+
+    # ── PEACS Assessment ─────────────────────────────────────────────────────
+    PeacsAssessment:
+      type: object
+      required:
+        - pe
+        - base
+        - mvmt
+        - strata
+        - ts
+      properties:
+        pe:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: "Composite PEACS score (Patient Engagement and Adherence Composite Score)"
+        base:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: "Baseline adherence dimension"
+        mvmt:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: "Movement/motivation dimension"
+        strata:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: "Stratification / barriers dimension"
+        pe_score:
+          type: number
+          description: "Alternate field name for pe in some records"
+        workspace_key:
+          type: string
+        patient_number:
+          type: string
+        condition:
+          type: string
+        country:
+          type: string
+        country_iso2:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        city:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        language:
+          type: string
+        collection_method:
+          type: string
+          enum: [direct, qr_scan, bulk_upload, remote]
+        ts:
+          type: integer
+          format: int64
+          description: "Unix epoch milliseconds (UTC)"
+        timestamp:
+          type: integer
+          format: int64
+
+    # ── Workspace Profile ────────────────────────────────────────────────────
+    WorkspaceProfile:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [superadmin, institution, pi, researcher, clinician, student, spectator]
+          description: "Access role embedded as a custom claim in the Firebase JWT"
+        display_name:
+          type: string
+          description: "Human-readable workspace or researcher name"
+        institution_type:
+          type: string
+          enum: [health, academic, amc]
+          description: "Category of institution (health system, academic, academic medical center)"
+        parent_institution:
+          type: string
+          description: "Key of parent institution workspace (for sub-workspace accounts)"
+        tier:
+          type: string
+          enum: [institutions, independent]
+          description: "Billing/feature tier"
+        features:
+          type: object
+          description: |
+            Feature-flag map set server-side. Keys are feature identifiers (e.g.
+            `bulk_upload`, `peacs_longitudinal`, `sentinel_alerts`, `api_access`).
+            Values are booleans or config objects.
+          additionalProperties: true
+        email:
+          type: string
+          format: email
+          description: "Contact email (used for magic-link and OTP delivery)"
+        created_at:
+          type: integer
+          format: int64
+          description: "Account creation timestamp (Unix ms)"
+
+    # ── Public Stats ─────────────────────────────────────────────────────────
+    PublicStats:
+      type: object
+      description: |
+        Aggregate MMAS-8 statistics maintained by server-side transactions.
+        Updated on every assessment submission; publicly readable with no auth.
+      properties:
+        total:
+          type: integer
+          description: "Total number of MMAS-8 assessments recorded on the platform"
+        score_sum:
+          type: number
+          description: "Running sum of all MMAS-8 scores (used with total to derive average)"
+        high_count:
+          type: integer
+          description: "Number of assessments classified as high adherence (score >= 6)"
+        countries:
+          type: object
+          description: "Map of sanitized country keys to `true`, representing countries with at least one assessment"
+          additionalProperties:
+            type: boolean
+
+    # ── PEACS Public Stats ───────────────────────────────────────────────────
+    PeacsPublicStats:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: "Total PEACS assessments recorded"
+        score_sum:
+          type: number
+          description: "Running sum of PEACS pe scores"
+        high_count:
+          type: integer
+          description: "Number of PEACS assessments with pe >= 0.6"
+
+    # ── Audit Log Entry ──────────────────────────────────────────────────────
+    AuditLogEntry:
+      type: object
+      properties:
+        action:
+          type: string
+          maxLength: 80
+          description: "Action identifier (e.g. data_export, superadmin_mfa_success, workspace_loaded)"
+        timestamp:
+          type: integer
+          format: int64
+          description: "Unix epoch milliseconds"
+        uid:
+          type: string
+          description: "Firebase UID of the user who performed the action"
+        workspace:
+          type: string
+          description: "Workspace key at time of action"
+        role:
+          type: string
+          description: "Role claim at time of action"
+        records:
+          type: integer
+          description: "Number of records involved (export operations)"
+        export_type:
+          type: string
+          description: "Export format (csv, xlsx, codebook)"
+        count:
+          type: integer
+        tier:
+          type: string
+        instrument:
+          type: string
+          description: "Instrument exported (mmas, peacs)"
+        rows:
+          type: integer
+
+    # ── Site Banner ──────────────────────────────────────────────────────────
+    SiteBanner:
+      type: object
+      properties:
+        message:
+          type: string
+          description: "Banner text displayed platform-wide"
+        type:
+          type: string
+          enum: [info, warning, critical]
+        active:
+          type: boolean
+        expires_at:
+          type: integer
+          format: int64
+          description: "Optional expiry timestamp (Unix ms); banner auto-hides after this"
+
+    # ── Campaign ─────────────────────────────────────────────────────────────
+    Campaign:
+      type: object
+      properties:
+        name:
+          type: string
+        icon:
+          type: string
+          description: "Emoji or short icon string for feed display"
+        color:
+          type: string
+          description: "Hex color for campaign badge"
+        active:
+          type: boolean
+        starts_at:
+          type: integer
+          format: int64
+        ends_at:
+          type: integer
+          format: int64
+        description:
+          type: string
+
+    # ── Error Response ───────────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: "Human-readable error message"
+        code:
+          type: string
+          description: "Machine-readable error code"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECURITY (global default)
+# ─────────────────────────────────────────────────────────────────────────────
+security:
+  - FirebaseJWT: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PATHS — Cloudflare Worker HTTP routes
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+
+  /:
+    get:
+      tags: [spa]
+      operationId: getIndex
+      summary: Serve main application shell (index.html)
+      description: |
+        Returns the ATLAS dashboard SPA entry point. All unrecognized paths
+        also resolve here (client-side routing). The Worker sets strict
+        security headers: `X-Frame-Options`, `X-Content-Type-Options`,
+        `Strict-Transport-Security`, and `Permissions-Policy`.
+      security: []
+      responses:
+        "200":
+          description: HTML document — ATLAS dashboard SPA
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                example: SAMEORIGIN
+            X-Content-Type-Options:
+              schema:
+                type: string
+                example: nosniff
+            Strict-Transport-Security:
+              schema:
+                type: string
+                example: "max-age=31536000; includeSubDomains; preload"
+            Cache-Control:
+              schema:
+                type: string
+                example: "public, max-age=0, s-maxage=300, stale-while-revalidate=86400"
+          content:
+            text/html:
+              schema:
+                type: string
+        "429":
+          description: Rate limit exceeded (60 req/min per IP)
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                example: 60
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Too Many Requests
+
+  /assess:
+    get:
+      tags: [spa]
+      operationId: getAssess
+      summary: Serve patient assessment shell (assess.html)
+      description: |
+        Returns the patient-facing MMAS-8 assessment SPA. Also matches
+        `/assess/` with a trailing slash. Designed for QR-code deep links
+        so patients can complete assessments without a researcher workspace.
+      security: []
+      responses:
+        "200":
+          description: HTML document — patient assessment SPA
+          content:
+            text/html:
+              schema:
+                type: string
+        "429":
+          $ref: "#/paths/~1/get/responses/429"
+
+  /download/template:
+    get:
+      tags: [downloads]
+      operationId: downloadTemplate
+      summary: Download ATLAS bulk-upload Excel template (ATLAS_Bulk_Upload.xlsm)
+      description: |
+        Proxies the macro-enabled Excel template from S3 and forces a file
+        download via `Content-Disposition: attachment`. The template is used
+        by PI-tier and institution-tier researchers to batch-import assessments.
+        The file is never cached (`Cache-Control: no-store`) so clients always
+        receive the current version.
+
+        Source: `https://adherence-project-march-2026.s3.amazonaws.com/ATLAS_Bulk_Upload.xlsm`
+      security: []
+      responses:
+        "200":
+          description: Macro-enabled Excel workbook
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="ATLAS_Bulk_Upload.xlsm"'
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/vnd.ms-excel.sheet.macroEnabled.12:
+              schema:
+                type: string
+                format: binary
+        "502":
+          description: S3 upstream unavailable or download failed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Template unavailable — contact info@adherence.cc"
+        "429":
+          $ref: "#/paths/~1/get/responses/429"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PATHS — Firebase Realtime Database (pseudo-REST)
+#
+# These are not HTTP routes on the Worker. They represent Firebase RTDB paths
+# accessed directly by the client SDK or via the Firebase REST API:
+#   GET  https://adherence-project-2026-default-rtdb.firebaseio.com/{path}.json
+#        ?auth={idToken}
+#   POST https://adherence-project-2026-default-rtdb.firebaseio.com/{path}.json
+#        ?auth={idToken}
+#
+# The x-firebase-path extension records the canonical database path.
+# ─────────────────────────────────────────────────────────────────────────────
+
+  /db/assessments/{workspaceKey}:
+    parameters:
+      - name: workspaceKey
+        in: path
+        required: true
+        schema:
+          type: string
+        description: "Workspace identifier (e.g. ATLAS-PI-001)"
+    get:
+      tags: [assessments]
+      operationId: listAssessments
+      summary: List all MMAS-8 assessments for a workspace
+      x-firebase-path: "/assessments/{workspaceKey}"
+      description: |
+        Returns a JSON object keyed by Firebase push IDs, each value being an
+        `MmasAssessment`. Accessible to:
+        - The workspace owner (`auth.token.workspace_key === workspaceKey`)
+        - A parent institution (`auth.token.parent_institution === workspaceKey`)
+        - Superadmin
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Map of assessment push IDs to MmasAssessment objects
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/MmasAssessment"
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but workspace key does not match token claims
+    post:
+      tags: [assessments]
+      operationId: submitAssessment
+      summary: Submit a new MMAS-8 assessment
+      x-firebase-path: "/assessments/{workspaceKey}"
+      description: |
+        Appends a new MMAS-8 assessment record using `firebase.database().ref(...).push()`.
+        A Firebase push ID is auto-generated as the record key.
+        Write access is limited to the owning workspace and superadmin.
+        On successful submission the client also:
+        1. Writes a de-identified pin to `/mapData` (if coordinates available)
+        2. Updates `/public_stats` via atomic transactions
+      security:
+        - FirebaseJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MmasAssessment"
+      responses:
+        "200":
+          description: Record written; Firebase returns the new push ID in `{ name: "-NxyzPushId" }`
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: Firebase push ID of the created record
+        "401":
+          description: Not authenticated
+        "403":
+          description: Token workspace_key does not match path
+
+  /db/assessments/{workspaceKey}/{id}:
+    parameters:
+      - name: workspaceKey
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: "Firebase push ID of the assessment"
+    get:
+      tags: [assessments]
+      operationId: getAssessment
+      summary: Get a single MMAS-8 assessment by ID
+      x-firebase-path: "/assessments/{workspaceKey}/{id}"
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Single MmasAssessment record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MmasAssessment"
+        "401":
+          description: Not authenticated
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Record not found (Firebase returns `null`)
+
+  /db/peacs_assessments/{workspaceKey}:
+    parameters:
+      - name: workspaceKey
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [peacs]
+      operationId: listPeacsAssessments
+      summary: List all PEACS assessments for a workspace
+      x-firebase-path: "/peacs_assessments/{workspaceKey}"
+      description: |
+        Same access rules as `/assessments/{workspaceKey}`: workspace owner,
+        parent institution, or superadmin.
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Map of push IDs to PeacsAssessment objects
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/PeacsAssessment"
+        "401":
+          description: Not authenticated
+        "403":
+          description: Insufficient permissions
+    post:
+      tags: [peacs]
+      operationId: submitPeacsAssessment
+      summary: Submit a new PEACS assessment
+      x-firebase-path: "/peacs_assessments/{workspaceKey}"
+      description: |
+        Appends a new PEACS record. On submission the client also:
+        1. Writes a de-identified pin to `/peacs_mapData`
+        2. Updates `/peacs_public_stats` via atomic transactions
+      security:
+        - FirebaseJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PeacsAssessment"
+      responses:
+        "200":
+          description: Record written; Firebase returns new push ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+        "401":
+          description: Not authenticated
+        "403":
+          description: Insufficient permissions
+
+  /db/public_stats:
+    get:
+      tags: [public]
+      operationId: getPublicStats
+      summary: Get aggregate MMAS-8 platform statistics
+      x-firebase-path: "/public_stats"
+      description: |
+        Publicly readable (no authentication required). Contains running totals
+        maintained by client-side Firebase transactions on every assessment
+        submission. Seeded from `/assessments` the first time an authenticated
+        user loads the app if the node is missing.
+      security: []
+      responses:
+        "200":
+          description: Platform-level MMAS-8 statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicStats"
+
+  /db/peacs_public_stats:
+    get:
+      tags: [public]
+      operationId: getPeacsPublicStats
+      summary: Get aggregate PEACS platform statistics
+      x-firebase-path: "/peacs_public_stats"
+      description: |
+        Publicly readable. Updated on every PEACS submission via Firebase
+        transactions. Seeded from `/peacs_assessments` on first load if missing.
+      security: []
+      responses:
+        "200":
+          description: Platform-level PEACS statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeacsPublicStats"
+
+  /db/workspace_profiles/{workspaceKey}:
+    parameters:
+      - name: workspaceKey
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [workspace]
+      operationId: getWorkspaceProfile
+      summary: Get workspace configuration and profile
+      x-firebase-path: "/workspace_profiles/{workspaceKey}"
+      description: |
+        Returns the workspace profile including role, feature flags, tier, and
+        display metadata. Readable only by the workspace owner or superadmin.
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Workspace profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceProfile"
+        "401":
+          description: Not authenticated
+        "403":
+          description: workspace_key claim does not match path
+
+  /db/audit_log:
+    get:
+      tags: [admin]
+      operationId: getAuditLog
+      summary: Get platform-wide audit log (superadmin only)
+      x-firebase-path: "/audit_log"
+      description: |
+        Full audit trail of all significant researcher and admin actions.
+        Written by `atlasAuditLog()` on: data exports, workspace loads,
+        superadmin MFA events, and other sensitive operations.
+        Read access is restricted to `role === "superadmin"`.
+        Write access is available to any non-anonymous authenticated user
+        (the function skips anonymous sessions).
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Map of push IDs to AuditLogEntry objects
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/AuditLogEntry"
+        "401":
+          description: Not authenticated
+        "403":
+          description: Requires superadmin role
+
+  /db/ws_audit/{workspaceKey}:
+    parameters:
+      - name: workspaceKey
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [workspace]
+      operationId: getWorkspaceAudit
+      summary: Get per-workspace audit log
+      x-firebase-path: "/ws_audit/{workspaceKey}"
+      description: |
+        Workspace-scoped subset of the audit log. Written for PI, institution,
+        and superadmin roles by `atlasAuditLog()`. Readable by:
+        - The workspace owner
+        - Users with `role === "pi"` or `role === "institution"`
+        - Superadmin
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Map of push IDs to abbreviated audit entries
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    action:
+                      type: string
+                    ts:
+                      type: integer
+                      format: int64
+                    uid:
+                      type: string
+        "401":
+          description: Not authenticated
+        "403":
+          description: Insufficient permissions
+
+  /db/campaigns:
+    get:
+      tags: [public]
+      operationId: getCampaigns
+      summary: List active campaigns
+      x-firebase-path: "/campaigns"
+      description: |
+        Campaign definitions used to tag submissions and display live feed
+        badges in Spectator Mode. Read requires any valid Firebase auth
+        (including anonymous). Write is superadmin only.
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Map of campaign IDs to Campaign objects
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/Campaign"
+        "401":
+          description: Not authenticated
+
+  /db/site_banner:
+    get:
+      tags: [public]
+      operationId: getSiteBanner
+      summary: Get current site-wide announcement banner
+      x-firebase-path: "/site_banner"
+      description: |
+        Publicly readable (no auth required). Set by superadmin. Used to
+        display platform-wide notices (maintenance windows, feature launches,
+        etc.) across all sessions.
+      security: []
+      responses:
+        "200":
+          description: Current site banner, or null if no active banner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteBanner"
+
+  /db/mapData:
+    get:
+      tags: [public]
+      operationId: getMapData
+      summary: Get de-identified geographic pins for the global MMAS-8 map
+      x-firebase-path: "/mapData"
+      description: |
+        De-identified assessment records with geographic coordinates used to
+        render map markers. Each record includes score, city, country, and
+        coordinates but no PII. Read and write require any valid Firebase auth
+        (including anonymous sign-in).
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Map of push IDs to de-identified geographic records
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    score:
+                      type: number
+                    city:
+                      type: string
+                    country:
+                      type: string
+                    latitude:
+                      type: number
+                    longitude:
+                      type: number
+                    timestamp:
+                      type: integer
+                      format: int64
+        "401":
+          description: Not authenticated
+
+  /db/export_counts/{workspaceKey}:
+    parameters:
+      - name: workspaceKey
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [workspace]
+      operationId: getExportCounts
+      summary: Get export usage counters for a workspace
+      x-firebase-path: "/export_counts/{workspaceKey}"
+      description: |
+        Tracks monthly export volume for rate-limiting on lower tiers.
+        Readable and writable by the workspace owner or superadmin.
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Export count data
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          description: Not authenticated
+        "403":
+          description: Insufficient permissions
+
+  /db/bulk_uploads:
+    get:
+      tags: [admin]
+      operationId: getBulkUploads
+      summary: List bulk upload records (superadmin only)
+      x-firebase-path: "/bulk_uploads"
+      description: |
+        Read restricted to superadmin. Any workspace with a non-null
+        `workspace_key` claim can write (append upload receipts).
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Bulk upload records
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          description: Not authenticated
+        "403":
+          description: Requires superadmin role
+
+  /db/partner_sites:
+    get:
+      tags: [public]
+      operationId: getPartnerSites
+      summary: List registered partner research sites
+      x-firebase-path: "/partner_sites"
+      description: |
+        Partner site registry used by Spectator Mode to render gold
+        institutional markers on the globe. Read requires any valid auth;
+        write is superadmin only.
+      security:
+        - FirebaseJWT: []
+      responses:
+        "200":
+          description: Map of workspace keys to partner site records
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    city:
+                      type: string
+                    country:
+                      type: string
+                    latitude:
+                      type: number
+                    longitude:
+                      type: number
+                    partner:
+                      type: boolean
+                    active:
+                      type: boolean
+                    color:
+                      type: string
+        "401":
+          description: Not authenticated

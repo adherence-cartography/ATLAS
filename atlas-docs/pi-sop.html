@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PI Governance SOP · ATLAS Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_shared.css"/>
+<style>
+.sop-header{border:1px solid var(--border2);border-top:3px solid var(--gold);border-radius:8px;padding:24px 28px;margin-bottom:36px;background:var(--card);}
+.sop-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px;}
+.sop-meta-item label{font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:3px;}
+.sop-meta-item span{font-size:0.80rem;color:var(--text);}
+.sig-line{display:flex;gap:40px;margin-top:32px;flex-wrap:wrap;}
+.sig-block{flex:1;min-width:200px;}
+.sig-line-bar{border-bottom:1px solid var(--border2);margin-bottom:5px;height:28px;}
+.sig-label{font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);}
+.role-matrix{width:100%;border-collapse:collapse;}
+.role-matrix th{font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:8px 12px;border-bottom:2px solid var(--border2);text-align:left;}
+.role-matrix td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:top;}
+.check{color:var(--green);}
+.cross{color:var(--dim);}
+</style>
+</head>
+<body>
+<nav class="doc-nav">
+  <div class="doc-nav-brand">Adherence <em>Cartography</em> · Docs</div>
+  <div class="doc-nav-links">
+    <a href="index.html">← Library</a>
+    <a href="https://atlas.adherence.cc">ATLAS Platform</a>
+    <a href="mailto:info@adherence.cc">Support</a>
+  </div>
+</nav>
+
+<div class="doc-container">
+  <div class="doc-header">
+    <div class="doc-eyebrow">Standard Operating Procedure · ATLAS Platform</div>
+    <h1>PI Governance SOP</h1>
+    <p style="font-size:0.88rem;color:var(--muted);">For grant-funded principal investigators operating under IRB or ethics committee protocols with multi-site data collection.</p>
+  </div>
+
+  <div class="sop-header">
+    <div style="font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">ATLAS PLATFORM · STANDARD OPERATING PROCEDURE</div>
+    <h2 style="margin:0 0 4px;font-size:1.4rem;">Multi-Site Medication Adherence Data Collection</h2>
+    <p style="font-size:0.78rem;color:var(--muted);">Using the MAP and PEACS instruments on the ATLAS platform</p>
+    <div class="sop-meta-grid">
+      <div class="sop-meta-item"><label>Document type</label><span>Standard Operating Procedure</span></div>
+      <div class="sop-meta-item"><label>Version</label><span>2026.06</span></div>
+      <div class="sop-meta-item"><label>Instrument(s)</label><span>MAP · PEACS</span></div>
+      <div class="sop-meta-item"><label>Platform</label><span>ATLAS (atlas.adherence.cc)</span></div>
+      <div class="sop-meta-item"><label>License authority</label><span>Adherence Inc., Long Beach CA</span></div>
+      <div class="sop-meta-item"><label>Review cycle</label><span>Annual or upon platform update</span></div>
+    </div>
+    <div class="sig-line">
+      <div class="sig-block">
+        <div class="sig-line-bar"></div>
+        <div class="sig-label">Principal Investigator · Date</div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-line-bar"></div>
+        <div class="sig-label">IRB / Ethics Representative · Date</div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-line-bar"></div>
+        <div class="sig-label">Site Coordinator (if applicable) · Date</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout info" style="margin-bottom:28px;">
+    <strong>Getting Started — PI Checklist</strong>
+    New to ATLAS as a PI? Complete these steps before your first data collection session: (1) receive your PI workspace key (<code>PI-[INST]-XXXX-2026</code>) and Letter of Permission from keys.adherence.cc; (2) sign in with key + email verification (OTP); (3) provision site coordinator keys linked to your PI key — see <a href="#site-setup">§ 3</a>; (4) confirm each coordinator can sign in and that a test submission appears in your PI dashboard; (5) delete test records before enrollment begins. Your site coordinators start each patient encounter with <strong>Start New Patient Session</strong> in their dashboard — see <a href="#collection">§ 6</a> for the full data collection procedure.
+  </div>
+
+  <div class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#purpose">Purpose and scope</a></li>
+      <li><a href="#instruments">Instrument overview and licensing</a> — incl. <a href="#sdoh-intelligence">SDoH Intelligence pre-fill</a></li>
+      <li><a href="#site-setup">Site setup and workspace key assignment</a></li>
+      <li><a href="#roles">Role hierarchy and access controls</a></li>
+      <li><a href="#data-flow">Data flow and storage</a></li>
+      <li><a href="#collection">Data collection procedures</a> — incl. <a href="#poi-network">POI Contributor Network</a></li>
+      <li><a href="#clinical-study-module">Clinical Study Module — Research Operations</a></li>
+      <li><a href="#bulk-upload-v2">Bulk Upload v2 Template — Study Provenance</a></li>
+      <li><a href="#quality">Quality assurance</a></li>
+      <li><a href="#pi-dashboard">PI Research Dashboard</a></li>
+      <li><a href="#export">IRB-grade data export and dataset lock</a></li>
+      <li><a href="#escalation">Escalation matrix</a></li>
+      <li><a href="#irb-language">IRB submission language</a></li>
+      <li><a href="#citation">Required citations and acknowledgements</a></li>
+      <li><a href="#pub-rights">Publication rights and licensing</a></li>
+      <li><a href="#amendments">SOP amendments</a></li>
+    </ol>
+  </div>
+
+  <div class="section" id="purpose">
+    <h2>1. Purpose and Scope</h2>
+    <p>This Standard Operating Procedure governs the use of the ATLAS platform (Adherence Tracking and Longitudinal Assessment System) for multi-site medication adherence data collection in research studies. It covers workspace setup, role assignments, data collection procedures, quality assurance, and export protocols.</p>
+    <p>This document is intended to accompany the study's primary IRB protocol as a technical appendix describing the digital data collection platform. It does not replace the protocol itself.</p>
+
+    <h3>Applicable study types</h3>
+    <ul>
+      <li>Cross-sectional adherence surveys using the MMAS-8</li>
+      <li>Longitudinal adherence tracking with repeat assessments</li>
+      <li>Multi-site comparative studies with institutional sub-cohorts</li>
+      <li>Quality improvement projects using adherence data for clinical decision support</li>
+      <li>PEACS validation studies using the Predictive Emergence framework</li>
+    </ul>
+  </div>
+
+  <div class="section" id="instruments">
+    <h2>2. Instrument Overview and Licensing</h2>
+
+    <h3>MAP (Multidimensional Adherence Parameters)</h3>
+    <p>MAP (Multidimensional Adherence Parameters) is the 8-item, cross-sectional adherence instrument administered through ATLAS for institutional data collection. It provides a validated snapshot of medication adherence behaviour and is the intellectual property of Adherence Inc. (© TX 8-632-533). Use on ATLAS is governed by a licensing agreement between the study institution and Adherence Inc.</p>
+    <p>Every workspace key issued through ATLAS includes a Letter of Permission specific to the named PI, institution, and study title. This letter must be retained in the study's regulatory binder and submitted with ethics applications.</p>
+
+    <h3>MAP PE Domain Analysis (TPE layer)</h3>
+    <p>Available on the PI tier and above, the <strong>PE Domain Analysis</strong> applies the Theory of Predictive Emergence (TPE) to each patient's MAP response profile. It computes three behavioural domain scores from the Q1–Q8 responses already collected, then derives a composite PE score: <strong>PE = (A × E × C)<sup>1/3</sup></strong>.</p>
+    <ul>
+      <li><strong>Architecture (A)</strong> — mean of Q2, Q3, Q6 — belief and motivation layer</li>
+      <li><strong>Execution (E)</strong> — mean of Q1, Q4, Q5, Q8 — habitual reliability layer</li>
+      <li><strong>Context (C)</strong> — Q7 — regimen burden and friction layer</li>
+    </ul>
+    <p>PE domain values are stored on each assessment record and exported as <code>mmas_pe</code>, <code>mmas_a</code>, <code>mmas_e</code>, <code>mmas_c</code> columns in the MAP CSV. They are computed from the same Q responses already required for the standard instrument — no additional patient-facing questions are involved. PE is computable retroactively on all historical records in the cohort. The PI dashboard includes a PE Domain Analysis panel showing cohort-level domain averages and a lowest-PE patient table for intervention prioritisation.</p>
+
+    <h3>PEACS v2.0</h3>
+    <p>The Predictive Emergence Assessment for Clinical Services (PEACS v2.0) is a three-dimension instrument developed by Philip Morisky, Founder of Adherence Inc., based on the Theory of Predictive Emergence (DOI: 10.5281/zenodo.18209699). It is available on the PI and Institution tiers. PEACS data is collected at the same session as the MMAS-8 and stored in a separate data node.</p>
+
+    <h3 id="sdoh-intelligence">PEACS SDoH Intelligence — Automated Pre-fill</h3>
+    <p>Before PEACS is administered, three inference engines run automatically to pre-fill answers from data already collected. This reduces patient burden and improves data completeness without asking additional questions.</p>
+
+    <h4>MAP Cross-Inference</h4>
+    <p>The eight MAP answers are algorithmically scored into PEACS dimensions (BASE, MVMT, STRATA). This produces pre-filled PEACS values derived entirely from the MAP response already collected in the same session. No additional patient-facing questions are required. Records where this inference was applied are identified by a non-zero <code>map_inferred_count</code> export column.</p>
+
+    <h4>Intake Pre-fill</h4>
+    <p>Five social support fields in the MAP intake form pre-fill matching PEACS STRATA and BASE questions:</p>
+    <table>
+      <tr><th>Intake field</th><th>Content</th><th>PEACS target</th></tr>
+      <tr><td><code>sq1</code></td><td>Primary support person</td><td>STRATA/BASE question</td></tr>
+      <tr><td><code>sq2</code></td><td>Living situation</td><td>STRATA/BASE question</td></tr>
+      <tr><td><code>sq3</code></td><td>Social contact frequency</td><td>STRATA/BASE question</td></tr>
+      <tr><td><code>sq4</code></td><td>Emergency contact network</td><td>STRATA/BASE question</td></tr>
+      <tr><td><code>bq7</code></td><td>Medication backup supply</td><td>BASE question</td></tr>
+    </table>
+    <p>Pre-fills from intake are tracked in <code>intake_inferred_count</code> and <code>intake_inferred_qids</code> export columns.</p>
+
+    <h4>Geo-Inference (sq5, sq6)</h4>
+    <p>If the patient provides an optional home postal code in the MAP intake form, ATLAS geocodes it client-side via the OpenStreetMap Nominatim API to a centroid coordinate, then queries the Overpass API for pharmacy and healthcare facility density within a 2 km radius. The results pre-fill two PEACS infrastructure access questions:</p>
+    <ul>
+      <li><strong>sq5 — Pharmacy access:</strong> scored from pharmacy count (score decrements at ≥1, ≥3, etc.)</li>
+      <li><strong>sq6 — Healthcare facility access:</strong> scored from hospital and clinic count in radius</li>
+    </ul>
+    <p>Geo-inference is tracked in <code>geo_inferred_count</code> and <code>geo_inferred_qids</code> export columns.</p>
+
+    <div class="callout info">
+      <strong>IRB / Data considerations for SDoH Inference</strong>
+      <ul style="margin:8px 0 0;">
+        <li>The postal code entered by the patient is processed entirely client-side and is <strong>never written to Firebase or any server</strong>. Only the Overpass-derived infrastructure scores (<code>sq5</code>, <code>sq6</code> as numeric strings) are stored.</li>
+        <li>IRB protocols should note that <code>sq5</code> and <code>sq6</code> may be pre-filled from public OpenStreetMap data rather than patient self-report.</li>
+        <li>All patient overrides of pre-filled answers are logged in the <code>_overrides</code> array with a <code>source</code> field identifying the original inference source.</li>
+        <li>The exported dataset includes <code>intake_inferred_count</code>, <code>intake_inferred_qids</code>, <code>geo_inferred_count</code>, <code>geo_inferred_qids</code>, and <code>map_inferred_count</code> columns documenting the provenance of each pre-filled answer.</li>
+        <li><strong>Validation study note:</strong> For studies comparing MAP-inferred vs. patient-reported PEACS answers, filter on <code>map_inferred_count &gt; 0</code> to isolate records where MAP cross-inference was applied.</li>
+      </ul>
+    </div>
+
+    <h3>Instrument validation status</h3>
+    <p>The MMAS-8 has been validated in over 3,000 published studies across 100+ countries. MAP (Multidimensional Adherence Parameters) administered through ATLAS uses the original validated wording. The ATLAS platform itself has been used in institutional research at the University of Nicosia, Democritus University of Thrace, NUST Oman, and multiple clinical sites in Italy (SIMAT partnership).</p>
+  </div>
+
+  <div class="section" id="site-setup">
+    <h2>3. Site Setup and Workspace Key Assignment</h2>
+
+    <h3>PI workspace (master key)</h3>
+    <p>The PI receives a PI-tier workspace key (format: <code>PI-[INST]-XXXX-2026</code>) upon purchase at keys.adherence.cc. This key provides access to the full ATLAS dataset including all sub-site data, the multi-site dashboard, bulk upload, IRB-grade export, and PE Domain Analysis.</p>
+
+    <h3>Site coordinator workspaces</h3>
+    <p>Each data collection site should have its own workspace key (typically Researcher tier). This allows:</p>
+    <ul>
+      <li>Site-specific data isolation — each coordinator sees only their site's patients</li>
+      <li>PI-level oversight — the PI's key sees all sites in aggregate</li>
+      <li>Audit trail — each submission is tagged with the submitting workspace key</li>
+    </ul>
+    <p>Sub-site keys are issued as Researcher tier and linked to your PI key as the Parent Institution Key — their data flows into your multi-site dashboard automatically. Contact info@adherence.cc to provision sub-site keys, providing: site name, coordinator name, and coordinator email. If your study is operating under an Institution account, sub-site Researcher seats are included in the institutional plan (5 seats in base, additional at $39/seat/month) — no separate subscription required per coordinator.</p>
+
+    <h3>Setting up a new site</h3>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Contact Adherence Inc. with site details</div>
+        <p>Email info@adherence.cc: site name, coordinator name, coordinator email, estimated patient volume, and your PI key prefix.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Coordinator receives their workspace key and Letter of Permission</div>
+        <p>The site-specific key is emailed to the coordinator with instructions. Their Letter of Permission names the PI's study title and their institution.</p>
+        <div class="callout tip"><strong>Parent Institution Key:</strong> When Adherence Inc. issues the site coordinator key, request that it be linked to your PI key as the <em>Parent Institution Key</em>. This ensures all data submitted under the coordinator's workspace is visible in your PI-level dashboard automatically, without any action from the coordinator.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Coordinator signs in with key + email verification (MFA)</div>
+        <p>When the coordinator first signs in, they enter their workspace key and then receive a 6-digit one-time code to their registered email. This two-step sign-in applies to all keyed workspace roles. Ensure the coordinator's correct email is on file before they attempt first login — contact info@adherence.cc to update if needed.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Test the site configuration</div>
+        <p>Have the coordinator submit one test assessment. Verify it appears under their workspace key in the PI dashboard. Use Patient ID "TEST-SITE-001" for test records — document this in your protocol deviation log.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Delete test records before data collection begins</div>
+        <p>Email info@adherence.cc to remove test records. Include workspace key prefix and Patient IDs of test submissions.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="roles">
+    <h2>4. Role Hierarchy and Access Controls</h2>
+    <table class="role-matrix">
+      <tr>
+        <th>Capability</th>
+        <th>Student (STU-)</th>
+        <th>Clinician · Researcher (NP- · PA- · RN- · MD- · PHRM- · CC- · RES-)</th>
+        <th>PI (PI-)</th>
+        <th>Institution (INST-)</th>
+      </tr>
+      <tr><td>Sign-in MFA (OTP email)</td><td class="check">✓ Required</td><td class="check">✓ Required</td><td class="check">✓ Required</td><td class="check">✓ Required</td></tr>
+      <tr><td>Administer MAP</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>Administer PEACS</td><td>Snapshot only</td><td class="check">✓ Full longitudinal</td><td class="check">✓ Full + stratification</td><td class="check">✓</td></tr>
+      <tr><td>ZOE voice assessment</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>ZOE SOAP notes</td><td class="cross">–</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>MTM Session Timer</td><td class="cross">–</td><td class="check">✓ (clinician · researcher tier)</td><td class="check">✓ (clinician · researcher tier)</td><td class="check">✓</td></tr>
+      <tr><td>MTM Audit Log</td><td class="cross">–</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>Sentinel alerts</td><td class="cross">–</td><td class="check">✓ Own cohort</td><td class="check">✓ All sites</td><td class="check">✓ All sites</td></tr>
+      <tr><td>CSV export</td><td>100/month</td><td class="check">Unlimited</td><td class="check">Unlimited</td><td class="check">Unlimited</td></tr>
+      <tr><td>IRB-grade export headers</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>Blinded export (hashed patient IDs)</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>Dataset lock · frozen snapshots</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>Workspace audit log</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>IRB Study Package generator</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>Bulk upload (XLSM)</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>MAP PE Domain Analysis</td><td class="cross">–</td><td class="check">✓ Cohort PE panel</td><td class="check">✓ Cohort PE panel</td><td class="check">✓ + per-site breakdown</td></tr>
+      <tr><td>Cross-site PE heatmap</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓ All child sites</td><td class="check">✓</td></tr>
+      <tr><td>Enrollment velocity tracking</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>Self-service site provisioning</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓ Up to 5 sites</td><td class="check">✓</td></tr>
+      <tr><td>Multi-site dashboard</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓ (via parent key)</td><td class="check">✓</td></tr>
+      <tr><td>API access</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓ Rate-limited</td><td class="check">✓</td></tr>
+      <tr><td>Population Health Command Center</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="check">✓</td></tr>
+    </table>
+    <div class="callout tip" style="margin-top:16px;"><strong>Patient / Explorer mode</strong> (anonymous public access — no workspace key) does not require MFA. Only keyed workspace roles require identity verification at sign-in.</div>
+  </div>
+
+  <div class="section" id="data-flow">
+    <h2>5. Data Flow and Storage</h2>
+
+    <h3>Collection path</h3>
+    <ol>
+      <li>Patient opens ATLAS (directly or via shared link) on a device provided by the researcher</li>
+      <li>Patient reads and accepts digital consent</li>
+      <li>Patient completes MMAS-8 (and PEACS if included in protocol)</li>
+      <li>Submission is transmitted over TLS 1.3 to Google Firebase Realtime Database (Iowa, USA)</li>
+      <li>Record is tagged with the researcher's workspace key as <code>institution_code</code></li>
+      <li>Record is immediately visible in the researcher's dashboard</li>
+      <li>If score is below threshold, Sentinel alert is written to Firebase <code>alerts/{workspace}</code> node</li>
+    </ol>
+
+    <h3>Data isolation</h3>
+    <p>Each workspace key creates an isolated data namespace. A coordinator with key <code>RES-SITE1-XXXX-2026</code> can only see records tagged with that key. The PI with key <code>PI-INST-XXXX-2026</code> can see records tagged with either the PI key directly or any child workspace registered under it.</p>
+
+    <h3>Data elements collected</h3>
+    <table>
+      <tr><th>Field</th><th>Required</th><th>Patient-provided</th><th>Notes</th></tr>
+      <tr><td>MMAS-8 scores (Q1–Q8)</td><td>Yes</td><td>Yes</td><td>Core instrument data</td></tr>
+      <tr><td>Timestamp</td><td>Yes</td><td>No (system)</td><td>Unix milliseconds, UTC</td></tr>
+      <tr><td>Workspace key</td><td>Yes</td><td>No (system)</td><td>Identifies cohort/site</td></tr>
+      <tr><td>Country</td><td>No</td><td>Yes</td><td>Free text, patient-reported</td></tr>
+      <tr><td>City</td><td>No</td><td>Yes</td><td>City level only</td></tr>
+      <tr><td>Patient ID</td><td>No</td><td>No (researcher assigns)</td><td>Your anonymisation code</td></tr>
+      <tr><td>Condition</td><td>No</td><td>Yes</td><td>Self-reported diagnosis</td></tr>
+      <tr><td>Medication name</td><td>No</td><td>Yes</td><td>Self-reported drug name</td></tr>
+      <tr><td>Demographics</td><td>No</td><td>Yes</td><td>Age range, gender, education — not name or DOB</td></tr>
+      <tr><td>Geolocation</td><td>No</td><td>Yes (browser prompt)</td><td>City-level, used for map only</td></tr>
+      <tr><td><code>mmas_pe</code></td><td>No (derived)</td><td>No (computed)</td><td>PE composite score 0–1; derived from Q1–Q8 via TPE formula. PI tier+.</td></tr>
+      <tr><td><code>mmas_a</code></td><td>No (derived)</td><td>No (computed)</td><td>Architecture domain — mean(Q2,Q3,Q6). PI tier+.</td></tr>
+      <tr><td><code>mmas_e</code></td><td>No (derived)</td><td>No (computed)</td><td>Execution domain — mean(Q1,Q4,Q5,Q8). PI tier+.</td></tr>
+      <tr><td><code>mmas_c</code></td><td>No (derived)</td><td>No (computed)</td><td>Context domain — Q7 value. PI tier+.</td></tr>
+      <tr><td><code>map_inferred_count</code></td><td>No (derived)</td><td>No (computed)</td><td>Number of PEACS questions pre-filled from MAP cross-inference. 0 if inference was not applied.</td></tr>
+      <tr><td><code>map_inferred_qids</code></td><td>No (derived)</td><td>No (computed)</td><td>Comma-separated PEACS question IDs pre-filled from MAP.</td></tr>
+      <tr><td><code>intake_inferred_count</code></td><td>No (derived)</td><td>No (computed)</td><td>Number of PEACS questions pre-filled from intake form dropdowns.</td></tr>
+      <tr><td><code>intake_inferred_qids</code></td><td>No (derived)</td><td>No (computed)</td><td>PEACS question IDs pre-filled from intake fields.</td></tr>
+      <tr><td><code>geo_inferred_count</code></td><td>No (derived)</td><td>No (computed)</td><td>Number of PEACS questions pre-filled from geo-inference (0 if no postal code was provided).</td></tr>
+      <tr><td><code>geo_inferred_qids</code></td><td>No (derived)</td><td>No (computed)</td><td>PEACS question IDs pre-filled from Overpass geo-inference (typically sq5, sq6).</td></tr>
+      <tr><td><code>_overrides</code></td><td>No</td><td>Yes (patient correction)</td><td>Array of patient-corrected answers; each entry records the original inferred value and inference source.</td></tr>
+    </table>
+
+    <div class="callout critical">
+      <strong>No direct identifiers are collected</strong>
+      ATLAS does not collect name, email, phone number, date of birth, national ID, or any other direct identifier. Patient ID is assigned by the researcher using their own anonymisation scheme. This is a fundamental design decision — ATLAS is a de-identified data collection system.
+    </div>
+
+    <h3>21 CFR Part 11 — Electronic Records &amp; Electronic Signatures</h3>
+    <p>When ATLAS records are submitted to or used in support of FDA-regulated studies (IND, NDA, 510(k)) or GCP-compliant clinical research, the platform operates under FDA 21 CFR Part 11. The following controls are active in the platform:</p>
+    <table>
+      <tr><th>Control</th><th>Regulatory basis</th></tr>
+      <tr><td>Immutable audit trail — every record create / update / delete logged with actor, timestamp, and SHA-256 payload hash</td><td>§11.10(d)(e)</td></tr>
+      <tr><td>Two-component electronic signature on data submission: email + password re-authentication at time of signing</td><td>§11.200(b) / §11.50</td></tr>
+      <tr><td>Electronic signature on record deletion (Mission Control); <code>signature_id</code> stored on target record</td><td>§11.70 / §11.50</td></tr>
+      <tr><td>30-minute inactivity session timeout with audit entry on expiry</td><td>§11.10(f)</td></tr>
+      <tr><td>Failed login events logged to audit trail</td><td>§11.10(d)</td></tr>
+      <tr><td>Read-only Audit Log Viewer (superadmin) — no delete or edit controls</td><td>§11.10(d)</td></tr>
+      <tr><td>System validation documentation: IQ / OQ / PQ / SRS / RTM prepared</td><td>§11.10(a)</td></tr>
+    </table>
+    <p>For studies requiring FDA submission, contact <a href="mailto:info@adherence.cc">info@adherence.cc</a> to request the system validation documentation package (IQ/OQ/PQ) for inclusion in your regulatory binder.</p>
+  </div>
+
+  <div class="section" id="collection">
+    <h2>6. Data Collection Procedures</h2>
+
+    <h3>Starting a patient session</h3>
+    <p>Every assessment begins with the <strong>Start New Patient Session</strong> workflow. The session modal requires the researcher to select the instrument(s) before the patient touches the screen, ensuring the correct assessment pathway is loaded and a unique Patient ID is generated prior to consent.</p>
+
+    <h3>Instrument selection in the session modal</h3>
+    <table>
+      <tr><th>Selection</th><th>Assessment sequence</th><th>When to use per protocol</th></tr>
+      <tr><td><strong>MMAS-8 Only</strong></td><td>Consent → MMAS-8 → result</td><td>Cross-sectional adherence studies; when PEACS is not in scope</td></tr>
+      <tr><td><strong>PEACS Only</strong></td><td>Consent → PEACS → result</td><td>When MMAS-8 has been collected separately and PEACS dimension data is needed</td></tr>
+      <tr><td><strong>MMAS-8 + PEACS</strong></td><td>Consent → SDoH → MMAS-8 → PEACS → result</td><td>Combined sessions; SDoH answered once and applied to both instrument records</td></tr>
+    </table>
+    <p>Clicking <strong>Continue to Informed Consent →</strong> generates an auto-assigned Patient ID (e.g. <code>PT-A3F7</code>). <strong>The researcher must record this ID in the CRF immediately</strong> — it is the link between the ATLAS record and all other study data. This ID cannot be changed after the session begins.</p>
+
+    <div class="callout warn">
+      <strong>Patient ID assignment</strong>
+      ATLAS generates the Patient ID automatically at session start. If your protocol requires a specific Patient ID format (e.g. SITE1-P001), do not use the auto-generated ID — instead, enter your own ID in the Patient Number field on the SDoH screen before the questions begin. The auto-generated PT-XXXX ID will be overwritten by whatever you enter there.
+    </div>
+
+    <h3>Standard procedure — researcher-administered</h3>
+    <ol>
+      <li>Researcher logs into ATLAS with their workspace key</li>
+      <li>Researcher clicks <strong>Start New Patient Session</strong> and selects the appropriate instrument per protocol</li>
+      <li>Researcher clicks <strong>Continue to Informed Consent →</strong> and notes the auto-generated Patient ID in their CRF</li>
+      <li>Researcher selects the patient's preferred language on the SDoH screen (before questions begin)</li>
+      <li>Researcher either: (a) hands device to patient for self-completion, or (b) reads questions aloud and records answers</li>
+      <li>Patient submits assessment; session closes automatically</li>
+      <li>Researcher reviews result on dashboard and documents any Sentinel flags</li>
+    </ol>
+
+    <h3>Procedure for patients using their own devices (remote collection)</h3>
+    <ol>
+      <li>Researcher generates a direct assessment link: atlas.adherence.cc?key=[WORKSPACE-KEY]&pid=[PATIENT-ID]</li>
+      <li>Link is shared with patient via email, SMS, or patient portal</li>
+      <li>Patient completes assessment independently</li>
+      <li>Result appears in researcher's dashboard under the specified Patient ID</li>
+    </ol>
+
+    <div class="callout tip">
+      <strong>ZOE Remote Mode</strong> — For patients who cannot attend in person, copy the Remote Assessment link from the follow-up card. The patient receives an SMS or copied link, opens it on their phone, and completes the ZOE assessment independently. Results are automatically submitted to your workspace. No app download required.
+    </div>
+
+    <h3>Deviations from protocol</h3>
+    <p>Document any departure from this SOP in your study's deviation log, including: assessments completed without Patient ID assignment, technical failures requiring manual re-entry, or patients who completed assessment in incorrect language. These should be noted but do not invalidate the data.</p>
+
+    <h3 id="poi-network">POI Contributor Network</h3>
+    <p>ATLAS maintains a crowd-sourced infrastructure database (<code>infrastructure_poi</code> Firebase node) used to supply pharmacy and healthcare facility data for geo-inference scoring of PEACS sq5 and sq6. Verified POIs in this database supplement the real-time Overpass API query, improving geo-scoring completeness in areas with sparse OpenStreetMap coverage.</p>
+
+    <h4>Contributing POIs</h4>
+    <p>Authenticated users can contribute infrastructure points of interest via: <strong>Dashboard → SDoH Globe → "Verified POIs" toggle → "Add POI" button</strong>. Six facility types are supported: pharmacy, hospital, clinic, public transport, food bank, and community center. Firebase security rules require authentication to write; each submission is tagged with the contributor's Firebase UID (<code>contributor_id</code>). Two independent user confirmations are required before a record is marked <code>verified: true</code>. Once verified, a POI feeds sq5/sq6 scoring for all patients in the vicinity.</p>
+
+    <h4>Research use of POI data</h4>
+    <p>The <code>infrastructure_poi</code> node is public-read. Researchers can query it directly for their study region to inspect local infrastructure coverage. For multi-site studies, coordinate with site staff to contribute local infrastructure POIs before data collection begins — this improves geo-scoring completeness for patients at those sites and reduces the proportion of records with missing sq5/sq6 pre-fills.</p>
+
+    <div class="callout tip">
+      <strong>Multi-site preparation:</strong> Add verified POIs for each study site before enrollment begins. A well-populated local POI set increases the proportion of patients who receive geo-inferred sq5/sq6 scores, reducing the number of patients asked to provide those answers manually and improving dataset consistency across sites.
+    </div>
+
+    <div class="callout info">
+      <strong>Privacy note:</strong> <code>contributor_id</code> is a Firebase UID — it is not personally identifiable outside the Firebase console and is not included in patient data exports. Researchers querying <code>infrastructure_poi</code> will see the UID but not the contributor's name or email.
+    </div>
+  </div>
+
+  <div class="section" id="clinical-study-module">
+    <h2>6a. Clinical Study Module — Research Operations</h2>
+    <p>The Clinical Study Module is accessed via the <strong>Study</strong> tab in the Institution dashboard. It provides a unified research operations view with the following components:</p>
+
+    <h3>Study Configuration</h3>
+    <p>Before collecting data, complete the Study Config (gear icon in the Study tab). Required fields: Study Name/Title, Principal Investigator, Institution, IRB Number. Optional but recommended: ClinicalTrials.gov ID, Protocol Version, Sponsor, enrollment target and visit schedule.</p>
+
+    <h3>Site Activation Tracker</h3>
+    <p>A world map displays all registered study sites colour-coded by status (Pending / Active / Closed). Add sites via the <strong>Add Site</strong> button. Site coordinates and status are stored locally and reflected on the map in real time.</p>
+
+    <h3>Enrollment and LTFU</h3>
+    <p>The module tracks enrolled patients against target, flags patients who are Lost to Follow-Up (LTFU) based on their expected visit window, and logs protocol deviations.</p>
+
+    <h3>IRB Submission Assistant</h3>
+    <p>Opens a 5-tab auto-populated IRB document template drawing from your Study Config. Tabs: Protocol Summary, Informed Consent, Risks &amp; Benefits, Privacy &amp; Data, Timeline &amp; Sites. Each section is editable and the complete document exports as a structured <code>.txt</code> file suitable for submission or paste into your IRB system.</p>
+  </div>
+
+  <div class="section" id="bulk-upload-v2">
+    <h2>6b. Bulk Upload v2 Template — Study Provenance</h2>
+    <p>Bulk upload allows researchers to import patient assessment records from a structured CSV file directly into the ATLAS platform. The current template version includes study-level metadata for regulatory traceability.</p>
+
+    <div class="callout info">
+      <strong>v2 Template — Study Provenance</strong><br/>
+      The current CSV template (v2) includes a study metadata header block in rows 1–8. Cells B2–B7 must be completed before uploading: Study Title, Principal Investigator, Institution, IRB Number, ClinicalTrials.gov ID, and Protocol Version. The uploader validates B2 (Study Title), B3 (PI), and B4 (Institution) and will reject the file if any of the three are blank. Patient data begins at row 10. The template pre-fills from your saved Study Config — download a fresh template after completing the Study Config modal to have it auto-populated.
+    </div>
+  </div>
+
+  <div class="section" id="quality">
+    <h2>7. Quality Assurance</h2>
+
+    <h3>Weekly data review</h3>
+    <p>The PI (or designated data manager) should review the dashboard weekly during active collection to:</p>
+    <ul>
+      <li>Confirm expected submission volumes across sites</li>
+      <li>Review Sentinel alerts for clinically urgent cases</li>
+      <li>Check for duplicate Patient IDs (same patient submitted twice)</li>
+      <li>Verify geographic distribution matches enrollment plan</li>
+    </ul>
+
+    <h3>Identifying and handling duplicates</h3>
+    <p>The Active Patients table can be searched by Patient ID. If the same Patient ID appears more than once with the same timestamp, this may be a duplicate. Contact info@adherence.cc to review and remove confirmed duplicates from your dataset.</p>
+
+    <h3>Data completeness monitoring</h3>
+    <p>The export CSV includes a <code>timestamp</code> column. Use this to verify all sites are submitting data within expected windows. Gaps may indicate technical issues, coordinator absences, or site-level protocol deviations that require follow-up.</p>
+  </div>
+
+  <div class="section" id="pi-dashboard">
+    <h2>8. PI Research Dashboard</h2>
+    <p>The PI Research Dashboard is a dedicated panel at the top of your researcher view, visible only to PI-tier workspaces. It loads automatically when you sign in and consolidates the key governance metrics for your study in one place.</p>
+
+    <h3>Enrollment velocity and target</h3>
+    <p>The four KPI cells at the top of the panel show: total enrolled participants, current weekly enrollment rate (calculated over the last 8 weeks), projected completion date (based on current rate toward your target), and the data retention deadline (computed from study end date plus the mandated retention period for your funding source — 7 years for NIH/NSF/DoD/PCORI, 10 years for industry-sponsored, 5 years for all others).</p>
+    <p>Set your enrollment target using the target input field. The progress bar fills as you approach your goal. Projected completion updates in real time as new records arrive.</p>
+    <div class="callout warn"><strong>Retention deadline warning</strong> — If your data retention date falls within 90 days, a red warning banner appears at the top of the panel. This means you must export and archive your data to a compliant institutional repository before that date. Contact info@adherence.cc for data retention extensions or deletion requests.</div>
+
+    <h3>Cross-site PE Domain heatmap</h3>
+    <p>Below the KPI strip, the PE heatmap shows one row per collection site (including your own PI workspace). Each cell displays the mean Architecture, Execution, and Context domain score for that site, colour-coded from red (constraint present) to green (domain healthy). This makes cross-site adherence barrier patterns immediately visible without exporting data.</p>
+    <p>Sites with fewer than 3 records are greyed out — insufficient data for meaningful domain averages. The heatmap refreshes each time the dashboard loads.</p>
+
+    <h3>Dataset lock and frozen snapshots</h3>
+    <p>The Dataset Lock section allows you to create an immutable copy of all assessment records at a specific point in time. Use this for:</p>
+    <ul>
+      <li>IRB interim analysis — lock the dataset at the analysis cutoff date before any interim review</li>
+      <li>Collaborator data handoff — share the snapshot CSV rather than live access to your workspace</li>
+      <li>Publication datasets — lock the exact records used in the submitted manuscript</li>
+      <li>Study closeout — create a final locked snapshot before cancelling the subscription</li>
+    </ul>
+    <p>Click <strong>⊘ Lock Current Dataset</strong> to create a snapshot. The platform confirms the record count before locking. Each snapshot is permanently stored and listed with its creation date, MMAS count, and PEACS count. Use the <strong>↓ CSV</strong> button next to any snapshot to download that frozen dataset.</p>
+    <div class="callout critical"><strong>Snapshots are permanent and immutable</strong> — once locked, a snapshot cannot be edited, deleted, or altered. This immutability is intentional and is what makes snapshots suitable for regulatory submission. The live dataset continues to accept new records after a snapshot is created.</div>
+
+    <h3>Workspace audit log</h3>
+    <p>The Audit Log displays the last 50 timestamped events for your workspace, newest first. Events recorded include: key issuance, key verification (each sign-in), data exports, dataset lock operations, site provisioning, electronic signatures, and failed login attempts. This log is suitable for inclusion in a regulatory binder as evidence of controlled access and data handling.</p>
+    <p>The audit log is append-only — entries cannot be deleted or edited. It persists for the lifetime of your subscription. All clinical record write operations (create, update, delete) generate a CFR-11 audit entry with a SHA-256 payload hash, satisfying FDA 21 CFR Part 11 §11.10(d)(e) requirements for tamper-evident, computer-generated, time-stamped records.</p>
+  </div>
+
+  <div class="section" id="export">
+    <h2>9. IRB-Grade Data Export and Dataset Lock</h2>
+    <p>The PI tier includes IRB-grade export headers — additional metadata columns added to the CSV that are not present in the standard Researcher export.</p>
+
+    <h3>Additional IRB export columns</h3>
+    <table>
+      <tr><th>Column</th><th>Contents</th></tr>
+      <tr><td><code>institution_code</code></td><td>Workspace key of submitting site — identifies which site collected the record</td></tr>
+      <tr><td><code>parent_institution</code></td><td>PI key (if sub-site keys are used) — links site records to the study</td></tr>
+      <tr><td><code>consent_version</code></td><td>Version of consent text the patient accepted</td></tr>
+      <tr><td><code>assessment_type</code></td><td>Manual / ZOE voice / Daily intake rapid screen</td></tr>
+      <tr><td><code>zoe_session</code></td><td>Boolean — whether ZOE was used for this assessment</td></tr>
+      <tr><td><code>soap_note_generated</code></td><td>Boolean — whether a SOAP note was generated</td></tr>
+      <tr><td><code>mmas_pe</code></td><td>PE composite score (0–1) computed from Q1–Q8 via TPE formula — PI tier and above</td></tr>
+      <tr><td><code>mmas_a</code></td><td>Architecture domain score — mean(Q2, Q3, Q6)</td></tr>
+      <tr><td><code>mmas_e</code></td><td>Execution domain score — mean(Q1, Q4, Q5, Q8)</td></tr>
+      <tr><td><code>mmas_c</code></td><td>Context domain score — Q7 value</td></tr>
+      <tr><td><code>map_inferred_count</code></td><td>Number of PEACS questions pre-filled from MAP cross-inference</td></tr>
+      <tr><td><code>map_inferred_qids</code></td><td>Comma-separated PEACS question IDs pre-filled from MAP</td></tr>
+      <tr><td><code>intake_inferred_count</code></td><td>Number of PEACS questions pre-filled from intake form dropdowns</td></tr>
+      <tr><td><code>intake_inferred_qids</code></td><td>PEACS question IDs pre-filled from intake fields</td></tr>
+      <tr><td><code>geo_inferred_count</code></td><td>Number of PEACS questions pre-filled from geo-inference (0 if no postal code provided)</td></tr>
+      <tr><td><code>geo_inferred_qids</code></td><td>PEACS question IDs pre-filled from Overpass geo-inference</td></tr>
+      <tr><td><code>_overrides</code></td><td>Array of patient-corrected pre-filled answers, each with original value and inference source</td></tr>
+    </table>
+
+    <h3>Blinded export</h3>
+    <p>The <strong>⊘ Blinded Export</strong> button (in the MMAS-8 panel footer, visible to PI accounts) generates a CSV in which all patient IDs are replaced with deterministic hash codes. The same patient will always receive the same hash code within your workspace, so longitudinal records remain linkable — but the original patient numbers are not recoverable from the export. Use this format when sharing datasets with collaborators who do not need to know your patient numbering scheme.</p>
+
+    <h3>Export procedure for study closeout</h3>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Lock the final dataset</div>
+        <p>Before cancelling, use <strong>⊘ Lock Current Dataset</strong> in the PI Research Dashboard to create a permanent snapshot of all records. This snapshot survives subscription cancellation requests and constitutes your archived dataset for the regulatory binder.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Download the snapshot CSV</div>
+        <p>Use the <strong>↓ CSV</strong> button next to the locked snapshot to download the frozen dataset. Store in your institution's approved research data repository.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Generate the IRB Study Package</div>
+        <p>Click <strong>Generate Study Package</strong> in the PI Research Dashboard to produce a printable summary page containing: study metadata, enrollment summary, PE domain breakdown, snapshot record counts, and audit log. Print to PDF and file in your regulatory binder alongside the permission letter.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Export the Session Certificate</div>
+        <p>Use the Session Certificate button in the MMAS-8 panel to generate a timestamped audit document covering the full history of assessments. Print to PDF and attach to your binder.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Request data deletion if required by protocol</div>
+        <p>Email info@adherence.cc with your PI key prefix and study end date. Data deletion is completed within 30 days and confirmed by email.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="escalation">
+    <h2>10. Escalation Matrix</h2>
+    <table>
+      <tr><th>Event</th><th>First response</th><th>Escalation</th><th>Timeline</th></tr>
+      <tr><td>Sentinel alert — Urgent (red)</td><td>Site coordinator reviews and contacts patient</td><td>PI informed if no resolution within 48h</td><td>Act within 7 days</td></tr>
+      <tr><td>Site data gap (&gt;3 days no submissions)</td><td>PI contacts site coordinator</td><td>Protocol deviation log entry</td><td>Within 24h of detection</td></tr>
+      <tr><td>Workspace key compromised (shared unauthorised)</td><td>Email info@adherence.cc for immediate revocation</td><td>Issue new key to site. Log as protocol deviation.</td><td>Immediate</td></tr>
+      <tr><td>Platform unavailability (&gt;2h)</td><td>Check status at atlas.adherence.cc. Use paper backup CRF.</td><td>Email info@adherence.cc. Document downtime period.</td><td>Immediate, log in deviation record</td></tr>
+      <tr><td>Patient distress during assessment</td><td>Stop assessment. Provide clinical support per protocol.</td><td>Document incident. Assess need for SAE reporting.</td><td>Immediate</td></tr>
+      <tr><td>IRB query about platform</td><td>Refer to this SOP and the ATLAS privacy documentation</td><td>Contact info@adherence.cc for technical support letter</td><td>Within IRB response deadline</td></tr>
+    </table>
+  </div>
+
+  <div class="section" id="irb-language">
+    <h2>11. IRB Submission Language</h2>
+
+    <h3>Methods section — data collection platform</h3>
+    <div class="callout info">
+      <strong>Copy and adapt this text</strong>
+      "Medication adherence data was collected using the ATLAS platform (Adherence Tracking and Longitudinal Assessment System; Adherence Cartography, Adherence Inc., Long Beach, CA; atlas.adherence.cc). MAP (Multidimensional Adherence Parameters) was administered digitally through ATLAS under a licensed permission agreement with Adherence Inc. (Certificate No. [YOUR CERT NUMBER], verifiable at keys.adherence.cc/verify). No personally identifiable information was collected. Participants provided digital informed consent prior to assessment. All data was transmitted over TLS 1.3 and stored encrypted (AES-256) in Google Firebase Realtime Database infrastructure. Data was accessible exclusively to named researchers via workspace key authentication."
+    </div>
+
+    <h3>Ethical considerations section</h3>
+    <div class="callout info">
+      <strong>Copy and adapt this text</strong>
+      "Digital consent was obtained through the ATLAS platform prior to each assessment. The consent screen disclosed: the nature of the data collected, the anonymous and voluntary nature of participation, the right to withdraw without consequence, the data storage location and security measures, and the use of responses in both the researcher's cohort and an anonymised global dataset. Consent records are timestamped and stored with each submission."
+    </div>
+
+    <h3>Data management plan section</h3>
+    <div class="callout info">
+      <strong>Copy and adapt this text</strong>
+      "Study data is stored on the ATLAS platform (Google Firebase, Iowa USA data centre) for the duration of the data collection period. Following study completion, data will be exported to [your institution's data repository] in CSV format and the ATLAS workspace will be closed. Anonymised aggregate data may remain in the ATLAS global dataset for research purposes per the platform terms of use."
+    </div>
+
+    <h3>FDA-regulated studies — 21 CFR Part 11 language</h3>
+    <p>Use this section for IND, NDA, 510(k), or GCP-compliant studies where the FDA 21 CFR Part 11 electronic records requirement applies.</p>
+    <div class="callout info">
+      <strong>Copy and adapt this text (electronic records)</strong>
+      "Electronic records were generated, maintained, and transmitted using the ATLAS platform (Adherence Cartography, Adherence Inc., Long Beach, CA; atlas.adherence.cc), which operates in compliance with FDA 21 CFR Part 11 (Electronic Records; Electronic Signatures). All clinical data records are protected by an immutable, computer-generated, time-stamped audit trail with SHA-256 payload integrity hashing (§11.10(d)(e)). Data submissions required two-component electronic signature re-authentication (email address and password) at the time of signing, with the meaning of each signature recorded (§11.200(b), §11.50). Signature records are stored with a cryptographic reference to the signed data record (§11.70). Access is controlled by Firebase custom token authentication via role-based workspace keys, with a 30-minute inactivity session timeout enforced at all researcher sessions (§11.10(f)). System validation documentation (Installation Qualification, Operational Qualification, Performance Qualification) is available upon request from info@adherence.cc."
+    </div>
+  </div>
+
+  <div class="section" id="citation">
+    <h2>12. Required Citations and Acknowledgements</h2>
+
+    <h3>MAP — required citation in all publications</h3>
+    <div class="callout info">
+      <strong>APA 7th</strong>
+      Krousel-Wood, M., Islam, T., Webber, L. S., Re, R. N., Morisky, D. E., &amp; Muntner, P. (2009). New medication adherence scale versus pharmacy fill rates in seniors with hypertension. <em>American Journal of Managed Care, 15</em>(1), 59–66.
+    </div>
+
+    <h3>Required acknowledgement footnote</h3>
+    <div class="callout info">
+      <strong>Include in every publication using MAP data</strong>
+      "MAP (Multidimensional Adherence Parameters) used with permission. www.moriskyscale.com"
+    </div>
+
+    <h3>ATLAS platform citation</h3>
+    <div class="callout info">
+      <strong>APA 7th</strong>
+      Adherence Cartography. (2026). <em>ATLAS: Adherence Tracking and Longitudinal Assessment System</em> [Data collection platform]. Adherence Inc. https://atlas.adherence.cc
+    </div>
+
+    <h3>PEACS — if used in study</h3>
+    <div class="callout info">
+      <strong>APA 7th</strong>
+      Morisky, P. (2025). <em>Theory of Predictive Emergence: A geometric behavioral stability framework</em> [Preprint]. Zenodo. https://doi.org/10.5281/zenodo.18209699
+    </div>
+  </div>
+
+  <div class="section" id="pub-rights">
+    <h2>12a. Publication Rights and Licensing</h2>
+
+    <h3>What your Letter of Permission covers</h3>
+    <p>Your Letter of Permission (LOP) is issued at workspace key activation and records your <strong>subscription activation date</strong>. It covers data collected during your active subscription period only. It does not reach backward. If your subscription lapses at any point, the LOP expires for that gap period — data collected after reactivation is covered from that new activation date forward.</p>
+    <div class="callout warning">
+      <strong>Retroactive coverage does not exist.</strong> Subscribing today does not license data you collected last year. Your activation date appears on every LOP and is publicly verifiable at <strong>keys.adherence.cc/verify</strong>. Journal editors and IRB officers who verify your key see your activation date alongside your data-collection period — a mismatch between the two is immediately apparent. Subscribe at the start of your study, not at the end of it.
+    </div>
+
+    <h3>Multi-year and grant-funded studies</h3>
+    <p>For PI-tier studies funded by grants, contracts, or institutional budgets, a standard subscription covers your data collection period while the subscription is active. If your study spans multiple years and you maintain continuous subscription coverage, your LOP remains valid throughout. If your study began before you subscribed to ATLAS, only the post-activation portion of your data is covered under the subscription LOP.</p>
+    <p>If you need publication rights covering a study that predates your ATLAS subscription — for example, you conducted a funded study before the platform was available and are now seeking to publish — contact <strong>info@adherence.cc</strong> with your study title, funding source, IRB number, and data-collection dates. Publication rights for funded studies are priced by study duration, not a flat rate.</p>
+
+    <div class="callout info">
+      <strong>The flat-rate Publication License is not available to funded researchers.</strong> The one-time $49–$249 Publication License is designed for students and self-funded researchers completing thesis or dissertation work. It is not the correct product for grant-funded studies. If you believe the flat-rate path applies to your situation, email info@adherence.cc before purchasing.
+    </div>
+
+    <h3>Two publication rights paths</h3>
+    <table>
+      <tr><th>Path</th><th>Who it is for</th><th>How to obtain</th></tr>
+      <tr>
+        <td><strong>Letter of Permission</strong> (MAP- key)</td>
+        <td>Any active workspace subscriber — student, clinician, researcher, PI, institution</td>
+        <td>Issued automatically at key activation. Download from your dashboard → Publish tab.</td>
+      </tr>
+      <tr>
+        <td><strong>Student Publication License</strong> (PUB- key)</td>
+        <td>Students and self-funded researchers with a completed thesis or dissertation and no active subscription</td>
+        <td>atlas.adherence.cc?publish=1 — one-time flat rate, instant issuance ($49–$249 by N)</td>
+      </tr>
+      <tr>
+        <td><strong>Funded Study Publication Rights</strong></td>
+        <td>PIs and researchers whose data collection was grant or institutionally funded</td>
+        <td>Email info@adherence.cc — duration-based pricing, custom quote</td>
+      </tr>
+    </table>
+
+    <h3>What happens if I cancel my subscription before publishing?</h3>
+    <p>If your subscription lapses before your manuscript is submitted, your Letter of Permission expires. To restore publication coverage you have two options: reactivate your subscription (LOP reissued immediately, covers data from reactivation forward), or contact info@adherence.cc to discuss duration-based publication rights for the completed study period.</p>
+
+    <div class="callout tip">
+      <strong>Best practice:</strong> Lock your dataset in ATLAS before cancelling your subscription. The dataset lock creates an immutable, timestamped snapshot of the exact records used in your study. This lock record is retained indefinitely and will support any publication rights discussion if you need to engage us after subscription end.
+    </div>
+  </div>
+
+  <div class="section" id="amendments">
+    <h2>13. SOP Amendments</h2>
+    <p>This SOP should be updated when any of the following occur:</p>
+    <ul>
+      <li>A new version of the ATLAS platform introduces materially different data collection procedures</li>
+      <li>The MAP license terms are amended by Adherence Inc.</li>
+      <li>IRB conditions require modification to collection procedures</li>
+      <li>A new data collection site is added to the study</li>
+    </ul>
+    <p>All amendments should be dated, versioned, and re-signed. Previous versions should be retained in the study regulatory binder. Notify info@adherence.cc of any material amendments to ensure platform support is aligned with updated procedures.</p>
+
+    <table>
+      <tr><th>Version</th><th>Date</th><th>Change</th><th>Author</th></tr>
+      <tr><td>2026.04</td><td>April 2026</td><td>Initial version — covers MAP, PEACS v2.0, MTM audit, Sentinel alerts. Updated § 6 for Start New Patient Session modal workflow and auto-generated Patient ID handling.</td><td>Adherence Cartography</td></tr>
+      <tr><td>2026.04.1</td><td>April 2026</td><td>Added § 2 MAP PE Domain Analysis (TPE layer): formula, three domain definitions, export columns (mmas_pe/a/e/c). Updated § 5 data elements table and § 9 IRB export columns to include PE fields. Added PE Domain Analysis row to § 4 role matrix.</td><td>Adherence Cartography</td></tr>
+      <tr><td>2026.04.2</td><td>April 2026</td><td>Added new § 8 PI Research Dashboard covering: enrollment velocity KPIs, data retention deadline, cross-site PE heatmap, dataset lock / frozen snapshots, and workspace audit log. Updated § 9 export section to document blinded export, dataset lock closeout procedure, and IRB Study Package. Updated TOC and § 4 role matrix with new PI capabilities: blinded export, dataset lock, audit log, IRB Study Package, enrollment velocity, cross-site heatmap, self-service site provisioning. Renumbered §§ 8–12 accordingly.</td><td>Adherence Cartography</td></tr>
+      <tr><td>2026.05</td><td>May 2026</td><td>Terminology update: MMAS-8R retired; replaced with MAP (Multidimensional Adherence Parameters) throughout. Updated metadata block instrument(s) field and subtitle. Added §§ 6a–6b: Clinical Study Module — Research Operations (Study Config, Site Activation Tracker, Enrollment/LTFU, IRB Submission Assistant) and Bulk Upload v2 Template — Study Provenance. Added ZOE Remote Mode callout to § 6 data collection. Updated TOC. Footer and amendment log updated to reflect MAP terminology.</td><td>Adherence Cartography</td></tr>
+      <tr><td>2026.05.1</td><td>May 2026</td><td>Added § 12a Publication Rights and Licensing: LOP activation-date coverage policy, retroactive coverage prohibition, multi-year funded study guidance, three-path publication rights table (LOP / Student Publication License / Funded Study inquiry), subscription-lapse guidance, and dataset lock best practice. Updated TOC. Reflects new student-only flat-rate Publication License policy and duration-based pricing for funded research.</td><td>Adherence Cartography</td></tr>
+      <tr><td>2026.05.2</td><td>May 2026</td><td>Added 21 CFR Part 11 (FDA Electronic Records &amp; Electronic Signatures) coverage throughout. § 5 Data Flow: new CFR-11 controls subsection with 7-item table (audit trail, e-signatures, session timeout, failed login logging, validation docs). § 8 Workspace Audit Log: enhanced description noting CFR-11 SHA-256 payload hashing and §11.10(d)(e) compliance. § 11 IRB Submission Language: added FDA-regulated study boilerplate (electronic records attestation, §11.200(b), §11.50, §11.70, §11.10(f) citations). Footer updated to v2026.05.2.</td><td>Adherence Cartography</td></tr>
+      <tr><td>2026.06</td><td>June 2026</td><td>Added § 2 PEACS SDoH Intelligence subsection documenting three automated pre-fill engines: MAP cross-inference (8 MAP answers scored into PEACS BASE/MVMT/STRATA dimensions), intake pre-fill (sq1–sq4, bq7 social support fields), and geo-inference (sq5, sq6 from postal code geocoding via OpenStreetMap Nominatim and Overpass API — client-side only, postal code never stored). Added IRB/data considerations callout including postal code privacy policy, <code>_overrides</code> logging, inference provenance columns, and validation study filter note. Added § 5 data elements rows for all six inference export columns (map_inferred_count/qids, intake_inferred_count/qids, geo_inferred_count/qids) and _overrides. Added § 6 POI Contributor Network subsection covering infrastructure_poi Firebase node, contribution workflow (Dashboard → SDoH Globe → Add POI), six POI types, two-confirmation verification, research query access, multi-site preparation guidance, and contributor_id privacy note. Added inference export columns to § 9 IRB export columns table. Updated TOC with anchor links to new subsections.</td><td>Adherence Cartography</td></tr>
+      <tr><td style="color:var(--dim);">&nbsp;</td><td></td><td></td><td></td></tr>
+    </table>
+  </div>
+
+  <footer class="doc-footer">
+    PI Governance SOP v2026.06 · ATLAS Platform · Adherence Cartography · Adherence Inc. · Long Beach, California<br/>
+    MAP (Multidimensional Adherence Parameters) · MMAS-8® © Dr. Donald E. Morisky · TX 8-632-533 · PEACS © Philip Morisky · PE Theory DOI: 10.5281/zenodo.18209699<br/>
+    <a href="mailto:info@adherence.cc">info@adherence.cc</a> · <a href="https://atlas.adherence.cc">atlas.adherence.cc</a> · <a href="https://keys.adherence.cc/verify">Verify certificate</a>
+  </footer>
+</div>
+</body>
+</html>

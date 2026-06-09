@@ -1,0 +1,35 @@
+{
+  "rules": {
+
+    "assessments": {
+      ".indexOn": ["patient_number", "user_id", "timestamp", "campaign_id"]
+    },
+
+    "peacs_assessments": {
+      ".indexOn": ["patient_number"]
+    },
+
+    "mapData": {
+      ".indexOn": ["timestamp"]
+    },
+
+    "wad_checkins": {
+      ".indexOn": ["timestamp"]
+    },
+
+    "ws_audit": {
+      "$workspace": {
+        ".indexOn": ["ts"]
+      }
+    },
+
+    "wall_projects": {
+      ".indexOn": ["created_at"]
+    },
+
+    "campaigns": {
+      ".indexOn": ["created_at"]
+    }
+
+  }
+}

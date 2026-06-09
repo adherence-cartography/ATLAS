@@ -1,0 +1,219 @@
+{
+    "rules": {
+      "magic_signals": {
+    "$key": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  },
+      "assessments": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.role !== 'observer'",
+        ".indexOn": ["patient_number", "user_id", "timestamp", "campaign_id"],
+        "$record": {
+          ".validate": "newData.hasChildren(['score','timestamp','user_id']) && newData.child('score').isNumber() &&
+  newData.child('score').val() >= -1 && newData.child('score').val() <= 8 && newData.child('timestamp').isNumber() &&
+  newData.child('timestamp').val() <= now + 300000 && newData.child('timestamp').val() >= now - 86400000 &&
+  newData.child('user_id').isString() && newData.child('user_id').val().length <= 64 && (!newData.hasChild('institution_code') ||
+  (newData.child('institution_code').isString() && newData.child('institution_code').val().length <= 32)) &&
+  (!newData.hasChild('patient_number') || (newData.child('patient_number').isString() && newData.child('patient_number').val().length <= 64))
+   && (!newData.hasChild('country') || (newData.child('country').isString() && newData.child('country').val().length <= 80)) &&
+  (!newData.hasChild('condition') || (newData.child('condition').isString() && newData.child('condition').val().length <= 500)) &&
+  (!newData.hasChild('drug_name') || (newData.child('drug_name').isString() && newData.child('drug_name').val().length <= 200))"
+        }
+      },
+      "mapData": {
+        ".read": true,
+        ".write": "auth != null && auth.token.role !== 'observer'",
+        ".indexOn": ["timestamp"],
+        "$record": {
+          ".validate": "newData.hasChildren(['score','timestamp']) && newData.child('score').isNumber() && newData.child('score').val() >= 0
+  && newData.child('score').val() <= 8 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 &&
+  newData.child('timestamp').val() >= now - 86400000 && (!newData.hasChild('latitude') || (newData.child('latitude').isNumber() &&
+  newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90)) && (!newData.hasChild('longitude') ||
+  (newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180))"
+        }
+      },
+      "public_stats": {
+        ".read": true,
+        ".write": "auth != null && auth.token.role !== 'observer'",
+        "total": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000" },
+        "score_sum": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "high_count": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000" },
+        "countries": {
+          "$country": { ".validate": "newData.isBoolean() && $country.length <= 80" }
+        }
+      },
+      "peacs_public_stats": {
+        ".read": true,
+        ".write": "auth != null && auth.token.role !== 'observer'",
+        "total": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000" },
+        "score_sum": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "high_count": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000" }
+      },
+      "site_banner": {
+        ".read": true,
+        ".write": "auth != null && auth.token.role === 'superadmin'",
+        ".validate": "newData.hasChildren(['active'])"
+      },
+      "peacs_assessments": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.role !== 'observer'",
+        ".indexOn": ["patient_number"],
+        "$record": {
+          ".validate": "newData.hasChildren(['pe','timestamp']) && newData.child('pe').isNumber() && newData.child('pe').val() >= 0 &&
+  newData.child('pe').val() <= 1 && (!newData.hasChild('base') || (newData.child('base').isNumber() && newData.child('base').val() >= 0 &&
+  newData.child('base').val() <= 1)) && (!newData.hasChild('mvmt') || (newData.child('mvmt').isNumber() && newData.child('mvmt').val() >= 0
+  && newData.child('mvmt').val() <= 1)) && (!newData.hasChild('strata') || (newData.child('strata').isNumber() &&
+  newData.child('strata').val() >= 0 && newData.child('strata').val() <= 1)) && newData.child('timestamp').isNumber() &&
+  newData.child('timestamp').val() <= now + 300000 && newData.child('timestamp').val() >= now - 86400000"
+        }
+      },
+      "peacs_dimensions": {
+        ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.role === 'institution' || auth.token.role === 'pi' ||
+  auth.token.role === 'researcher')",
+        "$patient_id": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.role !== 'observer'",
+          "$dimension": {
+            ".validate": "newData.hasChildren(['timestamp']) && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <=
+  now + 300000 && ($dimension === 'base' || $dimension === 'mvmt' || $dimension === 'strata')"
+          }
+        }
+      },
+      "peacs_dimension_history": {
+        ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.role === 'institution' || auth.token.role === 'pi' ||
+  auth.token.role === 'researcher')",
+        "$patient_id": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.role !== 'observer'",
+          "$dimension": {
+            "$record": {
+              ".validate": "newData.hasChildren(['timestamp']) && newData.child('timestamp').isNumber() && newData.child('timestamp').val()
+  <= now + 300000 && ($dimension === 'base' || $dimension === 'mvmt' || $dimension === 'strata')"
+            }
+          }
+        }
+      },
+      "wad_checkins": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.role !== 'observer'",
+        ".indexOn": ["timestamp"],
+        "$record": {
+          ".validate": "newData.hasChildren(['msg','timestamp']) && newData.child('msg').isString() && newData.child('msg').val().length >= 1
+   && newData.child('msg').val().length <= 200 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000
+  && newData.child('timestamp').val() >= now - 86400000"
+        }
+      },
+      "ws_audit": {
+        "$workspace": {
+          ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
+          ".write": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
+          ".indexOn": ["ts"]
+        }
+      },
+      "globalStats": {
+        ".read": true,
+        "totalAssessments": {
+          ".write": "auth != null && auth.token.role !== 'observer'",
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+        },
+        "countries": {
+          ".write": "auth != null && auth.token.role !== 'observer'",
+          "$country": { ".validate": "newData.isBoolean() && $country.length <= 80" }
+        }
+      },
+      "export_counts": {
+        ".read": "auth != null && auth.token.role === 'superadmin'",
+        "$workspace": {
+          ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
+          ".write": "auth != null && auth.token.role !== 'observer' && (auth.token.role === 'superadmin' || auth.token.workspace ===
+  $workspace)",
+          "$month": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000" }
+        }
+      },
+      "campaigns": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.role === 'superadmin'",
+        ".indexOn": ["created_at"]
+      },
+      "wall_projects": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.role === 'superadmin'",
+        ".indexOn": ["created_at"]
+      },
+      "api_keys": {
+        ".read": "auth != null && auth.token.role === 'superadmin'",
+        ".write": "auth != null && auth.token.role === 'superadmin'"
+      },
+      "workspaces": {
+        ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.role === 'institution')",
+        ".write": "auth != null && auth.token.role === 'superadmin'",
+        "$workspace": {
+          "name": { ".read": "auth != null" },
+          "cohortLabel": { ".read": "auth != null" },
+          "institution": { ".read": "auth != null" },
+          "parent_institution_name": { ".read": "auth != null" }
+        }
+      },
+      "partner_sites": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.role === 'superadmin'"
+      },
+      "alerts": {
+        "$workspace": {
+          ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
+          ".write": "auth != null && auth.token.role !== 'observer' && (auth.token.role === 'superadmin' || auth.token.workspace ===
+  $workspace)",
+          "$record": {
+            ".validate": "newData.hasChildren(['timestamp']) && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <=
+  now + 300000"
+          }
+        }
+      },
+      "config": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.role === 'superadmin'"
+      },
+      "institutions": {
+        ".read": "auth != null",
+        ".write": false
+      },
+      "translations": {
+        ".read": "auth != null",
+        ".write": false
+      },
+      "errors": {
+        ".read": "auth != null && auth.token.role === 'superadmin'",
+        ".write": "auth != null && auth.token.role !== 'observer'",
+        "$record": {
+          ".validate": "newData.hasChildren(['timestamp']) && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <=
+  now + 300000"
+        }
+      },
+      "warnings": {
+        ".read": "auth != null && auth.token.role === 'superadmin'",
+        ".write": "auth != null && auth.token.role !== 'observer'",
+        "$record": {
+          ".validate": "newData.hasChildren(['timestamp']) && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <=
+  now + 300000"
+        }
+      },
+      "audit_log": {
+        ".read": "auth != null && auth.token.role === 'superadmin'",
+        ".write": "auth != null",
+        "$record": {
+          ".validate": "newData.hasChildren(['action','timestamp','uid']) && newData.child('action').isString() &&
+  newData.child('action').val().length <= 80 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 &&
+  newData.child('timestamp').val() >= now - 86400000 && newData.child('uid').isString() && newData.child('uid').val().length <= 128"
+        }
+      },
+      "permissions": {
+        ".read": true,
+        ".write": "auth != null && auth.token.role === 'superadmin'",
+        "$certNum": {
+          ".validate": "newData.hasChildren(['certNum','name','institution','issued_at','status'])"
+        }
+      }
+    }
+  }

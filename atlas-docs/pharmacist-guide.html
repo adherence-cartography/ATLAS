@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Clinician Deep Reference Guide · ATLAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_shared.css"/>
+<style>
+.feature-block{background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:20px 22px;margin:16px 0;}
+.feature-block h4{margin-top:0;}
+</style>
+</head>
+<body>
+<nav class="doc-nav">
+  <div class="doc-nav-brand">Adherence <em>Cartography</em> · Docs</div>
+  <div class="doc-nav-links">
+    <a href="index.html">← Library</a>
+    <a href="pharmacist-quickref.html">Quick-Ref Card</a>
+    <a href="mailto:info@adherence.cc">Support</a>
+  </div>
+</nav>
+<div class="doc-container">
+  <div class="doc-header">
+    <div class="doc-eyebrow">Clinician · Researcher · Deep Reference Guide — NP · PA · RN · MD · PharmD · CC</div>
+    <h1>ATLAS Complete Feature Reference</h1>
+    <p style="font-size:0.95rem;color:var(--muted);margin-top:10px;line-height:1.7;">Everything available in the Clinician · Researcher tier — daily intake, ZOE voice assessments, MTM audit documentation, PEACS longitudinal tracking, Sentinel follow-up flags, and all export formats. Applies to all $49/mo clinical roles: Nurse Practitioner (NP), Physician Assistant (PA), Registered Nurse (RN), Physician/MD (MD), Pharmacist (PHRM), and Care Coordinator (CC), as well as independent researchers (RES). Use the quick-ref card for daily use; come back here when you need to understand a feature in depth.</p>
+    <div class="doc-meta">Version 2026.05 · Clinician · Researcher tier (NP- · PA- · RN- · MD- · PHRM- · CC- · RES-) · Full reference</div>
+  </div>
+
+  <div class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#getting-started">Getting Started — your first clinical session</a></li>
+      <li><a href="#login">Signing in — workspace key and identity verification (MFA)</a></li>
+      <li><a href="#daily-intake">Daily Intake Panel — Quick patient logging</a></li>
+      <li><a href="#zoe">ZOE Voice Assessment — Full walkthrough · Remote Mode</a></li>
+      <li><a href="#soap">SOAP Note generation and use — editable textarea</a></li>
+      <li><a href="#followup">Follow-up scheduling, reminder links, and Patient Portal link</a></li>
+      <li><a href="#sentinel">Sentinel alerts — 3-stage escalation workflow</a></li>
+      <li><a href="#mtm-timer">MTM Session Timer — CPT 99605 · 99606 · 99607</a></li>
+      <li><a href="#mtm-billing">MTM Audit Log — CMS billing documentation</a></li>
+      <li><a href="#peacs">PEACS — BASE · MVMT · STRATA explained</a></li>
+      <li><a href="#sdoh-intelligence">SDoH Intelligence — automated PEACS pre-fill</a></li>
+      <li><a href="#mmas-pe">MAP PE Domain Analysis — Architecture · Execution · Context</a></li>
+      <li><a href="#cohort">Your cohort — reading the dashboard · benchmark comparison</a></li>
+      <li><a href="#poi-network">POI Contributor Network — verified local infrastructure</a></li>
+      <li><a href="#exports">Data export formats</a></li>
+      <li><a href="#permission">Your Letter of Permission and certificate</a></li>
+    </ol>
+  </div>
+
+  <div class="section" id="getting-started">
+    <h2>Getting Started — Your First Clinical Session</h2>
+    <p>New to ATLAS? This is the complete daily workflow from sign-in to closing your last patient. Use this page end-to-end on your first day, then switch to the <a href="pharmacist-quickref.html">Quick-Reference Card</a> for everyday use.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Sign in once at the start of your shift</div>
+        <p>Open <strong>atlas.adherence.cc</strong>, click <strong>Tracks A+B · Researcher / Clinician</strong>, and enter your workspace key. The key prefix matches your role — <code>NP-</code>, <code>PA-</code>, <code>RN-</code>, <code>MD-</code>, <code>PHRM-</code>, <code>CC-</code>, or <code>RES-</code> for independent researchers. A 6-digit code is emailed to your registered address — enter it to open your workspace. You stay signed in for the session; you do not need to re-enter the key between patients. <a href="#login">Full sign-in walkthrough →</a></p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Choose your intake path for each patient</div>
+        <p>Two paths are available. Use the <strong>Daily Intake Panel</strong> (collapsed at the top of your dashboard) for a rapid 3-item screen when a patient is picking up a refill and you have 60 seconds. Use <strong>Start New Patient Session</strong> for a full MMAS-8 or MMAS-8 + PEACS session when you have 5–10 minutes and need validated, publishable data. <a href="#daily-intake">Daily Intake detail →</a></p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Start a full patient session (when time permits)</div>
+        <p>Click <strong>Start New Patient Session</strong>. The session modal opens — select the instrument: <strong>MMAS-8 Only</strong>, <strong>PEACS Only</strong>, or <strong>MMAS-8 + PEACS</strong>. Click <strong>Continue to Informed Consent →</strong>. ATLAS automatically generates a Patient ID (e.g. <code>PT-B2C9</code>) for this session — note it in your patient record before handing the device over. The patient sees the consent screen first, then the selected instrument(s).</p>
+        <div class="callout tip" style="margin-top:10px;"><strong>Home Postal Code — enter before handing the device over</strong> The MAP intake form contains an optional <strong>Home Postal Code</strong> field under "Social Support &amp; Preparedness." Enter the patient's home postal code (not the clinic address) before the patient begins. ATLAS geocodes this client-side and uses it to pre-fill the PEACS questions about pharmacy access (sq5) and healthcare access (sq6) based on actual infrastructure density near the patient's home. If left blank, geo-inference is skipped for the session. The postal code is never sent to or stored on any server. <a href="#sdoh-intelligence">SDoH Intelligence detail →</a></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Run ZOE for the full voice-guided experience</div>
+        <p>Once the MMAS-8 screen loads, activate <strong>ZOE</strong> from the instrument panel. ZOE guides the patient through all 8 questions verbally, interprets their spoken responses, and generates a SOAP note automatically when complete. ZOE requires Chrome or Edge and microphone permission. <a href="#zoe">ZOE walkthrough →</a></p>
+        <div class="callout tip" style="margin-top:10px;"><strong>PE Domain Profile on the result screen</strong> After any MMAS-8 submission (live or ZOE), the result modal shows a <strong>PE Domain Profile</strong> below the standard score and tips. It displays the patient's composite PE score, three colour-coded domain bars (Architecture · Execution · Context), and a one-line constraint interpretation identifying the primary barrier. Use this to immediately target your counseling — an Execution-constrained patient needs habit systems, a Context-constrained patient needs regimen simplification. <a href="#mmas-pe">Full PE Domain explanation →</a></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Review the SOAP note and Sentinel feed</div>
+        <p>After the patient's session closes, the SOAP note appears in the result panel — copy it into your dispensing system or patient record. Check the <strong>Sentinel feed</strong> on the right of your dashboard for any red or amber alerts from today's patients. <a href="#sentinel">Sentinel detail →</a></p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-title">Log MTM time and export for billing at end of shift</div>
+        <p>The <strong>MTM Session Timer</strong> (⏱ tab) tracks your service, documentation, and travel time per encounter and auto-suggests CPT codes. At end of shift, export the MTM Audit PDF for your billing department. <a href="#mtm-timer">MTM Timer detail →</a></p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <strong>Session summary bar</strong>
+      While a patient session is active, a slim bar at the top of the dashboard shows the active Patient ID and instrument selection. Click <strong>End Session</strong> in that bar to close the session cleanly before starting the next patient. Do not start a new session without ending the previous one — the session bar confirms which patient is currently active.
+    </div>
+  </div>
+
+  <div class="section" id="login">
+    <h2>Signing In</h2>
+    <p>ATLAS uses a two-step sign-in process for all pharmacist and researcher workspace keys: your workspace key plus a one-time email verification code (OTP). This ensures that even if your key is accidentally shared, your cohort data remains protected.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Open atlas.adherence.cc and select your tier</div>
+        <p>Click the card labelled <strong>Tracks A+B · Researcher</strong>. A workspace key entry box appears at the bottom of the panel.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Enter your workspace key and press Verify Access</div>
+        <p>Type or paste your key (e.g. <code>RES-HOSP-ABCD-2026</code>). The system validates it against AWS SSM. This takes 2–3 seconds.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Check your email for the 6-digit verification code</div>
+        <p>A blue <strong>Identity Verification</strong> panel appears on screen. ATLAS simultaneously sends a 6-digit OTP to the email address registered to your workspace key. The code is valid for 10 minutes. Check your inbox (and spam folder) for a message from <code>info@adherence.cc</code>.</p>
+        <div class="callout tip">If the code doesn't arrive within 2 minutes, click <strong>Resend Code</strong>. Each resend generates a new code — the previous one is invalidated. If your workspace key has no email registered, contact info@adherence.cc to add one.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Enter the code and confirm sign-in</div>
+        <p>Type the 6 digits into the verification panel and press <strong>Verify →</strong>. Your workspace opens immediately. The MTM Session Timer at the top of the dashboard resets to 00:00 at each new session.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="daily-intake">
+    <h2>Daily Intake Panel</h2>
+    <p>The Daily Intake Panel is designed for high-volume pharmacy practice — logging multiple patients per session without running a full MMAS-8 assessment on every one. It sits at the top of your dashboard and is collapsed by default. Click the header bar to expand it.</p>
+
+    <h3>When to use the Daily Intake Panel vs Start New Patient Session</h3>
+    <table>
+      <tr><th>Situation</th><th>Use</th></tr>
+      <tr><td>Quick check-in — patient picking up refill, 60 seconds available</td><td>Daily Intake Panel (rapid 3-item screen)</td></tr>
+      <tr><td>New patient, first adherence assessment, 5–10 minutes available</td><td>Start New Patient Session → MMAS-8 Only → full MMAS-8</td></tr>
+      <tr><td>Patient flagged low in rapid screen, needs full assessment today</td><td>Daily Intake → tick "Flag for full ZOE" → Start New Patient Session</td></tr>
+      <tr><td>Research study, need complete validated MMAS-8 data for publication</td><td>Start New Patient Session → MMAS-8 Only → full MMAS-8 always</td></tr>
+      <tr><td>Full clinical picture needed — adherence and predictive emergence</td><td>Start New Patient Session → MMAS-8 + PEACS (SDoH captured once for both)</td></tr>
+    </table>
+
+    <h3>The rapid 3-item screen</h3>
+    <p>The three questions in the Daily Intake Panel are drawn from the full MMAS-8:</p>
+    <ul>
+      <li><strong>Q1</strong> — "Do you ever forget to take your medication?" (No = 1 point)</li>
+      <li><strong>Q4</strong> — "Did you ever stop taking your medication without telling your doctor?" (No = 1 point)</li>
+      <li><strong>Q8</strong> — "How often do you have difficulty remembering to take all your medications?" (Never = 1 point, down to Always = 0)</li>
+    </ul>
+    <p>Maximum rapid score is 3. A score below 2 automatically triggers a Sentinel alert and is flagged in the MTM audit log for follow-up. This is not a validated standalone instrument — use it for triage only. The full MMAS-8 is required for any published research.</p>
+
+    <div class="callout tip">
+      <strong>Daily counter</strong>
+      The "Today:" counter in the Daily Intake header shows how many patients you have logged today. This resets at midnight. Useful for tracking your MTM consultation volume for billing purposes.
+    </div>
+  </div>
+
+  <div class="section" id="zoe">
+    <h2>ZOE Voice Assessment</h2>
+    <p>ZOE (an AI voice agent powered by Claude) guides patients through the full MMAS-8 verbally. The patient hears each question spoken aloud and responds in natural language. ZOE interprets the response, confirms it back, and moves to the next question. The entire 8-question assessment takes 4–6 minutes.</p>
+
+    <h3>Technical requirements</h3>
+    <ul>
+      <li>Chrome or Edge browser (not Safari, not Firefox)</li>
+      <li>Microphone permission — granted once, remembered by browser</li>
+      <li>Active internet connection (ZOE routes through Lambda AI proxy)</li>
+      <li>Speakers or headphones so patient can hear ZOE speak</li>
+    </ul>
+
+    <div class="callout tip">
+      <strong>Offline queue — for non-ZOE assessments</strong>
+      Standard MMAS-8 assessments work without an internet connection. Submissions are saved locally and a yellow <strong>⚡ Queued Submissions — Tap to Sync</strong> badge appears when you reconnect. ZOE requires a live connection since it processes voice in real time through the cloud.
+    </div>
+
+    <h3>Best practice for pharmacy use</h3>
+    <p>In a dispensing environment, the best setup is a tablet on a small stand at the counseling window. Hand the patient the tablet with ZOE already open. They tap "Speak" when ready. You can attend to other tasks — you will see the completed assessment in your dashboard when they finish. ZOE handles the entire interaction including the result screen.</p>
+
+    <h3>What ZOE does when it is uncertain</h3>
+    <p>If ZOE cannot interpret a patient's response with confidence, it says "Let me make sure I understood you — could you say yes or no for that one?" and waits for clarification before recording the answer. This prevents misscored responses from unclear speech.</p>
+
+    <h3>Skip button</h3>
+    <p>If a patient cannot answer a specific question (for example, Q5 about whether they took their medication yesterday, when they started treatment that day), the Skip button records a neutral answer for that question. The final score is calculated on all 8 questions including the skipped one, which is assigned the non-penalising default.</p>
+
+    <div class="feature-block">
+      <h4>ZOE Remote Mode</h4>
+      <p>When a patient cannot attend in person, use the <strong>Remote Assessment</strong> panel in the follow-up card. Enter the patient's mobile number (or leave blank to copy a link instead) and click <strong>Send SMS</strong> or <strong>Copy Link</strong>. The patient receives a URL that opens a self-guided ZOE assessment on their phone — no app download required. They answer the same questions at their own pace, and results are automatically submitted to your workspace linked to their patient ID.</p>
+      <p><em>Use case:</em> post-discharge follow-up, rural/remote patients, between-visit check-ins without requiring a clinic visit.</p>
+    </div>
+  </div>
+
+  <div class="section" id="soap">
+    <h2>SOAP Note Generation</h2>
+    <p>After completing all 8 questions, ZOE automatically generates a clinical SOAP note using the patient's verbatim voice responses and the computed adherence data. The note is ready within 2–3 seconds of the last question.</p>
+
+    <h3>SOAP note structure</h3>
+    <ul>
+      <li><strong>Subjective</strong> — Patient's own words about their medication experience, drawn from the voice transcript</li>
+      <li><strong>Objective</strong> — MMAS-8 score, adherence level, pattern classification, flagged questions</li>
+      <li><strong>Assessment</strong> — Clinical interpretation of the pattern, risk level, likely barriers</li>
+      <li><strong>Plan</strong> — Actionable recommendations for the treating clinician, formatted as bullet points</li>
+    </ul>
+
+    <h3>How to use the SOAP note</h3>
+    <p>The SOAP note appears in the result modal after submission. Copy it directly into your pharmacy management system or patient record. Many pharmacists paste it into their dispensing software's notes field. You can also email it to the prescribing physician using the "Send to Researcher" button if your workspace has email notification enabled.</p>
+
+    <div class="feature-block">
+      <h4>Editable SOAP textarea</h4>
+      <p>The SOAP note generated by ZOE is now displayed in an editable text area, not a read-only panel. You can directly edit any section of the note before copying or saving. Click the <strong>Copy SOAP Note</strong> button to copy the full text to clipboard for paste into your EHR.</p>
+    </div>
+
+    <div class="callout warn">
+      <strong>SOAP notes are AI-generated</strong>
+      Review before adding to a patient record. ZOE generates the note from the voice transcript — it does not have access to the patient's medical history, other medications, or diagnosis. Clinical judgement always takes precedence.
+    </div>
+  </div>
+
+  <div class="section" id="followup">
+    <h2>Follow-Up Scheduling</h2>
+    <p>After every ZOE assessment, ATLAS automatically calculates a recommended follow-up date based on the score and pattern:</p>
+    <table>
+      <tr><th>Score / Pattern</th><th>Interval</th><th>Urgency</th></tr>
+      <tr><td>INA pattern, clinical flags, or score &lt; 4</td><td>7 days</td><td><span class="badge red">Urgent</span></td></tr>
+      <tr><td>Medium adherence (score 4–6)</td><td>14 days</td><td><span class="badge" style="background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);">Moderate</span></td></tr>
+      <tr><td>High adherence (score &gt; 6)</td><td>30 days</td><td><span class="badge green">Routine</span></td></tr>
+    </table>
+
+    <h3>The follow-up card</h3>
+    <p>A card appears below the ZOE panel after assessment showing the recommended date, the reason for that interval, the patient ID, and the score. The card has two buttons: "Copy reminder link" and "Dismiss."</p>
+
+    <h3>The reminder link</h3>
+    <p>Clicking "Copy reminder link" generates a URL that pre-fills the ATLAS assessment with your workspace key and the patient ID. Share this with the patient by SMS, email, or WhatsApp. When they open the link and complete a new assessment, their result is automatically added to your cohort under the same Patient ID — enabling longitudinal tracking over time.</p>
+
+    <div class="feature-block">
+      <h4>Patient Portal link</h4>
+      <p>When you copy a follow-up reminder link, the clipboard now automatically includes a second line with the patient's portal URL: <code>https://atlas.adherence.cc?portal=&lt;patient_id&gt;</code>. Share this with the patient directly. When they open it, they see their own score history, PE domain profile, personalised adherence tips, and your care team contact card. No login required — the link is pre-authenticated for that patient only.</p>
+    </div>
+  </div>
+
+  <div class="section" id="sentinel">
+    <h2>Sentinel Alerts</h2>
+    <p>The Sentinel system monitors your cohort for adherence events that warrant clinical attention. Alerts appear in the right sidebar of your dashboard.</p>
+
+    <h3>What triggers a Sentinel alert</h3>
+    <ul>
+      <li>Full MMAS-8 score below 6</li>
+      <li>INA pattern detected (intentional non-adherence)</li>
+      <li>ZOE-identified clinical flags in the SOAP note</li>
+      <li>Rapid 3-item screen score below 2 (from Daily Intake)</li>
+      <li>Full ZOE assessment requested via Daily Intake flag</li>
+    </ul>
+
+    <h3>Alert urgency levels</h3>
+    <ul>
+      <li><strong>Urgent (red)</strong> — INA pattern or score below 4. Act within 7 days. These patients are choosing not to take their medication and require motivational counseling, not just reminders.</li>
+      <li><strong>Moderate (amber)</strong> — Score 4–6 or rapid screen low. Follow-up in 14 days. UNA pattern — practical barrier assessment and system setup (pill organiser, alarm) are first-line interventions.</li>
+      <li><strong>Routine (green)</strong> — Follow-up reminder for scheduled reassessment.</li>
+    </ul>
+
+    <h3>Marking alerts as reviewed</h3>
+    <p>Click "Mark Reviewed" on any alert card to clear it from the active feed. Reviewed alerts are faded but not deleted — they remain visible in the feed for audit purposes. The "Export Sentinel Log" button at the bottom of the feed exports all alerts (reviewed and active) to CSV.</p>
+
+    <div class="feature-block">
+      <h4>Sentinel Escalation Workflow</h4>
+      <p>Sentinel alerts now use a 3-stage structured escalation rather than a single "Mark Reviewed" button:</p>
+      <p><strong>Stage 1 — Assign:</strong> Enter the care team member's name responsible for follow-up and click Assign.</p>
+      <p><strong>Stage 2 — Contact Outcome:</strong> Record what happened when contact was attempted: Reached · No Answer · Declined · Referred.</p>
+      <p><strong>Stage 3 — Resolve:</strong> Once the clinical situation is addressed, click Resolve. A full audit trail (assigned to, contact outcome, resolution timestamp) is logged.</p>
+      <p>Escalation state persists across page refreshes. Alerts leave the active queue only when explicitly Resolved.</p>
+    </div>
+  </div>
+
+  <div class="section" id="mtm-timer">
+    <h2>MTM Session Timer</h2>
+    <p>The MTM Session Timer is a live stopwatch built into the pharmacist dashboard for documenting consultation time for CMS billing purposes. It runs three independent clocks simultaneously — one for each billable time component — and auto-suggests a CPT code based on total elapsed time.</p>
+
+    <div class="callout tip">The timer is located in the <strong>MTM Services</strong> tab of your workspace dashboard (the tab with the ⏱ icon). It is available exclusively on the Pharmacist · Researcher tier.</div>
+
+    <h3>The three clocks</h3>
+    <table>
+      <tr><th style="width:28%">Clock</th><th>What to time</th><th>CMS category</th></tr>
+      <tr>
+        <td><strong style="color:#4e9cf5;">⏱ Service</strong></td>
+        <td>Time spent face-to-face or in direct consultation with the patient — reviewing medications, discussing adherence barriers, providing counselling</td>
+        <td>Direct patient care time</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#2ec98a;">⏱ Documentation</strong></td>
+        <td>Time spent writing the SOAP note, completing the MTM record, entering data into ATLAS — any documentation activity for this encounter</td>
+        <td>Indirect patient care time</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#d4a843;">⏱ Travel/Review</strong></td>
+        <td>Time spent reviewing the patient's medication history before the encounter, or travelling to a patient's location (home visit, ward round)</td>
+        <td>Pre-encounter review time</td>
+      </tr>
+    </table>
+
+    <p>Each clock has a <strong>Start / Pause</strong> button and a <strong>Reset (↺)</strong> button. Clocks run independently — you can pause Service time while writing the SOAP note and run Documentation time instead. The total combined time drives the CPT badge.</p>
+
+    <h3>CPT auto-badge</h3>
+    <p>A CPT badge in the upper-right of the timer panel updates in real time based on total elapsed Service time:</p>
+    <table>
+      <tr><th>Elapsed service time</th><th>CPT suggestion</th><th>Description</th></tr>
+      <tr><td>0 – 14:59</td><td><strong>99605 / 99606</strong></td><td>Initial (99605) or follow-up (99606) MTM — first 15 minutes</td></tr>
+      <tr><td>15:00 – 22:59</td><td><strong>99605/99606 + 99607</strong></td><td>Base code plus one add-on unit</td></tr>
+      <tr><td>23:00+</td><td><strong>+ additional 99607</strong></td><td>One additional 99607 per 8–22 minute increment beyond 15 min</td></tr>
+    </table>
+
+    <div class="callout warn">
+      <strong>The CPT badge is a documentation aid, not a billing guarantee.</strong> Always verify the final CPT code against your payer's requirements, your actual clinical notes, and your organisation's billing policies before submitting a claim. The timer does not submit to any billing system — it provides the time documentation you need to assign codes manually.
+    </div>
+
+    <h3>Recommended workflow</h3>
+    <ol>
+      <li>Patient arrives → start the <strong>Service</strong> clock immediately.</li>
+      <li>At the end of the patient consultation → pause Service, start <strong>Documentation</strong>.</li>
+      <li>Complete SOAP note and MTM audit entry in ATLAS → pause Documentation.</li>
+      <li>Read the CPT badge — note the suggested code(s).</li>
+      <li>Reset all clocks before the next patient.</li>
+    </ol>
+
+    <h3>A note on 99605 vs 99606</h3>
+    <p><strong>99605</strong> is for the <em>initial</em> MTM service — a patient new to your MTM programme, or one you have not seen within the past 12 months. <strong>99606</strong> is for follow-up MTM — a patient you have previously billed 99605 for within the last year. The ATLAS MTM Audit Log auto-assigns one or the other based on whether the patient has prior records in your cohort — but you can override this in your billing documentation.</p>
+  </div>
+
+  <div class="section" id="mtm-billing">
+    <h2>MTM Audit Log</h2>
+    <p>The MTM Audit Log is a formatted record of every patient encounter in your cohort, with CPT codes auto-suggested based on encounter type and adherence pattern. It sits in the <strong>MTM Services</strong> tab of your dashboard (below the Session Timer) and updates automatically whenever a new assessment is logged.</p>
+
+    <h3>CPT code auto-assignment logic</h3>
+    <ul>
+      <li><strong>99605</strong> — Assigned to a patient's first encounter in your cohort (no prior history)</li>
+      <li><strong>99606</strong> — Assigned to follow-up encounters (patient seen within last 90 days)</li>
+      <li><strong>99607</strong> — Assigned when INA pattern detected or score below 4 (complex case requiring extended counseling time)</li>
+    </ul>
+    <p>These are suggestions based on encounter data. Always verify against your specific payer's requirements and your own clinical documentation before billing.</p>
+
+    <h3>Exporting for reimbursement</h3>
+    <p><strong>PDF export</strong> produces a formatted audit document suitable for CMS auditors, with your workspace name, date range, total encounters, and a formatted table including patient ID, date, CPT code, score, adherence level, pattern, condition, and intervention documented. The document includes the MAP license reference and ATLAS platform attribution.</p>
+    <p><strong>CSV export</strong> produces a spreadsheet for import into electronic billing systems. Each row is one encounter with all fields as separate columns.</p>
+
+    <h3>International billing reference</h3>
+    <p>For UK pharmacists: the MUR and NMS consultations document a review of medication usage and adherence. The ATLAS MTM export serves as the structured assessment component of this documentation. For Australian HMR: ATLAS data constitutes the adherence screening component of the clinical assessment. Always check current DVA and PBS requirements.</p>
+  </div>
+
+  <div class="section" id="peacs">
+    <h2>PEACS — Predictive Emergence Assessment</h2>
+    <p>PEACS (Predictive Emergence Assessment for Clinical Services) measures three behavioural dimensions that together predict whether a patient will sustain adherence over time. The composite PE score is calculated as: <code>PE = (BASE × MVMT × STRATA)^(1/3)</code>.</p>
+
+    <h3>The three dimensions</h3>
+    <div class="feature-block">
+      <h4>BASE — Behavioural Foundation (30-day window)</h4>
+      <p>Measures how consistently a patient follows their medication regimen under normal, everyday conditions. A patient with high BASE takes their medication reliably when nothing disrupts their routine. A patient with low BASE struggles even in stable circumstances — often indicating habit not yet formed or significant avoidance.</p>
+      <p><strong>Clinical implication:</strong> Low BASE suggests the patient needs structured habit-formation support — linking medication to an existing daily anchor (meals, brushing teeth, bedtime).</p>
+    </div>
+    <div class="feature-block">
+      <h4>MVMT — Behavioural Flexibility (7-day window)</h4>
+      <p>Measures whether a patient maintains adherence when life changes — travel, illness, shift work, family disruptions, schedule changes. A patient can have high BASE (great at home routine) but low MVMT (falls apart when travelling). This is the most predictive dimension for medication holiday risk.</p>
+      <p><strong>Clinical implication:</strong> Low MVMT patients benefit from a travel kit protocol, pre-loaded pill organisers for trips, and a simple rule for what to do when a dose is missed due to disruption.</p>
+    </div>
+    <div class="feature-block">
+      <h4>STRATA — Social Determinants (90-day window)</h4>
+      <p>Captures the structural barriers and enablers around adherence: housing stability, transport access to pharmacy and clinic, support network quality, health literacy, and beliefs about treatment necessity. Low STRATA almost always co-occurs with Poor PE zone scores.</p>
+      <p><strong>Clinical implication:</strong> Patients with low STRATA need systemic support — pharmacy delivery, social prescribing referral, simplified regimen negotiated with prescriber, or connection to community support services. Clinical counseling alone will not be sufficient.</p>
+    </div>
+
+    <h3>PE Zones</h3>
+    <table>
+      <tr><th>Zone</th><th>PE Score</th><th>Predicted behaviour</th><th>Recommended action</th></tr>
+      <tr><td><span class="badge green">Optimal</span></td><td>≥ 0.85</td><td>High behavioural stability — likely to sustain adherence long-term</td><td>Routine monitoring. Positive reinforcement.</td></tr>
+      <tr><td><span class="badge blue">Good</span></td><td>0.70–0.84</td><td>Generally stable with occasional instability risk</td><td>Periodic check-ins. Address any single low dimension.</td></tr>
+      <tr><td><span class="badge" style="background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);">Moderate</span></td><td>0.55–0.69</td><td>Instability risk present — may sustain short-term but likely to relapse</td><td>Identify which dimension (BASE/MVMT/STRATA) is lowest and target it specifically.</td></tr>
+      <tr><td><span class="badge red">Poor</span></td><td>&lt; 0.55</td><td>High risk of sustained non-adherence</td><td>Priority intervention. Check STRATA first — often the root cause. Consider social prescribing referral.</td></tr>
+    </table>
+  </div>
+
+  <div class="section" id="sdoh-intelligence">
+    <h2>SDoH Intelligence — Automated PEACS Pre-fill</h2>
+    <p>Before the patient sees PEACS, three inference engines run automatically and pre-fill answers where objective data already exists. This reduces patient burden, improves data quality for structural questions, and ensures that infrastructure context (pharmacy access, healthcare proximity) is grounded in geography rather than patient self-report alone.</p>
+
+    <div class="feature-block">
+      <h4>MAP Cross-Inference <span class="badge" style="background:rgba(212,168,67,0.15);color:#d4a843;border:1px solid rgba(212,168,67,0.3);font-size:0.75rem;vertical-align:middle;">gold · From MAP</span></h4>
+      <p>The 8 MAP answers are scored and mapped into PEACS dimensions automatically. Patients who have already completed the MAP will find relevant PEACS questions pre-answered. Pre-filled answers from this engine display a gold <strong>"From MAP"</strong> badge next to the answer.</p>
+      <p><strong>No action required</strong> — this runs automatically whenever MAP and PEACS are used in the same session.</p>
+    </div>
+
+    <div class="feature-block">
+      <h4>Intake Pre-fill <span class="badge blue" style="font-size:0.75rem;vertical-align:middle;">blue · From intake</span></h4>
+      <p>Five new social support dropdowns appear in the MAP SDoH intake form under <strong>"Social Support &amp; Preparedness"</strong>:</p>
+      <ul>
+        <li>Primary support person</li>
+        <li>Living situation</li>
+        <li>Social contact frequency</li>
+        <li>Emergency contact network</li>
+        <li>Medication backup supply</li>
+      </ul>
+      <p>Answers to these dropdowns pre-fill matching PEACS STRATA/BASE questions. Pre-filled answers display a blue <strong>"From intake"</strong> badge and remain fully editable by the patient.</p>
+    </div>
+
+    <div class="feature-block">
+      <h4>Geo-Inference <span class="badge green" style="font-size:0.75rem;vertical-align:middle;">green · From location</span></h4>
+      <p>When you enter the patient's <strong>Home Postal Code</strong> in the MAP intake form, ATLAS geocodes it client-side and queries pharmacy and healthcare facility density within a 2 km radius via OpenStreetMap. The result pre-fills:</p>
+      <ul>
+        <li><strong>sq5</strong> — pharmacy access</li>
+        <li><strong>sq6</strong> — healthcare access</li>
+      </ul>
+      <p>If no postal code is entered, geo-inference is skipped for the session — the system detects that the clinician's location is not the patient's home. The postal code is never stored to any server or database.</p>
+      <div class="callout tip" style="margin-top:10px;"><strong>Clinical importance — pharmacy deserts</strong> Patients in pharmacy deserts score lower on sq5 regardless of what they report about their own adherence. Always enter the patient's home postal code when known — it provides objective infrastructure context to the PEACS result that self-report alone cannot capture.</div>
+    </div>
+
+    <h3>What the patient sees in PEACS</h3>
+    <ul>
+      <li>A banner at the top of the PEACS form shows the total pre-filled count with colour-coded chips (gold, blue, green) indicating which engine filled each answer.</li>
+      <li>Every pre-filled answer can be overridden by the patient. All changes are logged.</li>
+      <li>The result card shows an inference summary: <em>"X of 22 questions were pre-filled. Y answers manually adjusted."</em></li>
+    </ul>
+  </div>
+
+  <div class="section" id="mmas-pe">
+    <h2>MAP PE Domain Analysis</h2>
+    <p>The PE Domain Analysis applies the <strong>Theory of Predictive Emergence (TPE)</strong> to every MAP (Multidimensional Adherence Parameters) response in your cohort. Rather than stopping at a total score, it asks: <em>why</em> is this patient non-adherent, and which specific domain of behaviour is the primary constraint? This is available on the Researcher tier and above — it is computed automatically from the Q1–Q8 responses already stored on every assessment, including historical records.</p>
+
+    <h3>The PE formula</h3>
+    <p>PE = (A × E × C)<sup>1/3</sup></p>
+    <p>This is a <em>non-compensatory multiplicative model</em>. A high score in one domain cannot offset a collapse in another — if any single domain approaches zero, the PE collapses regardless of the other two. This mirrors clinical reality: even a patient with perfect beliefs and manageable burden will fail if their execution reliability is near zero.</p>
+
+    <h3>The three domains</h3>
+    <div class="feature-block">
+      <h4 style="color:#4e9cf5;">Architecture (A) — Belief and decision layer</h4>
+      <p>Derived from the mean of Q2, Q3, and Q6. These questions capture whether the patient forgets due to inattention (Q2), sometimes decides to skip a dose (Q3), and stopped taking medication without telling their doctor in the past two weeks (Q6). Together they represent the cognitive and motivational architecture around taking medication.</p>
+      <p><strong>Low A means:</strong> The patient has belief-level or motivation-level barriers — side effects they haven't reported, doubts about necessity, cost-related avoidance, or a deliberate pattern of skipping. Counseling focus: motivational interviewing, addressing beliefs about the medication, shared decision-making with prescriber.</p>
+    </div>
+    <div class="feature-block">
+      <h4 style="color:#8b6ff5;">Execution (E) — Behavioural reliability layer</h4>
+      <p>Derived from the mean of Q1, Q4, Q5, and Q8. These questions capture everyday forgetfulness (Q1), stopping without telling the doctor (Q4), missed doses yesterday (Q5), and frequency of difficulty remembering (Q8). Together they measure whether the patient's daily behaviour reliably translates intention into action.</p>
+      <p><strong>Low E means:</strong> The patient <em>wants</em> to take their medication but their behaviour is unreliable — habits are not formed, routines are broken by schedule changes, or reminders are not in place. Counseling focus: habit stacking (linking medication to a daily anchor), pill organiser, phone alarm, blister packs, pharmacy-delivered packaging.</p>
+    </div>
+    <div class="feature-block">
+      <h4 style="color:#2ec98a;">Context (C) — Burden and friction layer</h4>
+      <p>Derived directly from Q7 — "Do you ever feel hassled about sticking to your medication regimen?" This single question captures the patient's experienced friction with their regimen: complexity, cost, administration burden (injections, timing constraints, side effects), and social stigma. Context is the amplifier — a patient with moderate A and E can sustain adherence if Context is low-friction, but even a motivated patient with good habits will degrade over time if the regimen feels unmanageable.</p>
+      <p><strong>Low C means:</strong> The regimen itself is the barrier. Counseling focus: regimen simplification discussion with prescriber (once-daily formulation, combination pill), medication delivery services, cost support programmes, addressing stigma or administration anxiety.</p>
+    </div>
+
+    <h3>Reading the PE composite score</h3>
+    <table>
+      <tr><th>PE Score</th><th>Interpretation</th><th>Clinical action</th></tr>
+      <tr><td><strong style="color:#2ec98a;">≥ 0.85</strong></td><td>High behavioural stability — all three domains strong</td><td>Routine follow-up. Positive reinforcement. 30-day cycle.</td></tr>
+      <tr><td><strong style="color:#4e9cf5;">0.70–0.84</strong></td><td>Generally stable, one domain showing mild weakness</td><td>Identify the weak domain from the bar chart and address it specifically.</td></tr>
+      <tr><td><strong style="color:#f59e0b;">0.55–0.69</strong></td><td>Instability risk — likely to relapse without targeted support</td><td>Domain-targeted intervention. Follow-up in 14 days.</td></tr>
+      <tr><td><strong style="color:#ef4444;">&lt; 0.55</strong></td><td>High risk of sustained non-adherence</td><td>Priority intervention. Identify dominant constraint domain. Consider PEACS for deeper structural assessment.</td></tr>
+    </table>
+
+    <h3>Constraint interpretation labels</h3>
+    <p>The result modal and the PE Domain Analysis panel both display a one-line constraint label based on which domain is lowest:</p>
+    <ul>
+      <li><strong>Architecture-constrained</strong> — A is the lowest domain. The problem is motivational or belief-based.</li>
+      <li><strong>Execution-constrained</strong> — E is the lowest domain. The problem is habitual or systems-based.</li>
+      <li><strong>Context-constrained</strong> — C is the lowest domain. The problem is regimen burden or friction.</li>
+      <li><strong>Balanced low</strong> — All three domains are similarly low, indicating pervasive adherence breakdown requiring a comprehensive approach.</li>
+    </ul>
+
+    <h3>The PE Domain Analysis dashboard panel</h3>
+    <p>Below the standard MMAS-8 summary panel, click <strong>PE Domain Analysis ▾</strong> to expand the cohort-level PE panel. This shows:</p>
+    <ul>
+      <li><strong>Cohort average PE score</strong> — the mean PE across all records in your cohort that have complete Q1–Q8 data</li>
+      <li><strong>Constraint distribution</strong> — what percentage of your cohort is Architecture-, Execution-, or Context-constrained (or balanced low)</li>
+      <li><strong>Domain average bars</strong> — mean A, E, and C scores displayed as coloured bars so you can see at a glance which domain is weakest across your population</li>
+      <li><strong>Individual patient table</strong> — the 100 lowest-PE patients in your cohort sorted by PE ascending, with columns for Patient ID, PE, A, E, C, and Constraint Label. Use this to prioritise follow-up for the most at-risk patients.</li>
+    </ul>
+
+    <div class="callout tip">
+      <strong>Historical records are included automatically</strong>
+      PE is computed on-the-fly from Q1–Q8 scores already stored on every assessment. You do not need to recollect data — the moment you open the PE Domain Analysis panel, it computes PE for every record in your cohort, including all historical submissions. New submissions get PE values stored directly on the record and appear in your CSV exports.
+    </div>
+
+    <h3>PE domain columns in your CSV export</h3>
+    <p>When you export your MMAS cohort data (Export MMAS CSV), four additional columns are included at the Researcher tier and above:</p>
+    <table>
+      <tr><th>Column</th><th>Contents</th></tr>
+      <tr><td><code>mmas_pe</code></td><td>Composite PE score (0–1, 4 decimal places)</td></tr>
+      <tr><td><code>mmas_a</code></td><td>Architecture domain score (mean of Q2, Q3, Q6)</td></tr>
+      <tr><td><code>mmas_e</code></td><td>Execution domain score (mean of Q1, Q4, Q5, Q8)</td></tr>
+      <tr><td><code>mmas_c</code></td><td>Context domain score (Q7 value)</td></tr>
+    </table>
+    <p>These columns are computed from the same Q1–Q8 values already present in your export, so you can verify the calculation independently. A null value in <code>mmas_pe</code> indicates that one or more required questions were missing from that record (uncommon — ATLAS requires all 8 questions for submission, so nulls typically appear only in bulk-uploaded records with incomplete source data).</p>
+
+    <div class="callout info">
+      <strong>Cite TPE in publications</strong>
+      If you report PE domain data in a publication, add this citation: Morisky, P. (2025). <em>Theory of Predictive Emergence: A geometric behavioral stability framework</em> [Preprint]. Zenodo. https://doi.org/10.5281/zenodo.18209699
+    </div>
+  </div>
+
+  <div class="section" id="cohort">
+    <h2>Reading Your Dashboard</h2>
+    <p>Your dashboard has two main panels (Track A — MMAS-8, Track B — PEACS) plus several additional analytics sections below. Here is what each component shows:</p>
+
+    <div class="feature-block">
+      <h4>Benchmark comparison</h4>
+      <p>Each cohort summary and individual score view now shows a benchmark strip comparing your result against two reference points: the published literature mean (Morisky et al., <em>J Clin Hypertension</em>, 2008: mean 5.93, 31.4% high adherence) and the ATLAS global dataset 2026 mean (6.21, 34.2% high adherence). Use this to frame patient counselling ("your score is above the global average…") and to contextualise cohort reports for case rounds or institutional reporting.</p>
+    </div>
+
+    <table>
+      <tr><th>Component</th><th>What it shows</th><th>How to use it</th></tr>
+      <tr><td>Pulse bar (top)</td><td>Live global totals — all ATLAS users worldwide</td><td>Context only — not your cohort</td></tr>
+      <tr><td>Mini globe (MMAS)</td><td>Map of your cohort's geographic distribution</td><td>Visual check of data spread</td></tr>
+      <tr><td>INA / UNA / Mixed / High boxes</td><td>Pattern classification breakdown</td><td>Hover for clinical tooltip. Determine primary intervention approach for your cohort</td></tr>
+      <tr><td>Adherence Phenotyping Engine</td><td>5-phenotype probabilistic model of your cohort</td><td>Population-level intervention planning</td></tr>
+      <tr><td>Drug · Condition Stratification</td><td>Mean score by drug class and condition</td><td>Identify which drug types have lowest adherence in your population</td></tr>
+      <tr><td>Longitudinal Trajectories</td><td>Score over time for patients with 2+ assessments</td><td>Monitor individual patient improvement or deterioration over repeat visits</td></tr>
+      <tr><td>Active Patients table</td><td>Individual patient records with score, pattern, date</td><td>Search by Patient ID. Review individual history.</td></tr>
+      <tr><td>PE Domain Analysis panel</td><td>Cohort-level PE scores, constraint distribution, domain average bars, lowest-PE patient table</td><td>Expand with <strong>PE Domain Analysis ▾</strong>. Identify which domain (Architecture / Execution / Context) is the primary constraint across your population. Prioritise follow-up using the lowest-PE patient table. <a href="#mmas-pe">Full detail →</a></td></tr>
+      <tr><td>MTM Audit Log</td><td>CMS-formatted encounter log with CPT codes</td><td>Export for billing reimbursement</td></tr>
+    </table>
+  </div>
+
+  <div class="section" id="poi-network">
+    <h2>POI Contributor Network</h2>
+    <p>The accuracy of geo-scoring depends on the completeness of local infrastructure data. The POI Contributor Network lets clinicians submit and verify points of interest in their region, so that PEACS geo-scores reflect newly opened facilities and local resources that may not yet appear in public map datasets.</p>
+
+    <h3>How to contribute a POI</h3>
+    <ol>
+      <li>Go to your dashboard → <strong>SDoH Globe</strong> panel.</li>
+      <li>Toggle <strong>Verified POIs</strong> to enable the contributor overlay.</li>
+      <li>Click <strong>Add POI</strong>.</li>
+      <li>Enter the facility name, type, and coordinates.</li>
+    </ol>
+
+    <p>Supported POI types:</p>
+    <ul>
+      <li>Pharmacy</li>
+      <li>Hospital</li>
+      <li>Clinic</li>
+      <li>Transport</li>
+      <li>Food bank</li>
+      <li>Community center</li>
+    </ul>
+
+    <h3>Verification process</h3>
+    <p>A submitted POI requires two independent confirmations from other authenticated ATLAS users before it becomes active. Once verified, the POI appears on the SDoH Globe and feeds directly into PEACS geo-scoring (sq5 and sq6) for all patients within range of that location.</p>
+
+    <div class="feature-block">
+      <h4>Clinical use case — newly opened pharmacies</h4>
+      <p>If a major pharmacy opened near your patient population recently and does not yet appear in OpenStreetMap data, submit it as a POI. Once two other clinicians confirm it, all patients in that area will receive updated sq5 scores the next time a PEACS assessment is run — without any manual intervention required.</p>
+    </div>
+
+    <div class="callout tip">
+      <strong>Verified POIs are shared across all users in the region</strong>
+      A POI you submit benefits every clinician using ATLAS for patients in that catchment, and their contributions improve your patients' scores in return. The network improves as more clinicians participate.
+    </div>
+  </div>
+
+  <div class="section" id="exports">
+    <h2>Data Exports</h2>
+    <table>
+      <tr><th>Export</th><th>Format</th><th>Contains</th><th>Use for</th></tr>
+      <tr><td>Export MMAS CSV</td><td>CSV</td><td>All cohort MMAS-8 records with individual Q scores, pattern, demographics, timestamps. Includes PE domain columns: <code>mmas_pe</code>, <code>mmas_a</code>, <code>mmas_e</code>, <code>mmas_c</code></td><td>Statistical analysis, research publication, PE domain analysis</td></tr>
+      <tr><td>Export PEACS CSV</td><td>CSV</td><td>PEACS records with BASE, MVMT, STRATA scores and PE composite</td><td>Longitudinal analysis, PEACS research</td></tr>
+      <tr><td>MTM Audit PDF</td><td>PDF (print)</td><td>Formatted audit table with CPT codes, patient IDs, scores, interventions, license reference</td><td>CMS reimbursement, audit documentation</td></tr>
+      <tr><td>MTM Audit CSV</td><td>CSV</td><td>Same data as MTM PDF in spreadsheet format</td><td>Electronic billing system import</td></tr>
+      <tr><td>Sentinel Log CSV</td><td>CSV</td><td>All sentinel alerts with urgency, reason, patient ID, score, reviewed status</td><td>Quality audit, JC documentation</td></tr>
+      <tr><td>SOAP Note</td><td>Text (copy/paste)</td><td>Individual patient SOAP note from ZOE session</td><td>Patient record, prescriber communication</td></tr>
+    </table>
+  </div>
+
+  <div class="section" id="permission">
+    <h2>Your Letter of Permission</h2>
+    <p>Your workspace key comes with a Letter of Permission for the MAP, sent as an HTML attachment in your welcome email. This letter:</p>
+    <ul>
+      <li>Is signed by Philip Morisky, Founder of Adherence Inc. and steward of the MAP</li>
+      <li>Carries a unique certificate number in the format <code>MAP-XXXXXXXX-XXXXXXXX-XXXXXXXX</code></li>
+      <li>Is verifiable at <a href="https://keys.adherence.cc/verify">keys.adherence.cc/verify</a> — share this URL with any journal editor or ethics officer who asks for confirmation</li>
+      <li>Specifies your name, institution, and study title as entered at registration</li>
+      <li>Is valid for the duration of your active subscription</li>
+    </ul>
+    <p>To print your letter: open the attached HTML file in Chrome → File → Print → Save as PDF. Keep a copy in your patient records folder and submit it with any research ethics application.</p>
+  </div>
+
+  <footer class="doc-footer">
+    Pharmacist · Researcher Guide v2026.05.1 · ATLAS Platform · Adherence Cartography<br/>
+    MAP® © Dr. Donald E. Morisky · TX 8-632-533 · PEACS © Philip Morisky · PE Theory: Zenodo 10.5281/zenodo.18209699<br/>
+    <a href="mailto:info@adherence.cc">info@adherence.cc</a> · <a href="https://atlas.adherence.cc">atlas.adherence.cc</a> · <a href="pharmacist-quickref.html">Quick-Ref Card</a>
+  </footer>
+</div>
+</body>
+</html>

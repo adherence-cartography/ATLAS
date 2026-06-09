@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Student Guide · ATLAS Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_shared.css"/>
+</head>
+<body>
+<nav class="doc-nav">
+  <div class="doc-nav-brand">Adherence <em>Cartography</em> · Docs</div>
+  <div class="doc-nav-links">
+    <a href="index.html">← Library</a>
+    <a href="https://atlas.adherence.cc">ATLAS Platform</a>
+    <a href="mailto:info@adherence.cc">Support</a>
+  </div>
+</nav>
+
+<div class="doc-container">
+  <div class="doc-header">
+    <div class="doc-eyebrow">Student Guide · ATLAS Platform</div>
+    <h1>Getting Started with ATLAS</h1>
+    <p style="font-size:0.95rem;color:var(--muted);margin-top:10px;line-height:1.7;">A complete walkthrough for students collecting medication adherence data for the first time. If you have used REDCap or paper CRFs before, ATLAS will feel familiar within your first session.</p>
+    <div class="doc-meta">Version 2026.05 · For the STU workspace tier · Estimated read time: 15 minutes</div>
+  </div>
+
+  <div class="callout info">
+    <strong>Before you begin</strong>
+    You need three things: (1) your workspace key — a code that looks like <code>STU-UNIC-ABCD-2026</code>, sent to you by your supervisor or purchased at keys.adherence.cc; (2) your institution's ethics or IRB approval for medication adherence data collection; (3) a laptop or desktop computer running Chrome or Edge for the best experience.
+  </div>
+
+  <div class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#getting-started">Getting Started — your first patient in 5 steps</a></li>
+      <li><a href="#what-is-atlas">What is ATLAS and how does it work?</a></li>
+      <li><a href="#step1">Step 1 — Entering your workspace key</a></li>
+      <li><a href="#step2">Step 2 — Understanding the dashboard</a></li>
+      <li><a href="#step3">Step 3 — Starting a patient session</a></li>
+      <li><a href="#step4">Step 4 — The consent screen</a></li>
+      <li><a href="#step5">Step 5 — Running the assessment</a>
+        <ul style="margin:4px 0 0 16px;list-style:disc;">
+          <li><a href="#multilingual">Multilingual support</a></li>
+          <li><a href="#sdoh-intelligence">SDoH Intelligence — automated PEACS pre-fill</a></li>
+        </ul>
+      </li>
+      <li><a href="#step6">Step 6 — Reading the result</a>
+        <ul style="margin:4px 0 0 16px;list-style:disc;">
+          <li><a href="#benchmark">Benchmark comparison</a></li>
+        </ul>
+      </li>
+      <li><a href="#step7">Step 7 — Your dashboard and cohort data</a></li>
+      <li><a href="#step8">Step 8 — Exporting your data</a></li>
+      <li><a href="#poi-network">POI Contributor Network</a></li>
+      <li><a href="#irb">IRB and ethics committee documentation</a></li>
+      <li><a href="#citation">How to cite MAP, MMAS-8, and ATLAS</a></li>
+      <li><a href="#pub-license">Publishing your research — Publication License</a></li>
+      <li><a href="#faq">Frequently asked questions</a></li>
+    </ol>
+  </div>
+
+  <div class="section" id="getting-started">
+    <h2>Getting Started — Your First Patient in 5 Steps</h2>
+    <p>New to ATLAS? This is the fastest path from zero to your first completed assessment. Full detail on each step is in the sections below.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Sign in with your workspace key</div>
+        <p>Open <strong>atlas.adherence.cc</strong>, click <strong>Tracks A+B · Researcher</strong>, and enter your <code>STU-XXXX-XXXX-2026</code> key. Check your email for a 6-digit verification code and enter it to complete sign-in. <a href="#step1">Full sign-in walkthrough →</a></p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Click "Start New Patient Session"</div>
+        <p>Once in your dashboard, click the <strong>Start New Patient Session</strong> button. A modal opens asking which instrument to administer. For most student projects, select <strong>MMAS-8 Only</strong>. If your protocol includes the PEACS, select <strong>MMAS-8 + PEACS</strong>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Note the auto-generated Patient ID</div>
+        <p>Click <strong>Continue to Informed Consent →</strong>. ATLAS automatically generates a unique Patient ID for this session — for example <code>PT-A3F7</code>. Write this ID in your paper CRF or study log now so you can link the ATLAS record to your other data. You cannot retrieve a different ID for this session later.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Hand the device to your patient at the consent screen</div>
+        <p>The patient reads the digital consent form and ticks the checkbox to agree. The assessment begins immediately after they confirm. The patient answers all 8 MMAS-8 questions and submits. The device returns to your dashboard automatically when done.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Review the result on your dashboard</div>
+        <p>The MMAS-8 panel updates immediately with the new submission. The patient's score, pattern (INA / UNA / Mixed / High), and session Patient ID appear in the Active Patients table. Repeat from Step 2 for your next patient.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <strong>Running MMAS-8 and PEACS together?</strong>
+      Select <strong>MMAS-8 + PEACS</strong> in the session modal. ATLAS presents both instruments in sequence and the Social Determinants of Health (SDoH) questions are shared — the patient answers them once and the responses are applied to both records. Both results appear in your dashboard when the session closes.
+    </div>
+
+    <div class="callout info">
+      <strong>What is the session summary bar?</strong>
+      Once a session is active, a slim bar appears at the top of the dashboard showing the active Patient ID and instrument. This confirms which patient session is in progress. Click <strong>End Session</strong> in that bar to close the session and return to a clean dashboard state before starting the next patient.
+    </div>
+  </div>
+
+  <div class="section" id="what-is-atlas">
+    <h2>What is ATLAS?</h2>
+    <p>ATLAS (Adherence Tracking and Longitudinal Assessment System) is a validated digital platform for collecting, storing, and analysing medication adherence data using the MMAS-8 scale and PEACS instrument. Think of it as a secure, cloud-based replacement for a paper CRF — except it scores automatically, maps submissions to a global dataset in real time, and produces IRB-ready export files.</p>
+    <p>When a patient completes the MMAS-8 through ATLAS, their anonymised response is stored in your private cohort — visible only to you and anyone else with your workspace key. No personally identifiable information is collected. The data is stored in Google Firebase (US data centres) with AES-256 encryption at rest.</p>
+
+    <h3>Key terms you will encounter</h3>
+    <table>
+      <tr><th>Term</th><th>What it means</th></tr>
+      <tr><td><strong>Workspace key</strong></td><td>Your unique access code (<code>STU-XXXX-XXXX-2026</code>). This is your cohort identifier. Keep it safe — anyone who has it can add data to your cohort.</td></tr>
+      <tr><td><strong>MMAS-8</strong></td><td>The Morisky Medication Adherence Scale, 8 items. The world's most validated self-report adherence instrument. Your workspace key includes a Letter of Permission to use it.</td></tr>
+      <tr><td><strong>MAP</strong></td><td>Multidimensional Adherence Parameters. The 8-item cross-sectional institutional instrument licensed through ATLAS for institutional and research use.</td></tr>
+      <tr><td><strong>PEACS</strong></td><td>Predictive Emergence Assessment for Clinical Services. A three-dimension instrument (BASE, MVMT, STRATA) that predicts sustained adherence behaviour. Available on the Student tier as a single-point snapshot.</td></tr>
+      <tr><td><strong>INA / UNA</strong></td><td>Intentional Non-Adherence / Unintentional Non-Adherence. ATLAS classifies every patient automatically based on their response pattern.</td></tr>
+      <tr><td><strong>Global pool</strong></td><td>Anonymised aggregate data from all ATLAS users worldwide. Your cohort data is isolated — it does not appear in the global pool unless you specifically enable that.</td></tr>
+      <tr><td><strong>TPE · PE Domain Analysis</strong></td><td>Theory of Predictive Emergence. An advanced MAP analytics layer (Researcher tier and above) that decomposes each patient's response pattern into three behavioural domains: Architecture (belief/decision), Execution (reliability), and Context (burden). Produces a single PE composite score (0–1) and identifies which domain is the primary constraint on adherence. Not available on the Student tier.</td></tr>
+      <tr><td><strong>Architecture (A)</strong></td><td>One of three PE domains. Derived from Q2, Q3, and Q6 — questions that capture whether forgetfulness and intentional decisions about skipping doses drive non-adherence. Low A indicates a belief or motivation problem.</td></tr>
+      <tr><td><strong>Execution (E)</strong></td><td>One of three PE domains. Derived from Q1, Q4, Q5, and Q8 — questions that capture behavioural reliability across everyday and disruption scenarios. Low E indicates a habit or systems problem.</td></tr>
+      <tr><td><strong>Context (C)</strong></td><td>One of three PE domains. Derived from Q7 — the patient's perceived burden of managing their medication. Low C means the patient finds their regimen difficult to manage, which amplifies both A and E problems.</td></tr>
+    </table>
+  </div>
+
+  <div class="section" id="step1">
+    <h2>Step 1 — Entering your workspace key</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Open atlas.adherence.cc in Chrome or Edge</div>
+        <p>You will see the ATLAS entry screen — a globe on the left, a panel of options on the right. Do not be alarmed by the globe. It shows where other researchers are collecting data in real time. It has nothing to do with your data yet.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Select "Tracks A+B · Researcher" and click "Get a Key"</div>
+        <p>The four cards on the entry screen represent different pathways. Click the card labelled <strong>Tracks A+B · Researcher</strong> (the one that says "PI · Pharmacist · Clinician · Student"). A workspace key entry box will appear at the bottom of the screen.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Type your workspace key and press Verify Access</div>
+        <p>Type your key exactly as it was sent to you — for example <code>STU-UNIC-ABCD-2026</code>. The system validates it against a secure database. The process takes 2–3 seconds.</p>
+        <div class="callout warn">
+          <strong>Key not working?</strong>
+          Check that you are copying all segments including the hyphens. Keys are case-insensitive. If you receive a "cannot reach validation server" error, check your internet connection — ATLAS requires an active connection to validate keys.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Check your email for a 6-digit verification code</div>
+        <p>After your key is validated, ATLAS sends a one-time passcode (OTP) to the email address registered to your workspace key. A blue verification panel appears on screen asking you to enter the code. The code is valid for 10 minutes.</p>
+        <div class="callout tip">
+          <strong>Code not arriving?</strong>
+          Check your spam or junk folder — the email comes from <code>info@adherence.cc</code> with the subject "Your ATLAS verification code". If you still don't see it after 2 minutes, click <strong>Resend Code</strong> in the verification panel. If your workspace key does not have an email on file, contact your supervisor or info@adherence.cc to add one.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Enter the code and complete sign-in</div>
+        <p>Type the 6-digit code into the verification panel and press <strong>Verify →</strong>. ATLAS confirms your identity and opens your workspace. This two-step process (key + OTP) keeps your cohort data secure even if your key is accidentally shared.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-title">You are now in your workspace</div>
+        <p>The green chip in the top-left corner of the dashboard shows your workspace identifier. This is your private cohort. Every assessment you collect will be stored here and only here.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="step2">
+    <h2>Step 2 — Understanding the dashboard</h2>
+    <p>Your dashboard has two main tracks side by side:</p>
+    <ul>
+      <li><strong>Track A — MMAS-8 Assessment</strong> (left panel): Shows your total submissions, country distribution, mean score, and adherence classification breakdown (INA, UNA, Mixed, High).</li>
+      <li><strong>Track B — Predictive Emergence / PEACS</strong> (right panel): Shows PEACS assessment data across BASE, MVMT, and STRATA dimensions.</li>
+    </ul>
+    <p>The top bar shows global statistics — these are from all ATLAS users worldwide and are not your data. Your data appears in the panels below.</p>
+
+    <div class="callout tip">
+      <strong>First time — dashboard will show zeros</strong>
+      This is normal. You have not collected any data yet. The numbers will populate as patients complete assessments through your workspace.
+    </div>
+  </div>
+
+  <div class="section" id="step3">
+    <h2>Step 3 — Starting a Patient Session</h2>
+    <p>Every assessment in ATLAS begins with a patient session. A session ties an instrument selection, a consent record, and a unique Patient ID together before the patient touches the screen.</p>
+
+    <h3>Opening the session modal</h3>
+    <p>Click <strong>Start New Patient Session</strong> in your dashboard. The session modal asks you to choose which instrument(s) to administer:</p>
+    <table>
+      <tr><th>Selection</th><th>What the patient sees</th><th>When to use</th></tr>
+      <tr><td><strong>MMAS-8 Only</strong></td><td>Consent → MMAS-8 questions → result</td><td>Standard adherence assessment; most student protocols</td></tr>
+      <tr><td><strong>PEACS Only</strong></td><td>Consent → PEACS questions → result</td><td>When MMAS-8 was collected separately and you need the PEACS dimension scores</td></tr>
+      <tr><td><strong>MMAS-8 + PEACS</strong></td><td>Consent → SDoH → MMAS-8 → PEACS → result</td><td>Combined session; SDoH answered once, applied to both instruments</td></tr>
+    </table>
+    <p>Click <strong>Continue to Informed Consent →</strong>. ATLAS generates a Patient ID (e.g. <code>PT-A3F7</code>) for this session and routes to the consent screen. Note the Patient ID in your study log before handing the device to the patient.</p>
+
+    <h3>Option A — Patient self-completes on your device (recommended)</h3>
+    <p>Once the session is started and the consent screen is displayed, hand your laptop or tablet to the patient. The patient reads the consent, ticks the checkbox, and proceeds through the assessment questions. When they submit, the device returns to your dashboard automatically.</p>
+
+    <h3>Option B — Researcher-administered (interviewer mode)</h3>
+    <p>Read each question aloud and select the patient's answer on their behalf. Use this when the patient has low literacy, vision impairment, or is not comfortable with technology. Start the session the same way — the scoring and data storage are identical regardless of who operates the device.</p>
+
+    <h3>Option C — ZOE voice assessment</h3>
+    <p>ZOE is an AI voice agent that guides the patient through the MMAS-8 verbally using the device's microphone. Start a patient session normally — when the MMAS-8 screen loads, activate ZOE from the instrument panel. The patient hears each question spoken aloud and responds naturally. ZOE interprets the response and records the answer. ZOE requires Chrome or Edge and microphone permission. The Student tier includes ZOE but does not include SOAP note generation.</p>
+  </div>
+
+  <div class="section" id="step4">
+    <h2>Step 4 — The consent screen</h2>
+    <p>Before every MMAS-8 assessment, patients see a digital consent screen. This screen explains:</p>
+    <ul>
+      <li>What data is collected (medication name, condition, anonymous demographic information)</li>
+      <li>How data is stored (anonymised, encrypted, no name or contact details)</li>
+      <li>That participation is voluntary and they can exit at any time</li>
+      <li>That their response contributes to a global research dataset</li>
+    </ul>
+    <p>The patient must actively tick the consent checkbox before proceeding. This consent record is timestamped and stored with their submission — which satisfies most ethics committee requirements for anonymous survey data.</p>
+
+    <div class="callout info">
+      <strong>IRB documentation note</strong>
+      The ATLAS consent screen has been reviewed by ethics committees at multiple institutions including the University of Nicosia and Democritus University of Thrace. You can reference the consent wording in your IRB submission. See the <a href="#irb">IRB documentation section</a> below for the exact language.
+    </div>
+  </div>
+
+  <div class="section" id="step5">
+    <h2>Step 5 — Running the assessment</h2>
+    <p>The MMAS-8 consists of eight questions. Questions 1–7 are Yes/No. Question 8 asks about frequency of difficulty remembering medication.</p>
+
+    <h3>Important scoring notes for your thesis write-up</h3>
+    <ul>
+      <li>Question 5 is reverse-scored: "Yes" to "Did you take your medicine yesterday?" scores 1 point (positive answer).</li>
+      <li>Maximum score is 8 (full adherence). Below 6 is classified as low adherence.</li>
+      <li>ATLAS computes the score automatically — you do not need to score it manually.</li>
+      <li>The INA/UNA classification is based on the pattern of which questions are missed, not the total score alone.</li>
+    </ul>
+
+    <h3>What patients can enter</h3>
+    <p>Before the questions, patients are asked for their country, city (optional), medication name, condition, and basic demographics. All of this is optional — patients can skip any field they are not comfortable with. The MMAS-8 questions themselves are mandatory; a partial MMAS-8 cannot be submitted.</p>
+
+    <div class="callout warn">
+      <strong>Language selection</strong>
+      ATLAS supports 60+ languages. Before handing the device to a patient who does not read English, select their language from the dropdown at the top of the assessment screen. The MMAS-8 questions are validated translations — do not use machine translation for your own purposes.
+    </div>
+
+    <div class="callout info" id="multilingual">
+      <strong>Multilingual support</strong> — ATLAS supports English, Spanish (Español), French (Français), German (Deutsch), and Portuguese (Português). Use the language selector buttons (EN / ES / FR / DE / PT) on the ATLAS entry screen before starting a session to switch the interface language. Consent text, form labels, and result displays all update automatically.
+    </div>
+
+    <h3 id="sdoh-intelligence">SDoH Intelligence — Automated PEACS Pre-fill</h3>
+    <p>When a session includes PEACS, three inference engines run automatically <em>before</em> the patient sees the PEACS form. Together they can pre-fill the majority of PEACS answers from data that has already been collected, reducing respondent burden and improving data quality. Every pre-filled answer can still be changed by the patient; all changes are logged.</p>
+
+    <p>A banner at the top of the PEACS form shows the total pre-filled count with coloured chips — for example: <strong>SDoH Intelligence · 14 of 22 pre-filled</strong>. The result card at the end of the session shows how many questions were pre-filled and how many were manually adjusted.</p>
+
+    <h4>MAP Cross-Inference <span style="display:inline-block;background:#b8860b;color:#fff;font-size:0.75rem;font-weight:500;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;">gold · From MAP</span></h4>
+    <p>The 8 MAP answers are scored into PEACS dimensions automatically:</p>
+    <ul>
+      <li><strong>Q1, Q4, Q5, Q8</strong> → MVMT (Execution dimension)</li>
+      <li><strong>Q2, Q3, Q6</strong> → BASE (Architecture dimension)</li>
+      <li><strong>Q7</strong> → STRATA (Context dimension)</li>
+    </ul>
+    <p>Pre-filled answers from this engine show a gold <strong>From MAP</strong> badge.</p>
+
+    <h4>Intake Pre-fill <span style="display:inline-block;background:#1a6fb5;color:#fff;font-size:0.75rem;font-weight:500;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;">blue · From intake</span></h4>
+    <p>Five social support dropdowns appear in the MAP form under a new <strong>Social Support &amp; Preparedness</strong> section. The patient answers these once during MAP intake and they pre-fill the matching PEACS STRATA questions automatically:</p>
+    <table>
+      <tr><th>Field</th><th>Question</th><th>Options</th></tr>
+      <tr><td><code>sq1</code></td><td>Primary support person</td><td>Lives alone / Family member / Partner or spouse / Friend or neighbour / Professional caregiver</td></tr>
+      <tr><td><code>sq2</code></td><td>Living situation</td><td>Alone / With family / With partner / Shared or assisted living / Care facility</td></tr>
+      <tr><td><code>sq3</code></td><td>Social contact frequency</td><td>Daily / Several times a week / Weekly / Rarely / Never</td></tr>
+      <tr><td><code>sq4</code></td><td>Emergency contact network</td><td>Yes, multiple / Yes, one person / Working on it / No</td></tr>
+      <tr><td><code>sq5</code></td><td>Medication backup supply</td><td>Yes, full / Yes, partial / No</td></tr>
+    </table>
+    <p>Pre-filled answers from this engine show a blue <strong>From intake</strong> badge.</p>
+
+    <h4>Geo-Inference <span style="display:inline-block;background:#2a7d4f;color:#fff;font-size:0.75rem;font-weight:500;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;">green · Location-scored</span></h4>
+    <p>An optional <strong>Home Postal Code</strong> field appears in the MAP SDoH form. This is the patient's home postal code — not their current location. When entered, it is geocoded client-side using OpenStreetMap Nominatim to a latitude/longitude centroid; then the Overpass API queries pharmacy and healthcare facility density within 2 km of that point. The results pre-fill two PEACS STRATA questions:</p>
+    <ul>
+      <li><code>sq5</code> — pharmacy access</li>
+      <li><code>sq6</code> — healthcare facility access</li>
+    </ul>
+    <p>Pre-filled answers from this engine show a green <strong>Location-scored</strong> badge. If no postal code is entered at a session, geo-inference is skipped. The postal code is never transmitted to or stored on any ATLAS server — all geocoding runs in the patient's browser.</p>
+
+    <div class="callout info">
+      <strong>For your thesis write-up</strong>
+      You can report the pre-fill rate as a data quality metric. The result card records exactly how many of the 22 PEACS questions were pre-filled from each source and how many were manually overridden, giving you a transparent audit trail for your methods section.
+    </div>
+  </div>
+
+  <div class="section" id="step6">
+    <h2>Step 6 — Reading the result</h2>
+    <p>After submission, the patient sees a result screen showing:</p>
+    <ul>
+      <li>Their MMAS-8 score out of 8</li>
+      <li>Their adherence level (High / Medium / Low)</li>
+      <li>Their adherence pattern (High Adherence / INA / UNA / Mixed)</li>
+      <li>Practical tips relevant to their pattern</li>
+      <li>A note that their result has been added to the global adherence map</li>
+    </ul>
+    <p>This screen is for the patient. Click <strong>← Exit</strong> or wait for it to return to the dashboard automatically after 30 seconds. The patient's data has already been saved to your cohort at the moment they submitted.</p>
+
+    <div class="callout info">
+      <strong>PE Domain Profile — Researcher tier and above</strong>
+      On the Researcher, PI, and Institution tiers, the result screen also displays a <strong>PE Domain Profile</strong> below the standard score and tips. This shows the patient's composite PE score (0–1) and coloured bars for their three behavioural domains — Architecture, Execution, and Context — along with a one-line constraint interpretation (e.g. "Context-constrained: regimen burden is the primary barrier"). The Student tier shows the standard score and pattern only. If your supervisor or a clinician (pharmacist, NP, PA, RN, MD) has a Clinician or Researcher key and reviews a patient's result, they will see this additional layer of analysis.
+    </div>
+
+    <div class="callout info" id="benchmark">
+      <strong>Benchmark comparison</strong> — Your patient's score is displayed alongside two reference points: the published literature mean (Morisky et al., <em>J Clin Hypertension</em>, 2008) and the current ATLAS global dataset mean. These benchmarks help you contextualise whether this patient's adherence sits above or below the broader population — useful for your research write-up.
+    </div>
+  </div>
+
+  <div class="section" id="step7">
+    <h2>Step 7 — Your dashboard and cohort data</h2>
+    <p>Return to your dashboard to see the submission counted. The MMAS-8 panel updates in real time. As you collect more data you will see:</p>
+    <ul>
+      <li><strong>Submissions counter</strong> — total assessments in your cohort</li>
+      <li><strong>Countries</strong> — how many distinct countries are represented</li>
+      <li><strong>Average score</strong> — mean MMAS-8 across your full cohort</li>
+      <li><strong>INA / UNA / Mixed / High</strong> — breakdown by adherence pattern</li>
+      <li><strong>The globe</strong> — a visual map showing where your submissions are coming from</li>
+    </ul>
+
+    <h3>The Active Patients table</h3>
+    <p>Scroll down past the main instrument cards to find the <strong>Active Patients · Your Cohort</strong> table. This shows every individual patient record with their Patient ID (if you assigned one), MMAS-8 score, pattern classification, and date. You can search by Patient ID and sort by most recent or by score.</p>
+
+    <div class="callout tip">
+      <strong>Patient ID best practice</strong>
+      Always assign a Patient ID before handing the device to the patient. Enter it in the "Patient Number" field on the SDOH screen (before the questions). Use whatever anonymised coding system your ethics committee approved — e.g. P001, P002. This is how you will link ATLAS data to your other records.
+    </div>
+  </div>
+
+  <div class="section" id="step8">
+    <h2>Step 8 — Exporting your data</h2>
+    <p>To export your cohort data for analysis in SPSS, R, Excel, or any other tool:</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Click "↓ Export MMAS CSV" in the MMAS-8 panel</div>
+        <p>This downloads a comma-separated values file containing all your cohort records. The Student tier allows 50 exports per month. Each row is one patient assessment.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Understand the export columns</div>
+        <table>
+          <tr><th>Column</th><th>Contents</th></tr>
+          <tr><td><code>patient_number</code></td><td>Your assigned Patient ID (if entered)</td></tr>
+          <tr><td><code>score</code></td><td>MMAS-8 total score (0–8)</td></tr>
+          <tr><td><code>q1</code>–<code>q8</code></td><td>Individual question scores</td></tr>
+          <tr><td><code>pattern</code></td><td>INA / UNA / Mixed / High</td></tr>
+          <tr><td><code>country</code>, <code>city</code></td><td>Patient-reported location</td></tr>
+          <tr><td><code>condition</code></td><td>Patient-reported medical condition</td></tr>
+          <tr><td><code>drug_name</code></td><td>Patient-reported medication</td></tr>
+          <tr><td><code>timestamp</code></td><td>Unix millisecond timestamp of submission</td></tr>
+          <tr><td><code>institution_code</code></td><td>Your workspace key prefix (for identifying your cohort)</td></tr>
+        </table>
+        <div class="callout info" style="margin-top:12px;">
+          <strong>PE domain columns — Researcher tier and above only</strong>
+          Researcher, PI, and Institution tier exports include four additional columns: <code>mmas_pe</code> (composite PE score, 0–1), <code>mmas_a</code> (Architecture domain), <code>mmas_e</code> (Execution domain), and <code>mmas_c</code> (Context domain). These are computed from the same Q1–Q8 responses and are automatically included in every export when the workspace role is Researcher or above. Student tier exports do not include these columns. If your protocol requires PE domain data in your analysis dataset, ask your supervisor to export under their Researcher key or request a tier upgrade.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Export the IRB Session Certificate</div>
+        <p>Click <strong>" Cite Instruments</strong> → then find the <strong>Session Certificate</strong> button in the MMAS-8 panel. This generates a printable document showing your workspace, total submissions, countries covered, mean score, and a unique session ID. Print this to PDF and keep it with your ethics committee documentation.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="poi-network">
+    <h2>POI Contributor Network</h2>
+    <p>The ATLAS dashboard globe includes a community layer that lets students and researchers contribute real-world infrastructure locations — Points of Interest (POIs) — that feed directly into geo-scoring for patients in those areas. This is the same infrastructure data that the Geo-Inference engine (above) draws on when pre-filling PEACS STRATA answers.</p>
+
+    <h3>Finding the controls</h3>
+    <p>In your ATLAS dashboard, locate the <strong>SDoH Globe</strong> and open the globe layer controls. You will see two new controls:</p>
+    <ul>
+      <li><strong>Verified POIs</strong> toggle — shows or hides community-contributed infrastructure as coloured dots on the globe</li>
+      <li><strong>Add POI</strong> button — opens the contribution modal</li>
+    </ul>
+
+    <h3>Contributing a POI</h3>
+    <p>Click <strong>Add POI</strong> to open the contribution modal. You will be asked to enter:</p>
+    <ul>
+      <li><strong>Name</strong> — the name of the location (e.g. "City Pharmacy on Main St")</li>
+      <li><strong>Type</strong> — one of six categories: pharmacy, hospital, clinic, public transport, food bank, or community center</li>
+      <li><strong>Coordinates</strong> — latitude and longitude, auto-filled from your device's location if you grant location permission; otherwise enter manually</li>
+    </ul>
+
+    <h3>Verification process</h3>
+    <p>A submitted POI is not immediately active. Two independent confirmations from other ATLAS users are required before it is marked <strong>verified</strong>. Once verified, the POI:</p>
+    <ul>
+      <li>Appears as a coloured dot on the globe (colour corresponds to POI type)</li>
+      <li>Is included in Overpass API density queries for patients who enter a nearby postal code during MAP intake</li>
+      <li>Contributes to geo-scoring for any PEACS session in that area</li>
+    </ul>
+
+    <div class="callout tip">
+      <strong>Useful for field data collection</strong>
+      If you are collecting data in a community or rural setting that is not well represented in OpenStreetMap, contributing POIs before your data collection sessions improves the accuracy of geo-inference for your own patient cohort. Two confirmations are still required, so coordinate with a colleague or supervisor to verify each other's submissions.
+    </div>
+  </div>
+
+  <div class="section" id="irb">
+    <h2>IRB &amp; Ethics Committee Documentation</h2>
+
+    <h3>What to say in your ethics application</h3>
+    <p>Use this language when describing ATLAS in your application:</p>
+    <div class="callout info">
+      <strong>Suggested ethics application wording</strong>
+      "Data will be collected using the ATLAS platform (Adherence Cartography, Adherence Inc., Long Beach, CA), a validated digital instrument platform operating the MAP (Multidimensional Adherence Parameters) and MMAS-8 instruments under a licensed permission agreement. The platform collects no personally identifiable information. Patients provide anonymous self-report responses to validated questions. All data is encrypted in transit (TLS 1.3) and at rest (AES-256) on Google Firebase infrastructure. Each participant provides digital informed consent prior to assessment. Data is accessible only to the named researchers via workspace key authentication."
+    </div>
+
+    <h3>Your Letter of Permission</h3>
+    <p>Your Letter of Permission for the MAP instrument is issued <strong>immediately when your workspace key is activated</strong>. It arrives as an HTML file attached to your welcome email. Open it in any browser and print to PDF — this is the document you submit to your ethics committee or IRB, and include in any publication. The letter is issued by Adherence Cartography and authorises the named researcher to use the MAP instrument for the study title specified at key issuance.</p>
+    <div class="callout tip">
+      <strong>Submitting to ethics before data collection begins?</strong> This is the intended workflow. Your letter is ready the moment your key is issued — you do not need to wait or request it separately. If you need to adjust the study title that appears on the letter, contact info@adherence.cc before submission.
+    </div>
+    <p>The letter includes a unique certificate number (format: <code>MAP-XXXXXXXX-XXXXXXXX-XXXXXXXX</code>) that can be verified by any journal editor or ethics officer at <a href="https://keys.adherence.cc/verify">keys.adherence.cc/verify</a>. Verification confirms the letter is genuine, active, and linked to a current ATLAS workspace subscription.</p>
+    <div class="callout warn">
+      <strong>Letter not in your welcome email?</strong> A letter is only generated if a Study Title was entered when your key was issued. If your key was set up without a study title (common for institution or ghost-name issuance), contact info@adherence.cc with your study title and workspace key — a letter can be issued manually at any time.
+    </div>
+    <div class="callout critical">
+      <strong>Do not cancel your subscription while your study is active.</strong> Your Letter of Permission is tied to your active subscription. If you cancel, the certificate is immediately and automatically revoked in the public registry — any journal editor or ethics officer who verifies it will see a revoked status. Your subscription must remain active for the full duration of data collection and through manuscript submission. If your study extends beyond your current billing period, simply keep the subscription active. If you need to pause for budget reasons, contact info@adherence.cc before cancelling.
+    </div>
+
+    <h3>Data storage and GDPR/privacy compliance</h3>
+    <ul>
+      <li>No names, email addresses, phone numbers, or direct identifiers are collected</li>
+      <li>Location data is city-level only — no precise GPS coordinates</li>
+      <li>Patient ID is assigned by the researcher, not derived from any identifying information</li>
+      <li>Data is stored in Google Firebase (Iowa, USA data centre) under Google Cloud's BAA</li>
+      <li>Data is retained for the duration of your workspace subscription</li>
+      <li>Deletion requests: contact info@adherence.cc with your workspace key prefix</li>
+    </ul>
+  </div>
+
+  <div class="section" id="citation">
+    <h2>How to cite MAP, MMAS-8, and ATLAS</h2>
+
+    <h3>Citing the MMAS-8 score (original 8-question instrument) — APA 7th</h3>
+    <div class="callout info">
+      <strong>Copy this exactly into your references</strong>
+      Krousel-Wood, M., Islam, T., Webber, L. S., Re, R. N., Morisky, D. E., &amp; Muntner, P. (2009). New medication adherence scale versus pharmacy fill rates in seniors with hypertension. <em>American Journal of Managed Care, 15</em>(1), 59–66.
+    </div>
+
+    <h3>Required MMAS-8 footnote in publications</h3>
+    <div class="callout info">
+      <strong>Include in your methods section</strong>
+      "MMAS-8® used with permission. www.moriskyscale.com"
+    </div>
+
+    <h3>Citing the MAP instrument (institutional cross-sectional instrument) — APA 7th</h3>
+    <div class="callout info">
+      <strong>Use this when citing MAP specifically</strong>
+      Morisky, P. (2026). <em>Multidimensional Adherence Parameters (MAP)</em>. In <em>Adherence Cartography</em>. Adherence Inc. https://atlas.adherence.cc
+    </div>
+
+    <h3>ATLAS platform citation (APA 7th)</h3>
+    <div class="callout info">
+      <strong>For citing the platform itself</strong>
+      Adherence Cartography. (2026). <em>ATLAS: Adherence Tracking and Longitudinal Assessment System</em> [Data collection platform]. Adherence Inc. https://atlas.adherence.cc
+    </div>
+
+    <h3>PEACS citation (if you used PEACS)</h3>
+    <div class="callout info">
+      <strong>For citing PEACS and the Theory of Predictive Emergence</strong>
+      Morisky, P. (2025). <em>Theory of Predictive Emergence: A geometric behavioral stability framework</em> [Preprint]. Zenodo. https://doi.org/10.5281/zenodo.18209699
+    </div>
+  </div>
+
+  <div class="section" id="pub-license">
+    <h2>Publishing Your Research — Publication License</h2>
+    <p>Most journals and ethics committees require a signed letter from the MAP intellectual property rights holder (Adherence Inc.) confirming you have permission to use the instrument. ATLAS provides two paths depending on where you are in your study. The flat-rate Publication License described in this section is available to <strong>students and self-funded researchers only</strong>. If your study was funded by a grant, contract, or institutional budget, publication rights are priced by study duration — contact <strong>info@adherence.cc</strong> instead of using the flat-rate flow.</p>
+
+    <h3>Letter of Permission vs. Publication License</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;margin:10px 0 20px;">
+      <thead><tr style="background:rgba(255,255,255,0.04);"><th style="padding:9px 12px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:500;">Letter of Permission (LOP)</th><th style="padding:9px 12px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:500;">Publication License</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);">Included with any paid workspace subscription</td><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);">One-time flat-rate payment — no subscription</td></tr>
+        <tr><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);">Covers data collection <em>and</em> publication</td><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);">Covers publication only (data already collected)</td></tr>
+        <tr><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);">Valid while subscription is active; expires if cancelled</td><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);"><strong>Permanent — never expires</strong></td></tr>
+        <tr><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);">Key: <code>MAP-XXXX-XXXX-XXXX</code></td><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);">Key: <code>PUB-XXXX-XXXX-XXXX</code></td></tr>
+        <tr><td style="padding:8px 12px;">Right for you if: your study is ongoing or your subscription is active</td><td style="padding:8px 12px;">Right for you if: study is complete, subscription lapsed or never started</td></tr>
+      </tbody>
+    </table>
+    <p>Both documents are accepted by journal editors and verifiable at <strong>keys.adherence.cc</strong>. If you have an active workspace subscription, your Letter of Permission is already included — you do not need to buy a Publication License.</p>
+
+    <div class="callout info">
+      <strong>Who can use the flat-rate Publication License?</strong>
+      Students and self-funded researchers who collected MAP data for a thesis or dissertation — whether inside or outside ATLAS — and now need a formal letter for journal submission. The Publication License is permanent and issued in minutes. Funded researchers (grant, contract, or institutional budget) must use the email path instead — see intro above.
+    </div>
+
+    <h3>How the ATLAS upload gate works</h3>
+    <p>ATLAS uses your own data as the integrity check. Rather than self-reporting participant counts, you upload your full dataset using the <strong>ATLAS standard template</strong>. The platform validates every record — checking score ranges, required fields, and geographic data — and plots each validated patient on the global ATLAS map. This map population <em>is</em> the proof of data provenance. The price tier and license scope are determined from this validated N automatically.</p>
+
+    <h3>Step-by-step: getting your Publication License</h3>
+    <ol class="step-list">
+      <li>
+        <div class="step-title">Go to your dashboard → Publish tab</div>
+        <p>Go to <strong><a href="https://atlas.adherence.cc?publish=1">atlas.adherence.cc?publish=1</a></strong> — the Publication License flow opens directly, no workspace key required. (If you have an active workspace, you can also reach it via the <strong>📄 Publish</strong> tab in your dashboard.)</p>
+      </li>
+      <li>
+        <div class="step-title">Download the ATLAS template</div>
+        <p>Click <strong>Download Template</strong> to get the official ATLAS bulk upload spreadsheet. This is the only accepted format. Fill in one row per participant, using your de-identified data. Do not add or remove columns.</p>
+      </li>
+      <li>
+        <div class="step-title">Upload your dataset</div>
+        <p>Drag and drop your completed spreadsheet (XLSX or XLS) onto the upload zone, or click to browse. ATLAS runs an automated security and format check. Each record that passes validation is immediately plotted on the global map. A progress bar shows the live count.</p>
+        <div class="callout warning"><strong>Important:</strong> Upload must be done from your workspace before initiating the license flow. The validated count (N) is locked at upload time and cannot be altered afterwards.</div>
+      </li>
+      <li>
+        <div class="step-title">Complete the study details form</div>
+        <p>After upload succeeds (minimum 10 validated participants), the Publication License form opens automatically. Fill in:</p>
+        <ul>
+          <li><strong>Principal Investigator name</strong> — as it will appear on the letter</li>
+          <li><strong>Institution</strong> — your university or research centre</li>
+          <li><strong>Study title</strong> — formal title matching your manuscript</li>
+          <li><strong>Patient population</strong> — brief description (e.g. "Adults with type 2 diabetes")</li>
+          <li><strong>IRB reference</strong> — optional, but recommended if you have one</li>
+          <li><strong>Journal name</strong> — optional, the journal you are submitting to</li>
+          <li><strong>Email address</strong> — where the letter will be sent</li>
+        </ul>
+      </li>
+      <li>
+        <div class="step-title">Pay the flat-rate license fee</div>
+        <p>The fee is calculated automatically from your validated N. A Stripe payment link opens in a new tab — pay securely with any major card. You do not need to create a Stripe account.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:0.9em;margin:10px 0;">
+          <thead><tr style="background:rgba(255,255,255,0.04);"><th style="padding:8px 12px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);">Validated N</th><th style="padding:8px 12px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);">Fee (one-time)</th></tr></thead>
+          <tbody>
+            <tr><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);">10 – 50</td><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);">$49</td></tr>
+            <tr><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);">51 – 200</td><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);">$89</td></tr>
+            <tr><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);">201 – 500</td><td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);">$149</td></tr>
+            <tr><td style="padding:8px 12px;">500+</td><td style="padding:8px 12px;">$249</td></tr>
+          </tbody>
+        </table>
+      </li>
+      <li>
+        <div class="step-title">Receive your license key and letter</div>
+        <p>After payment, click <strong>Verify Payment &amp; Issue License</strong> inside the ATLAS modal. Within seconds your <strong>PUB-XXXX-XXXX-XXXX</strong> license key is displayed. The official Letter of Permission is simultaneously emailed to you as an HTML attachment — open it in any browser and print to PDF to produce the signed document.</p>
+      </li>
+    </ol>
+
+    <h3>What the letter contains</h3>
+    <ul>
+      <li>Your name, institution, and study title exactly as entered</li>
+      <li>The ATLAS-validated participant count (N) as proof of data provenance</li>
+      <li>Data collection period and countries derived from your upload</li>
+      <li>Your PUB- license key and a permanent verification URL</li>
+      <li>The required MMAS-8 / MAP citation and acknowledgment footnote</li>
+      <li>Philip Morisky's signature block (Adherence Inc., IP rights holder)</li>
+    </ul>
+
+    <h3>Giving the letter to a journal</h3>
+    <p>Attach the PDF to your manuscript submission as a supplementary document, or paste the verification URL in your cover letter. Journal editors and peer reviewers can verify the license independently at <strong>keys.adherence.cc</strong> using the PUB- key number — no login required. The record is permanent and the verification URL never expires.</p>
+
+    <div class="callout success">
+      <strong>Active subscriber? You already have your letter.</strong>
+      If your workspace subscription is active, your Letter of Permission (<code>MAP-</code> key) is already issued and covers both data collection and publication. Log in to your dashboard, go to the <strong>📄 Publish</strong> tab, and download it from there. The Publication License is only needed if your subscription has lapsed or you collected data without an ATLAS workspace.
+    </div>
+    <div class="callout warning">
+      <strong>Your LOP only covers what happened during your subscription.</strong>
+      The Letter of Permission records your subscription activation date. It does not cover data you collected before you subscribed. Subscribing now to backfill coverage for a completed study does not work — the activation date is on the record and verifiable by anyone at keys.adherence.cc/verify. If your subscription was active for your whole study, you are covered. If there is a gap, contact info@adherence.cc.
+    </div>
+  </div>
+
+  <div class="section" id="faq">
+    <h2>Frequently Asked Questions</h2>
+
+    <h3>I accidentally submitted a test assessment. How do I delete it?</h3>
+    <p>Contact info@adherence.cc with your workspace key prefix and the approximate timestamp of the test submission. We can remove individual records from your cohort. Alternatively, use the Patient ID field to mark test records (e.g. <code>TEST-001</code>) and exclude them during analysis using your export filter.</p>
+
+    <h3>Can two researchers use the same workspace key at the same time?</h3>
+    <p>Yes. Multiple people can be logged into the same workspace simultaneously. All data goes to the same cohort. This is useful when multiple research coordinators are collecting data at the same site. Coordinate Patient ID assignment to avoid duplicates.</p>
+
+    <h3>The patient didn't answer all the questions. What happens?</h3>
+    <p>ATLAS requires all 8 MMAS-8 questions to be answered before submission. If a patient exits mid-way, no data is saved. Their partial responses are not recorded anywhere.</p>
+
+    <h3>Can I collect data offline?</h3>
+    <p>Yes — ATLAS has a built-in offline queue. If a patient submits an assessment while your device has no internet connection, the submission is saved locally in the browser's IndexedDB storage. When connectivity is restored, a yellow <strong>⚡ Queued Submissions — Tap to Sync</strong> badge appears at the bottom-left of the screen. Tap it to push all queued submissions to your cohort at once.</p>
+    <p>This means you can collect in a clinic with no WiFi and sync at the end of the session over any connection. The patient sees the normal result screen immediately — the data just travels to Firebase later. If you close the browser before syncing, the queue persists until the next time you open ATLAS on the same device and browser.</p>
+    <div class="callout warn">
+      <strong>Important</strong>
+      The offline queue is tied to the specific browser and device. If you collect on a clinic computer in Chrome and then try to sync from a different computer, the queue will not be there. Always sync on the same device before closing the browser session.
+    </div>
+
+    <h3>My supervisor wants to see my data. Can I share access?</h3>
+    <p><strong>Do not share your workspace key with your supervisor.</strong> Your workspace key is your private cohort identifier — anyone who holds it can submit data into your cohort and see everything in it. Sharing it introduces a risk of data contamination and breaks the audit trail that links your key to your ethics approval.</p>
+    <p>Supervisors have their own access path. Your institution will have been issued an <strong>Institution workspace key</strong> (format: <code>INST-XXXX-2026</code>) that gives your supervisor or department head a read-level dashboard showing all student and researcher cohorts linked to that institution. When your workspace key was issued, it was linked to your institution's key — your data is already visible to your supervisor through their own institution dashboard. Your supervisor does not need your key and should not ask for it.</p>
+    <p>If your supervisor does not yet have an institution account, ask your department administrator to contact <a href="mailto:info@adherence.cc">info@adherence.cc</a> to arrange one.</p>
+
+    <h3>I collected data on paper first. Can I upload it into ATLAS?</h3>
+    <p>Yes — ATLAS supports bulk upload of manually collected assessments via a structured Excel template. This is the correct path when patients were assessed on paper forms, when data was collected at a site without internet access, or when you are importing historical records from another system.</p>
+
+    <p><strong>How to use bulk upload:</strong></p>
+    <ol>
+      <li>In your ATLAS dashboard, click <strong>↓ Template</strong> (the ghost button below the MMAS-8 panel) to download the official <code>.xlsm</code> bulk upload template.</li>
+      <li>
+        <strong>Unblock the file before opening it in Excel.</strong> Windows flags downloaded <code>.xlsm</code> files as coming from the internet and blocks macros by default — you will see a red security bar across the top of Excel when you open it. To enable macros before opening: <strong>right-click the downloaded file</strong> → <strong>Properties</strong> → tick the <strong>Unblock</strong> checkbox at the bottom of the General tab → click <strong>OK</strong>. Now open the file and the macros (Validate, Summary, Remove Example Row) will work correctly.
+        <div class="callout tip" style="margin-top:10px;">
+          <strong>Already see the red security bar?</strong> Close the file, follow the unblock steps above, then re-open it. Alternatively click <strong>Enable Content</strong> in the yellow bar that appears at the top of the sheet — this also works but only for that session and does not persist.
+        </div>
+      </li>
+      <li>Open the template in Microsoft Excel. A single highlighted example row is included to show you the correct format — <strong>delete it before uploading</strong> (use the <strong>Remove Example Row</strong> macro button, or simply select and delete the row manually).</li>
+      <li>
+        <strong>Fill in one row per patient assessment.</strong> The key columns are:
+        <table style="margin-top:8px;">
+          <tr><th>Column</th><th>Notes</th></tr>
+          <tr><td><code>Patient_Number</code></td><td>Your anonymised patient ID (e.g. <code>PT-001</code>). Required to link records to your paper forms.</td></tr>
+          <tr><td><code>Assessment_Date</code></td><td>Date of the assessment in <strong>YYYY-MM-DD</strong> format (e.g. <code>2026-01-15</code>). Used as the record timestamp in ATLAS.</td></tr>
+          <tr><td><code>Q1</code>–<code>Q7</code></td><td>Use the dropdowns — select <strong>YES</strong> or <strong>NO</strong>. Q5 is reverse-scored (YES = adherent).</td></tr>
+          <tr><td><code>Q8_Frequency</code></td><td>Select from the dropdown: Never / Rarely / Sometimes / Usually / All of the time.</td></tr>
+          <tr><td><code>Country</code>, <code>Condition</code>, <code>Drug_Name</code></td><td>Recommended but optional.</td></tr>
+        </table>
+      </li>
+      <li>Save the completed file. Return to your ATLAS dashboard and click <strong>📤 Bulk Upload</strong>.</li>
+      <li>When the file selector opens, the file type filter defaults to <strong>Custom Files</strong> — change this to <strong>All Files</strong> so your <code>.xlsm</code> template is visible. Select your file. ATLAS validates each row, reports any errors (missing required fields, out-of-range values), and imports the valid records into your cohort.</li>
+      <li>Imported records appear in your dashboard and CSV exports exactly like live submissions, tagged with the upload timestamp and marked as bulk-imported in the audit trail.</li>
+    </ol>
+
+    <h3>How do I record the same patient at multiple timepoints (longitudinal data)?</h3>
+    <p>ATLAS identifies longitudinal records by matching the <code>Patient_Number</code> across rows. To log a patient at multiple timepoints, enter a separate row for each visit using the <strong>same Patient_Number</strong> and a different <strong>Assessment_Date</strong> each time:</p>
+    <table>
+      <tr><th>Patient_Number</th><th>Assessment_Date</th><th>Q1</th><th>…</th><th>MMAS8_Score</th></tr>
+      <tr><td><code>PT-001</code></td><td><code>2026-01-15</code></td><td>NO</td><td>…</td><td>6.75</td></tr>
+      <tr><td><code>PT-001</code></td><td><code>2026-04-15</code></td><td>NO</td><td>…</td><td>7.75</td></tr>
+      <tr><td><code>PT-001</code></td><td><code>2026-07-15</code></td><td>YES</td><td>…</td><td>5.75</td></tr>
+    </table>
+    <p>When you export your cohort CSV, each row is one assessment — sort or filter by <code>patient_number</code> to group all timepoints for a given patient. In SPSS or R, use <code>patient_number</code> as your subject ID variable and <code>timestamp</code> (derived from <code>Assessment_Date</code>) as your time variable for repeated-measures or mixed-model analyses.</p>
+    <div class="callout tip">
+      <strong>Before importing:</strong> use a Patient ID scheme that matches what you used on your paper forms (e.g. <code>PT-001</code>, <code>PT-002</code>). This lets you cross-reference the digital records against your paper originals for source data verification, which is required for GCP-compliant research.
+    </div>
+
+    <h3>What is PE Domain Analysis and why don't I see it on my result screens?</h3>
+    <p>PE Domain Analysis is an advanced analytics layer built on the Theory of Predictive Emergence (TPE). It decomposes each patient's MMAS-8 response pattern into three behavioural domains — <strong>Architecture</strong> (belief and decision), <strong>Execution</strong> (reliability), and <strong>Context</strong> (perceived burden) — and combines them into a single PE composite score from 0 to 1. A PE of 0.80 means the patient has high predicted behavioural stability; a PE of 0.40 means high risk of sustained non-adherence. The dominant low domain identifies the <em>primary constraint</em> — the one bottleneck most likely to drive non-adherence for that patient.</p>
+    <p>This feature is available on the Researcher, PI, and Institution tiers. It does not appear on the Student tier result screen or in Student CSV exports. If your thesis or dissertation requires PE domain data, two options are available: (1) ask your supervisor to export the cohort under their Researcher key — PE domain columns (<code>mmas_pe</code>, <code>mmas_a</code>, <code>mmas_e</code>, <code>mmas_c</code>) will be included; or (2) request a tier upgrade at keys.adherence.cc. PE is computed from the same Q1–Q8 responses already stored in every assessment, so upgrading applies retroactively to your entire existing cohort — no re-collection needed.</p>
+
+    <h3>How do I know my data is separate from the global pool?</h3>
+    <p>Your cohort data is filtered by your workspace key. The global pool on the spectator map and explorer mode does not show your individual cohort — it shows anonymised aggregates only. Your CSV export contains your records only.</p>
+
+    <h3>The assessment is showing in the wrong language</h3>
+    <p>Use the language selector dropdown at the top of the MMAS-8 screen to change the language before handing the device to a patient. If a language you need is missing, contact info@adherence.cc — we have translations available in 60+ languages and can activate additional ones for your workspace.</p>
+
+    <h3>Do I need a Letter of Permission or a Publication License?</h3>
+    <p>It depends on your subscription status and how your study was funded:</p>
+    <ul style="margin:8px 0 12px 20px;line-height:2;">
+      <li><strong>Active workspace subscription</strong> → your <strong>Letter of Permission</strong> (<code>MAP-</code> key) is already issued and included. Find it in your dashboard under the 📄 Publish tab. No extra cost.</li>
+      <li><strong>Study complete, subscription lapsed (student or self-funded)</strong> → get a <strong>Student Publication License</strong> (<code>PUB-</code> key) at <a href="https://atlas.adherence.cc?publish=1">atlas.adherence.cc?publish=1</a>. One-time flat rate ($49–$249), permanent.</li>
+      <li><strong>Collected data without ATLAS (student or self-funded)</strong> → same as above — use the Publication License flow, upload your data using the ATLAS template, and pay the flat rate.</li>
+      <li><strong>Grant-funded or institutionally funded study</strong> → the flat-rate Publication License is not available. Email <a href="mailto:info@adherence.cc?subject=Publication%20Rights%20%E2%80%93%20Funded%20Study%20Inquiry">info@adherence.cc</a> with your study title, funding source, IRB number, and data-collection dates. Publication rights are priced by study duration.</li>
+    </ul>
+    <p>Both the Letter of Permission and the Publication License are accepted by journals and IRB officers. The LOP is subscription-tied; the Publication License is permanent. Neither can retroactively cover data collected before subscription activation — if there is a gap in your coverage history, contact info@adherence.cc.</p>
+
+    <h3>Can a journal editor verify my license?</h3>
+    <p>Yes. Direct them to <strong>keys.adherence.cc</strong> and have them enter your key number (either <code>MAP-</code> or <code>PUB-</code> format). The registry will confirm your name, institution, study title, and issuance date — no login required. Publication License keys never expire in the registry, so the verification link you give a journal today will still work in five years.</p>
+  </div>
+
+  <footer class="doc-footer">
+    Student Guide v2026.05 · ATLAS Platform · Adherence Cartography · Adherence Inc.<br/>
+    MMAS-8® · MAP® © Dr. Donald E. Morisky / Philip Morisky · TX 8-632-533 · Licensed to Adherence Inc.<br/>
+    Questions: <a href="mailto:info@adherence.cc">info@adherence.cc</a> · Platform: <a href="https://atlas.adherence.cc">atlas.adherence.cc</a>
+  </footer>
+</div>
+</body>
+</html>

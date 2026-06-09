@@ -1,0 +1,8 @@
+name = "atlas-api"
+main = "_api_worker.js"
+compatibility_date = "2024-09-02"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "atlas-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
