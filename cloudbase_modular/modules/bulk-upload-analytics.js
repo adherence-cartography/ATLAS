@@ -437,7 +437,7 @@ function accLoadAnalytics() {
           const shade = i % 2 === 1 ? `background:${tc('rgba(255,255,255,0.02)','rgba(0,0,0,0.02)')};` : '';
           return `<tr style="${shade}">
             <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:0.90rem;color:rgba(212,168,67,0.65);">${w.key}</td>
-            <td style="padding:7px 10px;color:${tc('rgba(255,255,255,0.75)','rgba(0,0,0,0.78)')};max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${w.name}</td>
+            <td style="padding:7px 10px;color:${tc('rgba(255,255,255,0.75)','rgba(0,0,0,0.78)')};max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(w.name)}</td>
             <td style="padding:7px 10px;"><span class="acc-badge ${roleColors2[w.role] || ''}">${w.role}</span></td>
             <td style="padding:7px 10px;text-align:right;color:rgba(78,156,245,0.85);">${w.mmas.toLocaleString()}</td>
             <td style="padding:7px 10px;text-align:right;color:rgba(139,111,245,0.85);">${w.peacs.toLocaleString()}</td>
@@ -464,7 +464,7 @@ function accLoadAnalytics() {
           const warn = e.used >= 40;
           const col  = e.used >= 50 ? 'rgba(239,68,68,0.8)' : warn ? 'rgba(245,158,11,0.8)' : 'rgba(46,201,138,0.8)';
           return `<div style="display:flex;align-items:center;gap:12px;">
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:${tc('rgba(255,255,255,0.5)','rgba(0,0,0,0.6)')};min-width:160px;">${e.key}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:${tc('rgba(255,255,255,0.5)','rgba(0,0,0,0.6)')};min-width:160px;">${_esc(e.key)}</div>
             <div style="flex:1;background:${tc('rgba(255,255,255,0.05)','rgba(0,0,0,0.08)')};border-radius:3px;height:6px;overflow:hidden;">
               <div style="width:${pct}%;height:100%;background:${col};border-radius:3px;"></div>
             </div>
@@ -595,7 +595,7 @@ function accLoadGAI() {
         // PE columns removed from MMAS country table — PE is MAP-only
         const peCell = '';
         return `<tr style="${shade}">
-          <td style="padding:7px 10px;color:${tc('rgba(255,255,255,0.8)','rgba(0,0,0,0.8)')};">${co}</td>
+          <td style="padding:7px 10px;color:${tc('rgba(255,255,255,0.8)','rgba(0,0,0,0.8)')};">${_esc(co)}</td>
           <td style="padding:7px 10px;text-align:right;color:rgba(78,156,245,0.8);">${d.n.toLocaleString()}</td>
           <td style="padding:7px 10px;text-align:right;color:var(--pe);">${coAvg}</td>
           <td style="padding:7px 10px;text-align:right;color:var(--poor);">${inaPct}%</td>
@@ -711,7 +711,7 @@ function accLoadGAI() {
           const size    = 0.58 + (cnt / maxCond) * 0.2;
           const bgOpacity = tc('0.05', '0.08');
           const borderOpacity = tc('0.12', '0.2');
-          return `<div style="font-family:'IBM Plex Mono',monospace;font-size:${size.toFixed(2)}rem;letter-spacing:0.06em;color:rgba(78,156,245,${opacity.toFixed(2)});background:rgba(78,156,245,${bgOpacity});border:1px solid rgba(78,156,245,${borderOpacity});padding:4px 10px;border-radius:4px;" title="${cnt.toLocaleString()} records">${cond}</div>`;
+          return `<div style="font-family:'IBM Plex Mono',monospace;font-size:${size.toFixed(2)}rem;letter-spacing:0.06em;color:rgba(78,156,245,${opacity.toFixed(2)});background:rgba(78,156,245,${bgOpacity});border:1px solid rgba(78,156,245,${borderOpacity});padding:4px 10px;border-radius:4px;" title="${cnt.toLocaleString()} records">${_esc(cond)}</div>`;
         }).join('');
       }
     }
@@ -809,9 +809,9 @@ function accLoadGAIStudies() {
       const ageColor = days === null ? 'var(--dim)' : days > 365 ? '#ef4444' : days > 180 ? '#f59e0b' : '#10b981';
       const ageLabel = days === null ? '' : days === 0 ? ' · today' : ` · ${days}d ago`;
       return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-        <td style="padding:8px 10px;font-size:0.85rem;color:var(--text);">${s.title}</td>
-        <td style="padding:8px 10px;font-size:0.82rem;color:var(--muted);">${s.pi}</td>
-        <td style="padding:8px 10px;font-size:0.82rem;color:var(--muted);">${s.institution}</td>
+        <td style="padding:8px 10px;font-size:0.85rem;color:var(--text);">${_esc(s.title)}</td>
+        <td style="padding:8px 10px;font-size:0.82rem;color:var(--muted);">${_esc(s.pi)}</td>
+        <td style="padding:8px 10px;font-size:0.82rem;color:var(--muted);">${_esc(s.institution)}</td>
         <td style="padding:8px 10px;font-family:var(--font-mono);font-size:0.82rem;color:var(--text);text-align:right;">${s.count.toLocaleString()}</td>
         <td style="padding:8px 10px;font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);text-align:right;">${fmtDate(s.earliest)}</td>
         <td style="padding:8px 10px;font-family:var(--font-mono);font-size:0.80rem;text-align:right;"><span style="color:${ageColor};">${fmtDate(s.latest)}</span><span style="font-size:0.72rem;color:var(--dim);">${ageLabel}</span></td>

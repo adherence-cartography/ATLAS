@@ -581,8 +581,8 @@ function drawLoom(){
         const locStr=[a.city,a.country].filter(Boolean).join(', ');
         return`<div class="loom-patient-card" data-idx="${idx}" onclick="loomSelectByIdx(${idx},window.loomPts)" style="border-left:3px solid ${col}55;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <div style="font-family:var(--font-mono);font-size:0.88rem;color:${col};font-weight:500;">${patLabel}</div>
-            ${locStr?`<div style="font-family:var(--font-mono);font-size:0.90rem;color:rgba(255,255,255,0.3);">${locStr}</div>`:''}
+            <div style="font-family:var(--font-mono);font-size:0.88rem;color:${col};font-weight:500;">${_esc(patLabel)}</div>
+            ${locStr?`<div style="font-family:var(--font-mono);font-size:0.90rem;color:rgba(255,255,255,0.3);">${_esc(locStr)}</div>`:''}
           </div>
           <div style="display:flex;gap:4px;flex-wrap:wrap;">
             <span class="diag-chip" style="border-color:rgba(78,156,245,0.18);color:var(--base)">B ${(a.base||0).toFixed(3)}</span>
@@ -1838,7 +1838,7 @@ async function loadPeacsTrend(rawPatId) {
     const snap = await database.ref('peacs_assessments').orderByChild('patient_number').equalTo(patId).limitToLast(50).once('value');
     const data = snap.val();
     if (!data) {
-      chartArea.innerHTML = '<div style="color:var(--dim);font-family:\'IBM Plex Mono\',monospace;font-size:0.84rem;padding:40px 0;text-align:center;">No PEACS records found for <strong style="color:var(--bright);">' + patId + '</strong>.</div>';
+      chartArea.innerHTML = '<div style="color:var(--dim);font-family:\'IBM Plex Mono\',monospace;font-size:0.84rem;padding:40px 0;text-align:center;">No PEACS records found for <strong style="color:var(--bright);">' + _esc(patId) + '</strong>.</div>';
       return;
     }
     let records = Object.values(data).sort((a,b) => (a.timestamp||0) - (b.timestamp||0));
@@ -1901,7 +1901,7 @@ async function loadPeacsTrend(rawPatId) {
                 <td style="text-align:right;padding:8px 8px;color:var(--strata);">${isPartial ? '<span style="color:var(--dim);">—</span>' : (r.strata !== undefined ? parseFloat(r.strata).toFixed(3) : '—')}</td>
                 <td style="text-align:right;padding:8px 8px;">
                   <span style="color:${isPartial?'var(--dim)':zc};font-weight:600;">${isPartial ? 'BASE only' : (peVal !== null ? peVal.toFixed(4) : '—')}</span>
-                  ${!isPartial && zone!=='—' ? '<span style="display:block;font-size:0.75rem;color:'+zc+';opacity:0.7;">'+zone+'</span>' : ''}
+                  ${!isPartial && zone!=='—' ? '<span style="display:block;font-size:0.75rem;color:'+zc+';opacity:0.7;">'+_esc(zone)+'</span>' : ''}
                 </td>
               </tr>`;
             }).join('')}
@@ -2590,8 +2590,8 @@ function loadPeacsDiagnostics() {
       const locStr = [a.city, a.country].filter(Boolean).join(', ');
       return `<div class="peacs-result-card" style="margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div style="font-family:var(--font-mono);font-size:0.88rem;color:var(--bright);font-weight:500;">${patLabel||ts}</div>
-          <div style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);">${patLabel?ts+(locStr?' · '+locStr:''):locStr}</div>
+          <div style="font-family:var(--font-mono);font-size:0.88rem;color:var(--bright);font-weight:500;">${_esc(patLabel||ts)}</div>
+          <div style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);">${patLabel?ts+(locStr?' · '+_esc(locStr):''):_esc(locStr)}</div>
         </div>
         <div class="peacs-result-scores">
           <div class="peacs-score-chip"><div class="peacs-score-val" style="color:var(--base)">${(a.base||0).toFixed(3)}</div><div class="peacs-score-lbl">BASE</div></div>

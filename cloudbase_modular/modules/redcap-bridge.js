@@ -168,7 +168,7 @@ function _renderREDCapConnected(panel) {
       <span style="font-size:1.2rem;">✓</span>
       <div>
         <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(46,201,138,0.8);margin-bottom:3px;">Connected</div>
-        <div style="font-size:0.82rem;color:var(--text,#c8d6e8);">${_redcapConfig.api_url || 'REDCap'}</div>
+        <div style="font-size:0.82rem;color:var(--text,#c8d6e8);">${_esc(_redcapConfig.api_url || 'REDCap')}</div>
       </div>
       <button onclick="disconnectREDCap()" style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:0.60rem;text-transform:uppercase;background:none;border:1px solid rgba(239,68,68,0.3);color:rgba(239,68,68,0.7);padding:5px 10px;border-radius:5px;cursor:pointer;">Disconnect</button>
     </div>
@@ -328,7 +328,7 @@ async function syncATLAStoREDCap() {
     const data = await res.json();
 
     if (status) status.textContent = `✓ Pushed ${data.count || items.length} records. Errors: ${data.errors || 0}`;
-    if (log) log.innerHTML = (data.log || []).map(l => `<div>${l}</div>`).join('');
+    if (log) log.innerHTML = (data.log || []).map(l => `<div>${_esc(String(l))}</div>`).join('');
     if (typeof atlasAuditLog === 'function') atlasAuditLog('REDCAP_PUSH', { count: data.count, errors: data.errors });
 
   } catch(e) {

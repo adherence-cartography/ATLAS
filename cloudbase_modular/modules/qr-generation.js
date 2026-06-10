@@ -337,9 +337,9 @@ function _renderWallTablets(projects, liveTotal, liveCountries) {
 
     return `<div class="wall-tablet">
       <div class="wall-tablet-numeral">${num}</div>
-      <div class="wall-tablet-name">${p.name||'Untitled'}</div>
+      <div class="wall-tablet-name">${_esc(p.name||'Untitled')}</div>
       ${dateStr ? `<div class="wall-tablet-dates">${dateStr}</div>` : ''}
-      ${p.desc ? `<div class="wall-tablet-desc">${p.desc}</div>` : ''}
+      ${p.desc ? `<div class="wall-tablet-desc">${_esc(p.desc)}</div>` : ''}
       <div class="wall-tablet-stats">
         <div><div class="wall-tablet-stat-val">${total}</div><div class="wall-tablet-stat-lbl">Assessments</div></div>
         <div><div class="wall-tablet-stat-val">${countries}</div><div class="wall-tablet-stat-lbl">Countries</div></div>

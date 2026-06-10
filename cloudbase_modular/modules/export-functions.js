@@ -432,10 +432,10 @@ async function accIssueKey() {
       if (status) { status.style.color='var(--strata)'; status.textContent='Key issued successfully.'; }
       if (resultKey) resultKey.textContent = data.key;
       if (resultDetail) resultDetail.innerHTML =
-        `Role: ${data.tier || role} · Institution: ${data.institution || institution}<br/>` +
-        (parentInstitution ? `Parent Institution: <span style="color:var(--pe);">${parentInstitution}</span><br/>` : '') +
+        `Role: ${_esc(data.tier || role)} · Institution: ${_esc(data.institution || institution)}<br/>` +
+        (parentInstitution ? `Parent Institution: <span style="color:var(--pe);">${_esc(parentInstitution)}</span><br/>` : '') +
         `Email sent: ${data.email_sent ? 'Yes' : 'No'}<br/>` +
-        (data.atlas_url ? `ATLAS URL: <span style="color:var(--base);">${data.atlas_url}</span>` : '');
+        (data.atlas_url ? `ATLAS URL: <span style="color:var(--base);">${_esc(data.atlas_url)}</span>` : '');
       if (result) result.style.display = 'block';
       // Clear form
       ['km-name','km-email','km-institution','km-study','km-custom-key','km-parent-institution','km-parent-pi'].forEach(id => {

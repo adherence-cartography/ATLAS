@@ -33,7 +33,7 @@ function _showSMARTBanner(issUrl) {
     document.body.prepend(b);
   }
   const domain = (() => { try { return new URL(issUrl).hostname; } catch(e) { return issUrl; } })();
-  b.innerHTML = `<span>🏥 Launched from EHR</span><span style="opacity:0.8;font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px;">${domain}</span><button onclick="document.getElementById('atlas-smart-banner').style.display='none'" style="margin-left:auto;background:none;border:none;color:#fff;cursor:pointer;font-size:1rem;padding:0 0.25rem;">✕</button>`;
+  b.innerHTML = `<span>🏥 Launched from EHR</span><span style="opacity:0.8;font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px;">${_esc(domain)}</span><button onclick="document.getElementById('atlas-smart-banner').style.display='none'" style="margin-left:auto;background:none;border:none;color:#fff;cursor:pointer;font-size:1rem;padding:0 0.25rem;">✕</button>`;
   b.style.display = 'flex';
 }
 

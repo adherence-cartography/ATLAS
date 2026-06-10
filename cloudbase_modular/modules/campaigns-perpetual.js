@@ -161,10 +161,10 @@ function _renderCampaignAdminList() {
     const count = (dashMmasData||[]).filter(r => r.campaign_id === c.id).length;
     return `<div class="camp-list-item">
       <div class="camp-list-dot" style="background:${c.color};box-shadow:0 0 6px ${c.color};"></div>
-      <span style="font-size:0.86rem;">${c.icon||''}</span>
+      <span style="font-size:0.86rem;">${_esc(c.icon||'')}</span>
       <div style="flex:1;min-width:0;">
-        <div class="camp-list-name">${c.name}</div>
-        <div class="camp-list-dates">${startStr} — ${endStr}${c.condition ? ' · ' + c.condition : ''}</div>
+        <div class="camp-list-name">${_esc(c.name)}</div>
+        <div class="camp-list-dates">${startStr} — ${endStr}${c.condition ? ' · ' + _esc(c.condition) : ''}</div>
       </div>
       ${statusBadge}
       <span class="camp-list-count">${count}</span>
@@ -209,7 +209,7 @@ function renderCampaignTimeline() {
         style="background:${c.color}18;border-color:${c.color}50;color:${c.color};"
         onclick="toggleCampaignFilter('${c.id}')" title="Click to filter Wall to this campaign">
         <div class="camp-pill-dot" style="background:${c.color};${isLive?'box-shadow:0 0 6px '+c.color:'opacity:0.4'};"></div>
-        ${c.icon||''} ${c.name}
+        ${_esc(c.icon||'')} ${_esc(c.name)}
         ${count ? `<span style="opacity:0.7;font-size:0.86rem;">${count.toLocaleString()}</span>` : ''}
       </div>`;
     }).join('');

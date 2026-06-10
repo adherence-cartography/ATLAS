@@ -1202,10 +1202,10 @@ function addToCheckinFeed(c, animate) {
   const item = document.createElement('div');
   item.style.cssText = `display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);${animate ? 'animation:fadeUp 0.4s ease both;' : ''}`;
   item.innerHTML = `
-    <span style="font-size:1rem;flex-shrink:0;line-height:1.4;">${c.flag||'🌐'}</span>
+    <span style="font-size:1rem;flex-shrink:0;line-height:1.4;">${_esc(c.flag)||'🌐'}</span>
     <div style="flex:1;min-width:0;">
-      <div style="font-size:0.88rem;color:rgba(255,255,255,0.85);line-height:1.4;">${c.msg||''}</div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.86rem;color:rgba(255,255,255,0.35);margin-top:2px;">${c.country||'Unknown'}</div>
+      <div style="font-size:0.88rem;color:rgba(255,255,255,0.85);line-height:1.4;">${_esc(c.msg)||''}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.86rem;color:rgba(255,255,255,0.35);margin-top:2px;">${_esc(c.country)||'Unknown'}</div>
     </div>`;
   feed.insertBefore(item, feed.firstChild);
   while (feed.children.length > 20) feed.removeChild(feed.lastChild);
@@ -1281,7 +1281,7 @@ function _renderCinematicLeaderboard() {
     const pct  = Math.round(x.count/max*100);
     return `<div class="wall-lb-row">
       <span class="wall-lb-rank ${rankClass(i)}">${rankLabel(i)}</span>
-      <span class="wall-lb-country">${x.c}</span>
+      <span class="wall-lb-country">${_esc(x.c)}</span>
       <div class="wall-lb-bar-wrap"><div class="wall-lb-bar-fill" style="width:${pct}%;background:${cat.color};"></div></div>
       <span class="wall-lb-count">${x.count}</span>
     </div>`;

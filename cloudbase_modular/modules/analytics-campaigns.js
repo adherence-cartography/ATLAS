@@ -460,7 +460,7 @@ function _showZoeFollowUpCard(pid, days, urgency, reason, dueDateStr, score, due
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:' + c.text + ';margin-bottom:6px;">⏱ Follow-Up Scheduled · ' + c.label + '</div>' +
         '<div style="font-size:0.84rem;color:var(--text);margin-bottom:5px;line-height:1.55;"><strong>Next assessment due:</strong> ' + dueDateStr + '</div>' +
         '<div style="font-size:0.76rem;color:var(--muted);line-height:1.6;">' + reason + '</div>' +
-        (pid ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.65rem;color:var(--dim);margin-top:6px;">Patient: ' + pid + ' · MMAS-8: ' + score.toFixed(2) + ' / 8</div>' : '') +
+        (pid ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.65rem;color:var(--dim);margin-top:6px;">Patient: ' + _esc(pid) + ' · MMAS-8: ' + score.toFixed(2) + ' / 8</div>' : '') +
       '</div>' +
       '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">' +
         '<button onclick="_copyFollowUpLink(\'' + dueISO + '\',\'' + (pid||'') + '\')" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:6px 12px;cursor:pointer;">📋 Copy reminder link</button>' +
@@ -918,8 +918,8 @@ function _renderPatientRecord(r){
   if(r.zoe_transcript && r.zoe_transcript.length && txContent && txDiv){
     txContent.innerHTML = r.zoe_transcript.map(t=>`
       <div class="pr-q-row">
-        <div class="pr-q">Q${t.question_number}: ${t.question}</div>
-        <div class="pr-a">"${t.patient_response}"</div>
+        <div class="pr-q">Q${t.question_number}: ${_esc(t.question)}</div>
+        <div class="pr-a">"${_esc(t.patient_response)}"</div>
       </div>`).join('');
     txDiv.style.display='block';
   } else if(txDiv){
@@ -2265,7 +2265,7 @@ function apeRenderPatients() {
     const score = typeof r.score === 'number' ? r.score.toFixed(2) : '—';
     const cat = typeof getAdherenceCategory === 'function' ? getAdherenceCategory(r.score) : { color: '#6b8099' };
     return `<tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="showPatientRecordByKey(${JSON.stringify(r.user_id+'|'+r.timestamp)})" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background=''">
-      <td style="padding:8px 10px;font-family:var(--font-mono);font-size:0.88rem;color:var(--muted);">${patId}</td>
+      <td style="padding:8px 10px;font-family:var(--font-mono);font-size:0.88rem;color:var(--muted);">${_esc(patId)}</td>
       <td style="padding:8px 10px;"><span style="font-size:0.82rem;padding:2px 8px;border-radius:8px;background:${c}18;color:${c};border:1px solid ${c}35;white-space:nowrap;">${phenotype.icon} ${phenotype.name}</span></td>
       <td style="padding:8px 10px;text-align:right;font-family:var(--font-mono);font-size:0.88rem;color:${c};">${probPct}%</td>
       <td style="padding:8px 10px;text-align:right;font-family:var(--font-mono);font-size:0.80rem;font-weight:600;color:${cat.color};">${score}</td>
@@ -2378,7 +2378,7 @@ function renderStratification() {
     const ciLow  = Math.max(0, row.mean - row.ci95).toFixed(2);
     const ciHigh = Math.min(8, row.mean + row.ci95).toFixed(2);
     return `<div class="strat-row">
-      <div class="strat-label" title="${row.label}">${row.label.length > 26 ? row.label.substring(0,24)+'…' : row.label}</div>
+      <div class="strat-label" title="${_esc(row.label)}">${_esc(row.label.length > 26 ? row.label.substring(0,24)+'…' : row.label)}</div>
       <div class="strat-bar-wrap"><div class="strat-bar-fill" style="width:${barPct}%;background:${cat.color};"></div></div>
       <div class="strat-val" style="color:${cat.color};">${row.mean.toFixed(2)}</div>
       <div class="strat-n">n=${row.n}</div>
@@ -2510,7 +2510,7 @@ Supported ops: <, <=, >, >=, ==, !=, contains_ci (case-insensitive string contai
               ${filtered.slice(0,50).map(r=>`<tr>${cols.map(c=>{
                 const v = r[c]!==undefined&&r[c]!==null ? r[c] : '—';
                 const col = c==='score' ? getAdherenceCategory(parseFloat(v)||0).color : 'var(--text)';
-                return `<td style="padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.03);color:${col};">${v}</td>`;
+                return `<td style="padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.03);color:${col};">${_esc(String(v))}</td>`;
               }).join('')}</tr>`).join('')}
               ${filtered.length > 50 ? `<tr><td colspan="${cols.length}" style="padding:8px 10px;color:var(--dim);font-family:var(--font-mono);font-size:0.82rem;">…and ${filtered.length-50} more records. Export CSV for full dataset.</td></tr>` : ''}
             </tbody>
@@ -2578,7 +2578,7 @@ function renderTrajectoryCards(records) {
     const lastCat = getAdherenceCategory(last);
 
     return `<div class="traj-card">
-      <div class="traj-card-id">${label} · ${t.recs.length} assessments</div>
+      <div class="traj-card-id">${_esc(label)} · ${t.recs.length} assessments</div>
       <svg class="traj-sparkline" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
         <polyline points="${polyline}" fill="none" stroke="${lastCat.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         ${scores.map((s,i)=>`<circle cx="${pad+i*xStep}" cy="${H-pad-(s-minS)*yScale}" r="3" fill="${lastCat.color}"/>`).join('')}
@@ -3133,7 +3133,7 @@ function renderInstStrat() {
     const ciL  = Math.max(0, avg-ci), ciR = Math.min(8, avg+ci);
     return `<div style="margin-bottom:9px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%;" title="${k}">${k}</span>
+        <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%;" title="${_esc(k)}">${_esc(k)}</span>
         <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--dim);">n=${n} · <span style="color:${cat.color};">${avg.toFixed(2)}</span> ±${ci.toFixed(2)}</span>
       </div>
       <div style="position:relative;height:10px;background:var(--card2);border-radius:5px;overflow:visible;">
@@ -3235,7 +3235,7 @@ function renderInstPETable() {
   }
 
   tbody.innerHTML = pageRows.map(s => `<tr style="border-bottom:1px solid var(--border);">
-    <td style="font-family:var(--font-mono);font-size:0.84rem;color:var(--muted);padding:5px 8px;">${s.ws}</td>
+    <td style="font-family:var(--font-mono);font-size:0.84rem;color:var(--muted);padding:5px 8px;">${_esc(s.ws)}</td>
     <td style="font-family:var(--font-mono);font-size:0.84rem;color:${s.spe>=0.75?'#10b981':s.spe>=0.5?'#f59e0b':'#ef4444'};font-weight:600;text-align:right;padding:5px 8px;">${s.spe.toFixed(3)}</td>
     <td style="font-family:var(--font-mono);font-size:0.84rem;color:var(--base);text-align:right;padding:5px 8px;">${s.sa.toFixed(2)}</td>
     <td style="font-family:var(--font-mono);font-size:0.84rem;color:var(--mvmt);text-align:right;padding:5px 8px;">${s.se.toFixed(2)}</td>
@@ -3763,7 +3763,7 @@ function renderInstitutionDashboard() {
         const cat = n > 0 ? getAdherenceCategory(parseFloat(avg)||0) : {color:'var(--dim)'};
         const barW = Math.round(n/maxN*100);
         return `<div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--muted);min-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${w}">${w}</span>
+          <span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--muted);min-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(w)}">${_esc(w)}</span>
           <div style="flex:1;height:6px;background:var(--card2);border-radius:3px;overflow:hidden;">
             <div style="width:${barW}%;height:100%;background:${cat.color};border-radius:3px;transition:width 0.8s;"></div>
           </div>
@@ -3856,7 +3856,7 @@ function renderInstitutionDashboard() {
     condEl.innerHTML = sorted.length ? sorted.map(([k,n]) => {
       const label = condLabels[k] || k;
       return `<div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${label}">${label}</span>
+        <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(label)}">${_esc(label)}</span>
         <div style="flex-shrink:0;width:50px;height:5px;background:var(--card2);border-radius:3px;overflow:hidden;">
           <div style="width:${Math.round(n/maxC2*100)}%;height:100%;background:var(--base);border-radius:3px;transition:width 0.6s;"></div>
         </div>
@@ -3872,7 +3872,7 @@ function renderInstitutionDashboard() {
     const inaRate = total > 0 ? ina/total : 0;
     if (inaRate > 0.3) flags.push({col:'var(--poor)', msg:`High INA rate across cohort: ${Math.round(inaRate*100)}% intentional non-adherence`});
     const lowScoreWS = Object.entries(byWS).filter(([,d]) => d.mmas.length >= 3 && (d.mmas.reduce((s,r)=>s+(r.score||0),0)/d.mmas.length) < 5);
-    if (lowScoreWS.length) flags.push({col:'var(--moderate)', msg:`${lowScoreWS.length} workspace${lowScoreWS.length>1?'s':''} with mean score < 5.0: ${lowScoreWS.map(([w])=>w).join(', ')}`});
+    if (lowScoreWS.length) flags.push({col:'var(--moderate)', msg:`${lowScoreWS.length} workspace${lowScoreWS.length>1?'s':''} with mean score < 5.0: ${lowScoreWS.map(([w])=>_esc(w)).join(', ')}`});
     const noData = Object.keys(byWS).filter(w => byWS[w].mmas.length === 0);
     if (noData.length) flags.push({col:'var(--dim)', msg:`${noData.length} workspace${noData.length>1?'s':''} with PEACS but no MMAS data`});
     if (avgMapPe > 0 && avgMapPe < 0.55) flags.push({col:'var(--poor)', msg:`Collective PE mean below threshold: ${avgMapPe.toFixed(3)} (target ≥ 0.70)`});
@@ -3908,7 +3908,7 @@ function renderInstitutionDashboard() {
         return `<div style="display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:0;padding:4px 0;border-bottom:1px solid var(--border);">
           <div style="display:flex;align-items:center;gap:6px;overflow:hidden;">
             <div style="width:6px;height:6px;border-radius:50%;background:${covColor};flex-shrink:0;"></div>
-            <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${w}">${w}</span>
+            <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(w)}">${_esc(w)}</span>
           </div>
           <span style="font-family:var(--font-mono);font-size:0.80rem;color:${cat.color};text-align:right;padding-left:10px;min-width:36px;">${avg!==null?avg.toFixed(2):'—'}</span>
           <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--dim);text-align:right;padding-left:10px;min-width:24px;">${mN}</span>
@@ -3936,7 +3936,7 @@ function renderInstitutionDashboard() {
         const pct = Math.round(n/cMax*100);
         const barCol = n === cMax ? 'var(--base)' : 'var(--border2)';
         return `<div style="display:flex;align-items:center;gap:7px;">
-          <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--muted);min-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c}">${c}</span>
+          <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--muted);min-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(c)}">${_esc(c)}</span>
           <div style="flex:1;height:6px;background:var(--card2);border-radius:3px;overflow:hidden;">
             <div style="width:${pct}%;height:100%;background:var(--base);border-radius:3px;transition:width 0.6s;"></div>
           </div>
@@ -3970,7 +3970,7 @@ function renderInstitutionDashboard() {
         const peCol = avgPe === null ? 'var(--dim)' : avgPe>=0.85?'#10b981':avgPe>=0.70?'#3b82f6':avgPe>=0.55?'#f59e0b':'#ef4444';
         const hasBoth = mRecs.length > 0 && pRecs.length > 0;
         return `<div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:0;padding:4px 0;border-bottom:1px solid var(--border);">
-          <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${w}">${w}</span>
+          <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(w)}">${_esc(w)}</span>
           <span style="font-family:var(--font-mono);font-size:0.80rem;color:${peCol};text-align:right;padding-left:10px;min-width:44px;">${avgPe!==null?avgPe.toFixed(3):'—'}</span>
           <span style="font-family:var(--font-mono);font-size:0.84rem;color:${hasBoth?'var(--optimal)':'var(--dim)'};text-align:right;padding-left:8px;min-width:28px;">${pRecs.length>0?pRecs.length+'×':'—'}</span>
         </div>`;
