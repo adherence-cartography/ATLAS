@@ -9,7 +9,7 @@
     "assessments": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role !== 'observer'",
-      ".indexOn": ["patient_number", "user_id", "timestamp", "campaign_id"],
+      ".indexOn": ["patient_number", "user_id", "timestamp", "campaign_id", "institution_code", "parent_institution", "parent_pi"],
       "$record": {
         ".validate": "newData.hasChildren(['score','timestamp','user_id']) && newData.child('score').isNumber() && newData.child('score').val() >= -1 && newData.child('score').val() <= 8 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 && newData.child('timestamp').val() >= now - 86400000 && newData.child('user_id').isString() && newData.child('user_id').val().length <= 64 && (!newData.hasChild('institution_code') || (newData.child('institution_code').isString() && newData.child('institution_code').val().length <= 32)) && (!newData.hasChild('patient_number') || (newData.child('patient_number').isString() && newData.child('patient_number').val().length <= 64)) && (!newData.hasChild('country') || (newData.child('country').isString() && newData.child('country').val().length <= 80)) && (!newData.hasChild('condition') || (newData.child('condition').isString() && newData.child('condition').val().length <= 500)) && (!newData.hasChild('drug_name') || (newData.child('drug_name').isString() && newData.child('drug_name').val().length <= 200))",
         "q1": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
@@ -55,7 +55,7 @@
     "peacs_assessments": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role !== 'observer'",
-      ".indexOn": ["patient_number"],
+      ".indexOn": ["patient_number", "institution_code", "parent_institution", "parent_pi"],
       "$record": {
         ".validate": "newData.hasChildren(['pe','timestamp']) && newData.child('pe').isNumber() && newData.child('pe').val() >= 0 && newData.child('pe').val() <= 1 && (!newData.hasChild('base') || (newData.child('base').isNumber() && newData.child('base').val() >= 0 && newData.child('base').val() <= 1)) && (!newData.hasChild('mvmt') || (newData.child('mvmt').isNumber() && newData.child('mvmt').val() >= 0 && newData.child('mvmt').val() <= 1)) && (!newData.hasChild('strata') || (newData.child('strata').isNumber() && newData.child('strata').val() >= 0 && newData.child('strata').val() <= 1)) && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 && newData.child('timestamp').val() >= now - 86400000"
       }
