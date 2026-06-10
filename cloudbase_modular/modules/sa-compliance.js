@@ -239,7 +239,7 @@ async function _compDsarSearch() {
         _dsar.results.map(r =>
           '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">' +
           cols.map(c => '<td style="padding:5px 10px;color:' + _C.muted + ';">' +
-            (c === 'timestamp' && r[c] ? new Date(r[c]).toLocaleDateString() : (r[c] !== undefined && r[c] !== null ? String(r[c]) : '—')) +
+            _esc(c === 'timestamp' && r[c] ? new Date(r[c]).toLocaleDateString() : (r[c] !== undefined && r[c] !== null ? String(r[c]) : '—')) +
           '</td>').join('') + '</tr>'
         ).join('') +
         '</tbody></table>';
@@ -326,7 +326,7 @@ const _exportState = { wsCode: '', records: [], loaded: false };
 function _compRenderExport(panel) {
   const wsOptions = Object.values(_saCache.workspaces || {})
     .sort((a,b) => (a.workspace_code||'').localeCompare(b.workspace_code||''))
-    .map(w => `<option value="${w.workspace_code||''}">${w.workspace_code||''} — ${w.institution_name||w.pi_name||'unnamed'}</option>`)
+    .map(w => `<option value="${_esc(w.workspace_code||'')}">${_esc(w.workspace_code||'')} — ${_esc(w.institution_name||w.pi_name||'unnamed')}</option>`)
     .join('');
 
   panel.innerHTML = `

@@ -738,7 +738,7 @@ function _saAiNlqBubble(msg) {
     <div style="font-size:0.70rem;letter-spacing:0.12em;text-transform:uppercase;color:${_C.dim};">${isUser?'You':'ATLAS AI'}</div>
     <div style="max-width:88%;padding:10px 14px;border-radius:8px;font-size:0.90rem;line-height:1.6;
                background:${isUser?_C.amberFaint:_C.navy};border:1px solid ${isUser?'rgba(212,168,67,0.2)':_C.border};
-               color:${_C.text};">${msg.content}</div>
+               color:${_C.text};">${isUser ? msg.content : _esc(msg.content)}</div>
   </div>`;
 }
 

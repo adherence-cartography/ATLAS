@@ -1187,7 +1187,7 @@ async function _saResLoadDiscoverRegistry() {
   if (countryEl) {
     const countries = [...new Set((_saDiscoverRegistry||[]).map(e=>e.country).filter(Boolean))].sort();
     const current = countryEl.value;
-    countryEl.innerHTML = `<option value="all">All countries</option>${countries.map(c=>`<option value="${c}"${c===current?' selected':''}>${c}</option>`).join('')}`;
+    countryEl.innerHTML = `<option value="all">All countries</option>${countries.map(c=>`<option value="${_saEsc(c)}"${c===current?' selected':''}>${_saEsc(c)}</option>`).join('')}`;
   }
   _saDiscFilterAndRender();
 }

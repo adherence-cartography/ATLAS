@@ -665,7 +665,7 @@ function _saFeedItem(rec, instrument) {
     <div class="sa-feed-dot" style="background:${col};"></div>
     <div style="flex:1;min-width:0;">
       <span class="sa-tag" style="color:${col};border-color:${col};opacity:0.7;margin-right:6px;">${label}</span>
-      <span style="color:${_C.muted};">${ws} · ${ctry}</span>
+      <span style="color:${_C.muted};">${_esc(ws)} · ${_esc(ctry)}</span>
     </div>
     <div style="color:${col};font-weight:600;white-space:nowrap;">${score}</div>
     <div style="color:${_C.dim};font-size:0.78rem;white-space:nowrap;margin-left:8px;">${ts}</div>
@@ -846,7 +846,7 @@ function _saRunAnomalyDetection() {
   mmas.forEach(r => { const w = r.institution_code||'Unknown'; byWs[w]=(byWs[w]||0)+1; });
   const topWs   = Object.entries(byWs).sort((a,b)=>b[1]-a[1])[0];
   const topPct  = topWs ? (topWs[1]/mmas.length*100).toFixed(0) : 0;
-  if (+topPct > 60) anomalies.push({ sev: 'info', msg: `Workspace ${topWs[0]} contributes ${topPct}% of all MMAS-8 records.` });
+  if (+topPct > 60) anomalies.push({ sev: 'info', msg: `Workspace ${_esc(topWs[0])} contributes ${topPct}% of all MMAS-8 records.` });
 
   if (!anomalies.length) anomalies.push({ sev: 'ok', msg: 'No statistical anomalies detected in current dataset.' });
 

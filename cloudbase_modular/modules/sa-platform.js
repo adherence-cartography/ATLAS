@@ -1264,10 +1264,10 @@ async function _saPlatRequests(container) {
             </div>
             ${rows.map(r => `
               <div style="${_rowStyle}">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:${_C.text};">${r.wsKey}<div style="font-size:0.68rem;color:${_C.muted};">${r.wsName}</div></div>
-                <div style="color:${_C.muted};">${r.userName}<div style="font-size:0.68rem;opacity:0.7;">${r.wsRole}</div></div>
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:${_C.text};">${r.moduleLabel}<div style="font-size:0.65rem;color:${_C.muted};">${r.moduleId}</div></div>
-                <div style="font-size:0.72rem;color:${_C.muted};">${r.parentPi || r.parentInst || '—'}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:${_C.text};">${_saEsc(r.wsKey)}<div style="font-size:0.68rem;color:${_C.muted};">${_saEsc(r.wsName)}</div></div>
+                <div style="color:${_C.muted};">${_saEsc(r.userName)}<div style="font-size:0.68rem;opacity:0.7;">${_saEsc(r.wsRole)}</div></div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:${_C.text};">${_saEsc(r.moduleLabel)}<div style="font-size:0.65rem;color:${_C.muted};">${_saEsc(r.moduleId)}</div></div>
+                <div style="font-size:0.72rem;color:${_C.muted};">${_saEsc(r.parentPi || r.parentInst || '—')}</div>
                 <div style="font-size:0.72rem;color:${_C.muted};">${_fmtDate(r.requestedAt)}</div>
                 <div style="display:flex;gap:6px;flex-shrink:0;">${actionHtml(r)}</div>
               </div>`).join('')}

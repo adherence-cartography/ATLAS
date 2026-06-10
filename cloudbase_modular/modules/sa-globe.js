@@ -447,7 +447,7 @@ function _saGlobeOpenDrawer(info) {
     </div>
 
     <div style="font-size:0.84rem;color:${_C.muted};margin-bottom:4px;">${info.lat.toFixed(3)}°, ${info.lng.toFixed(3)}°</div>
-    ${info.country ? `<div style="font-size:1.00rem;font-weight:700;color:${_C.text};margin-bottom:12px;">${info.country}</div>` : ''}
+    ${info.country ? `<div style="font-size:1.00rem;font-weight:700;color:${_C.text};margin-bottom:12px;">${_esc(info.country)}</div>` : ''}
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
       <div class="sa-panel-sm">
@@ -481,7 +481,7 @@ function _saGlobeOpenDrawer(info) {
       <div style="font-size:0.72rem;letter-spacing:0.2em;text-transform:uppercase;color:${_C.dim};margin-bottom:6px;">Top Workspaces</div>
       ${topWs.map(([ws,n]) => `
         <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid ${_C.border};">
-          <span style="font-size:0.84rem;color:${_C.muted};">${ws}</span>
+          <span style="font-size:0.84rem;color:${_C.muted};">${_esc(ws)}</span>
           <span style="font-size:0.84rem;color:${_C.cyan};">${n}</span>
         </div>`).join('')}
     </div>` : ''}`;
@@ -685,9 +685,9 @@ function _saLoadPoiLayer(map) {
           .setLngLat(coords)
           .setHTML(`
             <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:#cdd8e8;padding:4px 2px;">
-              <div style="font-weight:700;font-size:0.88rem;margin-bottom:4px;color:#e8f0f8;">${p.name}</div>
-              <div style="letter-spacing:0.1em;text-transform:uppercase;font-size:0.68rem;color:rgba(46,201,138,0.85);margin-bottom:6px;">${typeLabel}</div>
-              ${p.city ? `<div style="color:rgba(138,160,184,0.9);margin-bottom:2px;">${p.city}${p.country ? ', ' + p.country : ''}</div>` : ''}
+              <div style="font-weight:700;font-size:0.88rem;margin-bottom:4px;color:#e8f0f8;">${_esc(p.name)}</div>
+              <div style="letter-spacing:0.1em;text-transform:uppercase;font-size:0.68rem;color:rgba(46,201,138,0.85);margin-bottom:6px;">${_esc(typeLabel)}</div>
+              ${p.city ? `<div style="color:rgba(138,160,184,0.9);margin-bottom:2px;">${_esc(p.city)}${p.country ? ', ' + _esc(p.country) : ''}</div>` : ''}
               <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08);color:rgba(138,160,184,0.7);font-size:0.70rem;">
                 ${p.confirmations} confirmation${p.confirmations !== 1 ? 's' : ''}
               </div>

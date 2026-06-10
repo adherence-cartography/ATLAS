@@ -316,11 +316,11 @@ async function _saRescueHandleFile(input) {
       '<tr style="color:' + _C.dim + ';border-bottom:1px solid ' + _C.border + ';"><th style="padding:4px 8px;text-align:left;">Country</th><th style="padding:4px 8px;text-align:left;">Patient#</th><th style="padding:4px 8px;text-align:left;">Condition</th><th style="padding:4px 8px;text-align:right;">Score</th><th style="padding:4px 8px;text-align:left;">Level</th></tr></thead><tbody>' +
       sample.map(r =>
         '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">' +
-        '<td style="padding:4px 8px;">' + (r.country || '—') + '</td>' +
-        '<td style="padding:4px 8px;">' + (r.patient_number || '—') + '</td>' +
-        '<td style="padding:4px 8px;">' + (r.condition || '—') + '</td>' +
+        '<td style="padding:4px 8px;">' + _esc(r.country || '—') + '</td>' +
+        '<td style="padding:4px 8px;">' + _esc(r.patient_number || '—') + '</td>' +
+        '<td style="padding:4px 8px;">' + _esc(r.condition || '—') + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">' + r.score + '</td>' +
-        '<td style="padding:4px 8px;">' + r.adherence_level + '</td></tr>'
+        '<td style="padding:4px 8px;">' + _esc(r.adherence_level) + '</td></tr>'
       ).join('') +
       '</tbody></table></div>';
   }

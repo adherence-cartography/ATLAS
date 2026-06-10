@@ -704,7 +704,7 @@ function _saGaiExportHTML(d) {
       <div style="font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:${_C.dim};margin-bottom:5px;">Endpoint</div>
       <div id="sa-gai-api-endpoint-box" style="background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;color:${_C.muted};margin-bottom:10px;overflow-x:auto;word-break:break-all;">
         <span style="color:${_C.dim};font-size:0.70rem;">GET</span>
-        <span style="color:${_C.amber};"> https://api.adherence.cc/gai?key=</span><span style="color:${_C.text};">${currentWorkspace || '{your_workspace_key}'}</span>
+        <span style="color:${_C.amber};"> https://api.adherence.cc/gai?key=</span><span style="color:${_C.text};">${_esc(currentWorkspace || '{your_workspace_key}')}</span>
       </div>
 
       <!-- Example response -->
