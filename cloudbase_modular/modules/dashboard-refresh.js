@@ -843,7 +843,7 @@ function renderPeacsDashboard(records, isInstitution) {
         const patDisplay = r.patient_number || ('PAT-'+_peacsIdx);
         const isPartial = !!r.partial;
         return `<tr>
-          <td style="font-family:var(--font-mono);font-size:0.71rem;color:var(--bright);">${patDisplay}</td>
+          <td style="font-family:var(--font-mono);font-size:0.71rem;color:var(--bright);">${_esc(patDisplay)}</td>
           <td style="font-size:0.88rem;color:var(--dim);">${d}</td>
           <td style="color:var(--base);">${(r.base||0).toFixed(3)}</td>
           <td style="color:var(--mvmt);">${isPartial ? '—' : (r.mvmt||0).toFixed(3)}</td>
@@ -927,7 +927,7 @@ function renderPeacsSchedule(peacsData) {
   if (tbody) {
     tbody.innerHTML = windowRows.map(r =>
       '<tr>' +
-        '<td style="font-weight:600;">' + r.id + '</td>' +
+        '<td style="font-weight:600;">' + _esc(r.id) + '</td>' +
         '<td>' + r.enrolled + '</td>' +
         '<td>' + r.baseNext + '</td>' +
         '<td>' + r.mvmtNext + '</td>' +

@@ -46,7 +46,7 @@
     return `<span class="lat-item">
       <span class="lat-dot" style="background:${col};box-shadow:0 0 5px ${col};"></span>
       <span class="lat-flag">${flag}</span>
-      <span style="color:rgba(200,220,255,0.85);">${city}</span>
+      <span style="color:rgba(200,220,255,0.85);">${_esc(city)}</span>
       <span class="lat-score" style="color:${col};">${score.toFixed(1)}</span>
       <span class="lat-label">${lbl}</span>
     </span>`;

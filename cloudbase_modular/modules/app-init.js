@@ -839,12 +839,12 @@ function printFactSheet(){
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem">
         <div style="border-top:1px solid #cdd8e8;padding-top:.4rem">
           <div style="font-size:.75rem;color:#8090a8">Principal Investigator</div>
-          <div style="font-size:.85rem;color:#1a2535;margin:.3rem 0">${piName}</div>
-          <div style="font-size:.75rem;color:#8090a8">${institutionName}</div>
+          <div style="font-size:.85rem;color:#1a2535;margin:.3rem 0">${_esc(piName)}</div>
+          <div style="font-size:.75rem;color:#8090a8">${_esc(institutionName)}</div>
         </div>
         <div style="border-top:1px solid #cdd8e8;padding-top:.4rem">
           <div style="font-size:.75rem;color:#8090a8">IRB Protocol</div>
-          <div style="font-size:.85rem;color:#1a2535;margin:.3rem 0">${irb}</div>
+          <div style="font-size:.85rem;color:#1a2535;margin:.3rem 0">${_esc(irb)}</div>
           <div style="font-size:.75rem;color:#8090a8">ATLAS v8.9.3</div>
         </div>
         <div style="border-top:1px solid #cdd8e8;padding-top:.4rem">

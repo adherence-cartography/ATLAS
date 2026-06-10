@@ -337,7 +337,7 @@ function refreshCommandCenter() {
         condList.innerHTML = sorted.length ? sorted.map(([k,n]) => {
           const label = condDisplay[k] || k;
           return `<div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${label}">${label}</span>
+            <span style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(label)}">${_esc(label)}</span>
             <div style="flex-shrink:0;width:40px;height:4px;background:var(--card2);border-radius:2px;overflow:hidden;">
               <div style="width:${Math.round(n/maxCn*100)}%;height:100%;background:var(--base);border-radius:2px;"></div>
             </div>
@@ -607,7 +607,7 @@ function _populateQuickFilterConditions(rows) {
     (p.peacs || []).forEach(r => { if (r.condition) condSet.add(r.condition); });
   });
   const current = sel.value;
-  const opts = [...condSet].sort().map(c => `<option value="${c.toLowerCase()}"${c.toLowerCase()===current?' selected':''}>${c}</option>`).join('');
+  const opts = [...condSet].sort().map(c => `<option value="${_esc(c.toLowerCase())}"${c.toLowerCase()===current?' selected':''}>${_esc(c)}</option>`).join('');
   sel.innerHTML = '<option value="">' + (_t.filter_all_conditions || 'All conditions') + '</option>' + opts;
 }
 
@@ -737,8 +737,8 @@ function _renderPatientPage() {
           return `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
             ${ss.map(s => `<div style="background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.18);border-radius:8px;padding:8px 14px;min-width:180px;flex:1;">
               <div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(78,156,245,0.5);margin-bottom:3px;">Study Source</div>
-              <div style="font-size:0.86rem;color:var(--text);font-weight:500;margin-bottom:2px;">${s.title}</div>
-              ${s.pi ? `<div style="font-size:0.78rem;color:var(--muted);">${s.pi}${s.institution ? ' · ' + s.institution : ''}</div>` : ''}
+              <div style="font-size:0.86rem;color:var(--text);font-weight:500;margin-bottom:2px;">${_esc(s.title)}</div>
+              ${s.pi ? `<div style="font-size:0.78rem;color:var(--muted);">${_esc(s.pi)}${s.institution ? ' · ' + _esc(s.institution) : ''}</div>` : ''}
               <div style="font-family:var(--font-mono);font-size:0.70rem;color:var(--dim);margin-top:3px;">${fd(s.earliest)} – ${fd(s.latest)}</div>
             </div>`).join('')}
           </div>`;
@@ -1091,7 +1091,7 @@ function populatePatientWorkspaceDropdown() {
   const wsList = [...new Set(rows.map(p => p.ws).filter(Boolean))].sort();
   const current = sel.value;
   sel.innerHTML = '<option value="">All Workspaces</option>' +
-    wsList.map(w => `<option value="${w}"${w===current?' selected':''}>${w}</option>`).join('');
+    wsList.map(w => `<option value="${_esc(w)}"${w===current?' selected':''}>${_esc(w)}</option>`).join('');
 }
 
 function populatePatientStudyDropdown() {
@@ -1103,7 +1103,7 @@ function populatePatientStudyDropdown() {
   const studyList = [...allStudies].sort();
   const current = sel.value;
   sel.innerHTML = '<option value="">All Studies</option>' +
-    studyList.map(s => `<option value="${s}"${s===current?' selected':''}>${s}</option>`).join('');
+    studyList.map(s => `<option value="${_esc(s)}"${s===current?' selected':''}>${_esc(s)}</option>`).join('');
 }
 function exportInstitutionCSV() {
   atlasAuditLog('export_institution_csv', { workspace: currentWorkspace });
