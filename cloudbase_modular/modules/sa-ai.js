@@ -859,29 +859,63 @@ async function _saAiCallClaude(query, apiKey) {
   const peacsMean = peacs.length    ? peacs.reduce((s,r)=>s+(r.pe!=null?+r.pe:0),0)/peacs.length : null;
   const r30 = mmasOnly.filter(r=>(r.timestamp||0)>=now-30*86400000);
 
-  // Per-country MMAS stats (countries present in the data, sorted by record count desc)
-  const countryMap = {};
-  for (const r of mmasOnly) {
-    const c = (r.country||'').trim();
-    if (!c) continue;
-    if (!countryMap[c]) countryMap[c] = { n:0, sum:0 };
-    countryMap[c].n++;
-    countryMap[c].sum += (r.score||0)/8;
-  }
-  const mmas_by_country = Object.entries(countryMap)
-    .sort((a,b)=>b[1].n-a[1].n)
-    .slice(0, 40) // cap at 40 countries to keep context lean
-    .reduce((obj,[c,v])=>{ obj[c]={n:v.n, mean:+(v.sum/v.n).toFixed(4)}; return obj; }, {});
+  // ── Helper: tally a string field into a sorted top-N object ──────────────────
+  const _tally = (recs, field, topN=15) => {
+    const map = {};
+    for (const r of recs) {
+      const v = (r[field]||'').trim();
+      if (!v) continue;
+      map[v] = (map[v]||0) + 1;
+    }
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,topN)
+      .reduce((obj,[k,n])=>{ obj[k]=n; return obj; }, {});
+  };
 
-  // Per-workspace MMAS stats (top 20 by volume)
-  const wsDataCodes = new Set([
-    ...mmasOnly.map(r=>r.institution_code||r.workspace).filter(Boolean),
-  ]);
-  const mmas_by_workspace = [...wsDataCodes].map(code => {
-    const recs = mmasOnly.filter(r=>(r.institution_code||r.workspace)===code);
-    return { code, n:recs.length, mean:+(recs.reduce((s,r)=>s+(r.score||0)/8,0)/recs.length).toFixed(4) };
-  }).sort((a,b)=>b.n-a.n).slice(0,20)
-    .reduce((obj,w)=>{ obj[w.code]={n:w.n,mean:w.mean}; return obj; }, {});
+  // ── Helper: tally + mean adherence per group ──────────────────────────────────
+  const _tallyMean = (recs, field, topN=15) => {
+    const map = {};
+    for (const r of recs) {
+      const v = (r[field]||'').trim();
+      if (!v) continue;
+      if (!map[v]) map[v] = { n:0, sum:0 };
+      map[v].n++;
+      map[v].sum += (r.score||0)/8;
+    }
+    return Object.entries(map).sort((a,b)=>b[1].n-a[1].n).slice(0,topN)
+      .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(4) }; return obj; }, {});
+  };
+
+  // Per-country MMAS stats
+  const wsDataCodes = new Set(mmasOnly.map(r=>r.institution_code||r.workspace).filter(Boolean));
+  const mmas_by_country   = _tallyMean(mmasOnly, 'country', 50);
+  const mmas_by_workspace = (() => {
+    return [...wsDataCodes].map(code => {
+      const recs = mmasOnly.filter(r=>(r.institution_code||r.workspace)===code);
+      return { code, n:recs.length, mean:+(recs.reduce((s,r)=>s+(r.score||0)/8,0)/recs.length).toFixed(4) };
+    }).sort((a,b)=>b.n-a.n).slice(0,20)
+      .reduce((obj,w)=>{ obj[w.code]={n:w.n,mean:w.mean}; return obj; }, {});
+  })();
+
+  // Condition & drug breakdowns (global + by country for top 10 countries)
+  const conditions_global  = _tallyMean(mmasOnly, 'condition', 20);
+  const drugs_global       = _tallyMean(mmasOnly, 'drug_name',  15);
+  const conditions_by_country = {};
+  for (const country of Object.keys(mmas_by_country).slice(0,15)) {
+    const recs = mmasOnly.filter(r=>(r.country||'').trim()===country);
+    const top  = _tally(recs, 'condition', 5);
+    if (Object.keys(top).length) conditions_by_country[country] = top;
+  }
+
+  // Demographics (gender, age range, education level)
+  const demographics = {
+    gender:     _tally(mmasOnly, 'gender',          8),
+    age_range:  _tally(mmasOnly, 'age_range',       10),
+    education:  _tally(mmasOnly, 'education_level', 8),
+    dosing_freq:_tally(mmasOnly, 'dosing_frequency',8),
+  };
+
+  // Adherence by condition (global)
+  const adherence_by_condition = _tallyMean(mmasOnly, 'condition', 20);
 
   const ctx = {
     mmas_total: mmasOnly.length,
@@ -891,6 +925,11 @@ async function _saAiCallClaude(query, apiKey) {
     mmas_high_n:     mmasOnly.filter(r=>(r.score||0)/8>=0.85).length,
     mmas_by_country,
     mmas_by_workspace,
+    conditions_global,
+    conditions_by_country,
+    adherence_by_condition,
+    drugs_global,
+    demographics,
     map_total: mapRecs.length,
     map_mean_pe: mapMean !== null ? +mapMean.toFixed(4) : null,
     peacs_total: peacs.length,
@@ -909,8 +948,22 @@ async function _saAiCallClaude(query, apiKey) {
   const res = await fetch(endpoint, {
     method:'POST',
     headers: reqHeaders,
-    body:JSON.stringify({model, max_tokens:400,
-      system:`You are ATLAS AI, an adherence science intelligence assistant. The ATLAS platform tracks medication adherence using three instruments: MMAS-8 (score 0–1, higher is better), MAP Tri-Domain (PE score 0–1), and PEACS (PE score 0–1). You have access to real platform data in the JSON context below. Use the exact numbers from this data to answer questions. mmas_by_country contains per-country MMAS-8 adherence means and record counts. mmas_by_workspace contains per-workspace stats. Respond in 1-4 sentences with specific numbers. Express means as percentages where natural (e.g. 0.716 = 71.6%). No markdown headers.\n\nContext: ${JSON.stringify(ctx)}`,
+    body:JSON.stringify({model, max_tokens:500,
+      system:`You are ATLAS AI, an adherence science intelligence assistant embedded in ATLAS Mission Control. You have access to REAL platform data in the JSON context below — use it to answer questions directly with specific numbers from the data.
+
+Key data available:
+- mmas_by_country: per-country MMAS-8 adherence mean (0–1) and record count
+- conditions_global: top medical conditions by record count (global) with mean adherence
+- conditions_by_country: top conditions per country (top 15 countries)
+- adherence_by_condition: mean MMAS-8 adherence score per condition
+- drugs_global: top medications by record count with mean adherence
+- demographics: gender, age_range, education, dosing_frequency distributions
+
+For geographic questions (e.g. "Europe"), use your knowledge of which countries belong to that region and sum/average across those countries in mmas_by_country or conditions_by_country.
+
+Express adherence means as percentages (0.716 = 71.6%). Respond in 2-5 sentences with specific numbers. If a field has no data, say so briefly. No markdown headers.
+
+Context: ${JSON.stringify(ctx)}`,
       messages:[{role:'user',content:query}]}),
   });
   if (!res.ok) throw new Error('API '+res.status);
