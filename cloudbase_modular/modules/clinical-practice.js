@@ -5,38 +5,8 @@
 // Only rendered for isPIResearcher() && !isInstitutionMode().
 // ══════════════════════════════════════════════════════════════════════════
 
-/**
- * Recompute MMAS-8 total score from individual item values stored in Firebase.
- * Always use this instead of r.score to correct historical records where q8 was
- * stored as an integer index (0–4) but incorrectly counted as a raw score.
- *
- * Convention (matches q8Label in dashboard-core.js):
- *   - q8 integer 0–4 → index: 0=Never(1.0), 1=Once in a while(0.75),
- *                              2=Sometimes(0.5), 3=Usually(0.25), 4=All the time(0)
- *   - q8 non-integer decimal → already a score, use directly
- *   - q8 string → mapped via label lookup
- */
-function _recomputeMMASScore(r) {
-  // MAP records use map_q* fields — fall back to stored score for those
-  if (r.tool === 'map' || r.map_q1 !== undefined) return r.score || 0;
-  const binary = (parseFloat(r.q1)||0) + (parseFloat(r.q2)||0) + (parseFloat(r.q3)||0) +
-                 (parseFloat(r.q4)||0) + (parseFloat(r.q5)||0) + (parseFloat(r.q6)||0) +
-                 (parseFloat(r.q7)||0);
-  const raw = r.q8;
-  let q8val;
-  if (typeof raw === 'number') {
-    if (Number.isInteger(raw) && raw >= 0 && raw <= 4) {
-      q8val = [1, 0.75, 0.5, 0.25, 0][raw];
-    } else {
-      q8val = raw; // already a decimal score (e.g. 0.75)
-    }
-  } else {
-    const s = String(raw || '').trim().toLowerCase();
-    q8val = ({ never:1, rarely:0.75, 'once in a while':0.75, sometimes:0.5,
-               often:0.25, usually:0.25, always:0, 'all the time':0 })[s] ?? 0;
-  }
-  return binary + q8val;
-}
+// _recomputeMMASScore is defined once in dashboard-core.js (loaded first) and
+// shared via the global scope. Do not redeclare it here.
 
 /** @type {Object[]} Raw MMAS assessment records for the researcher/student panel */
 window._rppMmasData  = [];
