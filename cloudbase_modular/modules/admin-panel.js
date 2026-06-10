@@ -1366,6 +1366,7 @@ function renderCorrelationChart() {
     const panel = document.createElement('div');
     panel.id = 'corr-panel';
     panel.className = 'corr-panel';
+    panel.dataset.hideObserver = '';
     panel.innerHTML = `
       <div class="corr-panel-hdr">
         <div>
