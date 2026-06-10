@@ -774,7 +774,10 @@ function _saAiNlqClear() {
 async function _saAiNlqAnswer(q) {
   const key = (sessionStorage.getItem('atlas_claude_key')||'').trim();
   if (key || ATLAS_AI_PROXY_URL) {
-    try { return await _saAiCallClaude(q, key); } catch(_) { /* fall through */ }
+    try { return await _saAiCallClaude(q, key); }
+    catch(err) {
+      return `Unable to reach Claude AI (${err.message || 'network error'}). Try again in a moment.`;
+    }
   }
   return _saAiRuleAnswer(q);
 }
@@ -801,36 +804,42 @@ function _saAiRuleAnswer(q) {
     return recs.length?{code,mean:recs.reduce((s,r)=>s+(r.score||0)/8,0)/recs.length,n:recs.length}:null;
   }).filter(Boolean);
 
-  if ((qL.includes('mean')||qL.includes('average'))&&(qL.includes('30')||qL.includes('recent')))
-    return mean30!==null?`The 30-day mean MMAS adherence score is <strong>${mean30.toFixed(3)}</strong> (n = ${last30.length.toLocaleString()}).`:'No timestamped records in the last 30 days.';
-  if (qL.includes('map')&&(qL.includes('mean')||qL.includes('pe')||qL.includes('score')))
-    return mapGlobalMean!==null?`MAP mean PE score is <strong>${mapGlobalMean.toFixed(3)}</strong> across <strong>${mapQaRecs.length.toLocaleString()}</strong> records.`:'No MAP records on file.';
-  if ((qL.includes('mean')||qL.includes('average'))&&(qL.includes('30')||qL.includes('recent')))
-    return mean30!==null?`The 30-day mean MMAS-8 adherence score is <strong>${mean30.toFixed(3)}</strong> (n = ${last30.length.toLocaleString()}).`:'No timestamped MMAS records in the last 30 days.';
-  if (qL.includes('mean')||qL.includes('average')||qL.includes('global'))
-    return `MMAS-8 global mean is <strong>${globalMean.toFixed(3)}</strong> (N=${mmasQaOnly.length.toLocaleString()}). MAP mean PE: <strong>${mapGlobalMean!==null?mapGlobalMean.toFixed(3):'—'}</strong> (N=${mapQaRecs.length.toLocaleString()}).`;
-  if (qL.includes('critical')||qL.includes('below'))
-    return `<strong>${critN.toLocaleString()} MMAS records (${mmasQaOnly.length?(critN/mmasQaOnly.length*100).toFixed(1):0}%)</strong> fall below the critical adherence threshold of 0.55.`;
-  if (qL.includes('high adherence')||qL.includes('percentage')||qL.includes('percent'))
-    return `<strong>${highN.toLocaleString()} records (${mmasQaOnly.length?(highN/mmasQaOnly.length*100).toFixed(1):0}%)</strong> meet the MMAS-8 high-adherence threshold (≥ 0.85).`;
-  if (qL.includes('highest')||qL.includes('top')||qL.includes('best')) {
-    const top=[...wsMeans].sort((a,b)=>b.mean-a.mean)[0];
-    return top?`Top workspace: <strong>${_saEsc(top.code)}</strong> — MMAS mean ${top.mean.toFixed(3)} (N=${top.n}).`:'No workspace data.';
+  // If the question references a specific country, region, workspace, or any
+  // comparison — the rule engine can't answer it. Fall straight to the summary
+  // so the user sees useful data rather than a confidently wrong answer.
+  const _hasGeo = /\b(country|countries|region|city|continent|africa|asia|europe|america|australia|north|south|east|west|[a-z]{4,})\b/.test(qL) &&
+    !/\b(mmas|peacs|map|score|mean|global|total|count|submission|volume|high adherence|critical)\b/.test(qL);
+  const _hasComparison = /\bvs\b|\bversus\b|\bcompare\b|\bdifference\b|\bbetween\b/.test(qL);
+  if (!_hasGeo && !_hasComparison) {
+    if ((qL.includes('mean')||qL.includes('average'))&&(qL.includes('30')||qL.includes('recent')))
+      return mean30!==null?`The 30-day mean MMAS adherence score is <strong>${mean30.toFixed(3)}</strong> (n = ${last30.length.toLocaleString()}).`:'No timestamped records in the last 30 days.';
+    if (qL.includes('map')&&(qL.includes('mean')||qL.includes('pe')||qL.includes('score')))
+      return mapGlobalMean!==null?`MAP mean PE score is <strong>${mapGlobalMean.toFixed(3)}</strong> across <strong>${mapQaRecs.length.toLocaleString()}</strong> records.`:'No MAP records on file.';
+    if (qL.includes('mean')||qL.includes('average')||qL.includes('global'))
+      return `MMAS-8 global mean is <strong>${globalMean.toFixed(3)}</strong> (N=${mmasQaOnly.length.toLocaleString()}). MAP mean PE: <strong>${mapGlobalMean!==null?mapGlobalMean.toFixed(3):'—'}</strong> (N=${mapQaRecs.length.toLocaleString()}).`;
+    if (qL.includes('critical')||qL.includes('low adherence')||qL.includes('below threshold'))
+      return `<strong>${critN.toLocaleString()} MMAS records (${mmasQaOnly.length?(critN/mmasQaOnly.length*100).toFixed(1):0}%)</strong> fall below the critical adherence threshold of 0.55.`;
+    if (qL.includes('high adherence'))
+      return `<strong>${highN.toLocaleString()} records (${mmasQaOnly.length?(highN/mmasQaOnly.length*100).toFixed(1):0}%)</strong> meet the MMAS-8 high-adherence threshold (≥ 0.85).`;
+    if (qL.includes('highest')||qL.includes('top workspace')||qL.includes('best workspace')) {
+      const top=[...wsMeans].sort((a,b)=>b.mean-a.mean)[0];
+      return top?`Top workspace: <strong>${_saEsc(top.code)}</strong> — MMAS mean ${top.mean.toFixed(3)} (N=${top.n}).`:'No workspace data.';
+    }
+    if (qL.includes('lowest workspace')||qL.includes('worst workspace')||qL.includes('bottom workspace')) {
+      const bot=[...wsMeans].sort((a,b)=>a.mean-b.mean)[0];
+      return bot?`Lowest workspace: <strong>${_saEsc(bot.code)}</strong> — MMAS mean ${bot.mean.toFixed(3)} (N=${bot.n}).`:'No workspace data.';
+    }
+    if (qL.includes('peacs'))
+      return `There are <strong>${peacs.length.toLocaleString()} PEACS assessments</strong> on record.`;
+    if (qL.includes('submission')||qL.includes('volume')) {
+      const l7=[...mmas,...peacs].filter(r=>(r.timestamp||0)>=now-7*86400000).length;
+      const p7=[...mmas,...peacs].filter(r=>(r.timestamp||0)>=now-14*86400000&&(r.timestamp||0)<now-7*86400000).length;
+      const delta=p7?((l7-p7)/p7*100).toFixed(0):null;
+      return `Last 7 days: <strong>${l7.toLocaleString()}</strong> submissions (all instruments). Prior 7: <strong>${p7.toLocaleString()}</strong>.${delta!==null?` Volume ${delta>=0?'+':''}${delta}% vs prior week.`:''}`;
+    }
+    if (qL.includes('how many')||qL.includes('count')||qL.includes('total'))
+      return `Totals: <strong>${mmasQaOnly.length.toLocaleString()} MMAS-8</strong>, <strong>${mapQaRecs.length.toLocaleString()} MAP</strong>, <strong>${peacs.length.toLocaleString()} PEACS</strong> across <strong>${wsMeans.length} workspaces</strong>.`;
   }
-  if (qL.includes('lowest')||qL.includes('worst')||qL.includes('bottom')) {
-    const bot=[...wsMeans].sort((a,b)=>a.mean-b.mean)[0];
-    return bot?`Lowest workspace: <strong>${_saEsc(bot.code)}</strong> — MMAS mean ${bot.mean.toFixed(3)} (N=${bot.n}).`:'No workspace data.';
-  }
-  if (qL.includes('peacs'))
-    return `There are <strong>${peacs.length.toLocaleString()} PEACS assessments</strong> on record.`;
-  if (qL.includes('submission')||qL.includes('volume')) {
-    const l7=[...mmas,...peacs].filter(r=>(r.timestamp||0)>=now-7*86400000).length;
-    const p7=[...mmas,...peacs].filter(r=>(r.timestamp||0)>=now-14*86400000&&(r.timestamp||0)<now-7*86400000).length;
-    const delta=p7?((l7-p7)/p7*100).toFixed(0):null;
-    return `Last 7 days: <strong>${l7.toLocaleString()}</strong> submissions (all instruments). Prior 7: <strong>${p7.toLocaleString()}</strong>.${delta!==null?` Volume ${delta>=0?'+':''}${delta}% vs prior week.`:''}`;
-  }
-  if (qL.includes('how many')||qL.includes('count')||qL.includes('total'))
-    return `Totals: <strong>${mmasQaOnly.length.toLocaleString()} MMAS-8</strong>, <strong>${mapQaRecs.length.toLocaleString()} MAP</strong>, <strong>${peacs.length.toLocaleString()} PEACS</strong> across <strong>${wsMeans.length} workspaces</strong>.`;
   const _ruleKey = (sessionStorage.getItem('atlas_claude_key')||'').trim();
   const hint = (_ruleKey || ATLAS_AI_PROXY_URL) ? '' : ' Add a Claude API key in Config for full natural language support.';
   return `Summary: <strong>${mmasQaOnly.length.toLocaleString()} MMAS-8</strong> (mean ${globalMean.toFixed(3)}), <strong>${mapQaRecs.length.toLocaleString()} MAP</strong>${mapGlobalMean!==null?' (mean PE '+mapGlobalMean.toFixed(3)+')':''}, <strong>${peacs.length.toLocaleString()} PEACS</strong>.${hint}`;
