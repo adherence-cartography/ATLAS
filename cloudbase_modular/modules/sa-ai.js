@@ -843,11 +843,36 @@ async function _saAiCallClaude(query, apiKey) {
 
   const mmasOnly = mmas.filter(r => r.tool !== 'map' && r.map_q1 === undefined);
   const mapRecs  = mmas.filter(r => r.tool === 'map' || r.map_q1 !== undefined);
+  const _mapPE   = r => Math.pow(Math.max(0,((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3*((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3*(0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2)),1/3);
 
   const mmasMean  = mmasOnly.length ? mmasOnly.reduce((s,r)=>s+(r.score||0)/8,0)/mmasOnly.length : 0;
-  const mapMean   = mapRecs.length  ? mapRecs.reduce((s,r)=>s+Math.pow(Math.max(0,((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3*((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3*(0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2)),1/3),0)/mapRecs.length : null;
+  const mapMean   = mapRecs.length  ? mapRecs.reduce((s,r)=>s+_mapPE(r),0)/mapRecs.length : null;
   const peacsMean = peacs.length    ? peacs.reduce((s,r)=>s+(r.pe!=null?+r.pe:0),0)/peacs.length : null;
   const r30 = mmasOnly.filter(r=>(r.timestamp||0)>=now-30*86400000);
+
+  // Per-country MMAS stats (countries present in the data, sorted by record count desc)
+  const countryMap = {};
+  for (const r of mmasOnly) {
+    const c = (r.country||'').trim();
+    if (!c) continue;
+    if (!countryMap[c]) countryMap[c] = { n:0, sum:0 };
+    countryMap[c].n++;
+    countryMap[c].sum += (r.score||0)/8;
+  }
+  const mmas_by_country = Object.entries(countryMap)
+    .sort((a,b)=>b[1].n-a[1].n)
+    .slice(0, 40) // cap at 40 countries to keep context lean
+    .reduce((obj,[c,v])=>{ obj[c]={n:v.n, mean:+(v.sum/v.n).toFixed(4)}; return obj; }, {});
+
+  // Per-workspace MMAS stats (top 20 by volume)
+  const wsDataCodes = new Set([
+    ...mmasOnly.map(r=>r.institution_code||r.workspace).filter(Boolean),
+  ]);
+  const mmas_by_workspace = [...wsDataCodes].map(code => {
+    const recs = mmasOnly.filter(r=>(r.institution_code||r.workspace)===code);
+    return { code, n:recs.length, mean:+(recs.reduce((s,r)=>s+(r.score||0)/8,0)/recs.length).toFixed(4) };
+  }).sort((a,b)=>b.n-a.n).slice(0,20)
+    .reduce((obj,w)=>{ obj[w.code]={n:w.n,mean:w.mean}; return obj; }, {});
 
   const ctx = {
     mmas_total: mmasOnly.length,
@@ -855,12 +880,14 @@ async function _saAiCallClaude(query, apiKey) {
     mmas_mean_30d: r30.length ? +(r30.reduce((s,r)=>s+(r.score||0)/8,0)/r30.length).toFixed(4) : null,
     mmas_critical_n: mmasOnly.filter(r=>(r.score||0)/8<0.55).length,
     mmas_high_n:     mmasOnly.filter(r=>(r.score||0)/8>=0.85).length,
+    mmas_by_country,
+    mmas_by_workspace,
     map_total: mapRecs.length,
     map_mean_pe: mapMean !== null ? +mapMean.toFixed(4) : null,
     peacs_total: peacs.length,
     peacs_mean_pe: peacsMean !== null ? +peacsMean.toFixed(4) : null,
     peacs_critical_n: peacs.filter(r=>(r.pe!=null?+r.pe:1)<0.55).length,
-    workspace_count: Object.keys(_saCache.workspaces||{}).length,
+    workspace_count: wsDataCodes.size,
   };
   const model      = sessionStorage.getItem('atlas_claude_model')||'claude-haiku-4-5-20251001';
   const useProxy   = !!ATLAS_AI_PROXY_URL;
@@ -873,8 +900,8 @@ async function _saAiCallClaude(query, apiKey) {
   const res = await fetch(endpoint, {
     method:'POST',
     headers: reqHeaders,
-    body:JSON.stringify({model, max_tokens:350,
-      system:`You are ATLAS AI, an adherence science intelligence assistant. The ATLAS platform tracks three instruments: MMAS-8 (medication adherence, score 0–1), MAP Tri-Domain (multi-domain adherence PE score 0–1), and PEACS (Predictive Emergence adherence composite PE score 0–1). Answer questions using this context: ${JSON.stringify(ctx)}. Respond in 1-3 sentences with specific numbers. No markdown headers.`,
+    body:JSON.stringify({model, max_tokens:400,
+      system:`You are ATLAS AI, an adherence science intelligence assistant. The ATLAS platform tracks medication adherence using three instruments: MMAS-8 (score 0–1, higher is better), MAP Tri-Domain (PE score 0–1), and PEACS (PE score 0–1). You have access to real platform data in the JSON context below. Use the exact numbers from this data to answer questions. mmas_by_country contains per-country MMAS-8 adherence means and record counts. mmas_by_workspace contains per-workspace stats. Respond in 1-4 sentences with specific numbers. Express means as percentages where natural (e.g. 0.716 = 71.6%). No markdown headers.\n\nContext: ${JSON.stringify(ctx)}`,
       messages:[{role:'user',content:query}]}),
   });
   if (!res.ok) throw new Error('API '+res.status);
