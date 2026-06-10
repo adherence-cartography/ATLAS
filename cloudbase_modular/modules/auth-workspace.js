@@ -1132,6 +1132,8 @@ function enterResearcherDashboard() {
   atlasAuditLog('dashboard_access', { workspace: currentWorkspace, role: workspaceProfile && workspaceProfile.role });
   document.body.classList.add('researcher-mode');
   document.body.classList.remove('patient-mode');
+  // Reset observer mode on every dashboard entry; re-applied below if role is observer.
+  document.body.classList.remove('atlas-observer-mode');
   const label = getScopeLabel();
   document.getElementById('dash-workspace-label').textContent = label || 'Workspace';
   if (!userLocation) requestGeolocation().then(() => fillSdohLocation());
@@ -3049,45 +3051,18 @@ function enterResearcherDashboard() {
     const _db = document.querySelector('#screen-dashboard .dash-body');
     if (_db) _db.insertBefore(obsBanner, _db.firstChild);
 
-    // Hide all write/export/admin controls
-    const OBSERVER_HIDE = [
-      '#dash-bulk-btn',
-      '#dash-mmas-export-btn',
-      '#dash-export-btn',
-      '#dash-qr-btn',
-      '#irb-cert-btn',
-      '#irb-aggregate-btn',
-      '#mmas-export-btn',
-      '#peacs-export-btn',
-      '#pi-blinded-export-btn',
-      '#pi-research-panel',
-      '#pi-provision-modal',
-      '#mmas-refresh-btn',
-      '#peacs-refresh-btn',
-      '#mapc-refresh-btn',
-      '#map-export-btn',
-      '#mapc-export-btn',
-      '#acc-open-btn',
-      '#acc-open-divider',
-      '#campaign-manager-btn',
-      '#backfill-tool-btn',
-      '#clinic-mode-toggle-btn',
-      '#dash-new-session-btn',
-      '.mc-ghost-btn',
-      '#researcher-patient-panel',
-      '#researcher-upgrade-nudge',
-      '#institution-analytics-dashboard',
-      '#institution-command-center',
-      '.ape-panel', '#ape-panel',
-      '.strat-panel', '#strat-panel',
-      '.nlq-panel', '#nlq-panel',
-      '.traj-panel', '#traj-panel',
-      '.bench-panel', '#bench-panel',
-      '#corr-panel',
-    ];
-    OBSERVER_HIDE.forEach(sel => {
-      document.querySelectorAll(sel).forEach(el => { el.style.display = 'none'; });
-    });
+    // Inject the observer-mode CSS rule once (idempotent — skipped if already present).
+    // Any element with data-hide-observer is hidden while body.atlas-observer-mode is set.
+    if (!document.getElementById('atlas-observer-mode-style')) {
+      const _obsStyle = document.createElement('style');
+      _obsStyle.id = 'atlas-observer-mode-style';
+      _obsStyle.textContent = 'body.atlas-observer-mode [data-hide-observer]{display:none!important}';
+      document.head.appendChild(_obsStyle);
+    }
+    // Hide all write/export/admin controls via CSS body class — see data-hide-observer
+    // attributes in index.html. Any future element to hide just needs that attribute;
+    // no central array to update.
+    document.body.classList.add('atlas-observer-mode');
 
     // Workspace chip — gold observer colour
     const chip = document.querySelector('.dash-workspace-chip');

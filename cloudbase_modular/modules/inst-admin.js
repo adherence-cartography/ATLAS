@@ -9,6 +9,20 @@
 let _instAdminMembers = null;
 
 /**
+ * Returns the Firebase ID token for the currently signed-in institution user.
+ * Does NOT require superadmin claims — any authenticated user may call this.
+ * Used exclusively by the /inst/ Lambda endpoints which enforce their own
+ * institution-role check server-side.
+ * @returns {Promise<string>} Raw Firebase ID token string
+ * @throws {Error} If no user is currently authenticated
+ */
+async function _instGetToken() {
+  const user = firebase.auth().currentUser;
+  if (!user) throw new Error('Not authenticated');
+  return await user.getIdToken(false);
+}
+
+/**
  * Renders the institution self-service admin panel.
  * @param {HTMLElement} container
  */
@@ -28,14 +42,15 @@ async function renderInstAdmin(container) {
 
 async function _loadInstMembers(body) {
   try {
-    const token = await _accGetToken();
-    const res = await fetch(LAMBDA_URL + '/admin/list-keys', {
+    const token = await _instGetToken();
+    const res = await fetch(LAMBDA_URL + '/inst/list-members', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ parent_inst: currentWorkspace })
+      body: JSON.stringify({})
     });
     const data = await res.json();
-    _instAdminMembers = (data.keys || []).filter(k => k.parent_inst === currentWorkspace);
+    if (!res.ok) throw new Error(data.error || 'Failed to load members');
+    _instAdminMembers = data.keys || [];
     _renderMemberTable(body);
   } catch(e) {
     if (body) body.innerHTML = `<div style="color:rgba(239,68,68,0.8);font-size:0.84rem;">Error loading members: ${e.message}</div>`;
@@ -141,11 +156,11 @@ async function submitAddMember() {
   if (!email || !email.includes('@')) { if (errEl) { errEl.textContent = 'Valid email required.'; errEl.style.display = 'block'; } return; }
 
   try {
-    const token = await _accGetToken();
-    const res = await fetch(LAMBDA_URL + '/admin/provision-key', {
+    const token = await _instGetToken();
+    const res = await fetch(LAMBDA_URL + '/inst/provision-key', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ fname, lname, email, role, parent_inst: currentWorkspace, expiry: expiry || null })
+      body: JSON.stringify({ fname, lname, email, role, expiry: expiry || null })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Provisioning failed');
@@ -169,11 +184,11 @@ async function revokeInstMember(key) {
   if (!key || !confirm('Revoke access for key ' + key + '? This cannot be undone.')) return;
 
   try {
-    const token = await _accGetToken();
-    await fetch(LAMBDA_URL + '/admin/revoke-key', {
+    const token = await _instGetToken();
+    await fetch(LAMBDA_URL + '/inst/revoke-key', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ key, revoked_by: currentWorkspace })
+      body: JSON.stringify({ key })
     });
     if (typeof showToast === 'function') showToast('Access revoked for ' + key, 3000);
     if (typeof atlasAuditLog === 'function') atlasAuditLog('INST_MEMBER_REVOKED', { key });

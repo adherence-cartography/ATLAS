@@ -500,8 +500,8 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         <span id="theme-toggle-label-mmas">Daylight</span>
       </button>
       <button class="mmas-spectator-nav-btn" id="mmas-spectator-btn" style="display:none;">◉ Spectator</button>
-      <button class="mmas-spectator-nav-btn" id="campaign-manager-btn" onclick="openCampaignManager()" style="display:none;background:rgba(212,168,67,0.08);border-color:rgba(212,168,67,0.25);color:var(--pe);">📅 Campaigns</button>
-      <button class="mmas-spectator-nav-btn" id="backfill-tool-btn" onclick="openBackfillModal()" style="display:none;background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);color:var(--poor);" title="Fix historical records missing parent_institution">⚙ Backfill</button>
+      <button class="mmas-spectator-nav-btn" id="campaign-manager-btn" data-hide-observer onclick="openCampaignManager()" style="display:none;background:rgba(212,168,67,0.08);border-color:rgba(212,168,67,0.25);color:var(--pe);">📅 Campaigns</button>
+      <button class="mmas-spectator-nav-btn" id="backfill-tool-btn" data-hide-observer onclick="openBackfillModal()" style="display:none;background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);color:var(--poor);" title="Fix historical records missing parent_institution">⚙ Backfill</button>
       <button class="mmas-exit-btn" id="mmas-exit-btn">← Exit</button>
     </div>
   </nav>
@@ -1635,15 +1635,15 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
             <span id="zoe-briefing-icon" style="font-size:0.85rem;opacity:0.8;">◉</span>
             <span>ZOE Brief</span>
           </button>
-          <button id="dash-new-session-btn" title="Clear session and start fresh" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:9px 12px;font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.06em;background:rgba(78,156,245,0.05);border:1px solid rgba(78,156,245,0.18);color:rgba(78,156,245,0.65);border-radius:6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(78,156,245,0.12)';this.style.color='rgba(78,156,245,0.9)'" onmouseout="this.style.background='rgba(78,156,245,0.05)';this.style.color='rgba(78,156,245,0.65)'">
+          <button id="dash-new-session-btn" data-hide-observer title="Clear session and start fresh" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:9px 12px;font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.06em;background:rgba(78,156,245,0.05);border:1px solid rgba(78,156,245,0.18);color:rgba(78,156,245,0.65);border-radius:6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(78,156,245,0.12)';this.style.color='rgba(78,156,245,0.9)'" onmouseout="this.style.background='rgba(78,156,245,0.05)';this.style.color='rgba(78,156,245,0.65)'">
             <span style="font-size:0.85rem;opacity:0.8;">⟳</span>
             <span>New Session</span>
           </button>
-          <button id="clinic-mode-toggle-btn" onclick="closeUserAccount();enterClinicMode()" title="Lock to patient view — protect patient flow" style="display:none;width:100%;text-align:left;align-items:center;gap:10px;padding:9px 12px;font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.06em;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.18);color:rgba(16,185,129,0.65);border-radius:6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.12)';this.style.color='rgba(16,185,129,0.9)'" onmouseout="this.style.background='rgba(16,185,129,0.05)';this.style.color='rgba(16,185,129,0.65)'">
+          <button id="clinic-mode-toggle-btn" data-hide-observer onclick="closeUserAccount();enterClinicMode()" title="Lock to patient view — protect patient flow" style="display:none;width:100%;text-align:left;align-items:center;gap:10px;padding:9px 12px;font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.06em;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.18);color:rgba(16,185,129,0.65);border-radius:6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.12)';this.style.color='rgba(16,185,129,0.9)'" onmouseout="this.style.background='rgba(16,185,129,0.05)';this.style.color='rgba(16,185,129,0.65)'">
             <span style="font-size:0.85rem;opacity:0.8;">🔒</span>
             <span>Clinic Mode</span>
           </button>
-          <button id="acc-open-btn" onclick="closeUserAccount();openCommandCenter()" title="ATLAS Mission Control — superadmin only" style="display:none;width:100%;text-align:left;align-items:center;gap:10px;padding:9px 12px;font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.06em;background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.25);color:rgba(212,168,67,0.75);border-radius:6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(212,168,67,0.12)';this.style.color='rgba(212,168,67,1)'" onmouseout="this.style.background='rgba(212,168,67,0.05)';this.style.color='rgba(212,168,67,0.75)'">
+          <button id="acc-open-btn" data-hide-observer onclick="closeUserAccount();openCommandCenter()" title="ATLAS Mission Control — superadmin only" style="display:none;width:100%;text-align:left;align-items:center;gap:10px;padding:9px 12px;font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.06em;background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.25);color:rgba(212,168,67,0.75);border-radius:6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(212,168,67,0.12)';this.style.color='rgba(212,168,67,1)'" onmouseout="this.style.background='rgba(212,168,67,0.05)';this.style.color='rgba(212,168,67,0.75)'">
             <span style="font-size:0.85rem;opacity:0.8;">◉</span>
             <span>ATLAS Mission Control</span>
           </button>
@@ -1925,7 +1925,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
 
     <!-- ── INSTITUTION ANALYTICS DASHBOARD ── -->
     <!-- Visible only when isInstitutionMode() — replaces instrument cards -->
-    <div id="institution-analytics-dashboard" style="display:none;">
+    <div id="institution-analytics-dashboard" data-hide-observer style="display:none;">
 
       <!-- Header -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:10px;padding-bottom:14px;">
@@ -3871,10 +3871,10 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
       <span id="mc-global-mmas"></span><span id="mc-global-mmas-total"></span><span id="mc-global-mmas-countries"></span><span id="mc-global-mmas-avg"></span>
       <span id="mmas-seg-high"></span><span id="mmas-seg-una"></span><span id="mmas-seg-ina"></span><span id="mmas-seg-mixed"></span>
       <button id="dash-map-export-btn" style="display:none;"></button>
-      <button id="dash-export-btn" style="display:none;"></button>
-      <button id="dash-mmas-export-btn" style="display:none;"></button>
-      <button id="dash-bulk-btn" style="display:none;"></button>
-      <button id="dash-qr-btn" style="display:none;"></button>
+      <button id="dash-export-btn" data-hide-observer style="display:none;"></button>
+      <button id="dash-mmas-export-btn" data-hide-observer style="display:none;"></button>
+      <button id="dash-bulk-btn" data-hide-observer style="display:none;"></button>
+      <button id="dash-qr-btn" data-hide-observer style="display:none;"></button>
     </div>
     <!-- Researcher / PI quick-action bar — shown for non-clinician authenticated roles -->
     <div id="dash-researcher-action-bar" style="display:none;margin-bottom:18px;display:flex;gap:8px;flex-wrap:wrap;">
@@ -3918,7 +3918,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
             </div>
           </div>
           <button onclick="openClinNewSession()" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.32);color:var(--base);border-radius:6px;padding:7px 16px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:7px;" onmouseover="this.style.background='rgba(78,156,245,0.20)'" onmouseout="this.style.background='rgba(78,156,245,0.12)'">⊕ New Assessment</button>
-          <button id="dash-qr-btn" onclick="openQRModal()" title="Patient QR code — scan to self-assess" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(46,201,138,0.08);border:1px solid rgba(46,201,138,0.28);color:#2ec98a;border-radius:6px;padding:7px 14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(46,201,138,0.18)'" onmouseout="this.style.background='rgba(46,201,138,0.08)'">📲 QR</button>
+          <button id="dash-qr-btn" data-hide-observer onclick="openQRModal()" title="Patient QR code — scan to self-assess" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(46,201,138,0.08);border:1px solid rgba(46,201,138,0.28);color:#2ec98a;border-radius:6px;padding:7px 14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(46,201,138,0.18)'" onmouseout="this.style.background='rgba(46,201,138,0.08)'">📲 QR</button>
           <button onclick="openClinSettings()" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:7px 14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.color='var(--text)';this.style.borderColor='rgba(255,255,255,0.25)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border2)'">⚙</button>
         </div>
       </div>
@@ -4199,7 +4199,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     </div>
 
     <!-- ── PI RESEARCH PANEL — PI tier only, hidden for all other roles ── -->
-    <div id="pi-research-panel" style="display:none;">
+    <div id="pi-research-panel" data-hide-observer style="display:none;">
 
       <!-- PI Dashboard Header -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:10px;padding-bottom:14px;">
@@ -4658,9 +4658,9 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
           <button class="mc-rec-tab" data-rtab="mmas" data-i18n="tabMMAS">MMAS-8</button>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
-          <button class="panel-refresh" id="mmas-refresh-btn" style="display:none;">↻</button>
-          <button class="panel-refresh" id="peacs-refresh-btn" style="display:none;">↻</button>
-          <button class="panel-refresh" id="mapc-refresh-btn" style="display:none;">↻</button>
+          <button class="panel-refresh" id="mmas-refresh-btn" data-hide-observer style="display:none;">↻</button>
+          <button class="panel-refresh" id="peacs-refresh-btn" data-hide-observer style="display:none;">↻</button>
+          <button class="panel-refresh" id="mapc-refresh-btn" data-hide-observer style="display:none;">↻</button>
           <button class="mc-records-toggle" id="mc-records-toggle-btn" onclick="toggleMcRecords()">
             <span id="mc-records-toggle-icon">▼ Records</span>
           </button>
@@ -4698,11 +4698,11 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
           </div>
           <div class="panel-footer">
             <div style="display:flex;flex-direction:column;align-items:flex-start;">
-              <button class="panel-export-btn" id="mmas-export-btn" title="Columns: patient_number, score, q1–q8, pattern, condition, country, timestamp">↓ Export MMAS CSV</button>
+              <button class="panel-export-btn" id="mmas-export-btn" data-hide-observer title="Columns: patient_number, score, q1–q8, pattern, condition, country, timestamp">↓ Export MMAS CSV</button>
               <span class="export-cols">Columns: patient_number, score, q1–q8, pattern, condition, country, timestamp</span>
             </div>
-            <button class="panel-export-btn" id="pi-blinded-export-btn" style="display:none;border-color:rgba(212,168,67,0.3);color:rgba(212,168,67,0.75);">⊘ Blinded Export</button>
-            <button class="panel-export-btn irb-btn" id="irb-cert-btn" style="display:none;">🗋 Session Certificate</button>
+            <button class="panel-export-btn" id="pi-blinded-export-btn" data-hide-observer style="display:none;border-color:rgba(212,168,67,0.3);color:rgba(212,168,67,0.75);">⊘ Blinded Export</button>
+            <button class="panel-export-btn irb-btn" id="irb-cert-btn" data-hide-observer style="display:none;">🗋 Session Certificate</button>
             <button class="panel-export-btn cite-btn" id="cite-btn">" Cite Instruments</button>
             <button onclick="generateATLASCitation()" style="padding:0.5rem 1rem;background:transparent;border:1px solid var(--accent,#4e9cf5);color:var(--accent,#4e9cf5);border-radius:6px;cursor:pointer;font-size:0.8rem;">&#x1F4C4; Cite ATLAS</button>
             <button class="panel-export-btn" id="cohort-pdf-btn" onclick="exportCohortPDF()" style="border-color:rgba(212,168,67,0.3);color:rgba(212,168,67,0.8);" onmouseover="this.style.borderColor='rgba(212,168,67,0.6)';this.style.color='rgba(212,168,67,1)'" onmouseout="this.style.borderColor='rgba(212,168,67,0.3)';this.style.color='rgba(212,168,67,0.8)'">↓ Cohort PDF</button>
@@ -4788,7 +4788,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
           </div>
           <div class="panel-footer">
             <div style="display:flex;flex-direction:column;align-items:flex-start;">
-              <button class="panel-export-btn" id="peacs-export-btn" title="Columns: patient_number, pe_score, base_score, mvmt_score, strata_score, pe_zone, condition, timestamp">↓ Export PEACS CSV</button>
+              <button class="panel-export-btn" id="peacs-export-btn" data-hide-observer title="Columns: patient_number, pe_score, base_score, mvmt_score, strata_score, pe_zone, condition, timestamp">↓ Export PEACS CSV</button>
               <span class="export-cols">Columns: patient_number, pe_score, base_score, mvmt_score, strata_score, pe_zone, condition, timestamp</span>
             </div>
             <span class="panel-last-updated" id="peacs-last-updated">—</span>
@@ -4831,7 +4831,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
           </div>
           <div class="panel-footer">
             <div style="display:flex;flex-direction:column;align-items:flex-start;">
-              <button class="panel-export-btn" id="mapc-export-btn" style="color:var(--strata);border-color:rgba(46,201,138,0.3);">↓ Export MAP CSV</button>
+              <button class="panel-export-btn" id="mapc-export-btn" data-hide-observer style="color:var(--strata);border-color:rgba(46,201,138,0.3);">↓ Export MAP CSV</button>
               <span class="export-cols">Columns: patient_number, score, arch, exec, ctx, pattern, condition, country, timestamp</span>
             </div>
             <span class="panel-last-updated" id="map-last-updated">—</span>
@@ -4861,7 +4861,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     <!-- ══════════════════════════════════════════
          HEOR FEATURE: ADHERENCE PHENOTYPING ENGINE
     ══════════════════════════════════════════ -->
-    <div class="ape-panel" id="ape-panel" style="display:none;">
+    <div class="ape-panel" id="ape-panel" data-hide-observer style="display:none;">
       <div class="ape-header" onclick="toggleApePanel()">
         <div class="ape-title-wrap">
           <span class="ape-badge">APE · Adherence Phenotyping Engine</span>
@@ -4921,7 +4921,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     <!-- ══════════════════════════════════════════
          HEOR FEATURE: DRUG-CONDITION STRATIFICATION
     ══════════════════════════════════════════ -->
-    <div class="strat-panel" id="strat-panel" style="display:none;">
+    <div class="strat-panel" id="strat-panel" data-hide-observer style="display:none;">
       <div class="strat-header" onclick="toggleStratPanel()" style="cursor:pointer;" title="Click to expand / collapse">
         <div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -4956,7 +4956,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     <!-- ══════════════════════════════════════════
          HEOR FEATURE: NATURAL LANGUAGE COHORT QUERY
     ══════════════════════════════════════════ -->
-    <div class="nlq-panel" id="nlq-panel" style="display:none;">
+    <div class="nlq-panel" id="nlq-panel" data-hide-observer style="display:none;">
       <div class="nlq-header">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-family:var(--font-mono);font-size:0.90rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--mvmt);" data-i18n="nlqTitle">✦ Ask Your Data</span>
@@ -4983,7 +4983,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     <!-- ══════════════════════════════════════════
          HEOR FEATURE: LONGITUDINAL TRAJECTORY CARDS
     ══════════════════════════════════════════ -->
-    <div class="traj-panel" id="traj-panel" style="display:none;">
+    <div class="traj-panel" id="traj-panel" data-hide-observer style="display:none;">
       <div class="traj-header">
         <div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -5002,7 +5002,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     <!-- ══════════════════════════════════════════
          HEOR FEATURE: SITE BENCHMARKING (for institution + superadmin)
     ══════════════════════════════════════════ -->
-    <div class="bench-panel" id="bench-panel" style="display:none;">
+    <div class="bench-panel" id="bench-panel" data-hide-observer style="display:none;">
       <div class="bench-header">
         <div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -5248,7 +5248,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
   </div>
 
   <!-- ── INSTITUTION COMMAND CENTER (institution mode only) ── -->
-  <div id="institution-command-center" style="display:none;padding:0 24px 32px;">
+  <div id="institution-command-center" data-hide-observer style="display:none;padding:0 24px 32px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-top:8px;border-top:1px solid var(--border);">
       <span style="font-family:var(--font-mono);font-size:0.61rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--pe);background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.2);border-radius:20px;padding:3px 10px;">🏛 Population Health Command Center</span>
       <span style="font-family:var(--font-mono);font-size:0.84rem;color:var(--dim);margin-left:auto;" id="icc-last-refresh">—</span>
@@ -5904,7 +5904,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
        Visible to researcher + student (isPIResearcher) only — not institution.
        Read-only view of their own cohort patients, sortable by column.
   ──────────────────────────────────────────────────────────────────────── -->
-  <div id="researcher-patient-panel" style="display:none;padding:0 28px 28px;">
+  <div id="researcher-patient-panel" data-hide-observer style="display:none;padding:0 28px 28px;">
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;">
         <div style="display:flex;align-items:center;gap:10px;">
