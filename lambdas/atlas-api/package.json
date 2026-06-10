@@ -1,0 +1,9 @@
+{
+  "name": "atlas-api",
+  "version": "1.0.0",
+  "description": "ATLAS API Lambda — Claude proxy + institution provisioning",
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

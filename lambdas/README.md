@@ -6,18 +6,23 @@ All AWS Lambda source code lives here. One subfolder = one deployed Lambda funct
 
 ## Function Map
 
-| Folder | AWS Function Name | API Gateway URL | Region | Last Updated |
-|---|---|---|---|---|
-| `atlas-main/` | `atlas-lambda` | `https://api.adherence.cc/` | us-east-1 | see `../lambda/` |
-| `claude-proxy/` | `atlas-claude-proxy` | `https://xckeiwruv7.execute-api.us-east-1.amazonaws.com/claude` | us-east-1 | — |
-| `institution/` | `atlas-institution` | _(same API GW as claude-proxy, routes `/inst/*`)_ | us-east-1 | — |
-| `adherence-pulse/` | `atlas-adherence-pulse` | _(CloudWatch scheduled trigger, no HTTP)_ | us-east-1 | — |
-| `gai-api/` | `atlas-gai-api` | `https://api.adherence.cc/gai` | us-east-1 | — |
-| `gai-realtime/` | _(not yet deployed)_ | _(future)_ | us-east-1 | — |
+| Folder | AWS Function Name | API Gateway URL | Region |
+|---|---|---|---|
+| `../lambda/` | `atlas-lambda` _(main)_ | `https://api.adherence.cc/` | us-east-1 |
+| `atlas-api/` | _(your xckeiwruv7 Lambda)_ | `https://xckeiwruv7.execute-api.us-east-1.amazonaws.com/` | us-east-1 |
+| `adherence-pulse/` | `atlas-adherence-pulse` | _(EventBridge scheduled, no HTTP)_ | us-east-1 |
+| `gai-api/` | `atlas-gai-api` | `https://api.adherence.cc/gai` | us-east-1 |
+| `gai-realtime/` | _(not yet deployed)_ | _(future)_ | us-east-1 |
 
-> **`atlas-main/`** is not duplicated here — its source lives at `../lambda/` (the original
-> location). That folder contains `index.mjs`, `lambda_stripe_handler.mjs`, and
-> `lambda_integrations.mjs`. Do not edit those files here; edit them in `../lambda/`.
+**`../lambda/`** (atlas-main) is the original main Lambda — ZOE, Stripe, key issuance, OTP,
+cert verification. Source lives at `atlas_v8/lambda/`. Edit it there, not here.
+
+**`atlas-api/`** is the Lambda currently deployed at `xckeiwruv7...`. It handles:
+- `POST /claude` — Anthropic AI proxy (all Mission Control AI features)
+- `POST /inst/*` — institution self-service provisioning
+
+> `claude-proxy/` and `institution/` in this folder are reference copies showing what
+> a future split would look like. Deploy `atlas-api/` for now.
 
 ---
 
