@@ -176,31 +176,32 @@ function _finishMmasLoad(dashMmasData) {
 // Multidimensional Adherence Parameters
 // Arch = mean(map_q2,map_q3,map_q6) · Exec = mean(map_q1,map_q4,map_q5,map_q8) · Ctx = map_q7
 // ══════════════════════════════════════════════
+
+// ── MAP domain score helpers (shared by _renderMapRecordsTab and exportMapCSV) ──
+// Architecture (A): intentional decision-making — Q2, Q3, Q6
+// Execution (E): behavioral reliability — Q1, Q5, Q8
+// Context (C_g): Context-Guard — 0.5 + 0.5×mean(Q4,Q7), floors at 0.5 to prevent PE collapse
+// Always computed from item-level data; stored scores are unreliable for legacy records.
+function _mapArch(r) { return ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3; }
+function _mapExec(r) { return ((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3; }
+function _mapCtx(r)  { return 0.5 + 0.5*((+r.map_q4||0)+(+r.map_q7||0))/2; }
+function _mapPat(r) {
+  if (r.score===8) return 'high';
+  if (typeof classifyPattern==='function') {
+    const cp=classifyPattern(r);
+    if (cp.intentional>cp.unintentional) return 'ina';
+    if (cp.unintentional>cp.intentional) return 'una';
+    return 'mixed';
+  }
+  return 'una';
+}
+
 function _renderMapRecordsTab(records) {
   const _t = (typeof ATLAS_STRINGS !== 'undefined' && ATLAS_STRINGS[mmasCurrentLang]) || (typeof ATLAS_STRINGS !== 'undefined' && ATLAS_STRINGS.en) || {};
   if (!records || !records.length) return;
   // Only rows saved with tool:'map' — discriminates from MMAS-8 records
   // Legacy records (pre-tool-field) that carry map_q1 are also included
   const mapRows = records.filter(r => r.tool === 'map' || r.map_q1 !== undefined).slice().reverse();
-
-  // Domain helpers — correct MAP PE mapping (Morisky 2026)
-  // Architecture (A): intentional decision-making — Q2, Q3, Q6
-  // Execution (E): behavioral reliability — Q1, Q5, Q8
-  // Context (C_g): Context-Guard — 0.5 + 0.5×mean(Q4,Q7), floors at 0.5 to prevent PE collapse
-  // Always computed from item-level data; stored scores are unreliable for legacy records.
-  function _arch(r) { return ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3; }
-  function _exec(r) { return ((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3; }
-  function _ctx(r)  { return 0.5 + 0.5*((+r.map_q4||0)+(+r.map_q7||0))/2; }
-  function _pat(r) {
-    if (r.score===8) return 'high';
-    if (typeof classifyPattern==='function') {
-      const cp=classifyPattern(r);
-      if (cp.intentional>cp.unintentional) return 'ina';
-      if (cp.unintentional>cp.intentional) return 'una';
-      return 'mixed';
-    }
-    return 'una';
-  }
   const patMap = {ina:'<span class="pattern-pill pattern-ina">INA</span>',una:'<span class="pattern-pill pattern-una">UNA</span>',mixed:'<span class="pattern-pill pattern-mixed">Mixed</span>',high:'<span class="pattern-pill pattern-high">High</span>'};
 
   // ── Stats ──────────────────────────────────────────────────────────
@@ -209,17 +210,17 @@ function _renderMapRecordsTab(records) {
   if (n) {
     const countries = new Set(mapRows.map(r=>r.country).filter(Boolean));
     const scores  = mapRows.map(r=>+r.score);
-    const archs   = mapRows.map(r=>_arch(r));
-    const execs   = mapRows.map(r=>_exec(r));
-    const ctxs    = mapRows.map(r=>_ctx(r));
+    const archs   = mapRows.map(r=>_mapArch(r));
+    const execs   = mapRows.map(r=>_mapExec(r));
+    const ctxs    = mapRows.map(r=>_mapCtx(r));
     const avg     = v => (v.reduce((a,b)=>a+b,0)/v.length).toFixed(2);
-    const pats    = mapRows.map(r=>_pat(r));
+    const pats    = mapRows.map(r=>_mapPat(r));
     const nIna   = pats.filter(p=>p==='ina').length;
     const nUna   = pats.filter(p=>p==='una').length;
     const nMixed = pats.filter(p=>p==='mixed').length;
     const nHigh  = pats.filter(p=>p==='high').length;
     // Compute cohort average PE — use stored pe_score when available, else derive
-    const peScores = mapRows.map(r => +r.pe_score || Math.pow(Math.max(0,_arch(r)*_exec(r)*_ctx(r)),1/3));
+    const peScores = mapRows.map(r => +r.pe_score || Math.pow(Math.max(0,_mapArch(r)*_mapExec(r)*_mapCtx(r)),1/3));
     const avgArch = archs.reduce((a,b)=>a+b,0)/archs.length;
     const avgExec = execs.reduce((a,b)=>a+b,0)/execs.length;
     const avgCtx  = ctxs.reduce((a,b)=>a+b,0)/ctxs.length;
@@ -286,7 +287,7 @@ function _renderMapRecordsTab(records) {
       return;
     }
     tbody.innerHTML = rows.map((r,i)=>{
-      const a=_arch(r), e=_exec(r), c=_ctx(r);
+      const a=_mapArch(r), e=_mapExec(r), c=_mapCtx(r);
       const cat=typeof getAdherenceCategory==='function'?getAdherenceCategory(r.score):{color:'var(--text)'};
       const d=new Date(r.timestamp).toLocaleDateString('en-US',{month:'short',day:'numeric'});
       const rowN = _mapPage*PAGE_SIZE+i+1;
@@ -297,7 +298,7 @@ function _renderMapRecordsTab(records) {
         <td style="color:var(--base);font-family:var(--font-mono);">${a.toFixed(2)}</td>
         <td style="color:var(--mvmt);font-family:var(--font-mono);">${e.toFixed(2)}</td>
         <td style="color:var(--strata);font-family:var(--font-mono);">${c.toFixed(2)}</td>
-        <td>${patMap[_pat(r)]||'—'}</td>
+        <td>${patMap[_mapPat(r)]||'—'}</td>
         <td>${_esc(r.country)||'Unknown'}</td>
         <td style="color:var(--dim);font-size:0.84rem;">${d}</td>
       </tr>`;
@@ -321,22 +322,14 @@ function exportMapCSV() {
   const records = (typeof dashMmasData!=='undefined'&&Array.isArray(dashMmasData)?dashMmasData:[])
     .filter(r => r.tool === 'map' || r.map_q1 !== undefined);
   if (!records.length) { alert('No MAP records to export.'); return; }
-  function _arch(r){ return ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3; }
-  function _exec(r){ return ((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3; }
-  function _ctx(r) { return 0.5 + 0.5*((+r.map_q4||0)+(+r.map_q7||0))/2; }
-  function _pat(r) {
-    if (r.score===8) return 'high';
-    if (typeof classifyPattern==='function'){ const cp=classifyPattern(r); return cp.intentional>cp.unintentional?'ina':cp.unintentional>cp.intentional?'una':'mixed'; }
-    return 'una';
-  }
   const header = 'patient_number,score,arch,exec,ctx,pattern,condition,country,timestamp';
   const rows = records.map(r=>[
     r.patient_number||'',
     r.score.toFixed(2),
-    _arch(r).toFixed(2),
-    _exec(r).toFixed(2),
-    _ctx(r).toFixed(2),
-    _pat(r),
+    _mapArch(r).toFixed(2),
+    _mapExec(r).toFixed(2),
+    _mapCtx(r).toFixed(2),
+    _mapPat(r),
     (r.condition||'').replace(/,/g,' '),
     (r.country||'').replace(/,/g,' '),
     r.timestamp||''

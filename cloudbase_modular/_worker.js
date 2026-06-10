@@ -228,6 +228,18 @@ export default {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
+        'Content-Security-Policy': [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net unpkg.com api.mapbox.com cdnjs.cloudflare.com www.gstatic.com",
+          "connect-src 'self' api.anthropic.com firebaseio.com *.firebaseio.com firebase.googleapis.com identitytoolkit.googleapis.com nominatim.openstreetmap.org api.adherence.cc api.mapbox.com events.mapbox.com securetoken.googleapis.com",
+          "style-src 'self' 'unsafe-inline' fonts.googleapis.com cdn.jsdelivr.net unpkg.com cdnjs.cloudflare.com",
+          "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net",
+          "img-src 'self' data: blob: *.mapbox.com",
+          "frame-src 'none'",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join('; '),
         'Permissions-Policy': 'microphone=(self)',
         'X-Frame-Options': 'SAMEORIGIN',
         'X-Content-Type-Options': 'nosniff',

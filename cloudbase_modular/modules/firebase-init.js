@@ -152,12 +152,6 @@ firebase.auth().onIdTokenChanged(function(user) {
 // Critical for LMIC deployments where network is intermittent.
 // Firebase queues writes locally and syncs when connection restores.
 try { firebase.database().goOnline(); } catch(e) {}
-(function enableOfflinePersistence() {
-  // keepSynced removed — it held the full assessments + peacs_assessments nodes
-  // in device memory permanently, causing progressive slowdown especially on
-  // mobile and low-RAM devices. Writes still queue offline via Firebase's built-in
-  // offline support; reads use normal on-demand fetching.
-})();
 
 // ══════════════════════════════════════════════
 // ATLAS AUDIT LOG

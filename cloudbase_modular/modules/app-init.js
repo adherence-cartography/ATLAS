@@ -364,7 +364,7 @@ function _applyBannerData(d) {
   const tagEl = banner.querySelector('.whd-date');
   if (tagEl) { tagEl.textContent = d.tag || ''; tagEl.style.color = t.tag; }
   const msgEl = banner.querySelector('.whd-message');
-  if (msgEl) msgEl.innerHTML = d.message || '';
+  if (msgEl) msgEl.innerHTML = _esc(d.message || '');
   const ctaEl = banner.querySelector('.whd-cta');
   if (ctaEl) {
     ctaEl.textContent = d.cta_text || 'Learn more';
@@ -501,7 +501,7 @@ function _updateBannerPreview(d) {
   const msgEl = document.getElementById('bp-msg');
   const ctaEl = document.getElementById('bp-cta');
   if (tagEl) { tagEl.textContent = d.tag || ''; tagEl.style.color = t.tag; }
-  if (msgEl) { msgEl.innerHTML = d.message; }
+  if (msgEl) { msgEl.innerHTML = _esc(d.message || ''); }
   if (ctaEl) { ctaEl.textContent = d.cta_text || 'Learn more'; ctaEl.style.background = t.cta; }
 }
 

@@ -18,15 +18,17 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" integrity="sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p" crossorigin="anonymous"></script>
 <!-- Lazy loader: Mapbox loaded only when map tab or globe is opened -->
 <script>
-const _lazyScripts = {};
-function lazyLoad(src, globalCheck) {
-  if (_lazyScripts[src]) return _lazyScripts[src];
-  if (globalCheck && window[globalCheck]) { _lazyScripts[src] = Promise.resolve(); return _lazyScripts[src]; }
-  _lazyScripts[src] = new Promise((res, rej) => {
-    const s = document.createElement('script'); s.src = src; s.async = true;
-    s.onload = res; s.onerror = rej; document.head.appendChild(s);
-  });
-  return _lazyScripts[src];
+if (typeof _lazyScripts === 'undefined') {
+  var _lazyScripts = {};
+  function lazyLoad(src, globalCheck) {
+    if (_lazyScripts[src]) return _lazyScripts[src];
+    if (globalCheck && window[globalCheck]) { _lazyScripts[src] = Promise.resolve(); return _lazyScripts[src]; }
+    _lazyScripts[src] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = src; s.async = true;
+      s.onload = res; s.onerror = rej; document.head.appendChild(s);
+    });
+    return _lazyScripts[src];
+  }
 }
 </script>
 <style>

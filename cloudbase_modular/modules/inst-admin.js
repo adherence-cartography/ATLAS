@@ -13,6 +13,7 @@ let _instAdminMembers = null;
  * @param {HTMLElement} container
  */
 async function renderInstAdmin(container) {
+  if (!isInstitutionMode()) return;
   if (!container) return;
   container.innerHTML = `
     <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:6px;">Institution · Team Management</div>
@@ -83,6 +84,7 @@ function _renderMemberTable(body) {
 }
 
 function openAddMemberModal() {
+  if (!isInstitutionMode()) return;
   const overlay = document.createElement('div');
   overlay.id = 'inst-add-member-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(2,6,18,0.88);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:24px;';
@@ -128,6 +130,7 @@ function openAddMemberModal() {
 }
 
 async function submitAddMember() {
+  if (!isInstitutionMode()) return;
   const fname  = document.getElementById('iam-fname')?.value.trim();
   const lname  = document.getElementById('iam-lname')?.value.trim();
   const email  = document.getElementById('iam-email')?.value.trim();
@@ -162,6 +165,7 @@ async function submitAddMember() {
 }
 
 async function revokeInstMember(key) {
+  if (!isInstitutionMode()) return;
   if (!key || !confirm('Revoke access for key ' + key + '? This cannot be undone.')) return;
 
   try {
