@@ -746,7 +746,7 @@ function _saAiNlqBubble(msg) {
     <div style="font-size:0.70rem;letter-spacing:0.12em;text-transform:uppercase;color:${_C.dim};">${isUser?'You':'ATLAS AI'}</div>
     <div style="max-width:88%;padding:10px 14px;border-radius:8px;font-size:0.90rem;line-height:1.6;
                background:${isUser?_C.amberFaint:_C.navy};border:1px solid ${isUser?'rgba(212,168,67,0.2)':_C.border};
-               color:${_C.text};">${isUser ? msg.content : _esc(msg.content)}</div>
+               color:${_C.text};">${isUser ? msg.content : (msg.html ? msg.content : _esc(msg.content))}</div>
   </div>`;
 }
 
@@ -759,7 +759,7 @@ function _saAiNlqSubmit() {
   _saAiRenderNLQ(document.getElementById('sa-ai-body'));
   setTimeout(async () => {
     const answer = await _saAiNlqAnswer(q);
-    _saAiNlqHistory.push({ role:'assistant', content:answer });
+    _saAiNlqHistory.push({ role:'assistant', content:answer, html:true });
     _saAiRenderNLQ(document.getElementById('sa-ai-body'));
     const hist = document.getElementById('sa-nlq-history');
     if (hist) hist.scrollTop = hist.scrollHeight;
@@ -773,7 +773,7 @@ function _saAiNlqClear() {
 
 async function _saAiNlqAnswer(q) {
   const key = (sessionStorage.getItem('atlas_claude_key')||'').trim();
-  if (key) {
+  if (key || ATLAS_AI_PROXY_URL) {
     try { return await _saAiCallClaude(q, key); } catch(_) { /* fall through */ }
   }
   return _saAiRuleAnswer(q);
@@ -831,7 +831,9 @@ function _saAiRuleAnswer(q) {
   }
   if (qL.includes('how many')||qL.includes('count')||qL.includes('total'))
     return `Totals: <strong>${mmasQaOnly.length.toLocaleString()} MMAS-8</strong>, <strong>${mapQaRecs.length.toLocaleString()} MAP</strong>, <strong>${peacs.length.toLocaleString()} PEACS</strong> across <strong>${wsMeans.length} workspaces</strong>.`;
-  return `Summary: <strong>${mmasQaOnly.length.toLocaleString()} MMAS-8</strong> (mean ${globalMean.toFixed(3)}), <strong>${mapQaRecs.length.toLocaleString()} MAP</strong>${mapGlobalMean!==null?' (mean PE '+mapGlobalMean.toFixed(3)+')':''}, <strong>${peacs.length.toLocaleString()} PEACS</strong>. Add a Claude API key in Config for full natural language support.`;
+  const _ruleKey = (sessionStorage.getItem('atlas_claude_key')||'').trim();
+  const hint = (_ruleKey || ATLAS_AI_PROXY_URL) ? '' : ' Add a Claude API key in Config for full natural language support.';
+  return `Summary: <strong>${mmasQaOnly.length.toLocaleString()} MMAS-8</strong> (mean ${globalMean.toFixed(3)}), <strong>${mapQaRecs.length.toLocaleString()} MAP</strong>${mapGlobalMean!==null?' (mean PE '+mapGlobalMean.toFixed(3)+')':''}, <strong>${peacs.length.toLocaleString()} PEACS</strong>.${hint}`;
 }
 
 async function _saAiCallClaude(query, apiKey) {
