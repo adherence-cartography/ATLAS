@@ -1,0 +1,9 @@
+{
+  "name": "atlas-claude-proxy",
+  "version": "1.0.0",
+  "description": "ATLAS secure Anthropic Claude proxy Lambda",
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}
