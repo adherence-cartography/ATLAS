@@ -1,8 +1,7 @@
 // sa-command.js — Command Center: GAI gauge, data loader, heatmap, workspace breakdown, live feed, AI briefing, anomaly detection
 
-// Proxy URL: if set in ATLAS_CONFIG, all Claude calls route through the Lambda
-// proxy (key stays server-side). Falls back to direct browser API call.
-const ATLAS_AI_PROXY_URL = window.ATLAS_CONFIG?.aiProxyUrl || null;
+// Proxy URL resolved inline per-call via window.ATLAS_CONFIG?.aiProxyUrl
+// (declared as const in sa-ai.js — do not redeclare here; all scripts share one global scope)
 
 function _saRenderCommand(container) {
   container.innerHTML = `
@@ -743,8 +742,8 @@ async function _saCallClaudeAPI(contextJSON) {
     ? `${contextJSON.query}\n\nData context: ${JSON.stringify(enrichedCtx)}`
     : `Summarise this adherence data: ${JSON.stringify(enrichedCtx)}`;
 
-  const useProxy   = !!ATLAS_AI_PROXY_URL;
-  const endpoint   = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
+  const useProxy   = !!(window.ATLAS_CONFIG?.aiProxyUrl);
+  const endpoint   = useProxy ? window.ATLAS_CONFIG.aiProxyUrl : 'https://api.anthropic.com/v1/messages';
   const idToken    = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
   const reqHeaders = useProxy
     ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }

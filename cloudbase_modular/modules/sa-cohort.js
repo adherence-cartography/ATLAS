@@ -5,9 +5,8 @@
 // Builder · Comparison · Risk Stratification · Longitudinal Trajectories
 // ══════════════════════════════════════════════════════════════════════════════
 
-// Proxy URL: if set in ATLAS_CONFIG, all Claude calls route through the Lambda
-// proxy (key stays server-side). Falls back to direct browser API call.
-const ATLAS_AI_PROXY_URL = window.ATLAS_CONFIG?.aiProxyUrl || null;
+// Proxy URL resolved inline per-call via window.ATLAS_CONFIG?.aiProxyUrl
+// (declared as const in sa-ai.js — do not redeclare here; all scripts share one global scope)
 
 // Cohort state
 const _saCohorts   = {};      // { id: { name, filters, records } } — up to 20 saved cohorts
@@ -524,8 +523,8 @@ async function _saCiInterpretWithClaude() {
   const model =  sessionStorage.getItem('atlas_claude_model') || 'claude-haiku-4-5-20251001';
 
   try {
-    const useProxy   = !!ATLAS_AI_PROXY_URL;
-    const endpoint   = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
+    const useProxy   = !!(window.ATLAS_CONFIG?.aiProxyUrl);
+    const endpoint   = useProxy ? window.ATLAS_CONFIG.aiProxyUrl : 'https://api.anthropic.com/v1/messages';
     const idToken    = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
     const reqHeaders = useProxy
       ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
