@@ -45,7 +45,16 @@ function loadMmasCohortData() {
   }
 
   document.getElementById('mmas-last-updated').textContent = _t.status_loading || 'Loading…';
-  database.ref('assessments').once('value', snap => {
+
+  // PERF: For non-superadmin roles, use server-side filtering by institution_code to avoid
+  // downloading the entire assessments table on every dashboard load.
+  // NOTE: firebase/database.rules.json requires ".indexOn": ["institution_code"] on the
+  // assessments node for this orderByChild query to run efficiently on the server.
+  const mmasRef = isSuperAdmin()
+    ? database.ref('assessments')
+    : database.ref('assessments').orderByChild('institution_code').equalTo(currentWorkspace);
+
+  mmasRef.once('value', snap => {
     const all = snap.val();
     const allRecords = all ? Object.values(all) : [];
 
@@ -54,6 +63,7 @@ function loadMmasCohortData() {
       _finishMmasLoad(dashMmasData);
     } else if (isInstitutionMode()) {
       resolveAllowedWorkspaces().then(allowedWS => {
+        // In-memory filter retained as safety net; Firebase already scoped to institution_code === ws.
         dashMmasData = allRecords.filter(r => {
           const code   = (r.institution_code   || '').toUpperCase();
           const parent = (r.parent_institution || '').toUpperCase();
@@ -64,6 +74,7 @@ function loadMmasCohortData() {
       });
     } else if (isPIMode()) {
       // PI sees their own workspace + all students whose parent_pi === this PI key
+      // In-memory filter retained as safety net; Firebase already scoped to institution_code === ws.
       resolveAllowedWorkspaces().then(allowedWS => {
         dashMmasData = allRecords.filter(r => {
           const code     = (r.institution_code || '').toUpperCase();
@@ -73,6 +84,7 @@ function loadMmasCohortData() {
         _finishMmasLoad(dashMmasData);
       });
     } else {
+      // In-memory filter retained as safety net; Firebase already scoped to institution_code === ws.
       dashMmasData = allRecords.filter(r =>
         (r.institution_code || '').toUpperCase() === ws
       );
@@ -600,7 +612,16 @@ function loadPeacsCohortData() {
   }
 
   document.getElementById('peacs-last-updated').textContent = _t.status_loading || 'Loading…';
-  database.ref('peacs_assessments').once('value', snap => {
+
+  // PERF: For non-superadmin roles, use server-side filtering by institution_code to avoid
+  // downloading the entire peacs_assessments table on every dashboard load.
+  // NOTE: firebase/database.rules.json requires ".indexOn": ["institution_code"] on the
+  // peacs_assessments node for this orderByChild query to run efficiently on the server.
+  const peacsRef = isSuperAdmin()
+    ? database.ref('peacs_assessments')
+    : database.ref('peacs_assessments').orderByChild('institution_code').equalTo(currentWorkspace);
+
+  peacsRef.once('value', snap => {
     const all = snap.val();
     const allRecords = all ? Object.values(all) : [];
     const ws = (currentWorkspace || '').toUpperCase();
@@ -617,6 +638,7 @@ function loadPeacsCohortData() {
       return;
     } else if (isInstitutionMode()) {
       resolveAllowedWorkspaces().then(allowedWS => {
+        // In-memory filter retained as safety net; Firebase already scoped to institution_code === ws.
         dashPeacsData = allRecords.filter(r => {
           const code   = (r.institution_code  || '').toUpperCase();
           const parent = (r.parent_institution || '').toUpperCase();
@@ -631,6 +653,7 @@ function loadPeacsCohortData() {
       return;
     } else if (isPIMode()) {
       // PI sees own workspace + direct students (parent_pi) + co-PI sites (allowedWS)
+      // In-memory filter retained as safety net; Firebase already scoped to institution_code === ws.
       resolveAllowedWorkspaces().then(allowedWS => {
         dashPeacsData = allRecords.filter(r => {
           const code     = (r.institution_code || '').toUpperCase();
@@ -648,6 +671,7 @@ function loadPeacsCohortData() {
       // Handled above before Firebase call — should not reach here.
       dashPeacsData = [];
     } else {
+      // In-memory filter retained as safety net; Firebase already scoped to institution_code === ws.
       dashPeacsData = allRecords.filter(r =>
         (r.institution_code || '').toUpperCase() === ws
       );
