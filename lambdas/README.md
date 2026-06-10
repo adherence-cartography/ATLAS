@@ -8,21 +8,44 @@ All AWS Lambda source code lives here. One subfolder = one deployed Lambda funct
 
 | Folder | AWS Function Name | API Gateway URL | Region |
 |---|---|---|---|
-| `../lambda/` | `atlas-lambda` _(main)_ | `https://api.adherence.cc/` | us-east-1 |
-| `atlas-api/` | _(your xckeiwruv7 Lambda)_ | `https://xckeiwruv7.execute-api.us-east-1.amazonaws.com/` | us-east-1 |
-| `adherence-pulse/` | `atlas-adherence-pulse` | _(EventBridge scheduled, no HTTP)_ | us-east-1 |
+| Folder | AWS Function Name | API Gateway URL | Region |
+|---|---|---|---|
+| `atlas-main/` | `zoe-atlas-proxy` _(or atlas-lambda)_ | `https://api.adherence.cc/` | us-east-1 |
+| `atlas-api/` | _(xckeiwruv7 Lambda)_ | `https://xckeiwruv7.execute-api.us-east-1.amazonaws.com/` | us-east-1 |
+| `adherence-pulse/` | `atlas-adherence-pulse` | _(EventBridge scheduled trigger, no HTTP)_ | us-east-1 |
 | `gai-api/` | `atlas-gai-api` | `https://api.adherence.cc/gai` | us-east-1 |
 | `gai-realtime/` | _(not yet deployed)_ | _(future)_ | us-east-1 |
 
-**`../lambda/`** (atlas-main) is the original main Lambda — ZOE, Stripe, key issuance, OTP,
-cert verification. Source lives at `atlas_v8/lambda/`. Edit it there, not here.
+### atlas-main — the core ATLAS Lambda
 
-**`atlas-api/`** is the Lambda currently deployed at `xckeiwruv7...`. It handles:
-- `POST /claude` — Anthropic AI proxy (all Mission Control AI features)
-- `POST /inst/*` — institution self-service provisioning
+Handles all authentication, key management, and business logic. Three files deployed together:
 
-> `claude-proxy/` and `institution/` in this folder are reference copies showing what
-> a future split would look like. Deploy `atlas-api/` for now.
+- `index.mjs` — main handler (2,700+ lines): key validation, Firebase token minting, OTP/MFA,
+  key issuance, magic links, cert verification, ZOE AI, DynamoDB (UAE PDPL), admin routes,
+  institution seat provisioning, GAI inquiry
+- `lambda_stripe_handler.mjs` — Stripe checkout sessions and webhook handling
+- `lambda_integrations.mjs` — REDCap and FHIR webhook integrations
+
+**Update this Lambda when:** changing key validation, email templates, OTP behavior, Stripe
+flows, admin endpoints, UAE data residency logic, or adding new integrations.
+
+**Does NOT handle:** Claude AI calls or institution member provisioning (those are `atlas-api`).
+
+> The source of truth for atlas-main is `../lambda/` (original location). The files in
+> `atlas-main/` here are kept in sync — always edit `../lambda/` and copy here before deploying.
+> `../lambda/index_old.mjs` is an outdated backup — ignore it.
+
+---
+
+### atlas-api — Claude proxy + institution provisioning
+
+One Lambda, two responsibilities:
+- `POST /claude` — Anthropic AI proxy for all Mission Control AI features (Intelligence Brief,
+  NLQ, Cohort comparison). Validates Firebase ID token before every call.
+- `POST /inst/*` — institution self-service member key provisioning
+
+**Update this Lambda when:** changing AI proxy behavior, adding inst provisioning routes,
+or updating the Firebase auth check.
 
 ---
 
