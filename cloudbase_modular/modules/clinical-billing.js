@@ -301,7 +301,7 @@ function renderSiteTrackerMap() {
   const container = document.getElementById('site-tracker-map-container');
   if (!container || !window.mapboxgl) return;
   if (!mapboxgl.accessToken) {
-    mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+    mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
   }
 
   if (_siteTrackerMap) {

@@ -10,7 +10,7 @@ let _saGlobeFilter    = 'all';  // 'all' | 'mmas' | 'map' | 'peacs'
 let _saGlobeClickPanel = null;  // current cluster detail panel content
 let _saPoiPopup       = null;   // active Mapbox popup for POI clicks
 
-const _MB_TOKEN = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+const _MB_TOKEN = ATLAS_MAPBOX_TOKEN;
 
 function _saRenderGlobe(container) {
   // The globe tab takes over the FULL main area — zero padding

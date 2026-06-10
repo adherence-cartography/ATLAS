@@ -958,7 +958,7 @@ function initDashMiniMaps() {
   // Mini-maps: only initialize for non-institution modes
   if (!isInstitutionMode()) {
   ensureMapbox().then(() => {
-  mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+  mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
 
   // One WebGL draw call for all points instead of 1800+ DOM Marker nodes
   function _addDotLayer(map, srcId, features) {

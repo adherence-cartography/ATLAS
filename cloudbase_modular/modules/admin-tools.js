@@ -436,7 +436,7 @@ function initAmbientGlobe() {
   const entryScreen = document.getElementById('screen-entry');
   if (!entryScreen) return;
   ensureMapbox().then(() => {
-    mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+    mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
     if (_ambientGlobeInited) return; // double-guard in case called twice while loading
   // Target the dedicated left column in the split layout
   const globeCol = document.getElementById('entry-globe-col');

@@ -2725,7 +2725,7 @@ function initPeacsMap() {
   peacsMapInited = true;
   peacsClusters = {};
   ensureMapbox().then(() => {
-    mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+    mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
     peacsMap = new mapboxgl.Map({
       container:'peacs-map',
       style:(window._mapboxThemeStyle||'mapbox://styles/mapbox/dark-v11'),

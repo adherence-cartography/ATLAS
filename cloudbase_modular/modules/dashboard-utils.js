@@ -559,7 +559,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (!mmasInlineMapInited) {
           mmasInlineMapInited = true;
           ensureMapbox().then(() => {
-            mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+            mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
             mmasInlineMap = new mapboxgl.Map({
               container: 'mmas-map-inline',
               style: window._mapboxThemeStyle || 'mapbox://styles/mapbox/dark-v11',

@@ -31,3 +31,6 @@ function ensureMapbox()  { return lazyLoad(MAPBOX_JS,  'mapboxgl'); }
 function ensurePlotly()  { return lazyLoad(PLOTLY_JS,  'Plotly'); }
 /** @returns {Promise<void>} Resolves when SheetJS (XLSX) is ready */
 function ensureSheetJS() { return lazyLoad(SHEETJS,    'XLSX'); }
+
+/** Canonical Mapbox public token — update here to rotate across all modules */
+const ATLAS_MAPBOX_TOKEN = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';

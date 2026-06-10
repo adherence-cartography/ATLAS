@@ -1444,7 +1444,7 @@ function stuToggleCohortMap(headerBtn) {
 
 function _stuInitCohortMap() {
   if (!window.mapboxgl) return;
-  if (!mapboxgl.accessToken) mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+  if (!mapboxgl.accessToken) mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
 
   var container = document.getElementById('stu-cohort-mapbox');
   if (!container) return;
@@ -1602,7 +1602,7 @@ function resToggleCohortMap(headerBtn) {
 
 function _resInitCohortMap() {
   if (!window.mapboxgl) return;
-  if (!mapboxgl.accessToken) mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+  if (!mapboxgl.accessToken) mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
 
   var container = document.getElementById('res-cohort-mapbox');
   if (!container) return;

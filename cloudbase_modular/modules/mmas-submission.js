@@ -25,7 +25,7 @@ function initMmasMap() {
 
   ensureMapbox().then(() => {
     clearTimeout(_mapTimeout);
-    mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+    mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
     mmasMapInstance = new mapboxgl.Map({
       container: 'mmas-map',
       style: 'mapbox://styles/mapbox/light-v11',
@@ -411,7 +411,7 @@ function enterSpectatorMode() {
   if (!spectatorMapInited) {
     spectatorMapInited = true;
     ensureMapbox().then(() => {
-    mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+    mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
     spectatorMap = new mapboxgl.Map({
       container:'spectator-map',
       style:'mapbox://styles/mapbox/satellite-streets-v12',
@@ -600,7 +600,7 @@ function enterPeacsSpectatorMode() {
   if (!peacsSpectatorInited) {
     peacsSpectatorInited = true;
     ensureMapbox().then(() => {
-    mapboxgl.accessToken = 'pk.eyJ1IjoicGhpbG03MTUiLCJhIjoiY21lOHBudmd6MGd5ejJscHdiNmpvNDQ1biJ9.viiogsAaQqrQ1GYTYIUaCA';
+    mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
     peacsSpectatorMap = new mapboxgl.Map({
       container: 'peacs-spectator-map',
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
