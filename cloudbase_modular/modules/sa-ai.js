@@ -115,7 +115,15 @@ function _saAiRenderBrief(body) {
   const last7all  = [...mmasOnly,...mapRecs,...peacs].filter(r=>(r.timestamp||0)>=now-7*86400000).length;
 
   // ── Workspace stats (normalize all instrument scores to 0–1) ────────────────
-  const wsStats = Object.keys(ws).map(code => {
+  // Derive workspace set from assessment records directly — the Firebase
+  // workspaces/ node only contains explicitly-configured keys (a small subset
+  // of all issued keys) so using Object.keys(ws) would under-count badly.
+  const allDataCodes = new Set([
+    ...mmasOnly.map(r=>r.institution_code||r.workspace).filter(Boolean),
+    ...mapRecs.map(r=>r.institution_code||r.workspace).filter(Boolean),
+    ...peacs.map(r=>r.institution_code||r.workspace).filter(Boolean),
+  ]);
+  const wsStats = [...allDataCodes].map(code => {
     const mr = mmasOnly.filter(r=>(r.institution_code||r.workspace)===code);
     const mapr= mapRecs.filter(r=>(r.institution_code||r.workspace)===code);
     const pr  = peacs.filter(r=>(r.institution_code||r.workspace)===code);
