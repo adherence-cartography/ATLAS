@@ -320,7 +320,14 @@ function _rppRender() {
         onclick="rppToggleDetail(${idx})">
       <td style="padding:10px 14px;font-family:var(--font-mono);font-size:0.71rem;color:var(--bright);font-weight:500;">${p.pid}</td>
       <td style="padding:10px;text-align:center;">${coverageCell}</td>
-      <td style="padding:10px;text-align:center;">${mmasCell}</td>
+      <td style="padding:10px;text-align:center;">
+        ${mmasCell}
+        ${(() => {
+          if (!latestMmas) return '';
+          const risk = _computePatientRisk(latestMmas);
+          return `<span style="display:inline-block;margin-left:6px;color:${risk.color};font-size:0.75rem;vertical-align:middle;" title="Adherence Risk: ${risk.level}">● ${risk.level}</span>`;
+        })()}
+      </td>
       <td style="padding:10px;text-align:center;">${peacsCell}</td>
       <td style="padding:10px;text-align:center;">${patLabels[pat] || '—'}</td>
       ${trendCell}
@@ -329,9 +336,18 @@ function _rppRender() {
     </tr>
     <tr id="rpp-detail-${idx}" style="display:none;background:var(--card2);border-bottom:1px solid var(--border);">
       <td colspan="8" style="padding:16px 18px;">
-        <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+          ${(() => {
+            const aiConfigured = !!(window.ATLAS_CONFIG?.aiProxyUrl || sessionStorage.getItem('atlas_claude_key'));
+            if (aiConfigured) {
+              return `<button id="rpp-counsel-btn-${idx}" onclick="event.stopPropagation();_rppGenerateCounseling(${idx});" style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(139,111,245,0.08);border:1px solid rgba(139,111,245,0.25);color:#8b6ff5;border-radius:6px;padding:5px 12px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(139,111,245,0.18)'" onmouseout="this.style.background='rgba(139,111,245,0.08)'">✦ Generate Counseling Brief</button>`;
+            } else {
+              return `<span style="font-size:0.72rem;color:var(--dim,#6b8099);font-style:italic;">Enable AI in Mission Control to generate counseling briefs</span>`;
+            }
+          })()}
           <button onclick="event.stopPropagation();_rppPrintRecord(${JSON.stringify(p).replace(/</g,'\\u003c').replace(/>/g,'\\u003e')});" style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(78,156,245,0.07);border:1px solid rgba(78,156,245,0.22);color:var(--base);border-radius:6px;padding:5px 12px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(78,156,245,0.15)'" onmouseout="this.style.background='rgba(78,156,245,0.07)'">🖨 Print Result Card</button>
         </div>
+        <div id="rpp-counsel-output-${idx}" style="display:none;"></div>
         ${(() => {
           // Collect unique studies from this patient's MMAS records
           const studyMap = {};
@@ -499,6 +515,211 @@ function _renderMAPProtocolPanel(record, container) {
   if (panel) container.appendChild(panel);
   return panel;
 }
+
+// ── AI Helper: call ATLAS Claude proxy or direct API ─────────────────────────
+async function _callAtlasAI(userPrompt, systemPrompt) {
+  const proxyUrl = window.ATLAS_CONFIG?.aiProxyUrl;
+  const sessionKey = sessionStorage.getItem('atlas_claude_key');
+  if (!proxyUrl && !sessionKey) {
+    return null; // AI not configured
+  }
+  const headers = { 'Content-Type': 'application/json' };
+  let endpoint;
+  if (proxyUrl) {
+    endpoint = proxyUrl;
+    try {
+      const tok = await firebase.auth().currentUser?.getIdToken();
+      if (tok) headers['Authorization'] = `Bearer ${tok}`;
+    } catch(e) {}
+  } else {
+    endpoint = 'https://api.anthropic.com/v1/messages';
+    headers['x-api-key'] = sessionKey;
+    headers['anthropic-version'] = '2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 512, system: systemPrompt, messages: [{ role: 'user', content: userPrompt }] })
+  });
+  const data = await res.json();
+  return data?.content?.[0]?.text || null;
+}
+
+// ── AI Helper: counseling brief proxy/direct call (Feature 2) ────────────────
+async function _clinicCallAI(userPrompt, systemPrompt) {
+  const proxyUrl = window.ATLAS_CONFIG?.aiProxyUrl;
+  const sessionKey = sessionStorage.getItem('atlas_claude_key');
+  if (!proxyUrl && !sessionKey) return null;
+  const headers = { 'Content-Type': 'application/json' };
+  let endpoint;
+  if (proxyUrl) {
+    endpoint = proxyUrl;
+    try {
+      const tok = await firebase.auth().currentUser?.getIdToken();
+      if (tok) headers['Authorization'] = `Bearer ${tok}`;
+    } catch(e) {}
+  } else {
+    endpoint = 'https://api.anthropic.com/v1/messages';
+    headers['x-api-key'] = sessionKey;
+    headers['anthropic-version'] = '2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST', headers,
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, system: systemPrompt, messages: [{ role: 'user', content: userPrompt }] })
+    });
+    const data = await res.json();
+    return data?.content?.[0]?.text || null;
+  } catch(e) { return null; }
+}
+
+// ── Per-patient adherence risk level (Feature 1) ─────────────────────────────
+function _computePatientRisk(record) {
+  const mmasScore = parseFloat(record.mmas_score || record.score || record.mmas8_score || 0);
+  const mmasPct = Math.min(mmasScore / 8, 1);
+  const archScore = parseFloat(record.map_architecture || record.arch_score || record.architecture || 0.5);
+  const execScore = parseFloat(record.map_execution || record.exec_score || record.execution || 0.5);
+  const ctxScore = parseFloat(record.map_context || record.ctx_score || record.context || 0.5);
+  // If MAP subscale data exists, weight composite; otherwise use MMAS only
+  const hasMAP = !!(record.map_architecture || record.arch_score);
+  const composite = hasMAP ? (mmasPct * 0.5) + (((archScore + execScore + ctxScore) / 3) * 0.5) : mmasPct;
+  if (composite >= 0.75) return { level: 'Low Risk', color: 'var(--optimal, #4caf50)' };
+  if (composite >= 0.50) return { level: 'Moderate', color: 'var(--moderate, #ff9800)' };
+  return { level: 'High Risk', color: 'var(--poor, #f44336)' };
+}
+
+// ── Feature 1 helper: show counseling brief modal ────────────────────────────
+function _atlasShowCounselingModal(patientData) {
+  const existingModal = document.getElementById('atlas-counseling-modal');
+  if (existingModal) existingModal.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'atlas-counseling-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  modal.innerHTML = `
+    <div style="background:var(--card,#1a2332);border:1px solid var(--border,#2a3a4a);border-radius:12px;padding:24px 28px;max-width:540px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:var(--font-mono,'IBM Plex Mono',monospace);font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--base,#4e9cf5);">Counseling Brief</div>
+        <button id="atlas-counsel-close" style="background:none;border:none;color:var(--dim,#6b8099);cursor:pointer;font-size:1.1rem;line-height:1;" title="Close">✕</button>
+      </div>
+      <div id="atlas-counsel-body" style="font-size:0.90rem;color:var(--text,#c8d6e8);line-height:1.65;min-height:80px;white-space:pre-wrap;"></div>
+      <div style="margin-top:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button id="atlas-counsel-copy" style="font-family:var(--font-mono,'IBM Plex Mono',monospace);font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(78,156,245,0.10);border:1px solid rgba(78,156,245,0.30);color:var(--base,#4e9cf5);border-radius:6px;padding:6px 14px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='rgba(78,156,245,0.20)'" onmouseout="this.style.background='rgba(78,156,245,0.10)'">Copy to Clipboard</button>
+        <button id="atlas-counsel-regen" style="font-family:var(--font-mono,'IBM Plex Mono',monospace);font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(139,111,245,0.10);border:1px solid rgba(139,111,245,0.30);color:#8b6ff5;border-radius:6px;padding:6px 14px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='rgba(139,111,245,0.20)'" onmouseout="this.style.background='rgba(139,111,245,0.10)'">Regenerate</button>
+        <span style="font-size:0.72rem;color:var(--dim,#6b8099);margin-left:auto;font-style:italic;">AI-generated — review before use</span>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const bodyEl = document.getElementById('atlas-counsel-body');
+  const closeBtn = document.getElementById('atlas-counsel-close');
+  const copyBtn = document.getElementById('atlas-counsel-copy');
+  const regenBtn = document.getElementById('atlas-counsel-regen');
+
+  closeBtn.addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+  const systemPrompt = `You are a clinical pharmacist AI assistant for the ATLAS adherence platform. Generate a brief, practical counseling script (3-5 sentences) for a pharmacist to use when speaking with a patient. Be empathetic, specific to the adherence pattern identified, and suggest one actionable intervention. Plain language only — no clinical jargon.`;
+
+  const buildUserPrompt = () => {
+    const mmasScore = parseFloat(patientData.mmasScore || 0);
+    const cat = typeof getAdherenceCategory === 'function' ? getAdherenceCategory(mmasScore) : { label: mmasScore >= 6 ? 'High' : mmasScore >= 4 ? 'Medium' : 'Low' };
+    const level = cat.label || (mmasScore >= 6 ? 'High' : mmasScore >= 4 ? 'Medium' : 'Low');
+    const phenotype = patientData.phenotype || 'PA';
+    const phenoDescMap = { INA: 'Intentional Non-Adherence', UNA: 'Unintentional Non-Adherence', PA: 'Partial Adherence', A: 'Adherent' };
+    const phenoDesc = phenoDescMap[phenotype] || phenotype;
+    const archScore = patientData.archScore !== undefined ? patientData.archScore.toFixed(2) : 'N/A';
+    const execScore = patientData.execScore !== undefined ? patientData.execScore.toFixed(2) : 'N/A';
+    const ctxScore = patientData.ctxScore !== undefined ? patientData.ctxScore.toFixed(2) : 'N/A';
+    const flagged = patientData.flaggedItems && patientData.flaggedItems.length ? patientData.flaggedItems.join(', ') : 'Not available';
+    return `Patient adherence profile:\n- MMAS-8 Score: ${mmasScore.toFixed(2)}/8 (${level})\n- MAP Phenotype: ${phenotype} (${phenoDesc})\n- Architecture domain: ${archScore} (belief/motivation)\n- Execution domain: ${execScore} (habit/routine)\n- Context domain: ${ctxScore} (environment/access)\n- Lowest scoring items: ${flagged}\n\nGenerate a pharmacist counseling script for this specific adherence pattern.`;
+  };
+
+  const runGenerate = async () => {
+    bodyEl.textContent = 'Generating…';
+    copyBtn.disabled = true;
+    regenBtn.disabled = true;
+    try {
+      const result = await _callAtlasAI(buildUserPrompt(), systemPrompt);
+      bodyEl.textContent = result || 'No response received. Check AI configuration.';
+    } catch(e) {
+      bodyEl.textContent = 'Error generating script: ' + (e.message || 'Unknown error');
+    }
+    copyBtn.disabled = false;
+    regenBtn.disabled = false;
+  };
+
+  copyBtn.addEventListener('click', () => {
+    const text = bodyEl.textContent;
+    if (navigator.clipboard && text) {
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy to Clipboard'; }, 1800);
+      });
+    }
+  });
+  regenBtn.addEventListener('click', runGenerate);
+
+  runGenerate();
+}
+
+// ── Feature 2 entry point: generate counseling brief inline in expanded row ───
+async function _rppGenerateCounseling(idx) {
+  const allRows = window._rppFiltered || [];
+  const p = allRows[idx];
+  if (!p) return;
+
+  const mmasSorted = [...p.mmas].sort((a, b) => (a.timestamp||0) - (b.timestamp||0));
+  const latestMmas = mmasSorted[mmasSorted.length - 1];
+  if (!latestMmas) {
+    if (typeof showToast === 'function') showToast('No MMAS record available for this patient.', 2500);
+    return;
+  }
+
+  const outputDiv = document.getElementById(`rpp-counsel-output-${idx}`);
+  const btn = document.getElementById(`rpp-counsel-btn-${idx}`);
+  if (!outputDiv) return;
+
+  // Show loading state
+  outputDiv.style.display = 'block';
+  outputDiv.innerHTML = `<div style="background:var(--surface2,#1a1a2e);border:1px solid var(--border,#333);border-radius:6px;padding:1rem;margin-top:0.75rem;"><span style="font-size:0.875rem;color:var(--muted);">Generating brief…</span></div>`;
+  if (btn) btn.disabled = true;
+
+  // Gather patient data
+  const mmasScore = _recomputeMMASScore(latestMmas);
+
+  // MAP domain scores from map_q* fields
+  const archScore = ((+latestMmas.map_q2||0) + (+latestMmas.map_q3||0) + (+latestMmas.map_q6||0)) / 3;
+  const execScore = ((+latestMmas.map_q1||0) + (+latestMmas.map_q5||0) + (+latestMmas.map_q8||0)) / 3;
+  const ctxScore  = 0.5 + 0.5 * (((+latestMmas.map_q4||0) + (+latestMmas.map_q7||0)) / 2);
+
+  // MAP phenotype (from stored field or derived)
+  let phenotype = latestMmas.map_phenotype || latestMmas.phenotype || 'PA';
+  try {
+    if (typeof deriveMAPPhenotype === 'function') phenotype = deriveMAPPhenotype(latestMmas);
+  } catch(e) {}
+
+  const systemPrompt = 'You are a clinical pharmacist AI assistant. Generate a brief, practical counseling script (3-5 sentences) for a pharmacist speaking with a patient about medication adherence. Be empathetic, specific to the identified adherence pattern, and suggest one concrete actionable intervention. Use plain language — no clinical jargon.';
+  const userPrompt = `Patient adherence profile:\n- MMAS-8 Score: ${mmasScore.toFixed(2)}/8\n- MAP Phenotype: ${phenotype}\n- Architecture domain (beliefs/motivation): ${archScore.toFixed(2)}\n- Execution domain (habits/routine): ${execScore.toFixed(2)}\n- Context domain (environment/access): ${ctxScore.toFixed(2)}\n\nGenerate a pharmacist counseling script for this specific patient.`;
+
+  const scriptText = await _clinicCallAI(userPrompt, systemPrompt);
+  if (btn) btn.disabled = false;
+
+  if (!scriptText) {
+    outputDiv.innerHTML = `<div style="background:var(--surface2,#1a1a2e);border:1px solid var(--border,#333);border-radius:6px;padding:1rem;margin-top:0.75rem;"><span style="font-size:0.875rem;color:var(--dim,#6b8099);">No response received. Check AI configuration in Mission Control.</span></div>`;
+    return;
+  }
+
+  outputDiv.innerHTML = `
+    <div style="background:var(--surface2,#1a1a2e);border:1px solid var(--border,#333);border-radius:6px;padding:1rem;margin-top:0.75rem;">
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em;">AI Counseling Brief <span style="color:var(--poor,#f44336)">· Review before use</span></div>
+      <p style="font-size:0.875rem;line-height:1.6;color:var(--text);margin:0 0 0.75rem;">${_esc ? _esc(scriptText) : scriptText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+      <button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent)" style="font-size:0.7rem;padding:0.25rem 0.6rem;background:var(--accent,#4e9cf5);color:#fff;border:none;border-radius:4px;cursor:pointer;">Copy</button>
+    </div>`;
+}
+window._rppGenerateCounseling = _rppGenerateCounseling;
 
 function _rppUpdateSummary() {
   const bar = document.getElementById('rpp-summary-bar');

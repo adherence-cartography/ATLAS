@@ -451,3 +451,100 @@ async function accIssueKey() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// ATLAS CITATION GENERATOR
+// Generates workspace-aware, instrument-aware citations in APA, AMA,
+// Vancouver, and Methods Section Template formats.
+// ══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Generates formatted citations for ATLAS and its instruments based on the
+ * active workspace and detected data (MMAS-8, MAP, PEACS).
+ * Opens a modal with copy buttons for APA, AMA, Vancouver, and a Methods
+ * Section Template.
+ * @returns {void}
+ */
+function generateATLASCitation() {
+  const ws = window.currentWorkspace || 'WORKSPACE';
+  const today = new Date();
+  const accessDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const year = today.getFullYear();
+  const version = document.querySelector('meta[name="atlas-build"]')?.content || 'v8';
+
+  // Determine what instruments were used
+  const usedMMAS = true; // always
+  const usedMAP = !!(window.dashMapData?.length || window._mapRecords?.length);
+  const usedPEACS = !!(window.dashPeacsData?.length || window._peacsRecords?.length);
+
+  const instruments = ['MMAS-8'];
+  if (usedMAP) instruments.push('MAP');
+  if (usedPEACS) instruments.push('PEACS');
+
+  const instrumentStr = instruments.join(', ');
+
+  const citations = {
+    apa: `Morisky, D. E. (${year}). ATLAS Adherence Cartography Platform (${version}) [Software]. Adherence Inc. Accessed ${accessDate}. https://atlas.adherence.cc\n\nMorisky, D. E., Ang, A., Krousel-Wood, M., & Ward, H. J. (2008). Predictive validity of a medication adherence measure in an outpatient setting. Journal of Clinical Hypertension, 10(5), 348–354. https://doi.org/10.1111/j.1751-7176.2008.07572.x`,
+
+    ama: `Morisky DE. ATLAS Adherence Cartography Platform (${version}) [Software]. Adherence Inc; ${year}. Accessed ${accessDate}. https://atlas.adherence.cc\n\nMorisky DE, Ang A, Krousel-Wood M, Ward HJ. Predictive validity of a medication adherence measure in an outpatient setting. J Clin Hypertens. 2008;10(5):348–354. doi:10.1111/j.1751-7176.2008.07572.x`,
+
+    vancouver: `Morisky DE. ATLAS Adherence Cartography Platform (${version}) [Software]. Adherence Inc.; ${year} [cited ${accessDate}]. Available from: https://atlas.adherence.cc\n\nMorisky DE, Ang A, Krousel-Wood M, Ward HJ. Predictive validity of a medication adherence measure in an outpatient setting. J Clin Hypertens. 2008;10(5):348-354.`,
+
+    methods: `Data collection and adherence assessment were conducted using the ATLAS Adherence Cartography Platform (${version}; Adherence Inc., https://atlas.adherence.cc), employing the ${instrumentStr} instrument${instruments.length > 1 ? 's' : ''}. Workspace code: ${ws}. Data collection period: [INSERT DATES]. All assessments were conducted in accordance with the validated scoring protocols established by Morisky et al. (2008).`
+  };
+
+  _showCitationModal(citations);
+}
+
+/**
+ * Renders and appends the citation modal to the document body.
+ * Removes any existing instance before creating a fresh one.
+ * @param {{ apa: string, ama: string, vancouver: string, methods: string }} citations
+ * @returns {void}
+ */
+function _showCitationModal(citations) {
+  // Remove existing modal if present
+  const existing = document.getElementById('atlas-citation-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'atlas-citation-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  modal.innerHTML = `
+    <div style="background:var(--surface,#0f0f1a);border:1px solid var(--border,#2a2a3e);border-radius:12px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;">
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-weight:700;font-size:1rem;">Cite ATLAS</div>
+          <div style="font-size:0.75rem;color:var(--muted);">Copy the citation format required by your journal</div>
+        </div>
+        <button onclick="document.getElementById('atlas-citation-modal').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.25rem;">&#x2715;</button>
+      </div>
+      <div style="padding:1.25rem 1.5rem;">
+        ${_citationBlock('APA', citations.apa)}
+        ${_citationBlock('AMA', citations.ama)}
+        ${_citationBlock('Vancouver', citations.vancouver)}
+        ${_citationBlock('Methods Section Template', citations.methods)}
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+/**
+ * Renders a single labelled citation block with a copy button.
+ * @param {string} label - Display label (e.g. 'APA', 'Vancouver')
+ * @param {string} text  - Citation text to display and copy
+ * @returns {string} HTML string for the citation block
+ */
+function _citationBlock(label, text) {
+  const id = 'cit-' + label.toLowerCase().replace(/\s+/g, '-');
+  return `
+    <div style="margin-bottom:1.25rem;">
+      <div style="font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem;">${label}</div>
+      <div style="background:var(--surface2,#1a1a2e);border:1px solid var(--border);border-radius:6px;padding:0.75rem;font-size:0.8rem;line-height:1.6;color:var(--text);white-space:pre-wrap;" id="${id}">${text}</div>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('${id}').textContent).then(()=>{ this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy',1500); })" style="margin-top:0.4rem;padding:0.25rem 0.75rem;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:0.72rem;cursor:pointer;">Copy</button>
+    </div>`;
+}
+
+window.generateATLASCitation = generateATLASCitation;
+

@@ -5,6 +5,10 @@
 //                 Natural Language Query · API Config
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Proxy URL: if set in ATLAS_CONFIG, all Claude calls route through the Lambda
+// proxy (key stays server-side). Falls back to direct browser API call.
+const ATLAS_AI_PROXY_URL = window.ATLAS_CONFIG?.aiProxyUrl || null;
+
 let _saAiTab       = 'brief';
 let _saAiNlqHistory = [];
 
@@ -314,14 +318,16 @@ async function _saAiBriefWithClaude() {
   const model =  sessionStorage.getItem('atlas_claude_model') || 'claude-haiku-4-5-20251001';
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const useProxy   = !!ATLAS_AI_PROXY_URL;
+    const endpoint   = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
+    const idToken    = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
+    const reqHeaders = useProxy
+      ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
+      : { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
+
+    const res = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: reqHeaders,
       body: JSON.stringify({
         model,
         max_tokens: 600,
@@ -846,11 +852,18 @@ async function _saAiCallClaude(query, apiKey) {
     peacs_critical_n: peacs.filter(r=>(r.pe!=null?+r.pe:1)<0.55).length,
     workspace_count: Object.keys(_saCache.workspaces||{}).length,
   };
-  const model = sessionStorage.getItem('atlas_claude_model')||'claude-haiku-4-5-20251001';
-  const res = await fetch('https://api.anthropic.com/v1/messages',{
+  const model      = sessionStorage.getItem('atlas_claude_model')||'claude-haiku-4-5-20251001';
+  const useProxy   = !!ATLAS_AI_PROXY_URL;
+  const endpoint   = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
+  const idToken    = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
+  const reqHeaders = useProxy
+    ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
+    : { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
+
+  const res = await fetch(endpoint, {
     method:'POST',
-    headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model,max_tokens:350,
+    headers: reqHeaders,
+    body:JSON.stringify({model, max_tokens:350,
       system:`You are ATLAS AI, an adherence science intelligence assistant. The ATLAS platform tracks three instruments: MMAS-8 (medication adherence, score 0–1), MAP Tri-Domain (multi-domain adherence PE score 0–1), and PEACS (Predictive Emergence adherence composite PE score 0–1). Answer questions using this context: ${JSON.stringify(ctx)}. Respond in 1-3 sentences with specific numbers. No markdown headers.`,
       messages:[{role:'user',content:query}]}),
   });
@@ -967,15 +980,21 @@ async function _saAiCfgTest() {
   const key=(document.getElementById('sa-cfg-api-key')?.value||sessionStorage.getItem('atlas_claude_key')||'').trim();
   const model=document.getElementById('sa-cfg-model')?.value||'claude-haiku-4-5-20251001';
   const st=document.getElementById('sa-cfg-status');
-  if(!key){if(st)st.innerHTML=`<span style="color:#f97316;">Enter an API key first.</span>`;return;}
+  const useProxy = !!ATLAS_AI_PROXY_URL;
+  if(!useProxy && !key){if(st)st.innerHTML=`<span style="color:#f97316;">Enter an API key first.</span>`;return;}
   if(st)st.innerHTML=`<span style="color:${_C.dim};">Testing connection…</span>`;
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const endpoint  = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
+    const idToken   = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
+    const hdrs = useProxy
+      ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
+      : { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
+    const res=await fetch(endpoint,{
       method:'POST',
-      headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+      headers: hdrs,
       body:JSON.stringify({model,max_tokens:5,messages:[{role:'user',content:'Reply: ok'}]}),
     });
-    if(res.ok){if(st)st.innerHTML=`<span style="color:${_C.green};">✓ Claude API connected (${model}).</span>`;}
+    if(res.ok){if(st)st.innerHTML=`<span style="color:${_C.green};">✓ Claude ${useProxy?'Proxy':'API'} connected (${model}).</span>`;}
     else {
       const err=await res.json().catch(()=>({}));
       if(st)st.innerHTML=`<span style="color:${_C.red};">✗ Error ${res.status}: ${err.error?.message||'Unknown'}</span>`;

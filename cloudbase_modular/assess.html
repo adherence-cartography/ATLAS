@@ -5211,6 +5211,15 @@ function getAdherenceCategory(score) {
   return                   { label: t.levelLow   || 'Low Adherence',    color:'#ef4444' };
 }
 
+// ── PEACS / MAP domain score display helpers ─────────────────────────────────
+function _pct(val) { return Math.round(parseFloat(val || 0) * 100); }
+function _scoreLabel(val) {
+  const v = parseFloat(val || 0);
+  if (v >= 0.75) return 'Good';
+  if (v >= 0.50) return 'Fair';
+  return 'Needs attention';
+}
+
 
 
 function showToast(msg, duration=3000) {
@@ -6376,6 +6385,11 @@ async function _submitMMASCore(signatureId) {
 
     // Fire Sentinel alert for critical scores — non-blocking
     fireSentinelAlert(full, ref.key).catch(()=>{});
+
+    // REDCap auto-sync — push this single record if configured and enabled
+    if (currentWorkspace && typeof redcapAutoSyncRecord === 'function') {
+      redcapAutoSyncRecord(full).catch(()=>{});
+    }
 
     // Auto-refresh dashboard so new submission appears immediately
     // Fire for ALL roles — superadmin dashboard must see patient-path submissions too
@@ -8860,6 +8874,10 @@ async function _submitMAPCore(signatureId) {
         institution_code: currentWorkspace || null
       });
     }
+    // REDCap auto-sync — push this single MAP record if configured and enabled
+    if (currentWorkspace && typeof redcapAutoSyncRecord === 'function') {
+      redcapAutoSyncRecord(mapPayload).catch(()=>{});
+    }
   } catch(e) {
     console.warn('MAP persist error:', e);
   }
@@ -8877,21 +8895,25 @@ async function _submitMAPCore(signatureId) {
         <div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(46,201,138,0.7);margin-bottom:12px;">✦ TPE PE Domain Profile · MAP Scoring · Morisky 2026</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
           <div style="background:rgba(78,156,245,0.07);border:1px solid rgba(78,156,245,0.18);border-radius:8px;padding:10px;text-align:center;">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:300;color:#4e9cf5;line-height:1;">${pe.A.toFixed(3)}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:300;color:#4e9cf5;line-height:1;">${_pct(pe.A)}%</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;color:rgba(78,156,245,0.85);margin-top:2px;">${_scoreLabel(pe.A)}</div>
             <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(78,156,245,0.6);margin-top:4px;">Architecture<br/><span style="font-weight:300;opacity:0.7;">Q2 · Q3 · Q6</span></div>
           </div>
           <div style="background:rgba(139,111,245,0.07);border:1px solid rgba(139,111,245,0.18);border-radius:8px;padding:10px;text-align:center;">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:300;color:#8b6ff5;line-height:1;">${pe.E.toFixed(3)}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:300;color:#8b6ff5;line-height:1;">${_pct(pe.E)}%</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;color:rgba(139,111,245,0.85);margin-top:2px;">${_scoreLabel(pe.E)}</div>
             <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(139,111,245,0.6);margin-top:4px;">Execution<br/><span style="font-weight:300;opacity:0.7;">Q1 · Q4 · Q5 · Q8</span></div>
           </div>
           <div style="background:rgba(46,201,138,0.07);border:1px solid rgba(46,201,138,0.18);border-radius:8px;padding:10px;text-align:center;">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:300;color:#2ec98a;line-height:1;">${pe.C.toFixed(3)}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:300;color:#2ec98a;line-height:1;">${_pct(pe.C)}%</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;color:rgba(46,201,138,0.85);margin-top:2px;">${_scoreLabel(pe.C)}</div>
             <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(46,201,138,0.6);margin-top:4px;">Context<br/><span style="font-weight:300;opacity:0.7;">Q7</span></div>
           </div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(46,201,138,0.05);border:1px solid rgba(46,201,138,0.15);border-radius:8px;padding:10px 14px;">
           <div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;color:var(--strata);line-height:1;">${pe.PE.toFixed(3)}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;color:var(--strata);line-height:1;">${_pct(pe.PE)}%</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.1em;color:rgba(46,201,138,0.85);margin-top:2px;">${_scoreLabel(pe.PE)}</div>
             <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(46,201,138,0.6);margin-top:3px;">PE Score</div>
           </div>
           <div style="text-align:right;">

@@ -5,6 +5,10 @@
 // Builder · Comparison · Risk Stratification · Longitudinal Trajectories
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Proxy URL: if set in ATLAS_CONFIG, all Claude calls route through the Lambda
+// proxy (key stays server-side). Falls back to direct browser API call.
+const ATLAS_AI_PROXY_URL = window.ATLAS_CONFIG?.aiProxyUrl || null;
+
 // Cohort state
 const _saCohorts   = {};      // { id: { name, filters, records } } — up to 20 saved cohorts
 let   _saCohortA   = null;    // active cohort A id for comparison
@@ -520,9 +524,16 @@ async function _saCiInterpretWithClaude() {
   const model =  sessionStorage.getItem('atlas_claude_model') || 'claude-haiku-4-5-20251001';
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const useProxy   = !!ATLAS_AI_PROXY_URL;
+    const endpoint   = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
+    const idToken    = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
+    const reqHeaders = useProxy
+      ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
+      : { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
+
+    const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
+      headers: reqHeaders,
       body: JSON.stringify({
         model, max_tokens: 500,
         system: 'You are ATLAS AI, an adherence science specialist. Interpret a cohort comparison in ATLAS Mission Control. Write 2-3 short paragraphs covering: what the Cohen\'s d effect size means clinically, which cohort is performing better and why this matters, and what interventions or follow-up actions the data suggests. Use the exact numbers from the context. No markdown headers.',

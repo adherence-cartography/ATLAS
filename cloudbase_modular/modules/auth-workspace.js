@@ -262,6 +262,11 @@ function closeWorkspaceModal() {
   // Reset magic link step
   const magicStep = document.getElementById('ws-magic-step');
   if (magicStep) magicStep.style.display = 'none';
+  const magicTimerEl   = document.getElementById('ws-magic-timer');
+  const magicExpiredEl = document.getElementById('ws-magic-expired');
+  if (magicTimerEl)   magicTimerEl.textContent  = 'Expires in 15 minutes';
+  if (magicExpiredEl) magicExpiredEl.style.display = 'none';
+  _stopMagicLinkListener(); // clears countdown + all channels
   _magicPendingKey = null; _magicPendingProfile = null; _magicResendCooldown = false;
   // Always reset button so it's ready for next open
   const btn = document.getElementById('ws-submit');
@@ -538,11 +543,12 @@ async function resendMagicLink() {
   }, 30000);
 }
 
-let _magicBroadcastChannel = null;
-let _magicFocusListener    = null;
-let _magicPollInterval     = null;
-let _magicAuthUnsub        = null;  // Firebase onAuthStateChanged unsubscribe for cross-tab sync
-let _magicRtdbRef          = null;  // Firebase RTDB ref for cross-browser signal
+let _magicBroadcastChannel  = null;
+let _magicFocusListener     = null;
+let _magicPollInterval      = null;
+let _magicAuthUnsub         = null;  // Firebase onAuthStateChanged unsubscribe for cross-tab sync
+let _magicRtdbRef           = null;  // Firebase RTDB ref for cross-browser signal
+let _magicCountdownInterval = null;  // Countdown timer interval for the waiting-state UI
 
 function _checkMagicLocalStorage() {
   // ── localStorage check ────────────────────────────────────────────────────
@@ -602,6 +608,30 @@ function _startMagicLinkListener() {
   // which was breaking RTDB auth).
   const _preWaitUid = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
   console.log('[ATLAS] Magic link listener started, pendingKey:', _magicPendingKey, '| pre-wait uid:', _preWaitUid || '(none)');
+
+  // ── Countdown timer ───────────────────────────────────────────────────────
+  // Updates #ws-magic-timer every minute; at 0 shows the expired state with a
+  // resend prompt and stops all listeners (link is no longer valid anyway).
+  const timerEl   = document.getElementById('ws-magic-timer');
+  const expiredEl = document.getElementById('ws-magic-expired');
+  let minutesLeft = 15;
+  if (timerEl) timerEl.textContent = 'Expires in 15 minutes';
+  if (expiredEl) expiredEl.style.display = 'none';
+  if (_magicCountdownInterval) clearInterval(_magicCountdownInterval); // clear any stale
+  _magicCountdownInterval = setInterval(function() {
+    minutesLeft -= 1;
+    if (minutesLeft > 0) {
+      if (timerEl) timerEl.textContent = 'Expires in ' + minutesLeft + ' minute' + (minutesLeft !== 1 ? 's' : '');
+    } else {
+      if (timerEl) timerEl.textContent = '';
+      if (expiredEl) expiredEl.style.display = '';
+      clearInterval(_magicCountdownInterval);
+      _magicCountdownInterval = null;
+      // Stop all listeners — expired link cannot complete auth
+      _stopMagicLinkListener();
+      console.log('[ATLAS] Magic link countdown expired — listeners stopped');
+    }
+  }, 60000);
 
   // BP-SEC-10: Generate nonce for this magic link session to prevent cross-tab token replay.
   // Stored in sessionStorage (for this tab's validation) and localStorage (so the relay tab
@@ -692,17 +722,46 @@ function _startMagicLinkListener() {
 }
 
 function _stopMagicLinkListener() {
-  if (_magicAuthUnsub)        { _magicAuthUnsub(); _magicAuthUnsub = null; }
-  if (_magicBroadcastChannel) { _magicBroadcastChannel.close(); _magicBroadcastChannel = null; }
+  if (_magicAuthUnsub)           { _magicAuthUnsub(); _magicAuthUnsub = null; }
+  if (_magicBroadcastChannel)    { _magicBroadcastChannel.close(); _magicBroadcastChannel = null; }
   if (_magicFocusListener) {
     window.removeEventListener('focus',   _magicFocusListener);
     window.removeEventListener('storage', _magicFocusListener);
     _magicFocusListener = null;
   }
-  if (_magicPollInterval)     { clearInterval(_magicPollInterval); _magicPollInterval = null; }
-  if (_magicRtdbRef)          { _magicRtdbRef.off(); _magicRtdbRef = null; }
+  if (_magicPollInterval)        { clearInterval(_magicPollInterval); _magicPollInterval = null; }
+  if (_magicRtdbRef)             { _magicRtdbRef.off(); _magicRtdbRef = null; }
+  if (_magicCountdownInterval)   { clearInterval(_magicCountdownInterval); _magicCountdownInterval = null; }
   // BP-SEC-10: Clean up nonce from localStorage (sessionStorage cleared in _completeMagicAuth)
   try { localStorage.removeItem('_mlinkNonce'); } catch(e) {}
+}
+
+/**
+ * Cancels the magic-link waiting state and returns the user to the key-entry screen.
+ * Stops all listeners, resets UI, and re-enables the key input and submit button.
+ * Called from the "Cancel" button in the magic-link waiting panel.
+ */
+function _cancelMagicLinkWait() {
+  _stopMagicLinkListener();
+  _magicPendingKey     = null;
+  _magicPendingProfile = null;
+  _magicResendCooldown = false;
+  // Hide the magic-link waiting panel
+  const magicStep = document.getElementById('ws-magic-step');
+  if (magicStep) magicStep.style.display = 'none';
+  // Reset the expired state so next attempt starts fresh
+  const expiredEl = document.getElementById('ws-magic-expired');
+  if (expiredEl) expiredEl.style.display = 'none';
+  const timerEl = document.getElementById('ws-magic-timer');
+  if (timerEl) timerEl.textContent = 'Expires in 15 minutes';
+  // Re-enable key input and reset button
+  const input = document.getElementById('ws-input');
+  if (input) { input.value = ''; input.disabled = false; input.focus(); }
+  const btn = document.getElementById('ws-submit');
+  if (btn) { btn.disabled = false; btn.innerHTML = 'Verify Access →'; btn.style.background = ''; }
+  const err = document.getElementById('ws-error');
+  if (err) { err.classList.remove('show'); err.textContent = ''; }
+  console.log('[ATLAS] Magic link wait cancelled by user — returned to key entry');
 }
 
 let _magicAuthCompleting = false; // guard against double-trigger from multiple channels
@@ -1299,6 +1358,7 @@ function enterResearcherDashboard() {
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                 <button onclick="enterSpectatorMode()" style="padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.2);color:#059669;border-radius:7px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(5,150,105,0.12)'" onmouseout="this.style.background='rgba(5,150,105,0.06)'">🌐 Global Map</button>
+                <button onclick="openStuGlossary()" style="padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.2);color:var(--base);border-radius:7px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(78,156,245,0.13)'" onmouseout="this.style.background='rgba(78,156,245,0.06)'">Glossary</button>
               </div>
             </div>
           </div>
@@ -1321,12 +1381,15 @@ function enterResearcherDashboard() {
             <div style="padding:12px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <!-- Instrument launchers -->
               <button id="stu-sess-map" onclick="_stuStartSession('map')"
+                data-tip="Multidimensional Adherence Parameters — measures Architecture, Execution, and Context domains"
                 style="padding:9px 18px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(5,150,105,0.07);border:1px solid rgba(5,150,105,0.28);color:#059669;border-radius:7px;cursor:pointer;transition:all 0.18s;"
                 onmouseover="this.style.background='rgba(5,150,105,0.15)'" onmouseout="this.style.background='rgba(5,150,105,0.07)'">⬡ MAP</button>
               <button id="stu-sess-mmas" onclick="_stuStartSession('mmas')"
+                data-tip="Morisky Medication Adherence Scale — 8-item validated adherence instrument"
                 style="padding:9px 18px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.25);color:#2563eb;border-radius:7px;cursor:pointer;transition:all 0.18s;"
                 onmouseover="this.style.background='rgba(37,99,235,0.14)'" onmouseout="this.style.background='rgba(37,99,235,0.07)'">◉ MMAS-8</button>
               <button id="stu-sess-peacs" onclick="_stuStartSession('peacs')"
+                data-tip="Patient Ecosystem Adherence Composite Score — 7-item cross-domain assessment"
                 style="padding:9px 18px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.25);color:#7c3aed;border-radius:7px;cursor:pointer;transition:all 0.18s;"
                 onmouseover="this.style.background='rgba(124,58,237,0.14)'" onmouseout="this.style.background='rgba(124,58,237,0.07)'">◈ PEACS</button>
               <!-- Divider -->
@@ -1351,7 +1414,7 @@ function enterResearcherDashboard() {
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;">
               <div style="padding:18px 20px;border-right:1px solid var(--border);">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.46rem;letter-spacing:0.18em;text-transform:uppercase;color:#2563eb;margin-bottom:3px;">MMAS-8</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.46rem;letter-spacing:0.18em;text-transform:uppercase;color:#2563eb;margin-bottom:3px;"><span data-tip="Morisky Medication Adherence Scale — 8-item validated adherence instrument">MMAS-8</span></div>
                 <div id="stu-session-count" style="font-family:'IBM Plex Mono',monospace;font-size:2rem;font-weight:700;color:var(--bright);line-height:1;letter-spacing:-0.03em;">—</div>
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--dim);margin-top:3px;">assessments</div>
                 <div style="margin-top:8px;display:flex;align-items:baseline;gap:6px;">
@@ -1364,16 +1427,16 @@ function enterResearcherDashboard() {
                 </div>
               </div>
               <div style="padding:18px 20px;border-right:1px solid var(--border);">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.46rem;letter-spacing:0.18em;text-transform:uppercase;color:#059669;margin-bottom:3px;">MAP</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.46rem;letter-spacing:0.18em;text-transform:uppercase;color:#059669;margin-bottom:3px;"><span data-tip="Multidimensional Adherence Parameters — measures Architecture, Execution, and Context domains">MAP</span></div>
                 <div id="stu-val-map-n" style="font-family:'IBM Plex Mono',monospace;font-size:2rem;font-weight:700;color:var(--bright);line-height:1;letter-spacing:-0.03em;">—</div>
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--dim);margin-top:3px;">assessments</div>
                 <div style="margin-top:8px;display:flex;align-items:baseline;gap:6px;">
                   <div id="stu-pe-composite-score" style="font-family:'IBM Plex Mono',monospace;font-size:1.2rem;font-weight:600;color:#059669;line-height:1;">—</div>
-                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--dim);">PE avg</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--dim);"><span data-tip="Predictive Emergence — composite adherence score from MAP tri-domain model">PE</span> avg</div>
                 </div>
               </div>
               <div style="padding:18px 20px;">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.46rem;letter-spacing:0.18em;text-transform:uppercase;color:#7c3aed;margin-bottom:3px;">PEACS</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.46rem;letter-spacing:0.18em;text-transform:uppercase;color:#7c3aed;margin-bottom:3px;"><span data-tip="Patient Ecosystem Adherence Composite Score — 7-item cross-domain assessment">PEACS</span></div>
                 <div id="stu-val-mmas-n" style="font-family:'IBM Plex Mono',monospace;font-size:2rem;font-weight:700;color:var(--bright);line-height:1;letter-spacing:-0.03em;">—</div>
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--dim);margin-top:3px;">assessments</div>
               </div>
@@ -1391,7 +1454,7 @@ function enterResearcherDashboard() {
             <button onclick="(function(btn){var body=document.getElementById('stu-mod-patterns-body');var open=body.style.display!=='none';body.style.display=open?'none':'block';btn.querySelector('.stu-mod-toggle').textContent=open?'▶':'▼';})(this)" style="width:100%;padding:14px 20px;text-align:left;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;">
               <div style="width:3px;height:14px;background:#2563eb;border-radius:2px;flex-shrink:0;"></div>
               <div style="flex:1;">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">Student · MMAS-8 Analysis</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">Student · <span data-tip="Morisky Medication Adherence Scale — 8-item validated adherence instrument">MMAS-8</span> Analysis</div>
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;font-weight:700;color:var(--bright);margin-top:1px;">Adherence Patterns</div>
               </div>
               <div class="stu-mod-toggle" style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:var(--dim);">▼</div>
@@ -1404,12 +1467,12 @@ function enterResearcherDashboard() {
                   <div style="font-family:'IBM Plex Mono',monospace;font-size:0.54rem;color:var(--dim);margin-top:3px;">score ≥ 8</div>
                 </div>
                 <div style="background:var(--card2);border:1px solid var(--border);border-top:2px solid #dc2626;border-radius:9px;padding:13px 15px;">
-                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.50rem;color:#dc2626;margin-bottom:5px;">Deliberate Adj.</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.50rem;color:#dc2626;margin-bottom:5px;"><span data-tip="Intentional Non-Adherence — patient chooses not to take medication">INA</span></div>
                   <div id="stu-count-ina" style="font-family:'IBM Plex Mono',monospace;font-size:1.6rem;font-weight:700;color:#dc2626;line-height:1;">—</div>
                   <div style="font-family:'IBM Plex Mono',monospace;font-size:0.54rem;color:var(--dim);margin-top:3px;">intentional</div>
                 </div>
                 <div style="background:var(--card2);border:1px solid var(--border);border-top:2px solid #d97706;border-radius:9px;padding:13px 15px;">
-                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.50rem;color:#d97706;margin-bottom:5px;">Practical Barriers</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.50rem;color:#d97706;margin-bottom:5px;"><span data-tip="Unintentional Non-Adherence — patient forgets or has barriers to taking medication">UNA</span></div>
                   <div id="stu-count-una" style="font-family:'IBM Plex Mono',monospace;font-size:1.6rem;font-weight:700;color:#d97706;line-height:1;">—</div>
                   <div style="font-family:'IBM Plex Mono',monospace;font-size:0.54rem;color:var(--dim);margin-top:3px;">unintentional</div>
                 </div>
@@ -1440,7 +1503,7 @@ function enterResearcherDashboard() {
             <button onclick="(function(btn){var body=document.getElementById('stu-mod-domains-body');var open=body.style.display!=='none';body.style.display=open?'none':'block';btn.querySelector('.stu-mod-toggle').textContent=open?'▶':'▼';})(this)" style="width:100%;padding:14px 20px;text-align:left;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;">
               <div style="width:3px;height:14px;background:#059669;border-radius:2px;flex-shrink:0;"></div>
               <div style="flex:1;">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">Student · MAP · Predictive Emergence</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">Student · <span data-tip="Multidimensional Adherence Parameters — measures Architecture, Execution, and Context domains">MAP</span> · Predictive Emergence</div>
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;font-weight:700;color:var(--bright);margin-top:1px;">AEC Domain Scores</div>
               </div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--dim);font-style:italic;margin-right:8px;">Cohort averages</div>
@@ -1869,8 +1932,8 @@ function enterResearcherDashboard() {
             <button onclick="(function(btn){var body=document.getElementById(\'stu-mod-peacs-tracker-body\');var open=body.style.display!==\'none\';body.style.display=open?\'none\':\'block\';btn.querySelector(\'.stu-mod-toggle\').textContent=open?\'▶\':\'▼\';})(this)" style="width:100%;padding:14px 20px;text-align:left;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;">
               <div style="width:3px;height:14px;background:#7c3aed;border-radius:2px;flex-shrink:0;"></div>
               <div style="flex:1;">
-                <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">Student · PEACS Longitudinal</div>
-                <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.78rem;font-weight:700;color:var(--bright);margin-top:1px;">PEACS Dimension Tracker</div>
+                <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">Student · <span data-tip="Patient Ecosystem Adherence Composite Score — 7-item cross-domain assessment">PEACS</span> Longitudinal</div>
+                <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.78rem;font-weight:700;color:var(--bright);margin-top:1px;"><span data-tip="Patient Ecosystem Adherence Composite Score — 7-item cross-domain assessment">PEACS</span> Dimension Tracker</div>
               </div>
               <div id="stu-peacs-tracker-badge" style="display:none;font-family:\'IBM Plex Mono\',monospace;font-size:0.58rem;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.22);color:#7c3aed;border-radius:20px;padding:2px 10px;margin-right:8px;"></div>
               <div class="stu-mod-toggle" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.70rem;color:var(--dim);">▶</div>
@@ -1892,7 +1955,7 @@ function enterResearcherDashboard() {
                   <div id="stu-peacs-partial" style="font-family:\'IBM Plex Mono\',monospace;font-size:1.6rem;font-weight:700;color:#d97706;line-height:1;">—</div>
                 </div>
                 <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.14);border-top:2px solid #dc2626;border-radius:8px;padding:11px 13px;text-align:center;">
-                  <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.46rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;">BASE Only</div>
+                  <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.46rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;"><span data-tip="Behavioral Adherence Substrate Evaluation — habits and routine domain">BASE</span> Only</div>
                   <div id="stu-peacs-base-only" style="font-family:\'IBM Plex Mono\',monospace;font-size:1.6rem;font-weight:700;color:#dc2626;line-height:1;">—</div>
                 </div>
               </div>
@@ -1901,9 +1964,9 @@ function enterResearcherDashboard() {
               <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
                 <div style="display:grid;grid-template-columns:2fr 90px 90px 90px 90px;gap:0;padding:8px 14px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.02);">
                   <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);">Patient ID</div>
-                  <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:#b45309;text-align:center;">BASE</div>
-                  <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:#2563eb;text-align:center;">MVMT</div>
-                  <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:#7c3aed;text-align:center;">STRATA</div>
+                  <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:#b45309;text-align:center;"><span data-tip="Behavioral Adherence Substrate Evaluation — habits and routine domain">BASE</span></div>
+                  <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:#2563eb;text-align:center;"><span data-tip="Movement domain — physical and logistical adherence factors">MVMT</span></div>
+                  <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:#7c3aed;text-align:center;"><span data-tip="Stratification domain — mindset and motivation factors">STRATA</span></div>
                   <div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);text-align:center;">Status</div>
                 </div>
                 <div id="stu-peacs-grid-body" style="max-height:320px;overflow-y:auto;">

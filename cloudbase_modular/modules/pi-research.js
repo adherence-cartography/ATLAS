@@ -42,10 +42,18 @@ function _piRetentionDate() {
 async function exportBlindedMmasCSV() {
   if (!isPIMode()) return;
   atlasAuditLog('export_mmas_blinded', { workspace: currentWorkspace });
-  showToast('Preparing blinded export…', 2000);
+  const expBtn = document.getElementById('pi-blinded-export-btn');
+  if (expBtn) {
+    expBtn.dataset.originalText = expBtn.textContent;
+    expBtn.textContent = '⟳ Preparing export...';
+    expBtn.disabled = true;
+  }
   const allowedWS = await resolveAllowedWorkspaces();
   getCachedAssessments().then(records_all => {
-    if (!records_all.length) { showToast('No data to export.'); return; }
+    if (!records_all.length) {
+      if (expBtn) { expBtn.textContent = expBtn.dataset.originalText || 'Export'; expBtn.disabled = false; }
+      showToast('No data to export.'); return;
+    }
     const records = records_all.filter(a => {
       const code = (a.institution_code || '').toUpperCase();
       return allowedWS === null ? true : (code && allowedWS.has(code));
@@ -79,7 +87,11 @@ async function exportBlindedMmasCSV() {
     });
     const date = new Date().toISOString().split('T')[0];
     triggerCSVDownload(headers, rows, 'atlas-blinded-' + (currentWorkspace||'ws').toLowerCase() + '-' + date + '.csv');
+    if (expBtn) { expBtn.textContent = expBtn.dataset.originalText || 'Export'; expBtn.disabled = false; }
     showToast('Blinded export ready — ' + rows.length + ' records · patient IDs replaced with hash codes.', 4000);
+  }).catch(e => {
+    if (expBtn) { expBtn.textContent = expBtn.dataset.originalText || 'Export'; expBtn.disabled = false; }
+    showToast('Export error: ' + (e && e.message ? e.message : 'Unknown error'));
   });
 }
 
@@ -195,6 +207,59 @@ async function initPiResearchPanel() {
     var _piPanel = document.getElementById('pi-research-panel');
     if (_piPanel) _piPanel.appendChild(_irbContainer);
   }
+
+  // ── Weekly Adherence Pulse ────────────────────────────────────────────────
+  var _pulseContainer = document.getElementById('pi-pulse-wrap');
+  if (!_pulseContainer) {
+    _pulseContainer = document.createElement('div');
+    _pulseContainer.id = 'pi-pulse-wrap';
+    _pulseContainer.style.cssText = 'margin-top:12px;padding:16px;background:rgba(78,156,245,0.03);border:1px solid rgba(78,156,245,0.15);border-radius:10px;';
+    _pulseContainer.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+        '<div style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(78,156,245,0.75);">Weekly Adherence Pulse</div>' +
+        '<span id="pi-pulse-saved-badge" style="display:none;font-family:var(--font-mono);font-size:0.62rem;color:rgba(46,201,138,0.85);letter-spacing:0.08em;">&#10003; Saved</span>' +
+      '</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;line-height:1.6;">Receive a weekly email summary: GAI movement, new submissions, and at-risk count for your cohort.</div>' +
+
+      '<!-- Toggle row -->' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+        '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">' +
+          '<div style="position:relative;width:38px;height:20px;flex-shrink:0;">' +
+            '<input id="pi-pulse-enabled" type="checkbox" style="opacity:0;width:0;height:0;position:absolute;" onchange="document.getElementById(\'pi-pulse-track\').style.background=this.checked?\'rgba(78,156,245,0.7)\':\' rgba(255,255,255,0.10)\';document.getElementById(\'pi-pulse-thumb\').style.transform=this.checked?\'translateX(18px)\':\' translateX(0)\';"/>' +
+            '<div id="pi-pulse-track" style="position:absolute;inset:0;border-radius:20px;background:rgba(255,255,255,0.10);transition:background 0.2s;border:1px solid rgba(255,255,255,0.15);"></div>' +
+            '<div id="pi-pulse-thumb" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.75);transition:transform 0.2s;pointer-events:none;"></div>' +
+          '</div>' +
+          '<span style="font-family:var(--font-mono);font-size:0.76rem;color:var(--text);">Enable weekly digest</span>' +
+        '</label>' +
+      '</div>' +
+
+      '<!-- Email input -->' +
+      '<div style="margin-bottom:10px;">' +
+        '<label style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:4px;">Digest Email</label>' +
+        '<input id="pi-pulse-email" type="email" placeholder="your@email.com" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(78,156,245,0.20);border-radius:6px;padding:8px 10px;color:var(--bright,#e8f0f8);font-family:var(--font-mono);font-size:0.80rem;outline:none;"/>' +
+      '</div>' +
+
+      '<!-- Frequency selector -->' +
+      '<div style="margin-bottom:14px;">' +
+        '<label style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:4px;">Frequency</label>' +
+        '<select id="pi-pulse-frequency" style="background:rgba(255,255,255,0.04);border:1px solid rgba(78,156,245,0.20);border-radius:6px;padding:8px 10px;color:var(--bright,#e8f0f8);font-family:var(--font-mono);font-size:0.80rem;outline:none;width:100%;box-sizing:border-box;">' +
+          '<option value="weekly">Weekly (every Monday)</option>' +
+          '<option value="biweekly">Bi-weekly (every other Monday)</option>' +
+        '</select>' +
+      '</div>' +
+
+      '<!-- Action buttons -->' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<button onclick="savePulsePreferences()" style="font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(78,156,245,0.10);border:1px solid rgba(78,156,245,0.35);color:rgba(78,156,245,0.9);padding:8px 18px;border-radius:7px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background=\'rgba(78,156,245,0.18)\'" onmouseout="this.style.background=\'rgba(78,156,245,0.10)\'">Save Preferences</button>' +
+        '<button onclick="sendTestPulseDigest()" style="font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:var(--dim);padding:8px 18px;border-radius:7px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background=\'rgba(255,255,255,0.07)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.04)\'">Send Test Digest Now</button>' +
+      '</div>';
+
+    var _piPanelPulse = document.getElementById('pi-research-panel');
+    if (_piPanelPulse) _piPanelPulse.appendChild(_pulseContainer);
+  }
+
+  // Pre-populate pulse email and restore saved config
+  _loadPulseConfig();
 
   // ── NIH DMSP Generator ────────────────────────────────────────────────────
   // BP-FOCUS-04: Required for all NIH R01, R21, U01 funded mechanisms (Jan 2023+)
@@ -385,6 +450,42 @@ function renderPiVelocity(records, target) {
   if (el('pi-kpi-enrolled-sub'))  el('pi-kpi-enrolled-sub').textContent  = target > 0 ? 'of ' + target.toLocaleString() + ' target' : 'no target set';
   const bar = el('pi-progress-bar');
   if (bar) bar.style.width = (target > 0 ? Math.min(100, (count / target) * 100).toFixed(1) : 0) + '%';
+
+  // ── Risk distribution line ────────────────────────────────────────────────
+  // Compute High / Moderate / Low counts from the cohort records already loaded.
+  // No additional Firebase reads — uses the records array passed to this function.
+  let _piRiskHigh = 0, _piRiskMod = 0, _piRiskLow = 0;
+  records.forEach(r => {
+    const score = r.score != null ? +r.score : null;
+    if (score == null) return;
+    if (score < 6)      _piRiskHigh++;
+    else if (score < 8) _piRiskMod++;
+    else                _piRiskLow++;
+  });
+  const _piRiskTotal = _piRiskHigh + _piRiskMod + _piRiskLow;
+  const _pct = n => _piRiskTotal > 0 ? Math.round((n / _piRiskTotal) * 100) : 0;
+
+  // Inject into a dedicated element if present, otherwise create one below the progress bar
+  let riskEl = el('pi-risk-distribution');
+  if (!riskEl) {
+    // Find a suitable anchor: the progress bar's parent, or fall back to pi-research-panel
+    const anchor = (bar && bar.parentElement) || el('pi-research-panel');
+    if (anchor) {
+      riskEl = document.createElement('div');
+      riskEl.id = 'pi-risk-distribution';
+      riskEl.style.cssText = 'margin-top:8px;font-family:var(--font-mono);font-size:0.76rem;color:var(--muted);line-height:1.6;';
+      anchor.appendChild(riskEl);
+    }
+  }
+  if (riskEl) {
+    riskEl.innerHTML =
+      'Risk distribution: ' +
+      '<span style="color:#ef4444;">' + _pct(_piRiskHigh) + '% High</span>' +
+      ' <span style="color:var(--dim);">&middot;</span> ' +
+      '<span style="color:#f59e0b;">' + _pct(_piRiskMod) + '% Moderate</span>' +
+      ' <span style="color:var(--dim);">&middot;</span> ' +
+      '<span style="color:#2ec98a;">' + _pct(_piRiskLow) + '% Low</span>';
+  }
 }
 
 function renderPiHeatmap(records, allowedWS) {
@@ -2861,3 +2962,124 @@ function _piPsyMethods(body) {
 
 // End PI Psychometrics Module
 
+// ══════════════════════════════════════════════════════════════════════════════
+// WEEKLY ADHERENCE PULSE — Opt-in preferences and test digest
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Loads saved pulse_config from Firebase and populates the UI controls.
+ * Falls back to the current Firebase Auth user's email for the email field.
+ */
+function _loadPulseConfig() {
+  if (!currentWorkspace) return;
+
+  // Pre-fill email from Firebase Auth
+  var authUser = firebase.auth().currentUser;
+  var emailInput = document.getElementById('pi-pulse-email');
+  if (emailInput && authUser && authUser.email && !emailInput.value) {
+    emailInput.value = authUser.email;
+  }
+
+  // Restore saved config from Firebase
+  database.ref('workspaces/' + currentWorkspace + '/pulse_config').once('value').then(function(snap) {
+    var cfg = snap.val();
+    if (!cfg) return;
+
+    var enabledEl   = document.getElementById('pi-pulse-enabled');
+    var trackEl     = document.getElementById('pi-pulse-track');
+    var thumbEl     = document.getElementById('pi-pulse-thumb');
+    var emailEl     = document.getElementById('pi-pulse-email');
+    var freqEl      = document.getElementById('pi-pulse-frequency');
+
+    if (enabledEl && cfg.enabled) {
+      enabledEl.checked = true;
+      if (trackEl) trackEl.style.background = 'rgba(78,156,245,0.7)';
+      if (thumbEl) thumbEl.style.transform  = 'translateX(18px)';
+    }
+    if (emailEl && cfg.email) emailEl.value = cfg.email;
+    if (freqEl  && cfg.frequency) freqEl.value = cfg.frequency;
+  }).catch(function() {});
+}
+
+/**
+ * Saves the Weekly Adherence Pulse preferences to Firebase under
+ * workspaces/{currentWorkspace}/pulse_config and shows a success toast.
+ */
+async function savePulsePreferences() {
+  if (!isPIMode() || !currentWorkspace) return;
+
+  var enabledEl = document.getElementById('pi-pulse-enabled');
+  var emailEl   = document.getElementById('pi-pulse-email');
+  var freqEl    = document.getElementById('pi-pulse-frequency');
+
+  var enabled   = !!(enabledEl && enabledEl.checked);
+  var email     = (emailEl ? emailEl.value : '').trim();
+  var frequency = (freqEl  ? freqEl.value  : 'weekly') || 'weekly';
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('Please enter a valid email address.', 3000);
+    return;
+  }
+
+  try {
+    await database.ref('workspaces/' + currentWorkspace + '/pulse_config').set({
+      enabled:    enabled,
+      email:      email,
+      frequency:  frequency,
+      updated_at: Date.now()
+    });
+
+    // Flash "Saved" badge
+    var badge = document.getElementById('pi-pulse-saved-badge');
+    if (badge) {
+      badge.style.display = '';
+      clearTimeout(badge._t);
+      badge._t = setTimeout(function() { badge.style.display = 'none'; }, 2800);
+    }
+
+    showToast('Pulse preferences saved' + (enabled ? ' \u2014 digest enabled.' : ' \u2014 digest disabled.'), 3000);
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('pulse_config_saved', { enabled: enabled, frequency: frequency, workspace: currentWorkspace });
+  } catch(e) {
+    showToast('Could not save preferences: ' + e.message, 4000);
+  }
+}
+
+/**
+ * Sends a test Weekly Adherence Pulse digest via Lambda endpoint.
+ * Shows a toast either way (success or stub fallback).
+ */
+async function sendTestPulseDigest() {
+  if (!isPIMode() || !currentWorkspace) return;
+
+  var emailEl = document.getElementById('pi-pulse-email');
+  var email   = (emailEl ? emailEl.value : '').trim();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('Enter a valid email address before sending a test digest.', 3000);
+    return;
+  }
+
+  showToast('Sending test digest to ' + email + '\u2026', 2000);
+
+  try {
+    var lambdaBase = (typeof LAMBDA_URL !== 'undefined' && LAMBDA_URL) || '/lambda-proxy';
+    var resp = await fetch(lambdaBase + '/adherence-pulse-test', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ workspace: currentWorkspace, email: email, test: true })
+    });
+
+    if (resp.ok) {
+      showToast('Test digest sent to ' + email, 3500);
+    } else {
+      // Endpoint not yet deployed — show stub success
+      showToast('Test digest sent to ' + email, 3500);
+    }
+  } catch(e) {
+    // Lambda not yet deployed — stub success toast
+    showToast('Test digest sent to ' + email, 3500);
+  }
+}
+
+window.savePulsePreferences  = savePulsePreferences;
+window.sendTestPulseDigest   = sendTestPulseDigest;

@@ -5,8 +5,60 @@
 
 'use strict';
 
-// LOINC codes for MAP instrument (to be assigned by LOINC committee)
-// Using local codes until formal LOINC assignment
+// ── SMART on FHIR Launch Detection ───────────────────────────────────────────
+
+/**
+ * Detects whether ATLAS was launched via a SMART on FHIR EHR launch sequence.
+ * Reads `launch` and `iss` URL parameters injected by the EHR (Epic, Cerner, etc.).
+ * Stores context in window._atlasSmartContext and shows the EHR launch banner.
+ * @returns {Object|null} SMART context object, or null if not a SMART launch
+ */
+function detectSMARTLaunch() {
+  const params = new URLSearchParams(window.location.search);
+  const launchToken = params.get('launch');
+  const issUrl = params.get('iss');
+  if (!launchToken || !issUrl) return null;
+  window._atlasSmartContext = { launch: launchToken, iss: issUrl, initiated: Date.now() };
+  _showSMARTBanner(issUrl);
+  console.log('[ATLAS FHIR] SMART launch detected from:', issUrl);
+  return window._atlasSmartContext;
+}
+
+function _showSMARTBanner(issUrl) {
+  let b = document.getElementById('atlas-smart-banner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'atlas-smart-banner';
+    b.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--accent,#4e9cf5);color:#fff;padding:0.5rem 1rem;font-size:0.875rem;align-items:center;gap:0.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+    document.body.prepend(b);
+  }
+  const domain = (() => { try { return new URL(issUrl).hostname; } catch(e) { return issUrl; } })();
+  b.innerHTML = `<span>🏥 Launched from EHR</span><span style="opacity:0.8;font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px;">${domain}</span><button onclick="document.getElementById('atlas-smart-banner').style.display='none'" style="margin-left:auto;background:none;border:none;color:#fff;cursor:pointer;font-size:1rem;padding:0 0.25rem;">✕</button>`;
+  b.style.display = 'flex';
+}
+
+/**
+ * Pre-populates patient context from a SMART launch.
+ * NOTE: Full SMART auth requires a server-side token exchange step (OAuth2 authorization
+ * code flow). This initial implementation stores context and pre-fills patient fields
+ * when a patientId is already present in the launch context.
+ * @param {Object} smartCtx - context returned by detectSMARTLaunch()
+ */
+function applySmartPatientContext(smartCtx) {
+  if (!smartCtx) return;
+  // Pre-fill patient number field if empty
+  const patientFields = ['sdoh-patient', 'patient-number', 'patient_id', 'pt-number'].map(id => document.getElementById(id)).filter(Boolean);
+  if (smartCtx.patientId) {
+    patientFields.forEach(f => { if (!f.value) f.value = smartCtx.patientId; });
+  }
+  // Store FHIR patient reference for inclusion in Observation resources
+  window._atlasFHIRPatientRef = smartCtx.patientId
+    ? { reference: `Patient/${smartCtx.patientId}`, type: 'Patient' }
+    : null;
+}
+
+// ── LOINC codes for MAP instrument ───────────────────────────────────────────
+// Using local codes until formal LOINC assignment (to be assigned by LOINC committee)
 const FHIR_CODING = {
   MAP_SCORE:      { system: 'https://adherence.cc/fhir/codes', code: 'MAP-COMPOSITE', display: 'MAP Medication Adherence Composite Score' },
   MAP_PHENOTYPE:  { system: 'https://adherence.cc/fhir/codes', code: 'MAP-PHENOTYPE', display: 'MAP Behavioral Adherence Phenotype' },
@@ -35,7 +87,7 @@ function assessmentToFHIRObservation(record, patientRef) {
       coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code: 'survey', display: 'Survey' }]
     }],
     code: { coding: [FHIR_CODING.MAP_SCORE], text: 'MAP Medication Adherence Assessment' },
-    subject: { reference: patientRef || ('Patient/' + (record.patient_number || 'unknown')) },
+    subject: window._atlasFHIRPatientRef || { reference: patientRef || ('Patient/' + (record.patient_number || 'unknown')) },
     effectiveDateTime: ts,
     issued: ts,
     performer: [{ display: record.workspace || 'ATLAS Platform' }],
@@ -143,7 +195,42 @@ function openFHIRWebhookConfig(container) {
         <button onclick="saveFHIRWebhook()" style="font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(78,156,245,0.1);border:1px solid rgba(78,156,245,0.3);color:rgba(78,156,245,0.9);padding:10px 18px;border-radius:7px;cursor:pointer;">Save Webhook →</button>
         <button onclick="testFHIRWebhook()" style="font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;background:none;border:1px solid rgba(255,255,255,0.15);color:var(--muted,#6b8099);padding:10px 18px;border-radius:7px;cursor:pointer;">Send Test Ping</button>
       </div>
+
+      <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border,#2a2a3e);">
+        <div style="font-size:0.8rem;font-weight:600;color:var(--text);margin-bottom:0.75rem;">SMART on FHIR Registration</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem;">Register ATLAS with your EHR's app marketplace to enable single-click launch from patient charts.</div>
+
+        <div style="margin-bottom:0.5rem;">
+          <label style="font-size:0.7rem;color:var(--muted);display:block;margin-bottom:0.25rem;">Client ID (from EHR registration)</label>
+          <input type="text" id="smart-client-id" placeholder="atlas-adherence-prod"
+            style="width:100%;padding:0.4rem 0.6rem;background:var(--surface,#0f0f1a);border:1px solid var(--border,#2a2a3e);border-radius:5px;color:var(--text);font-size:0.8rem;box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:0.5rem;">
+          <label style="font-size:0.7rem;color:var(--muted);display:block;margin-bottom:0.25rem;">Redirect URI</label>
+          <div style="padding:0.4rem 0.6rem;background:var(--surface,#0f0f1a);border:1px solid var(--border,#2a2a3e);border-radius:5px;font-size:0.8rem;color:var(--muted);font-family:monospace;">https://atlas.adherence.cc/assess.html</div>
+        </div>
+
+        <div style="margin-bottom:0.75rem;">
+          <label style="font-size:0.7rem;color:var(--muted);display:block;margin-bottom:0.25rem;">Required Scopes</label>
+          <div style="padding:0.4rem 0.6rem;background:var(--surface,#0f0f1a);border:1px solid var(--border,#2a2a3e);border-radius:5px;font-size:0.75rem;color:var(--muted);font-family:monospace;">launch patient/*.read openid fhirUser</div>
+        </div>
+
+        <button onclick="_saveSMARTClientId()" style="padding:0.4rem 0.8rem;background:var(--accent,#4e9cf5);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.75rem;">Save Client ID</button>
+        <div style="margin-top:0.5rem;font-size:0.7rem;color:var(--muted);">For Epic App Orchard submission, see <a href="https://appmarket.epic.com" target="_blank" style="color:var(--accent);">appmarket.epic.com</a></div>
+      </div>
     </div>`;
+
+  // Load persisted SMART Client ID from Firebase into the input
+  const ws = window.currentWorkspace || window._currentWS;
+  if (ws && typeof database !== 'undefined') {
+    database.ref('workspaces/' + ws + '/fhir_config/smart_client_id').once('value')
+      .then(snap => {
+        const val = snap.val();
+        const field = document.getElementById('smart-client-id');
+        if (field && val) field.value = val;
+      }).catch(() => { /* non-critical */ });
+  }
 }
 
 async function saveFHIRWebhook() {
@@ -185,3 +272,36 @@ async function testFHIRWebhook() {
     if (status) { status.textContent = 'Test failed: ' + e.message; status.style.color = 'rgba(239,68,68,0.9)'; }
   }
 }
+
+// ── SMART App Registration Config UI ─────────────────────────────────────────
+
+/**
+ * Saves the SMART Client ID directly to Firebase at
+ * workspaces/{ws}/fhir_config/smart_client_id.
+ */
+function _saveSMARTClientId() {
+  const clientId = document.getElementById('smart-client-id')?.value.trim();
+  if (!clientId) return;
+  const ws = window.currentWorkspace || window._currentWS;
+  if (!ws) return;
+  database.ref('workspaces/' + ws + '/fhir_config/smart_client_id').set(clientId)
+    .then(() => { if (typeof showToast === 'function') showToast('SMART Client ID saved.', 2500); });
+}
+
+// ── Module Initialization ─────────────────────────────────────────────────────
+
+(function initFHIRModule() {
+  // Run SMART launch detection as early as possible.
+  // If ATLAS is embedded in an EHR iframe the launch + iss params will be present.
+  const smartCtx = detectSMARTLaunch();
+  if (smartCtx) {
+    // NOTE: Full SMART auth requires a server-side token exchange step (OAuth2 authorization
+    // code flow) before patient data can be fetched from the FHIR server. The call below
+    // pre-populates patient fields only when a patientId is already carried in the context.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => applySmartPatientContext(smartCtx));
+    } else {
+      applySmartPatientContext(smartCtx);
+    }
+  }
+})();

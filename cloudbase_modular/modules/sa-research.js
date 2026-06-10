@@ -12,6 +12,7 @@ const _SA_RES_SUBS = [
   { id: 'export',   icon: '◫', label: 'Data Export'    },
   { id: 'analysis', icon: '◬', label: 'Group Analysis' },
   { id: 'registry', icon: '◈', label: 'Study Registry' },
+  { id: 'discover', icon: '⊕', label: 'Discover Studies' },
   { id: 'meta',     icon: '◎', label: 'Meta-Analysis'  },
   { id: 'refs',     icon: '◩', label: 'Citations'      },
 ];
@@ -24,21 +25,22 @@ function _saRenderResearch(container) {
     <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:${_C.text};">Research Console</div>
   </div>
 
-  <div style="display:flex;gap:6px;margin-bottom:22px;border-bottom:1px solid ${_C.border};padding-bottom:16px;flex-wrap:wrap;">
+  <div style="display:flex;gap:6px;margin-bottom:22px;border-bottom:1px solid ${_C.border};padding-bottom:16px;flex-wrap:wrap;align-items:center;">
     ${_SA_RES_SUBS.map(s => `
       <button id="sa-res-btn-${s.id}" onclick="saResTab('${s.id}')"
         style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;letter-spacing:0.12em;text-transform:uppercase;
-               padding:7px 14px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+               padding:7px 14px;border-radius:6px;cursor:pointer;transition:all 0.15s;position:relative;
                background:${s.id==='export'?_C.amberFaint:'transparent'};
                border:1px solid ${s.id==='export'?'rgba(212,168,67,0.35)':_C.border};
                color:${s.id==='export'?_C.amber:_C.muted};">
-        ${s.icon} ${s.label}
+        ${s.icon} ${s.label}${s.id==='discover'?`<span id="collab-request-badge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:#ef4444;color:#fff;font-size:0.60rem;font-weight:700;border-radius:8px;text-align:center;line-height:16px;padding:0 3px;"></span>`:''}
       </button>`).join('')}
   </div>
 
   <div id="sa-res-body"></div>`;
 
   saResTab('export');
+  _checkCollaborationRequests();
 }
 
 function saResTab(tab) {
@@ -57,6 +59,7 @@ function saResTab(tab) {
     case 'export':   _saResRenderExport(body);   break;
     case 'analysis': _saResRenderAnalysis(body); break;
     case 'registry': _saResRenderRegistry(body); break;
+    case 'discover': _saResRenderDiscover(body); break;
     case 'meta':     _saResRenderMeta(body);     break;
     case 'refs':     _saResRenderRefs(body);     break;
   }
@@ -837,6 +840,52 @@ function _saResRenderRegistry(body) {
             style="width:100%;box-sizing:border-box;background:${_C.navy};border:1px solid ${_C.border};color:${_C.text};
                    font-family:'IBM Plex Mono',monospace;font-size:0.82rem;padding:7px 10px;border-radius:6px;outline:none;resize:vertical;"></textarea>
         </div>
+        <div>
+          <div style="font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;color:${_C.dim};margin-bottom:3px;">Study Design</div>
+          <select id="sa-reg-design"
+            style="width:100%;background:${_C.surface};border:1px solid ${_C.border};color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.88rem;padding:7px 10px;border-radius:6px;outline:none;">
+            <option value="">— Select design —</option>
+            <option value="RCT">RCT (Randomised Controlled Trial)</option>
+            <option value="Observational">Observational / Cohort</option>
+            <option value="Cross-sectional">Cross-sectional</option>
+            <option value="Case-control">Case-control</option>
+            <option value="Qualitative">Qualitative</option>
+            <option value="Mixed-methods">Mixed-methods</option>
+            <option value="Systematic Review">Systematic Review / Meta-analysis</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;color:${_C.dim};margin-bottom:3px;">Study Phase</div>
+          <select id="sa-reg-phase"
+            style="width:100%;background:${_C.surface};border:1px solid ${_C.border};color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.88rem;padding:7px 10px;border-radius:6px;outline:none;">
+            <option value="">— Select phase —</option>
+            <option value="Phase I">Phase I</option>
+            <option value="Phase II">Phase II</option>
+            <option value="Phase III">Phase III</option>
+            <option value="Phase IV">Phase IV / Post-market</option>
+            <option value="Pilot">Pilot / Feasibility</option>
+            <option value="N/A">N/A (Observational)</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;color:${_C.dim};margin-bottom:3px;">Country</div>
+          <input id="sa-reg-country" type="text" placeholder="e.g. United States"
+            style="width:100%;box-sizing:border-box;background:${_C.navy};border:1px solid ${_C.border};color:${_C.text};
+                   font-family:'IBM Plex Mono',monospace;font-size:0.84rem;padding:7px 10px;border-radius:6px;outline:none;"/>
+        </div>
+        <div style="padding:10px 12px;background:${_C.navy};border:1px solid ${_C.border};border-radius:6px;">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="sa-reg-discoverable" style="accent-color:${_C.amber};cursor:pointer;margin-top:2px;flex-shrink:0;"/>
+            <div>
+              <div style="font-size:0.82rem;color:${_C.text};font-weight:600;">Make discoverable in public registry</div>
+              <div style="font-size:0.72rem;color:${_C.dim};margin-top:3px;line-height:1.5;">
+                Other ATLAS researchers can find this study and send collaboration requests.
+                Your workspace code is shared; PI name is optional. You can disable this at any time.
+              </div>
+            </div>
+          </label>
+        </div>
         <button onclick="_saResAddStudy()"
           style="font-family:'IBM Plex Mono',monospace;font-size:0.86rem;letter-spacing:0.12em;text-transform:uppercase;
                  padding:9px 16px;border-radius:7px;cursor:pointer;
@@ -941,6 +990,7 @@ async function _saResAddStudy() {
   const msg = document.getElementById('sa-reg-status-msg');
   const status = document.getElementById('sa-reg-status')?.value || 'planning';
   const conditions = Array.from(document.getElementById('sa-reg-cond')?.selectedOptions || []).map(o => o.value).filter(Boolean);
+  const discoverable = !!(document.getElementById('sa-reg-discoverable')?.checked);
   const study = {
     title:            (document.getElementById('sa-reg-title')?.value||'').trim(),
     pi:               (document.getElementById('sa-reg-pi')?.value||'').trim(),
@@ -958,6 +1008,10 @@ async function _saResAddStudy() {
     atlas_id:         _saResGenerateAtlasId(),
     created:          Date.now(),
     prereg_locked_at: status === 'active' ? Date.now() : null,
+    design:           document.getElementById('sa-reg-design')?.value || '',
+    phase:            document.getElementById('sa-reg-phase')?.value  || '',
+    country:          (document.getElementById('sa-reg-country')?.value||'').trim(),
+    discoverable,
   };
   if (!study.title) { if(msg)msg.innerHTML=`<span style="color:#f97316;">Study title is required.</span>`; return; }
   if (!study.pi)    { if(msg)msg.innerHTML=`<span style="color:#f97316;">Principal Investigator is required.</span>`; return; }
@@ -966,13 +1020,33 @@ async function _saResAddStudy() {
     if (!db) throw new Error('no db');
     if(msg)msg.innerHTML=`<span style="color:${_C.dim};">Saving…</span>`;
     await db.ref('research_studies').push(study);
-    if(msg)msg.innerHTML=`<span style="color:${_C.green};">✓ Study pre-registered · ID: ${study.atlas_id}</span>`;
-    ['sa-reg-title','sa-reg-pi','sa-reg-inst','sa-reg-irb','sa-reg-ct','sa-reg-start','sa-reg-end','sa-reg-n','sa-reg-hypothesis','sa-reg-notes'].forEach(id=>{
+
+    // Write to public registry if researcher opted in
+    if (discoverable && currentWorkspace) {
+      const primaryCondition = conditions[0] || '';
+      await db.ref('public_study_registry/' + currentWorkspace).set({
+        title:            study.title,
+        condition:        primaryCondition,
+        design:           study.design,
+        phase:            study.phase,
+        country:          study.country,
+        institution:      study.institution,
+        pi_name:          study.pi,
+        contact_enabled:  true,
+        registered_at:    study.created,
+        workspace_code:   currentWorkspace,
+      });
+    }
+
+    if(msg)msg.innerHTML=`<span style="color:${_C.green};">✓ Study pre-registered · ID: ${study.atlas_id}${discoverable?' · Listed in public registry':''}</span>`;
+    ['sa-reg-title','sa-reg-pi','sa-reg-inst','sa-reg-irb','sa-reg-ct','sa-reg-start','sa-reg-end','sa-reg-n','sa-reg-hypothesis','sa-reg-notes','sa-reg-country'].forEach(id=>{
       const el=document.getElementById(id); if(el)el.value='';
     });
     ['inst-mmas','inst-map','inst-peacs'].forEach(id=>{const el=document.getElementById('sa-reg-'+id);if(el)el.checked=false;});
     const condEl = document.getElementById('sa-reg-cond');
     if (condEl) Array.from(condEl.options).forEach(o=>o.selected=false);
+    const discEl = document.getElementById('sa-reg-discoverable');
+    if (discEl) discEl.checked = false;
     _saResLoadStudies();
   } catch(e){
     if(msg)msg.innerHTML=`<span style="color:${_C.red};">Save failed: ${e.message}</span>`;
@@ -1055,6 +1129,178 @@ async function _saResDeleteStudy(key) {
     if (db) await db.ref('research_studies/'+key).remove();
     _saResLoadStudies();
   } catch(e) { alert('Delete failed: '+e.message); }
+}
+
+// ── DISCOVER STUDIES ─────────────────────────────────────────────────────────
+
+let _saDiscoverRegistry = null; // cached public registry entries
+
+async function _saResRenderDiscover(body) {
+  body.innerHTML = `
+  <div style="margin-bottom:16px;">
+    <div style="font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:${_C.dim};margin-bottom:10px;">
+      Find collaborators running studies on the ATLAS platform. Only studies that opted in to public discovery are shown.
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+      <input id="sa-disc-search" type="text" placeholder="Search by title or institution…"
+        oninput="_saDiscFilterAndRender()"
+        style="flex:1;min-width:200px;background:${_C.navy};border:1px solid ${_C.border};color:${_C.text};
+               font-family:'IBM Plex Mono',monospace;font-size:0.84rem;padding:7px 10px;border-radius:6px;outline:none;"/>
+      <select id="sa-disc-cond" onchange="_saDiscFilterAndRender()"
+        style="background:${_C.navy};border:1px solid ${_C.border};color:${_C.muted};font-family:'IBM Plex Mono',monospace;
+               font-size:0.78rem;padding:7px 10px;border-radius:5px;outline:none;">
+        <option value="all">All conditions</option>
+        ${_SA_CONDITIONS.map(c=>`<option value="${c}">${c}</option>`).join('')}
+      </select>
+      <select id="sa-disc-country" onchange="_saDiscFilterAndRender()"
+        style="background:${_C.navy};border:1px solid ${_C.border};color:${_C.muted};font-family:'IBM Plex Mono',monospace;
+               font-size:0.78rem;padding:7px 10px;border-radius:5px;outline:none;">
+        <option value="all">All countries</option>
+      </select>
+      <button onclick="_saResLoadDiscoverRegistry()"
+        style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.1em;text-transform:uppercase;
+               padding:7px 14px;border-radius:5px;cursor:pointer;background:${_C.navy};border:1px solid ${_C.border};color:${_C.muted};">
+        ↺ Refresh
+      </button>
+    </div>
+    <div id="sa-disc-count" style="font-size:0.78rem;color:${_C.dim};margin-bottom:12px;"></div>
+    <div id="sa-disc-list"><div style="font-size:0.90rem;color:${_C.dim};">Loading public registry…</div></div>
+  </div>`;
+
+  await _saResLoadDiscoverRegistry();
+}
+
+async function _saResLoadDiscoverRegistry() {
+  const listEl = document.getElementById('sa-disc-list');
+  if (listEl) listEl.innerHTML = `<div style="font-size:0.88rem;color:${_C.dim};">Loading…</div>`;
+  try {
+    const db = typeof database !== 'undefined' ? database : null;
+    if (!db) throw new Error('no db');
+    const snap = await db.ref('public_study_registry').once('value');
+    const raw = snap.val() || {};
+    _saDiscoverRegistry = Object.entries(raw).map(([wsCode, entry]) => ({ ...entry, workspace_code: wsCode }));
+  } catch(e) {
+    _saDiscoverRegistry = [];
+  }
+  // Populate country filter from loaded data
+  const countryEl = document.getElementById('sa-disc-country');
+  if (countryEl) {
+    const countries = [...new Set((_saDiscoverRegistry||[]).map(e=>e.country).filter(Boolean))].sort();
+    const current = countryEl.value;
+    countryEl.innerHTML = `<option value="all">All countries</option>${countries.map(c=>`<option value="${c}"${c===current?' selected':''}>${c}</option>`).join('')}`;
+  }
+  _saDiscFilterAndRender();
+}
+
+function _saDiscFilterAndRender() {
+  const listEl   = document.getElementById('sa-disc-list');
+  const countEl  = document.getElementById('sa-disc-count');
+  if (!listEl) return;
+
+  const query    = (document.getElementById('sa-disc-search')?.value || '').toLowerCase().trim();
+  const condFilt = document.getElementById('sa-disc-cond')?.value    || 'all';
+  const ctryFilt = document.getElementById('sa-disc-country')?.value || 'all';
+
+  const entries = _saDiscoverRegistry || [];
+
+  // Filter out the current workspace's own entry
+  const myWs = (typeof currentWorkspace !== 'undefined' && currentWorkspace) ? currentWorkspace : null;
+
+  const filtered = entries.filter(e => {
+    if (myWs && e.workspace_code === myWs) return false;
+    if (condFilt !== 'all' && e.condition !== condFilt) return false;
+    if (ctryFilt !== 'all' && e.country   !== ctryFilt) return false;
+    if (query) {
+      const haystack = ((e.title||'') + ' ' + (e.institution||'')).toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    return true;
+  });
+
+  if (countEl) countEl.textContent = `${filtered.length} stud${filtered.length===1?'y':'ies'} found${entries.length>0?' ('+entries.length+' total in registry)':''}`;
+
+  if (!filtered.length) {
+    listEl.innerHTML = `<div style="font-size:0.88rem;color:${_C.dim};font-style:italic;padding:16px 0;">${
+      entries.length ? 'No studies match the current filters.' : 'No studies have been listed in the public registry yet.'
+    }</div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(e => {
+    const wsCode = _saEsc(e.workspace_code || '');
+    return `
+  <div style="background:var(--surface2,${_C.navy});border:1px solid var(--border,${_C.border});border-radius:8px;padding:1rem;margin-bottom:0.75rem;">
+    <div style="font-weight:600;font-size:0.875rem;color:${_C.text};margin-bottom:0.25rem;">${_saEsc(e.title||'Untitled Study')}</div>
+    <div style="font-size:0.75rem;color:${_C.muted};margin-bottom:0.5rem;">
+      ${_saEsc(e.condition||'—')} · ${_saEsc(e.country||'—')} · ${_saEsc(e.design||'—')}
+      ${e.phase?` · ${_saEsc(e.phase)}`:''}
+    </div>
+    <div style="font-size:0.7rem;color:${_C.muted};margin-bottom:0.4rem;">${_saEsc(e.institution||'—')}</div>
+    ${e.pi_name?`<div style="font-size:0.7rem;color:${_C.dim};">PI: ${_saEsc(e.pi_name)}</div>`:''}
+    <div style="display:flex;align-items:center;gap:8px;margin-top:0.5rem;flex-wrap:wrap;">
+      ${e.contact_enabled
+        ? `<button onclick="_requestCollaboration('${wsCode}')"
+             style="padding:0.25rem 0.6rem;font-size:0.7rem;background:var(--accent,${_C.blue});color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;">
+             ⊕ Request Collaboration
+           </button>`
+        : `<span style="font-size:0.7rem;color:${_C.dim};font-style:italic;">Contact not enabled</span>`}
+      <span style="font-size:0.68rem;color:${_C.dim};margin-left:auto;">Listed ${e.registered_at?new Date(e.registered_at).toLocaleDateString():''}</span>
+    </div>
+  </div>`;
+  }).join('');
+}
+
+function _requestCollaboration(targetWsCode) {
+  const myWs    = (typeof currentWorkspace !== 'undefined') ? currentWorkspace : '';
+  const myEmail = (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser)
+    ? (firebase.auth().currentUser.email || '') : '';
+
+  if (!myWs) {
+    if (typeof showToast === 'function') showToast('Cannot send request: no active workspace.', 3000);
+    return;
+  }
+  if (myWs === targetWsCode) {
+    if (typeof showToast === 'function') showToast('You cannot request collaboration with your own workspace.', 3000);
+    return;
+  }
+
+  const db = typeof database !== 'undefined' ? database : null;
+  if (!db) {
+    if (typeof showToast === 'function') showToast('Request failed: database unavailable.', 3000);
+    return;
+  }
+
+  db.ref('collaboration_requests/' + targetWsCode).push({
+    from_workspace: myWs,
+    from_email:     myEmail,
+    message:        '',
+    requested_at:   Date.now(),
+    status:         'pending',
+  }).then(() => {
+    if (typeof showToast === 'function') showToast('Collaboration request sent. The PI will be notified.', 3500);
+  }).catch(() => {
+    if (typeof showToast === 'function') showToast('Request failed. Please try again.', 3000);
+  });
+}
+
+function _checkCollaborationRequests() {
+  const myWs = (typeof currentWorkspace !== 'undefined') ? currentWorkspace : '';
+  if (!myWs) return;
+  const db = typeof database !== 'undefined' ? database : null;
+  if (!db) return;
+
+  db.ref('collaboration_requests/' + myWs)
+    .orderByChild('status').equalTo('pending')
+    .once('value', snap => {
+      const count = snap.numChildren();
+      if (count > 0) {
+        const badge = document.getElementById('collab-request-badge');
+        if (badge) { badge.textContent = count; badge.style.display = 'inline-block'; }
+        if (typeof showToast === 'function') {
+          showToast(`You have ${count} collaboration request${count > 1 ? 's' : ''}.`, 4000);
+        }
+      }
+    });
 }
 
 // ── META-ANALYSIS ─────────────────────────────────────────────────────────────

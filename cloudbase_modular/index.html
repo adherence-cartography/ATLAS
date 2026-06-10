@@ -4,6 +4,10 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Adherence Cartography · ATLAS Platform</title>
+<script>
+  window.ATLAS_CONFIG = window.ATLAS_CONFIG || {};
+  window.ATLAS_CONFIG.aiProxyUrl = 'https://xckeiwruv7.execute-api.us-east-1.amazonaws.com/claude';
+</script>
 <meta name="atlas-build" content="v8.9.3"/>
 
 <!-- SEO -->
@@ -1324,16 +1328,26 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         </div>
         <div style="font-size:0.84rem;color:var(--muted);line-height:1.6;">
           A login link has been sent to <strong id="ws-magic-email-hint" style="color:var(--bright);"></strong>.<br>
-          Click the link in your email to continue — it expires in 15 minutes.
+          Click the link in your email to continue.
+        </div>
+        <div id="ws-magic-timer" style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);margin-top:8px;letter-spacing:0.06em;">
+          Expires in 15 minutes
+        </div>
+        <div id="ws-magic-expired" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:6px;font-size:0.80rem;color:rgba(239,68,68,0.85);">
+          Link expired. <button id="ws-magic-resend-expired" onclick="resendMagicLink()"
+            style="background:none;border:none;color:rgba(239,68,68,0.9);font-family:var(--font-mono);font-size:0.78rem;cursor:pointer;padding:0;text-decoration:underline;font-weight:600;">Request a new one</button>
         </div>
         <div style="margin-top:14px;padding:12px 16px;background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.2);border-radius:8px;font-size:0.78rem;color:var(--muted);line-height:1.6;text-align:left;">
           <strong style="color:rgba(212,168,67,0.85);font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;">Not seeing it?</strong><br/>
           Check your <strong>spam or junk folder</strong> — institutional firewalls sometimes filter magic links.<br/>
           <span style="font-size:0.73rem;opacity:0.75;">Ask your IT department to whitelist <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:3px;">@adherence.cc</code> if this happens repeatedly.</span>
         </div>
-        <div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);margin-top:10px;">
+        <div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);margin-top:10px;display:flex;justify-content:center;gap:16px;align-items:center;">
           Wrong inbox? <button id="ws-magic-resend" onclick="resendMagicLink()"
             style="background:none;border:none;color:var(--mvmt);font-family:var(--font-mono);font-size:0.78rem;cursor:pointer;padding:0;text-decoration:underline;">Resend link</button>
+          <span style="opacity:0.3;">|</span>
+          <button id="ws-magic-cancel" onclick="_cancelMagicLinkWait()"
+            style="background:none;border:none;color:var(--dim);font-family:var(--font-mono);font-size:0.78rem;cursor:pointer;padding:0;text-decoration:underline;opacity:0.7;">Cancel</button>
         </div>
       </div>
     </div>
@@ -1373,7 +1387,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
   <div style="background:var(--card);border:1px solid rgba(212,168,67,0.22);border-radius:var(--rl);max-width:540px;width:100%;padding:40px 38px;">
 
     <div style="font-family:var(--font-mono);font-size:0.71rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:10px;">Global Adherence Index · Industry Intelligence</div>
-    <div style="font-family:var(--font-display);font-size:2rem;font-weight:300;color:var(--bright);margin-bottom:8px;">Subscribe to GAI Reports</div>
+    <div style="font-family:var(--font-display);font-size:2rem;font-weight:300;color:var(--bright);margin-bottom:8px;">Subscribe to <span data-tip="Global Adherence Index — composite 0–1 score combining MMAS-8, MAP, and PEACS">GAI</span> Reports</div>
     <p style="font-size:0.88rem;color:var(--muted);line-height:1.75;margin-bottom:28px;">Population-level medication adherence intelligence — quarterly and annual benchmarks used by HEOR teams, pharma companies, health ministries, and payers. All data is de-identified and aggregate. No individual records are ever distributed.</p>
 
     <!-- Tier cards -->
@@ -3825,7 +3839,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         <span style="font-size:1.15rem;">⊕</span>
         <div style="text-align:left;">
           <div id="sess-btn-label">Start New Patient Session</div>
-          <div style="font-size:0.70rem;color:var(--dim);letter-spacing:0.08em;text-transform:none;margin-top:2px;font-family:'Helvetica Neue',Arial,sans-serif;">Collect patient ID · SDoH · consent · select instrument</div>
+          <div style="font-size:0.70rem;color:var(--dim);letter-spacing:0.08em;text-transform:none;margin-top:2px;font-family:'Helvetica Neue',Arial,sans-serif;">Collect patient ID · <span data-tip="Social Determinants of Health — environmental factors affecting adherence">SDoH</span> · consent · select instrument</div>
         </div>
         <span id="session-active-badge" style="display:none;margin-left:auto;background:rgba(46,201,138,0.14);border:1px solid rgba(46,201,138,0.35);color:var(--strata);border-radius:6px;padding:3px 10px;font-size:0.70rem;letter-spacing:0.1em;font-family:'IBM Plex Mono',monospace;">SESSION ACTIVE</span>
       </button>
@@ -4690,6 +4704,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
             <button class="panel-export-btn" id="pi-blinded-export-btn" style="display:none;border-color:rgba(212,168,67,0.3);color:rgba(212,168,67,0.75);">⊘ Blinded Export</button>
             <button class="panel-export-btn irb-btn" id="irb-cert-btn" style="display:none;">🗋 Session Certificate</button>
             <button class="panel-export-btn cite-btn" id="cite-btn">" Cite Instruments</button>
+            <button onclick="generateATLASCitation()" style="padding:0.5rem 1rem;background:transparent;border:1px solid var(--accent,#4e9cf5);color:var(--accent,#4e9cf5);border-radius:6px;cursor:pointer;font-size:0.8rem;">&#x1F4C4; Cite ATLAS</button>
             <button class="panel-export-btn" id="cohort-pdf-btn" onclick="exportCohortPDF()" style="border-color:rgba(212,168,67,0.3);color:rgba(212,168,67,0.8);" onmouseover="this.style.borderColor='rgba(212,168,67,0.6)';this.style.color='rgba(212,168,67,1)'" onmouseout="this.style.borderColor='rgba(212,168,67,0.3)';this.style.color='rgba(212,168,67,0.8)'">↓ Cohort PDF</button>
             <span class="panel-last-updated" id="mmas-last-updated">—</span>
           </div>

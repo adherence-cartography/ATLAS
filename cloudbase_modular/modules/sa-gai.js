@@ -688,34 +688,62 @@ function _saGaiExportHTML(d) {
     </div>
 
     <!-- Real-time -->
-    <div style="background:${_C.surface};border:1px solid ${_C.border};border-radius:10px;padding:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+    <div style="background:${_C.surface};border:1px solid ${_C.purple}44;border-radius:10px;padding:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
         <span style="font-size:1.2rem;color:${_C.purple};">◎</span>
         <span style="font-size:0.78rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:${_C.purple};">Real-Time API</span>
+        <span style="margin-left:auto;font-size:0.65rem;letter-spacing:0.16em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:${_C.purple}18;border:1px solid ${_C.purple}44;color:${_C.purple};">Live</span>
       </div>
-      <div style="font-size:0.84rem;color:${_C.muted};margin-bottom:14px;line-height:1.6;">
-        Live GAI endpoint for programmatic access — dashboards, EHR integrations, and
-        research pipelines. Secured with workspace key, returns JSON payload on every call.
+      <div style="font-size:0.82rem;color:${_C.muted};margin-bottom:12px;line-height:1.6;">
+        Programmatic access to your workspace GAI metrics. Secured with your workspace key,
+        returns a JSON payload on every call. Use in dashboards, EHR integrations, and research pipelines.
+        Rate limit: 100 requests per day per key.
       </div>
-      <div style="background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:${_C.muted};margin-bottom:12px;overflow-x:auto;">
-        <span style="color:${_C.dim};">GET</span> /api/gai?key=<span style="color:${_C.amber};">{ws_key}</span><br>
-        <span style="color:${_C.dim};">→</span> <span style="color:${_C.green};">{ gai, tier, components, trend, ts }</span>
+
+      <!-- Endpoint URL -->
+      <div style="font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:${_C.dim};margin-bottom:5px;">Endpoint</div>
+      <div id="sa-gai-api-endpoint-box" style="background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;color:${_C.muted};margin-bottom:10px;overflow-x:auto;word-break:break-all;">
+        <span style="color:${_C.dim};font-size:0.70rem;">GET</span>
+        <span style="color:${_C.amber};"> https://api.adherence.cc/gai?key=</span><span style="color:${_C.text};">${currentWorkspace || '{your_workspace_key}'}</span>
       </div>
-      <div style="font-size:0.76rem;color:${_C.dim};margin-bottom:14px;line-height:1.5;">
-        Webhook configuration: push GAI updates to your endpoint whenever a new assessment record is submitted.
+
+      <!-- Example response -->
+      <div style="font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:${_C.dim};margin-bottom:5px;">Example Response</div>
+      <pre style="background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:${_C.muted};margin:0 0 12px;overflow-x:auto;line-height:1.7;">{
+  <span style="color:${_C.dim};">"workspace"</span>: <span style="color:${_C.green};">"PI-XXXX-XXXX-2026"</span>,
+  <span style="color:${_C.dim};">"gai"</span>: <span style="color:${_C.amber};">0.742</span>,
+  <span style="color:${_C.dim};">"n"</span>: <span style="color:${_C.cyan};">147</span>,
+  <span style="color:${_C.dim};">"at_risk"</span>: <span style="color:${_C.red};">12</span>,
+  <span style="color:${_C.dim};">"last_updated"</span>: <span style="color:${_C.green};">"2026-06-09T14:30:00Z"</span>,
+  <span style="color:${_C.dim};">"trend_7d"</span>: <span style="color:${_C.green};">+0.023</span>
+}</pre>
+
+      <!-- Live response output -->
+      <div id="sa-gai-api-live-out" style="display:none;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:${_C.muted};margin-bottom:10px;overflow-x:auto;max-height:160px;white-space:pre-wrap;line-height:1.6;"></div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button onclick="_saGaiTestAPI()" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.10em;text-transform:uppercase;padding:8px 0;border-radius:6px;cursor:pointer;background:${_C.purple}18;border:1px solid ${_C.purple}44;color:${_C.purple};transition:all 0.15s;"
+          onmouseover="this.style.background='${_C.purple}28'" onmouseout="this.style.background='${_C.purple}18'">
+          ◎ Test API
+        </button>
+        <button onclick="_saGaiCopyEndpoint()" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.10em;text-transform:uppercase;padding:8px 0;border-radius:6px;cursor:pointer;background:${_C.cyan}12;border:1px solid ${_C.cyan}33;color:${_C.cyan};transition:all 0.15s;"
+          onmouseover="this.style.background='${_C.cyan}22'" onmouseout="this.style.background='${_C.cyan}12'">
+          ⎘ Copy URL
+        </button>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        <div>
-          <label style="display:block;font-size:0.70rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">Webhook URL</label>
+
+      <!-- Webhook section -->
+      <div style="border-top:1px solid ${_C.border};padding-top:12px;margin-top:4px;">
+        <div style="font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:${_C.dim};margin-bottom:6px;">Webhook (push on new assessment)</div>
+        <div style="display:flex;gap:6px;">
           <input id="sa-gai-rt-url" type="url" placeholder="https://your-system.com/webhook"
-            style="width:100%;box-sizing:border-box;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:7px 10px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+            style="flex:1;box-sizing:border-box;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:7px 10px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.80rem;outline:none;"/>
+          <button onclick="_saGaiSaveWebhook()" style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;letter-spacing:0.10em;text-transform:uppercase;padding:7px 12px;border-radius:6px;cursor:pointer;background:${_C.purple}18;border:1px solid ${_C.purple}44;color:${_C.purple};white-space:nowrap;transition:all 0.15s;"
+            onmouseover="this.style.background='${_C.purple}28'" onmouseout="this.style.background='${_C.purple}18'">Save</button>
         </div>
       </div>
-      <button onclick="_saGaiSaveWebhook()" style="width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;padding:9px 0;border-radius:6px;cursor:pointer;background:${_C.purple}18;border:1px solid ${_C.purple}44;color:${_C.purple};transition:all 0.15s;"
-        onmouseover="this.style.background='${_C.purple}28'" onmouseout="this.style.background='${_C.purple}18'">
-        ◎ Save Webhook
-      </button>
-      <div id="sa-gai-rt-st" style="font-size:0.80rem;color:${_C.muted};margin-top:6px;min-height:16px;"></div>
+      <div id="sa-gai-rt-st" style="font-size:0.78rem;color:${_C.muted};margin-top:6px;min-height:14px;"></div>
     </div>
   </div>
 
@@ -800,4 +828,71 @@ async function _saGaiSaveWebhook() {
   } catch(e) {
     if (st) { st.textContent='Error: '+e.message; st.style.color=_C.red; }
   }
+}
+
+async function _saGaiTestAPI() {
+  const out = document.getElementById('sa-gai-api-live-out');
+  if (!out) return;
+  const ws  = (typeof currentWorkspace !== 'undefined' ? currentWorkspace : '') || '';
+  if (!ws) {
+    out.style.display = 'block';
+    out.style.color   = '#f97316';
+    out.textContent   = 'No workspace key detected — please log in to a workspace first.';
+    return;
+  }
+  const endpoint = `https://api.adherence.cc/gai?key=${encodeURIComponent(ws)}`;
+  out.style.display = 'block';
+  out.style.color   = 'var(--dim, #888)';
+  out.textContent   = 'Calling ' + endpoint + ' …';
+  try {
+    const res  = await fetch(endpoint, { method: 'GET', headers: { 'Accept': 'application/json' } });
+    const text = await res.text();
+    if (res.ok) {
+      try {
+        const json = JSON.parse(text);
+        out.style.color = 'var(--optimal, #2ec98a)';
+        out.textContent = JSON.stringify(json, null, 2);
+      } catch (_) {
+        out.style.color = 'var(--dim, #888)';
+        out.textContent = text;
+      }
+    } else {
+      out.style.color = 'var(--dim, #888)';
+      out.textContent = 'Endpoint not yet deployed — contact support@adherence.cc to enable API access\n\n(HTTP ' + res.status + ')';
+    }
+  } catch (e) {
+    out.style.color = 'var(--dim, #888)';
+    out.textContent = 'Endpoint not yet deployed — contact support@adherence.cc to enable API access\n\n(' + e.message + ')';
+  }
+}
+
+function _saGaiCopyEndpoint() {
+  const ws  = (typeof currentWorkspace !== 'undefined' ? currentWorkspace : '') || '{your_workspace_key}';
+  const url = `https://api.adherence.cc/gai?key=${ws}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Endpoint URL copied to clipboard.', 2000);
+    }).catch(() => {
+      _saGaiFallbackCopy(url);
+    });
+  } else {
+    _saGaiFallbackCopy(url);
+  }
+}
+
+function _saGaiFallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity  = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('Endpoint URL copied to clipboard.', 2000);
+  } catch (_) {
+    showToast('Copy failed — please copy manually: ' + text, 4000);
+  }
+  document.body.removeChild(ta);
 }

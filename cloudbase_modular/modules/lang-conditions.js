@@ -424,7 +424,15 @@ async function submitMMAS() {
   if (count < 8) { showToast('Please answer all 8 questions.'); return; }
 
   const btn = document.getElementById('mmas-submit-btn');
-  btn.disabled = true; btn.textContent = 'Submitting…';
+  btn.dataset.originalText = btn.textContent;
+  if (!document.getElementById('atlas-spin-style')) {
+    const s = document.createElement('style');
+    s.id = 'atlas-spin-style';
+    s.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+    document.head.appendChild(s);
+  }
+  btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;">⟳</span> Submitting...';
+  btn.disabled = true;
 
   if (!userLocation) await requestGeolocation();
 

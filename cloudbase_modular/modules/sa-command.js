@@ -1,4 +1,9 @@
 // sa-command.js — Command Center: GAI gauge, data loader, heatmap, workspace breakdown, live feed, AI briefing, anomaly detection
+
+// Proxy URL: if set in ATLAS_CONFIG, all Claude calls route through the Lambda
+// proxy (key stays server-side). Falls back to direct browser API call.
+const ATLAS_AI_PROXY_URL = window.ATLAS_CONFIG?.aiProxyUrl || null;
+
 function _saRenderCommand(container) {
   container.innerHTML = `
   <!-- ROW 1: GAI + Instruments + Alert zones -->
@@ -738,14 +743,16 @@ async function _saCallClaudeAPI(contextJSON) {
     ? `${contextJSON.query}\n\nData context: ${JSON.stringify(enrichedCtx)}`
     : `Summarise this adherence data: ${JSON.stringify(enrichedCtx)}`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const useProxy   = !!ATLAS_AI_PROXY_URL;
+  const endpoint   = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
+  const idToken    = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
+  const reqHeaders = useProxy
+    ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
+    : { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
+
+  const res = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: reqHeaders,
     body: JSON.stringify({
       model,
       max_tokens: 400,

@@ -2464,7 +2464,7 @@ function _stuRenderRegistryPanel(wrap, db, wk, study) {
   // ── Conditions & PI ───────────────────────────────────────────────────────
   if (study.conditions || study.pi || study.institution) {
     h += '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:11px 14px;margin-bottom:14px;">';
-    if (study.pi) h += '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.64rem;color:var(--muted);margin-bottom:4px;"><span style="color:var(--dim);">PI:</span> ' + study.pi + (study.institution ? ' · ' + study.institution : '') + '</div>';
+    if (study.pi) h += '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.64rem;color:var(--muted);margin-bottom:4px;"><span style="color:var(--dim);"><span data-tip="Principal Investigator — researcher managing a study workspace">PI</span>:</span> ' + study.pi + (study.institution ? ' · ' + study.institution : '') + '</div>';
     if (study.conditions) {
       var conds = Array.isArray(study.conditions) ? study.conditions : study.conditions.split(',');
       h += '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;">';
@@ -3977,3 +3977,83 @@ function _stuStatsEffectSize(body) {
   body.innerHTML = html;
 }
 // End Module 14 — Statistics Panel
+
+// ══════════════════════════════════════════════════════════════════════════
+// ACRONYM GLOSSARY MODAL
+// Opened via the "Glossary" button in the student workspace header.
+// Lists all ATLAS acronyms used in the student and patient-facing views.
+// ══════════════════════════════════════════════════════════════════════════
+
+var _STU_GLOSSARY_TERMS = [
+  { term: 'MAP',    def: 'Multidimensional Adherence Parameters — measures Architecture, Execution, and Context domains' },
+  { term: 'PEACS',  def: 'Patient Ecosystem Adherence Composite Score — 7-item cross-domain assessment' },
+  { term: 'GAI',    def: 'Global Adherence Index — composite 0–1 score combining MMAS-8, MAP, and PEACS' },
+  { term: 'MMAS-8', def: 'Morisky Medication Adherence Scale — 8-item validated adherence instrument' },
+  { term: 'INA',    def: 'Intentional Non-Adherence — patient chooses not to take medication' },
+  { term: 'UNA',    def: 'Unintentional Non-Adherence — patient forgets or has barriers to taking medication' },
+  { term: 'PE',     def: 'Predictive Emergence — composite adherence score from MAP tri-domain model' },
+  { term: 'BASE',   def: 'Behavioral Adherence Substrate Evaluation — habits and routine domain (PEACS Session 1)' },
+  { term: 'MVMT',   def: 'Movement domain — physical and logistical adherence factors (PEACS Session 2)' },
+  { term: 'STRATA', def: 'Stratification domain — mindset and motivation factors (PEACS Session 3)' },
+  { term: 'SDoH',   def: 'Social Determinants of Health — environmental factors affecting adherence' },
+  { term: 'PI',     def: 'Principal Investigator — researcher managing a study workspace' },
+];
+
+/**
+ * Opens the ATLAS Acronym Glossary modal.
+ * Creates the modal on first call, then shows it on subsequent calls.
+ * @returns {void}
+ */
+function openStuGlossary() {
+  var existing = document.getElementById('stu-glossary-modal');
+  if (existing) { existing.style.display = 'flex'; document.body.style.overflow = 'hidden'; return; }
+
+  var modal = document.createElement('div');
+  modal.id = 'stu-glossary-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:100050;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = (
+    '<div style="background:var(--card,#111d30);border:1px solid var(--border,#1e2d45);border-radius:14px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.6);">' +
+      '<div style="padding:20px 24px 0;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border2,#1e2d45);">' +
+          '<div>' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">ATLAS · Reference</div>' +
+            '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.25rem;font-weight:600;color:var(--bright);">Acronym Glossary</div>' +
+          '</div>' +
+          '<button onclick="closeStuGlossary()" style="background:none;border:none;font-size:1.2rem;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:6px;transition:color 0.15s;" onmouseover="this.style.color=\'var(--text)\'" onmouseout="this.style.color=\'var(--muted)\'">\u2715</button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="padding:18px 24px 24px;display:flex;flex-direction:column;gap:0;">' +
+        _STU_GLOSSARY_TERMS.map(function(t, i) {
+          var borderTop = i === 0 ? '' : 'border-top:1px solid var(--border2,#1e2d45);';
+          return (
+            '<div style="display:flex;gap:14px;padding:12px 0;' + borderTop + 'align-items:flex-start;">' +
+              '<div style="min-width:66px;font-family:\'IBM Plex Mono\',monospace;font-size:0.74rem;font-weight:700;color:var(--base,#4e9cf5);letter-spacing:0.04em;flex-shrink:0;padding-top:1px;">' + t.term + '</div>' +
+              '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.73rem;color:var(--text,#e0e0e0);line-height:1.6;">' + t.def + '</div>' +
+            '</div>'
+          );
+        }).join('') +
+      '</div>' +
+    '</div>'
+  );
+
+  // Close on backdrop click
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeStuGlossary();
+  });
+
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Closes and hides the ATLAS Acronym Glossary modal.
+ * @returns {void}
+ */
+function closeStuGlossary() {
+  var modal = document.getElementById('stu-glossary-modal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+window.openStuGlossary  = openStuGlossary;
+window.closeStuGlossary = closeStuGlossary;
