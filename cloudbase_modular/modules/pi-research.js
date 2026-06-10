@@ -1625,8 +1625,8 @@ async function piConfirmKeyRotation() {
       result.innerHTML = `
         <div class="pi-rotate-success">
           <div class="pi-rotate-success-label">New Workspace Key</div>
-          <div class="pi-rotate-new-key" id="pi-rotate-new-key-display">${newKey || 'Check your email — key sent via Magic Link'}</div>
-          ${newKey ? `<button class="pi-rotate-copy" onclick="navigator.clipboard.writeText('${newKey}').then(()=>this.textContent='Copied!')">Copy Key</button>` : ''}
+          <div class="pi-rotate-new-key" id="pi-rotate-new-key-display">${_esc(newKey || 'Check your email — key sent via Magic Link')}</div>
+          ${newKey ? `<button class="pi-rotate-copy" data-key="${_esc(newKey)}" onclick="navigator.clipboard.writeText(this.dataset.key).then(()=>this.textContent='Copied!')">Copy Key</button>` : ''}
           <p class="pi-rotate-note">Your previous key has been revoked. All sessions using the old key have been signed out. Save your new key securely.</p>
         </div>`;
       result.style.display = 'block';
@@ -1636,7 +1636,7 @@ async function piConfirmKeyRotation() {
 
   } catch(err) {
     if (result) {
-      result.innerHTML = `<div class="pi-rotate-err">Rotation failed: ${err.message}</div>`;
+      result.innerHTML = `<div class="pi-rotate-err">Rotation failed: ${_esc(err.message)}</div>`;
       result.style.display = 'block';
     }
     if (btn) btn.disabled = false;

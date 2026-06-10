@@ -393,7 +393,7 @@ async function accLoadKeys() {
     });
     accRenderKeys(_kmAllKeys);
   } catch(e) {
-    container.innerHTML = `<span style="color:var(--poor);">Error: ${e.message}</span>`;
+    container.innerHTML = `<span style="color:var(--poor);">Error: ${_esc(e.message)}</span>`;
   }
 }
 
@@ -615,9 +615,18 @@ function _kmPrefillForm({ role, institution, parent_institution, parent_pi }) {
   setTimeout(() => nameEl?.focus(), 450);
 }
 
+function _kmPrefillById(id) {
+  const d = window._kmPrefillCache && window._kmPrefillCache[id];
+  if (d) _kmPrefillForm(d);
+}
+window._kmPrefillById = _kmPrefillById;
+
 function accRenderKeysGrouped(keys) {
   const container = document.getElementById('km-keys-list');
   if (!container) return;
+
+  window._kmPrefillCache = {};
+  let _kmPrefillIdx = 0;
 
   const active = keys.filter(k => k.active !== false);
 
@@ -653,11 +662,11 @@ function accRenderKeysGrouped(keys) {
     const safeKey = (m.key||'').replace(/'/g,"\\'");
     return `<div style="display:flex;align-items:center;gap:10px;padding:7px 14px 7px ${indent}px;border-bottom:1px solid var(--border2);flex-wrap:wrap;">
       <span style="color:var(--border2);font-size:0.70rem;flex-shrink:0;">└─</span>
-      <span style="font-size:0.84rem;color:var(--text);min-width:120px;">${m.name||'—'}</span>
-      <span style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;color:${col};border:1px solid ${col}44;padding:1px 6px;border-radius:3px;">${m.role.toUpperCase()}</span>
-      <span style="font-size:0.72rem;color:var(--muted);flex:1;">${m.email||''}</span>
-      <span style="font-family:var(--font-mono);font-size:0.60rem;color:rgba(212,168,67,0.45);letter-spacing:0.06em;">${m.key}</span>
-      <span onclick="accOpenEditKey('${safeKey}')" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--base);cursor:pointer;opacity:0.6;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">Edit</span>
+      <span style="font-size:0.84rem;color:var(--text);min-width:120px;">${_esc(m.name)||'—'}</span>
+      <span style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;color:${col};border:1px solid ${col}44;padding:1px 6px;border-radius:3px;">${_esc(m.role).toUpperCase()}</span>
+      <span style="font-size:0.72rem;color:var(--muted);flex:1;">${_esc(m.email||'')}</span>
+      <span style="font-family:var(--font-mono);font-size:0.60rem;color:rgba(212,168,67,0.45);letter-spacing:0.06em;">${_esc(m.key)}</span>
+      <span data-key="${_esc(m.key)}" onclick="accOpenEditKey(this.dataset.key)" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--base);cursor:pointer;opacity:0.6;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">Edit</span>
     </div>`;
   }
 
@@ -668,17 +677,19 @@ function accRenderKeysGrouped(keys) {
     const instKey  = (inst.key||'').toUpperCase();
     const instName = inst.institution || inst.name || instKey;
     const pis      = pisByInst[instKey] || [];
-    const safeInstKey  = instKey.replace(/'/g,"\\'");
-    const safeInstName = instName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const safeInstKey  = _esc(instKey);
+    const safeInstName = _esc(instName);
+    const _piPrefillId = _kmPrefillIdx++;
+    window._kmPrefillCache[_piPrefillId] = { role: 'pi', institution: instName, parent_institution: instKey };
 
     html += `<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
       <!-- Institution root -->
       <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(139,111,245,0.05);border-bottom:1px solid var(--border);">
         <span style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;background:rgba(139,111,245,0.1);border:1px solid rgba(139,111,245,0.25);color:rgba(139,111,245,0.8);border-radius:20px;padding:2px 9px;">Institution</span>
-        <span style="flex:1;font-size:0.90rem;color:var(--bright);font-weight:500;">${instName}</span>
-        <span style="font-family:var(--font-mono);font-size:0.62rem;color:rgba(212,168,67,0.55);letter-spacing:0.06em;">${inst.key}</span>
-        ${actionBtn('+ Add PI', 'rgba(139,111,245,0.8)', `_kmPrefillForm({role:'pi',institution:'${safeInstName}',parent_institution:'${safeInstKey}'})`)}
-        <span onclick="accOpenEditKey('${safeInstKey}')" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--base);cursor:pointer;opacity:0.6;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">Edit</span>
+        <span style="flex:1;font-size:0.90rem;color:var(--bright);font-weight:500;">${safeInstName}</span>
+        <span style="font-family:var(--font-mono);font-size:0.62rem;color:rgba(212,168,67,0.55);letter-spacing:0.06em;">${safeInstKey}</span>
+        ${actionBtn('+ Add PI', 'rgba(139,111,245,0.8)', `_kmPrefillById(${_piPrefillId})`)}
+        <span data-key="${safeInstKey}" onclick="accOpenEditKey(this.dataset.key)" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--base);cursor:pointer;opacity:0.6;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">Edit</span>
       </div>`;
 
     if (!pis.length) {
@@ -689,21 +700,26 @@ function accRenderKeysGrouped(keys) {
       const piKey     = (pi.key||'').toUpperCase();
       const piName    = pi.name || piKey;
       const piMembers = membersByPi[piKey] || [];
-      const safePiKey  = piKey.replace(/'/g,"\\'");
-      const safePiName = piName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const safePiKey  = _esc(piKey);
+      const _clinPrefillId = _kmPrefillIdx++;
+      const _resPrefillId  = _kmPrefillIdx++;
+      const _stuPrefillId  = _kmPrefillIdx++;
+      window._kmPrefillCache[_clinPrefillId] = { role: 'clinician',  institution: instName, parent_institution: instKey, parent_pi: piKey };
+      window._kmPrefillCache[_resPrefillId]  = { role: 'researcher', institution: instName, parent_institution: instKey, parent_pi: piKey };
+      window._kmPrefillCache[_stuPrefillId]  = { role: 'student',    institution: instName, parent_institution: instKey, parent_pi: piKey };
 
       html += `<div style="border-bottom:1px solid var(--border2);">
         <!-- PI row -->
         <div style="display:flex;align-items:center;gap:10px;padding:9px 14px 9px 28px;background:rgba(78,156,245,0.03);">
           <span style="color:var(--border2);font-size:0.70rem;flex-shrink:0;">└─</span>
           <span style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(78,156,245,0.7);border:1px solid rgba(78,156,245,0.25);padding:1px 6px;border-radius:3px;">PI</span>
-          <span style="flex:1;font-size:0.86rem;color:var(--bright);">${piName}</span>
-          <span style="font-size:0.72rem;color:var(--muted);">${pi.email||''}</span>
-          <span style="font-family:var(--font-mono);font-size:0.60rem;color:rgba(212,168,67,0.45);letter-spacing:0.06em;">${pi.key}</span>
-          ${actionBtn('+ Clinician', 'rgba(16,185,129,0.8)', `_kmPrefillForm({role:'clinician',institution:'${safeInstName}',parent_institution:'${safeInstKey}',parent_pi:'${safePiKey}'})`)}
-          ${actionBtn('+ Researcher', 'rgba(78,156,245,0.8)', `_kmPrefillForm({role:'researcher',institution:'${safeInstName}',parent_institution:'${safeInstKey}',parent_pi:'${safePiKey}'})`)}
-          ${actionBtn('+ Student', 'rgba(46,201,138,0.8)', `_kmPrefillForm({role:'student',institution:'${safeInstName}',parent_institution:'${safeInstKey}',parent_pi:'${safePiKey}'})`)}
-          <span onclick="accOpenEditKey('${safePiKey}')" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--base);cursor:pointer;opacity:0.6;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">Edit</span>
+          <span style="flex:1;font-size:0.86rem;color:var(--bright);">${_esc(piName)}</span>
+          <span style="font-size:0.72rem;color:var(--muted);">${_esc(pi.email||'')}</span>
+          <span style="font-family:var(--font-mono);font-size:0.60rem;color:rgba(212,168,67,0.45);letter-spacing:0.06em;">${safePiKey}</span>
+          ${actionBtn('+ Clinician', 'rgba(16,185,129,0.8)', `_kmPrefillById(${_clinPrefillId})`)}
+          ${actionBtn('+ Researcher', 'rgba(78,156,245,0.8)', `_kmPrefillById(${_resPrefillId})`)}
+          ${actionBtn('+ Student', 'rgba(46,201,138,0.8)', `_kmPrefillById(${_stuPrefillId})`)}
+          <span data-key="${safePiKey}" onclick="accOpenEditKey(this.dataset.key)" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--base);cursor:pointer;opacity:0.6;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">Edit</span>
         </div>
         ${piMembers.map(m => memberRow(m, 44)).join('')}
       </div>`;
@@ -767,9 +783,9 @@ async function accIssueLOP() {
       if (status) { status.style.color='var(--strata)'; status.textContent='Letter issued successfully.'; }
       document.getElementById('lop-result-cert').textContent = data.certNum;
       document.getElementById('lop-result-detail').innerHTML =
-        `${data.name} · ${data.institution}<br/>` +
+        `${_esc(data.name)} · ${_esc(data.institution)}<br/>` +
         `Email sent: ${data.email_sent ? 'Yes' : 'No (check SES logs)'}<br/>` +
-        `Verify: <a href="${data.verify_url}" target="_blank" style="color:var(--base);">${data.verify_url}</a>`;
+        `Verify: <a href="${_esc(data.verify_url)}" target="_blank" style="color:var(--base);">${_esc(data.verify_url)}</a>`;
       if (result) result.style.display = 'block';
       ['lop-name','lop-email','lop-institution','lop-study','lop-wskey','lop-notes','lop-expiry'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
@@ -803,18 +819,18 @@ function _lopTable(lops, isLmic) {
         const active     = l.status !== 'revoked';
         const issued     = l.issued_at ? new Date(l.issued_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
         const expires    = _lopExpiryDate(l);
-        const certShort  = (l.certNum||'').slice(0,20) + '…';
-        const certEsc    = (l.certNum||'').replace(/'/g,"\\'");
+        const certShort  = _esc((l.certNum||'').slice(0,20)) + '…';
+        const certNum    = _esc(l.certNum||'');
         const actionBtns = [
-          `<span onclick="accReprintLOP('${certEsc}')" title="Download letter HTML" style="color:var(--base);cursor:pointer;opacity:0.75;margin-right:10px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">↓ Download</span>`,
-          `<span onclick="accResendLOP('${certEsc}')" title="Resend letter to recipient" style="color:var(--mvmt);cursor:pointer;opacity:0.75;margin-right:10px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">✉ Resend</span>`,
-          isLmic && active ? `<span onclick="accRevokeLOP('${certEsc}')" style="color:var(--poor);cursor:pointer;opacity:0.7;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">Revoke</span>` : '',
+          `<span data-cert="${certNum}" onclick="accReprintLOP(this.dataset.cert)" title="Download letter HTML" style="color:var(--base);cursor:pointer;opacity:0.75;margin-right:10px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">↓ Download</span>`,
+          `<span data-cert="${certNum}" onclick="accResendLOP(this.dataset.cert)" title="Resend letter to recipient" style="color:var(--mvmt);cursor:pointer;opacity:0.75;margin-right:10px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">✉ Resend</span>`,
+          isLmic && active ? `<span data-cert="${certNum}" onclick="accRevokeLOP(this.dataset.cert)" style="color:var(--poor);cursor:pointer;opacity:0.7;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">Revoke</span>` : '',
         ].join('');
         return `<tr>
-          <td style="color:var(--pe);letter-spacing:0.06em;font-size:0.72rem;" title="${l.certNum||''}">${certShort}</td>
-          <td style="color:var(--text);">${l.name||'—'}</td>
-          <td style="color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${l.institution||''}">${l.institution||'—'}</td>
-          <td><span style="color:var(--base);border:1px solid rgba(78,156,245,0.3);padding:1px 6px;border-radius:3px;font-size:0.68rem;">${(l.role||'—').toUpperCase()}</span></td>
+          <td style="color:var(--pe);letter-spacing:0.06em;font-size:0.72rem;" title="${certNum}">${certShort}</td>
+          <td style="color:var(--text);">${_esc(l.name||'—')}</td>
+          <td style="color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(l.institution||'')}">${_esc(l.institution||'—')}</td>
+          <td><span style="color:var(--base);border:1px solid rgba(78,156,245,0.3);padding:1px 6px;border-radius:3px;font-size:0.68rem;">${_esc(l.role||'—').toUpperCase()}</span></td>
           <td style="color:var(--dim);">${issued}</td>
           <td style="color:var(--dim);">${expires}</td>
           <td><span style="color:${active?'var(--strata)':'var(--poor)'}">${active?'Active':'Revoked'}</span></td>
@@ -852,7 +868,7 @@ async function accLoadLetters() {
     lmicEl.innerHTML = _lopTable(lmic, true);
     stdEl.innerHTML  = _lopTable(std,  false);
   } catch(e) {
-    lmicEl.innerHTML = stdEl.innerHTML = `<span style="color:var(--poor);">Error: ${e.message}</span>`;
+    lmicEl.innerHTML = stdEl.innerHTML = `<span style="color:var(--poor);">Error: ${_esc(e.message)}</span>`;
   }
 }
 
@@ -1079,10 +1095,10 @@ function accDiscoverWorkspaces() {
         <thead><tr><th>Key</th><th>MMAS Records</th><th>PEACS Records</th><th>Action</th></tr></thead>
         <tbody>${newKeys.sort((a,b)=>(b[1].mmas+b[1].peacs)-(a[1].mmas+a[1].peacs)).map(([k,v]) =>
           `<tr>
-            <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:rgba(212,168,67,0.7);">${k}</span></td>
+            <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:rgba(212,168,67,0.7);">${_esc(k)}</span></td>
             <td>${v.mmas}</td>
             <td>${v.peacs}</td>
-            <td><button onclick="accRegisterSingleKey('${k}',${v.mmas})" style="font-family:'IBM Plex Mono',monospace;font-size:0.84rem;letter-spacing:0.08em;text-transform:uppercase;background:none;border:1px solid rgba(46,201,138,0.25);color:rgba(46,201,138,0.6);padding:2px 8px;cursor:pointer;" onmouseover="this.style.borderColor='rgba(46,201,138,0.55)';this.style.color='#2ec98a'" onmouseout="this.style.borderColor='rgba(46,201,138,0.25)';this.style.color='rgba(46,201,138,0.6)'">Register</button></td>
+            <td><button data-key="${_esc(k)}" data-mmas="${v.mmas}" onclick="accRegisterSingleKey(this.dataset.key,+this.dataset.mmas)" style="font-family:'IBM Plex Mono',monospace;font-size:0.84rem;letter-spacing:0.08em;text-transform:uppercase;background:none;border:1px solid rgba(46,201,138,0.25);color:rgba(46,201,138,0.6);padding:2px 8px;cursor:pointer;" onmouseover="this.style.borderColor='rgba(46,201,138,0.55)';this.style.color='#2ec98a'" onmouseout="this.style.borderColor='rgba(46,201,138,0.25)';this.style.color='rgba(46,201,138,0.6)'">Register</button></td>
           </tr>`
         ).join('')}</tbody>
       </table>`;
@@ -1181,13 +1197,13 @@ function _renderWorkspaceTable(entries) {
   const roleBadge = r => r==='institution'?'acc-badge-gold':r==='superadmin'?'acc-badge-gold':r==='clinician'?'acc-badge-teal':r==='pharmacist'?'acc-badge-teal':r==='researcher'?'acc-badge-blue':'acc-badge-green';
   tb.innerHTML = entries.map(([key, ws]) => `
     <tr>
-      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:rgba(212,168,67,0.7);">${key}</span></td>
-      <td>${ws.name||'—'}</td>
-      <td><span class="acc-badge ${roleBadge(ws.role)}">${ws.role||'researcher'}</span></td>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:rgba(212,168,67,0.7);">${_esc(key)}</span></td>
+      <td>${_esc(ws.name||'—')}</td>
+      <td><span class="acc-badge ${roleBadge(ws.role)}">${_esc(ws.role||'researcher')}</span></td>
       <td>${ws.record_count!=null?ws.record_count:'—'}</td>
-      <td style="color:rgba(255,255,255,0.35);">${ws.parent_institution||'—'}</td>
+      <td style="color:rgba(255,255,255,0.35);">${_esc(ws.parent_institution||'—')}</td>
       <td><span class="acc-badge ${ws.active===false?'acc-badge-red':'acc-badge-green'}">${ws.active===false?'Inactive':'Active'}</span></td>
-      <td><button onclick="accRevokeWorkspace('${key}')" style="font-family:'IBM Plex Mono',monospace;font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;background:none;border:1px solid rgba(239,68,68,0.2);color:rgba(239,68,68,0.5);padding:2px 8px;cursor:pointer;" onmouseover="this.style.borderColor='rgba(239,68,68,0.5)';this.style.color='#ef4444'" onmouseout="this.style.borderColor='rgba(239,68,68,0.2)';this.style.color='rgba(239,68,68,0.5)'">Revoke</button></td>
+      <td><button data-key="${_esc(key)}" onclick="accRevokeWorkspace(this.dataset.key)" style="font-family:'IBM Plex Mono',monospace;font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;background:none;border:1px solid rgba(239,68,68,0.2);color:rgba(239,68,68,0.5);padding:2px 8px;cursor:pointer;" onmouseover="this.style.borderColor='rgba(239,68,68,0.5)';this.style.color='#ef4444'" onmouseout="this.style.borderColor='rgba(239,68,68,0.2)';this.style.color='rgba(239,68,68,0.5)'">Revoke</button></td>
     </tr>`).join('');
 }
 function accFilterWorkspaces(q) {
@@ -1261,17 +1277,17 @@ function accLoadCampaigns() {
       var dateStr=[c.start,c.end].filter(Boolean).join(' \u2192 ');
       var dot='<span style="display:inline-block;width:8px;height:8px;background:'+(c.color||'#d4a843')+';margin-left:8px;vertical-align:middle;"></span>';
       return '<tr>'
-        +'<td style="color:'+cc1+';">'+(c.name||'\u2014')+dot+'</td>'
-        +'<td style="color:'+cc2+';font-size:0.82rem;">'+dateStr+'</td>'
+        +'<td style="color:'+cc1+';">'+_esc(c.name||'\u2014')+dot+'</td>'
+        +'<td style="color:'+cc2+';font-size:0.82rem;">'+_esc(dateStr)+'</td>'
         +'<td><span class="acc-badge '+badge+'">'+status+'</span></td>'
         +'<td style="color:'+cc3+';">'+(c.submission_count||'\u2014')+'</td>'
-        +'<td><button onclick="accArchiveCampaign(\''+id+'\')" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;background:none;border:1px solid rgba(212,168,67,0.2);color:rgba(212,168,67,0.5);padding:2px 8px;cursor:pointer;">Archive</button></td>'
+        +'<td><button data-id="'+_esc(id)+'" onclick="accArchiveCampaign(this.dataset.id)" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;background:none;border:1px solid rgba(212,168,67,0.2);color:rgba(212,168,67,0.5);padding:2px 8px;cursor:pointer;">Archive</button></td>'
         +'</tr>';
     });
     list.innerHTML = '<table class="acc-table"><thead><tr><th>Name</th><th>Dates</th><th>Status</th><th>Submissions</th><th></th></tr></thead><tbody>'+rows.join('')+'</tbody></table>';
     var sel = document.getElementById('acc-data-camp-select');
     if (sel) {
-      sel.innerHTML = '<option value="">Select campaign\u2026</option>' + camps.map(function(e){return '<option value="'+e[0]+'">'+(e[1].name||e[0])+'</option>';}).join('');
+      sel.innerHTML = '<option value="">Select campaign\u2026</option>' + camps.map(function(e){return '<option value="'+_esc(e[0])+'">'+_esc(e[1].name||e[0])+'</option>';}).join('');
     }
   });
 }
@@ -1318,8 +1334,8 @@ function accLoadWallSection() {
       list.innerHTML = all.map((p,i)=>`
         <div style="display:flex;align-items:baseline;gap:14px;padding:10px 0;border-bottom:1px solid ${tc('rgba(255,255,255,0.04)','rgba(0,0,0,0.07)')};">
           <span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.9rem;color:rgba(212,168,67,0.45);letter-spacing:0.2em;min-width:32px;">${_toRoman(i+1)}</span>
-          <span style="color:${tc('rgba(255,255,255,0.7)','rgba(0,0,0,0.8)')};flex:1;">${p.name||'Untitled'}</span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:${tc('rgba(255,255,255,0.25)','rgba(0,0,0,0.4)')};">${p.start||''} – ${p.end||''}</span>
+          <span style="color:${tc('rgba(255,255,255,0.7)','rgba(0,0,0,0.8)')};flex:1;">${_esc(p.name||'Untitled')}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:${tc('rgba(255,255,255,0.25)','rgba(0,0,0,0.4)')};">${_esc(p.start||'')} – ${_esc(p.end||'')}</span>
           <span style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:rgba(212,168,67,0.5);">${p._seed ? tot.toLocaleString() : (p.total?Number(p.total).toLocaleString():'—')}</span>
         </div>`).join('');
     });
@@ -1374,13 +1390,13 @@ function accLoadApiKeys() {
     if(!entries.length){tb.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:20px;color:${tc('rgba(255,255,255,0.2)','rgba(0,0,0,0.38)')};font-family:'IBM Plex Mono',monospace;font-size:0.88rem;">No API keys issued.</td></tr>`;return;}
     const tierBadge=t=>t==='enterprise'?'acc-badge-gold':t==='premium'?'acc-badge-blue':'acc-badge-green';
     tb.innerHTML=entries.map(([id,k])=>`<tr>
-      <td style="color:${tc('rgba(255,255,255,0.65)','rgba(0,0,0,0.75)')};">${k.client||'—'}</td>
-      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.88rem;color:rgba(212,168,67,0.6);">${id.slice(0,12)}…</span></td>
-      <td><span class="acc-badge ${tierBadge(k.tier)}">${k.tier||'standard'}</span></td>
-      <td style="color:${tc('rgba(255,255,255,0.4)','rgba(0,0,0,0.5)')};">${k.calls_today||0} / ${k.rate_limit||'∞'}</td>
-      <td style="color:${tc('rgba(255,255,255,0.3)','rgba(0,0,0,0.4)')};font-size:0.80rem;">${k.expiry||'—'}</td>
+      <td style="color:${tc('rgba(255,255,255,0.65)','rgba(0,0,0,0.75)')};">${_esc(k.client||'—')}</td>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.88rem;color:rgba(212,168,67,0.6);">${_esc(id.slice(0,12))}…</span></td>
+      <td><span class="acc-badge ${tierBadge(k.tier)}">${_esc(k.tier||'standard')}</span></td>
+      <td style="color:${tc('rgba(255,255,255,0.4)','rgba(0,0,0,0.5)')};">${k.calls_today||0} / ${_esc(String(k.rate_limit||'∞'))}</td>
+      <td style="color:${tc('rgba(255,255,255,0.3)','rgba(0,0,0,0.4)')};font-size:0.80rem;">${_esc(k.expiry||'—')}</td>
       <td><span class="acc-badge ${k.active===false?'acc-badge-red':'acc-badge-green'}">${k.active===false?'Revoked':'Active'}</span></td>
-      <td><button onclick="accRevokeApiKey('${id}')" style="font-family:'IBM Plex Mono',monospace;font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;background:none;border:1px solid rgba(239,68,68,0.2);color:rgba(239,68,68,0.5);padding:2px 8px;cursor:pointer;">Revoke</button></td>
+      <td><button data-id="${_esc(id)}" onclick="accRevokeApiKey(this.dataset.id)" style="font-family:'IBM Plex Mono',monospace;font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;background:none;border:1px solid rgba(239,68,68,0.2);color:rgba(239,68,68,0.5);padding:2px 8px;cursor:pointer;">Revoke</button></td>
     </tr>`).join('');
   });
 }
@@ -1416,7 +1432,7 @@ function accLoadDataSection() {
     const raw=snap.val()||{};
     const sel=document.getElementById('acc-data-camp-select');
     if(sel) sel.innerHTML='<option value="">Select campaign…</option>'+
-      Object.entries(raw).map(([id,c])=>`<option value="${id}">${c.name||id}</option>`).join('');
+      Object.entries(raw).map(([id,c])=>`<option value="${_esc(id)}">${_esc(c.name||id)}</option>`).join('');
   });
   refreshBatchHistory();
 }
@@ -1535,7 +1551,7 @@ function renderAnnualReport() {
       <tbody>
         ${topCountries.map((c,i) => `<tr>
           <td style="color:#9ca3af;">${i+1}</td>
-          <td style="font-weight:600;">${c.name}</td>
+          <td style="font-weight:600;">${_esc(c.name)}</td>
           <td>${c.n.toLocaleString()}</td>
           <td>${scoreBar(c.mean)}</td>
           <td style="color:#9ca3af;">${pct(c.n)}</td>
@@ -1548,7 +1564,7 @@ function renderAnnualReport() {
     <div>
       ${topConditions.map(c => `
         <div class="ar-condition-row">
-          <span style="font-weight:600;">${c.name}</span>
+          <span style="font-weight:600;">${_esc(c.name)}</span>
           <span style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:0.72rem;color:#9ca3af;">n=${c.n}</span>
             ${scoreBar(c.mean)}
@@ -1652,12 +1668,12 @@ function refreshBatchHistory() {
     const isActive = batch.status === 'active';
     return `<tr>
       <td style="color:#6b7280;font-size:0.78rem;">${date}</td>
-      <td style="font-weight:600;font-family:monospace;font-size:0.78rem;">${batch.filename}</td>
+      <td style="font-weight:600;font-family:monospace;font-size:0.78rem;">${_esc(batch.filename)}</td>
       <td style="text-align:center;font-weight:700;">${batch.recordCount}</td>
-      <td style="color:#6b7280;">${batch.uploadedBy || '—'}</td>
+      <td style="color:#6b7280;">${_esc(batch.uploadedBy || '—')}</td>
       <td><span class="batch-status-badge ${batch.status}">${batch.status === 'active' ? 'Active' : 'Rolled Back'}</span></td>
       <td>${isActive
-        ? `<button class="batch-rollback-btn" onclick="confirmRollback('${batch.id}')">Rollback</button>`
+        ? `<button class="batch-rollback-btn" data-id="${_esc(batch.id)}" onclick="confirmRollback(this.dataset.id)">Rollback</button>`
         : `<span style="font-size:0.72rem;color:#9ca3af;">—</span>`
       }</td>
     </tr>`;

@@ -53,7 +53,7 @@ async function _loadInstMembers(body) {
     _instAdminMembers = data.keys || [];
     _renderMemberTable(body);
   } catch(e) {
-    if (body) body.innerHTML = `<div style="color:rgba(239,68,68,0.8);font-size:0.84rem;">Error loading members: ${e.message}</div>`;
+    if (body) body.innerHTML = `<div style="color:rgba(239,68,68,0.8);font-size:0.84rem;">Error loading members: ${_esc(e.message)}</div>`;
   }
 }
 

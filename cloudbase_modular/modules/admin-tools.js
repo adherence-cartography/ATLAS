@@ -171,7 +171,7 @@ function renderWADLeaderboard() {
     const pct     = Math.round((x.count / maxCount) * 100);
     row.innerHTML = `
       <div class="wad-lb-rank">${i < 3 ? medals[i] : (i+1)}</div>
-      <div class="wad-lb-country">${x.c}${isHot ? ' <span class="wad-hot-badge">🔥 hot</span>' : ''}</div>
+      <div class="wad-lb-country">${_esc(x.c)}${isHot ? ' <span class="wad-hot-badge">🔥 hot</span>' : ''}</div>
       <div class="wad-lb-bar-wrap"><div class="wad-lb-bar-fill" style="width:${pct}%;background:${cat.color};"></div></div>
       <div class="wad-lb-count">${x.count}</div>
       <div class="wad-lb-avg" style="color:${cat.color};">${x.avg.toFixed(2)}</div>`;
@@ -712,7 +712,7 @@ function injectPeacsPercentile(peScore) {
     if (existing) existing.remove();
     const badge = document.createElement('div');
     badge.className = 'peacs-percentile-badge';
-    const condLabel = result.condition ? ` in your ${result.condition} group` : '';
+    const condLabel = result.condition ? ` in your ${_esc(result.condition)} group` : '';
     badge.innerHTML = `📊 You scored higher than <strong style="color:var(--bright);margin:0 3px;">${result.percentile}%</strong> of patients${condLabel} (n=${result.n})`;
     resultArea.appendChild(badge);
   });
@@ -1583,11 +1583,11 @@ function _openPhenotypeDrawer(title, color, patients) {
     const peScore   = p.peacs.length ? (p.peacs[p.peacs.length-1].pe||0).toFixed(3) : '—';
     const cat = p.mmas.length ? getAdherenceCategory(parseFloat(mmasScore)||0) : {color:'var(--dim)',label:'—'};
     const lastDate = p.lastTs ? new Date(p.lastTs).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
-    return `<div class="drawer-row" data-pid="${p.pid}" data-ws="${p.ws}" style="padding:10px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''" onclick="_toggleDrawerDetail(this,${i})">
+    return `<div class="drawer-row" data-pid="${_esc(p.pid)}" data-ws="${_esc(p.ws)}" style="padding:10px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''" onclick="_toggleDrawerDetail(this,${i})">
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="width:6px;height:6px;border-radius:50%;background:${cat.color};flex-shrink:0;box-shadow:0 0 4px ${cat.color}80;"></div>
-        <span style="font-family:var(--font-mono);font-size:0.80rem;color:var(--bright);font-weight:500;flex:1;">${p.pid}</span>
-        <span style="font-family:var(--font-mono);font-size:0.86rem;color:var(--dim);">${p.ws}</span>
+        <span style="font-family:var(--font-mono);font-size:0.80rem;color:var(--bright);font-weight:500;flex:1;">${_esc(p.pid)}</span>
+        <span style="font-family:var(--font-mono);font-size:0.86rem;color:var(--dim);">${_esc(p.ws)}</span>
         <span style="font-family:var(--font-mono);font-size:0.80rem;color:${cat.color};min-width:32px;text-align:right;">${mmasScore}</span>
         <span style="font-family:var(--font-mono);font-size:0.86rem;color:var(--pe);min-width:40px;text-align:right;">${peScore}</span>
         <span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--dim);min-width:52px;text-align:right;">${lastDate}</span>
@@ -1595,7 +1595,7 @@ function _openPhenotypeDrawer(title, color, patients) {
       <div class="drawer-detail" style="display:none;margin-top:8px;padding:8px 12px;background:var(--card2);border-radius:6px;font-family:var(--font-mono);font-size:0.86rem;color:var(--muted);line-height:1.7;">
         ${p.mmas.length ? `MMAS-8: ${p.mmas.map(r=>`<span style="color:${getAdherenceCategory(r.score||0).color};">${(r.score||0).toFixed(2)}</span>`).join(' → ')} (${p.mmas.length} assessment${p.mmas.length>1?'s':''})` : 'No MMAS data'}
         <br>${p.peacs.length ? `PE: ${(p.peacs[p.peacs.length-1].pe||0).toFixed(3)} · B:${(p.peacs[p.peacs.length-1].base||0).toFixed(2)} M:${(p.peacs[p.peacs.length-1].mvmt||0).toFixed(2)} S:${(p.peacs[p.peacs.length-1].strata||0).toFixed(2)}` : 'No PEACS data'}
-        <br>Condition: ${p.mmas[0]?.condition || '—'} · Country: ${p.mmas[0]?.country || p.peacs[0]?.country || '—'}
+        <br>Condition: ${_esc(p.mmas[0]?.condition || '—')} · Country: ${_esc(p.mmas[0]?.country || p.peacs[0]?.country || '—')}
       </div>
     </div>`;
   }).join('') : `<div style="padding:32px 20px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">No patients classified into this phenotype yet.</div>`;
@@ -1746,7 +1746,7 @@ function renderICCDemographics(records) {
     const warnHtml = topPct > WARN
       ? `<div style="display:flex;align-items:center;gap:5px;margin-bottom:7px;padding:4px 8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:5px;">
            <span style="width:6px;height:6px;border-radius:50%;background:#ef4444;flex-shrink:0;display:inline-block;"></span>
-           <span style="font-family:var(--font-mono);font-size:0.88rem;color:#ef4444;">Imbalance · "${SHORT[entries[0].label]||entries[0].label}" = ${Math.round(topPct*100)}%</span>
+           <span style="font-family:var(--font-mono);font-size:0.88rem;color:#ef4444;">Imbalance · "${_esc(SHORT[entries[0].label]||entries[0].label)}" = ${Math.round(topPct*100)}%</span>
          </div>`
       : '';
     const bars = entries.map((e, i) => {
@@ -1757,7 +1757,7 @@ function renderICCDemographics(records) {
         : (colors[i % colors.length]);
       const lbl   = SHORT[e.label] || e.label;
       return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-        <div style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);width:82px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.label}">${lbl}</div>
+        <div style="font-family:var(--font-mono);font-size:0.90rem;color:var(--muted);width:82px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${_esc(e.label)}">${_esc(lbl)}</div>
         <div style="flex:1;background:var(--border);border-radius:2px;height:8px;overflow:hidden;">
           <div style="width:${width}%;height:100%;background:${col};border-radius:2px;transition:width 0.4s ease;"></div>
         </div>

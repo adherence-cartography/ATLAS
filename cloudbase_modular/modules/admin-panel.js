@@ -684,9 +684,9 @@ function dndValidateRows(rawRows) {
     html.push(`<tr class="${isValid?'dnd-row-valid':'dnd-row-error'}">
       <td class="dnd-row-num">${idx+2}</td>
       <td class="dnd-row-status">${isValid?'&#10003;':'&#10007;'}</td>
-      <td style="font-weight:600;">${patNum||'&mdash;'}</td>
-      <td>${country}</td><td>${condition||'&mdash;'}</td>
-      <td style="font-family:monospace;font-size:0.68rem;">${qSummary}</td>
+      <td style="font-weight:600;">${_esc(patNum||'')||'&mdash;'}</td>
+      <td>${_esc(country)}</td><td>${_esc(condition||'')||'&mdash;'}</td>
+      <td style="font-family:monospace;font-size:0.68rem;">${_esc(qSummary)}</td>
       <td class="dnd-error-msg">${errors.join(', ')}</td></tr>`);
   });
   tbody.innerHTML = html.join('') || '<tr><td colspan="7" style="color:#9ca3af;padding:12px;">No data rows found.</td></tr>';
@@ -1082,7 +1082,7 @@ function generateIRBCertificate() {
       <div class="irb-cert-sub">For IRB / Ethics Committee Documentation</div>
       <table class="irb-cert-table">
         <tr><td>Session ID</td><td>${sessionId}</td></tr>
-        <tr><td>Institution / Workspace</td><td>${wsName}</td></tr>
+        <tr><td>Institution / Workspace</td><td>${_esc(wsName)}</td></tr>
         <tr><td>Certificate Generated</td><td>${dateStr} at ${timeStr}</td></tr>
         <tr><td>Collection Window</td><td>ATLAS · Ongoing · Perpetual global data collection</td></tr>
         <tr><td>Platform</td><td>ATLAS · Adherence Tracking and Longitudinal Assessment System</td></tr>
@@ -1545,7 +1545,7 @@ function exportLeaderboardSnapshot() {
     const cat = getAdherenceCategory(x.avg);
     return `<tr>
       <td style="font-weight:700;width:32px;">${i<3?medals[i]:(i+1)}</td>
-      <td style="font-weight:500;">${x.c}</td>
+      <td style="font-weight:500;">${_esc(x.c)}</td>
       <td style="text-align:right;font-weight:600;color:${cat.color};width:52px;">${x.avg.toFixed(2)}</td>
       <td style="text-align:right;width:48px;">${x.count}</td>
       <td style="width:90px;"><div class="lb-snap-bar-bg"><div class="lb-snap-bar-fill" style="width:${Math.round(x.count/maxCount*100)}%;background:${cat.color};"></div></div></td>
@@ -2364,8 +2364,8 @@ function mtmRender() {
   tbody.innerHTML = page.map(e => {
     // CPT badge: for timed entries show full code string; for MMAS entries show single code
     const cptBadges = e.source === 'timer' && e.cpt_display
-      ? '<span style="font-family:var(--font-mono);font-size:0.70rem;font-weight:600;color:var(--mvmt);background:rgba(139,111,245,0.08);border:1px solid rgba(139,111,245,0.2);border-radius:4px;padding:2px 7px;">' + e.cpt_display.split('(')[0].trim() + '</span>'
-      : '<span style="font-family:var(--font-mono);font-size:0.72rem;font-weight:600;color:' + (cptColor[e.cpt]||'var(--text)') + ';background:rgba(139,111,245,0.06);border:1px solid rgba(139,111,245,0.15);border-radius:4px;padding:2px 7px;">' + e.cpt + '</span>';
+      ? '<span style="font-family:var(--font-mono);font-size:0.70rem;font-weight:600;color:var(--mvmt);background:rgba(139,111,245,0.08);border:1px solid rgba(139,111,245,0.2);border-radius:4px;padding:2px 7px;">' + _esc(e.cpt_display.split('(')[0].trim()) + '</span>'
+      : '<span style="font-family:var(--font-mono);font-size:0.72rem;font-weight:600;color:' + (cptColor[e.cpt]||'var(--text)') + ';background:rgba(139,111,245,0.06);border:1px solid rgba(139,111,245,0.15);border-radius:4px;padding:2px 7px;">' + _esc(e.cpt) + '</span>';
 
     // Duration cell
     const durCell = e.source === 'timer' && e.duration !== '—'
@@ -2379,12 +2379,12 @@ function mtmRender() {
 
     return '<tr style="border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseover="this.style.background=\'rgba(139,111,245,0.04)\'" onmouseout="this.style.background=\'\'">' +
       '<td style="padding:9px 14px;color:var(--text);white-space:nowrap;">' + srcDot + e.date + '</td>' +
-      '<td style="padding:9px 14px;font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">' + e.pid + '</td>' +
+      '<td style="padding:9px 14px;font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">' + _esc(e.pid) + '</td>' +
       '<td style="padding:9px 14px;">' + cptBadges + '</td>' +
       '<td style="padding:9px 14px;">' + durCell + '</td>' +
       '<td style="padding:9px 14px;font-family:var(--font-mono);font-size:0.82rem;color:var(--text);font-weight:500;">' + (e.score !== '—' ? e.score + '<span style="font-size:0.65rem;color:var(--dim);margin-left:4px;">' + (e.scoreUnit || '/ 8') + '</span>' : '<span style="color:var(--dim);">—</span>') + '</td>' +
       '<td style="padding:9px 14px;"><span style="font-family:var(--font-mono);font-size:0.68rem;color:' + (patColor[e.pattern]||'var(--dim)') + ';text-transform:uppercase;letter-spacing:0.08em;">' + e.pattern + '</span></td>' +
-      '<td style="padding:9px 14px;color:var(--dim);font-size:0.76rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + e.condition + '">' + e.condition + '</td>' +
+      '<td style="padding:9px 14px;color:var(--dim);font-size:0.76rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + _esc(e.condition) + '">' + _esc(e.condition) + '</td>' +
       '<td style="padding:9px 14px;color:var(--text);font-size:0.76rem;line-height:1.5;max-width:240px;">' + e.intervention + '</td>' +
       '<td style="padding:9px 14px;font-family:var(--font-mono);font-size:0.65rem;color:var(--dim);">' + e.instrument + '</td>' +
     '</tr>';
@@ -3716,7 +3716,7 @@ function _renderInstSettingsSeatSummary() {
     if (!quota) { el.textContent = 'Seat data unavailable — open Team tab to load.'; return; }
     const lines = Object.entries(quota).map(([type, total]) => {
       const u = (used && used[type]) || 0;
-      return type.charAt(0).toUpperCase() + type.slice(1) + ': ' + u + ' / ' + total;
+      return _esc(type.charAt(0).toUpperCase() + type.slice(1)) + ': ' + (+u) + ' / ' + (+total);
     });
     el.innerHTML = lines.map(l => '<div style="margin-bottom:4px;">' + l + '</div>').join('');
   } catch(e) {
@@ -3794,7 +3794,7 @@ async function instLoadAuditLog() {
     _auditLogPage = 0;
     _instRenderAuditTable();
   } catch(err) {
-    if (wrap) wrap.innerHTML = '<div class="inst-audit-err">Error: ' + err.message + '</div>';
+    if (wrap) wrap.innerHTML = '<div class="inst-audit-err">Error: ' + _esc(err.message) + '</div>';
   }
 }
 
@@ -3930,7 +3930,7 @@ function _instRenderSLACard() {
         '<span class="sla-csm-icon">' + (sla.csm ? '◎' : '✉') + '</span>' +
         '<div>' +
           '<span class="sla-csm-label">' + (sla.csm ? 'Dedicated Customer Success Manager' : 'Support Email') + '</span>' +
-          (csmName ? '<span class="sla-csm-name">' + csmName + '</span>' : '') +
+          (csmName ? '<span class="sla-csm-name">' + _esc(csmName) + '</span>' : '') +
           '<a href="mailto:' + sla.email + '" class="sla-csm-email">' + sla.email + '</a>' +
         '</div>' +
       '</div>' +
@@ -4038,8 +4038,8 @@ async function generateInstQuarterlySummary() {
     var data = await resp.json();
     var text = (data.content && data.content[0] && data.content[0].text) || 'No summary generated.';
     out.innerHTML =
-      '<div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--pe);margin-bottom:10px;">✦ ' + qLabel + ' Executive Summary · AI Draft · ' + instName + '</div>' +
-      '<div style="font-family:var(--font-body);font-size:0.88rem;line-height:1.75;color:var(--text);white-space:pre-wrap;">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
+      '<div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--pe);margin-bottom:10px;">✦ ' + qLabel + ' Executive Summary · AI Draft · ' + _esc(instName) + '</div>' +
+      '<div style="font-family:var(--font-body);font-size:0.88rem;line-height:1.75;color:var(--text);white-space:pre-wrap;">' + _esc(text) + '</div>' +
       '<div style="margin-top:14px;display:flex;gap:8px;align-items:center;">' +
         '<button onclick="(function(){ var t=document.getElementById(\'inst-quarterly-output\').querySelector(\'div:nth-child(2)\'); if(t) navigator.clipboard.writeText(t.textContent); })()" style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.25);color:rgba(212,168,67,0.8);padding:5px 13px;border-radius:6px;cursor:pointer;">Copy Text</button>' +
         '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);">AI draft · review before distribution to leadership</div>' +
