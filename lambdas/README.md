@@ -8,10 +8,8 @@ All AWS Lambda source code lives here. One subfolder = one deployed Lambda funct
 
 | Folder | AWS Function Name | API Gateway URL | Region |
 |---|---|---|---|
-| Folder | AWS Function Name | API Gateway URL | Region |
-|---|---|---|---|
-| `atlas-main/` | `zoe-atlas-proxy` _(or atlas-lambda)_ | `https://api.adherence.cc/` | us-east-1 |
-| `atlas-api/` | _(xckeiwruv7 Lambda)_ | `https://xckeiwruv7.execute-api.us-east-1.amazonaws.com/` | us-east-1 |
+| `atlas-main/` | `zoe-atlas-proxy` | `https://api.adherence.cc/` | us-east-1 |
+| `atlas-api/` | `atlas-claude-proxy` | `https://xckeiwruv7.execute-api.us-east-1.amazonaws.com/` | us-east-1 |
 | `adherence-pulse/` | `atlas-adherence-pulse` | _(EventBridge scheduled trigger, no HTTP)_ | us-east-1 |
 | `gai-api/` | `atlas-gai-api` | `https://api.adherence.cc/gai` | us-east-1 |
 | `gai-realtime/` | _(not yet deployed)_ | _(future)_ | us-east-1 |

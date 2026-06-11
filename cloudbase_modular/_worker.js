@@ -183,6 +183,46 @@ export default {
       }
     }
 
+    // ── /lambda-proxy-partner/*  →  proxy to Partner API (MAP/MMAS/PEACS) ────
+    // External partner integrations call same-origin /lambda-proxy-partner/v1/...
+    // Worker forwards server-to-server; no CORS negotiation needed from browser.
+    if (url.pathname.startsWith('/lambda-proxy-partner/')) {
+      const LAMBDA_BASE = env.PARTNER_API_URL;
+      const lambdaPath  = url.pathname.replace('/lambda-proxy-partner', '');
+      const lambdaURL   = LAMBDA_BASE + lambdaPath + (url.search || '');
+      try {
+        const hasBody  = request.method !== 'GET' && request.method !== 'HEAD';
+        const bodyText = hasBody ? await request.text() : undefined;
+        const partnerKey = request.headers.get('X-Partner-Key') || '';
+        const lambdaResp = await fetch(lambdaURL, {
+          method:  request.method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(partnerKey ? { 'X-Partner-Key': partnerKey } : {}),
+          },
+          body: bodyText,
+        });
+        const responseText = await lambdaResp.text();
+        return new Response(responseText, {
+          status: lambdaResp.status,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type, X-Partner-Key',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          },
+        });
+      } catch (err) {
+        const requestId = crypto.randomUUID().substring(0, 8).toUpperCase();
+        console.error(`[${requestId}] Partner API proxy error:`, err.message);
+        return new Response(JSON.stringify({ error: 'Service temporarily unavailable', requestId }), {
+          status: 502,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // ── www → apex redirect ───────────────────────────────────────────────────
     // Placed AFTER lambda-proxy blocks so www-origin API calls are proxied
     // instead of being redirected cross-origin (which would cause CORS failures).
@@ -231,7 +271,7 @@ export default {
         'Content-Security-Policy': [
           "default-src 'self'",
           "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net unpkg.com api.mapbox.com cdnjs.cloudflare.com www.gstatic.com",
-          "connect-src 'self' api.anthropic.com firebaseio.com *.firebaseio.com firebase.googleapis.com identitytoolkit.googleapis.com nominatim.openstreetmap.org api.adherence.cc api.mapbox.com events.mapbox.com securetoken.googleapis.com",
+          "connect-src 'self' api.anthropic.com firebaseio.com *.firebaseio.com firebase.googleapis.com identitytoolkit.googleapis.com nominatim.openstreetmap.org api.adherence.cc *.execute-api.us-east-1.amazonaws.com api.mapbox.com events.mapbox.com securetoken.googleapis.com",
           "style-src 'self' 'unsafe-inline' fonts.googleapis.com cdn.jsdelivr.net unpkg.com cdnjs.cloudflare.com",
           "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net",
           "img-src 'self' data: blob: *.mapbox.com",

@@ -8,6 +8,9 @@
 /** @type {Object[]|null} Cached list of workspace members */
 let _instAdminMembers = null;
 
+/** @type {string[]|null} In-memory session domain match counts keyed by domain */
+let _instDomainMatchCounts = {};
+
 /**
  * Returns the Firebase ID token for the currently signed-in institution user.
  * Does NOT require superadmin claims — any authenticated user may call this.
@@ -20,6 +23,167 @@ async function _instGetToken() {
   const user = firebase.auth().currentUser;
   if (!user) throw new Error('Not authenticated');
   return await user.getIdToken(false);
+}
+
+/**
+ * Returns the institution workspace key from the current user's token claims.
+ * @returns {Promise<string>} The workspace key
+ * @throws {Error} If no workspace key found in claims
+ */
+async function _instGetInstKey() {
+  const user = firebase.auth().currentUser;
+  if (!user) throw new Error('Not authenticated');
+  const result = await user.getIdTokenResult(false);
+  const claims = result.claims;
+  const key = claims.workspace || claims.workspace_key;
+  if (!key) throw new Error('No workspace key found in token claims');
+  return key;
+}
+
+/**
+ * Returns true if the email's domain is in the given domains array.
+ * @param {string} email
+ * @param {string[]} domains
+ * @returns {boolean}
+ */
+function _instCheckDomainMatch(email, domains) {
+  if (!email || !domains || !domains.length) return false;
+  const parts = String(email).toLowerCase().split('@');
+  if (parts.length !== 2) return false;
+  return domains.indexOf(parts[1]) !== -1;
+}
+
+/**
+ * Renders the Domain Access Configuration section into the given container.
+ * @param {HTMLElement} container - the element to append the section into
+ * @param {string} instKey - the institution workspace key
+ * @param {Object[]} members - current member list (for domain match counting)
+ */
+async function _instRenderDomainConfig(container, instKey, members) {
+  if (!container || !instKey) return;
+
+  // Dismiss banner state (session-only)
+  const bannerKey = '_instSsoBannerDismissed';
+
+  const sectionEl = document.createElement('div');
+  sectionEl.id = 'inst-domain-config-section';
+  sectionEl.style.cssText = 'margin-top:32px;';
+  container.appendChild(sectionEl);
+
+  const _renderSection = (domains) => {
+    // Count member email matches per session
+    _instDomainMatchCounts = {};
+    (members || []).forEach(m => {
+      if (m.email && _instCheckDomainMatch(m.email, domains)) {
+        const d = m.email.split('@')[1].toLowerCase();
+        _instDomainMatchCounts[d] = (_instDomainMatchCounts[d] || 0) + 1;
+      }
+    });
+    const totalMatched = Object.values(_instDomainMatchCounts).reduce((s, v) => s + v, 0);
+
+    // Check if current user matches
+    const currentUser = firebase.auth().currentUser;
+    const currentEmail = currentUser ? (currentUser.email || '') : '';
+    const currentUserMatches = _instCheckDomainMatch(currentEmail, domains);
+
+    const bannerDismissed = sessionStorage.getItem(bannerKey);
+    const ssoBannerHtml = bannerDismissed ? '' : `
+      <div id="inst-sso-banner" style="background:rgba(78,156,245,0.07);border:1px solid rgba(78,156,245,0.22);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;">
+        <div style="flex:1;font-size:0.80rem;color:rgba(78,156,245,0.85);line-height:1.6;">
+          <strong style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;">Enterprise SSO Available</strong><br>
+          Full SSO integration (LDAP/SAML/Azure AD) is available on Enterprise tier. Domain matching enables streamlined invite workflows.
+        </div>
+        <button onclick="sessionStorage.setItem('${bannerKey}','1');document.getElementById('inst-sso-banner').remove();" style="background:none;border:none;color:rgba(78,156,245,0.5);font-size:1rem;cursor:pointer;padding:0;line-height:1;flex-shrink:0;" title="Dismiss">✕</button>
+      </div>`;
+
+    const domainListHtml = domains.length === 0
+      ? '<div style="font-size:0.80rem;color:var(--muted,#6b8099);font-style:italic;padding:8px 0;">No domains registered yet.</div>'
+      : domains.map(d => {
+          const matchCount = _instDomainMatchCounts[d] || 0;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:6px;margin-bottom:6px;">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:rgba(212,168,67,0.9);flex:1;">@${_esc(d)}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:rgba(46,201,138,0.7);">Active &mdash; ${matchCount} user${matchCount !== 1 ? 's' : ''} matched this session</span>
+            <button onclick="_instRemoveDomain('${_esc(d)}')" style="background:none;border:1px solid rgba(239,68,68,0.25);color:rgba(239,68,68,0.6);border-radius:4px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.08)'" onmouseout="this.style.background='none'">✕ Remove</button>
+          </div>`;
+        }).join('');
+
+    sectionEl.innerHTML = `
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:6px;">Domain Access Configuration</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.15rem;font-weight:300;color:var(--bright,#e8f0f8);margin-bottom:6px;">Domain Access</div>
+      <p style="font-size:0.80rem;color:var(--muted,#6b8099);line-height:1.75;margin-bottom:16px;">Register your institution's email domain. Users signing in with a matching email are automatically recognized as institution members and can request access without a manual key.</p>
+      ${ssoBannerHtml}
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input id="inst-domain-input" type="text" placeholder="Email domain (e.g. hopkinsmedicine.org)" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 12px;color:var(--bright,#e8f0f8);font-family:'IBM Plex Mono',monospace;font-size:0.80rem;outline:none;" />
+        <button onclick="_instAddDomain()" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(212,168,67,0.10);border:1px solid rgba(212,168,67,0.30);color:rgba(212,168,67,0.9);padding:8px 16px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:all 0.2s;" onmouseover="this.style.background='rgba(212,168,67,0.18)'" onmouseout="this.style.background='rgba(212,168,67,0.10)'">Add Domain</button>
+      </div>
+      <div id="inst-domain-list">${domainListHtml}</div>
+      ${currentUserMatches ? '<div style="margin-top:10px;font-family:\'IBM Plex Mono\',monospace;font-size:0.68rem;color:rgba(46,201,138,0.8);">Your account matches this domain.</div>' : ''}
+      <div id="inst-domain-err" style="font-size:0.78rem;color:rgba(239,68,68,0.9);display:none;margin-top:8px;"></div>`;
+  };
+
+  // Load existing domains from Firebase
+  try {
+    const snap = await firebase.database().ref('workspaces/' + instKey + '/auth_domains').once('value');
+    const existing = snap.val() || [];
+    const domainArr = Array.isArray(existing) ? existing : Object.values(existing);
+    window._instCurrentDomains = domainArr;
+    window._instCurrentKey = instKey;
+    _renderSection(domainArr);
+  } catch(e) {
+    sectionEl.innerHTML = `<div style="font-size:0.80rem;color:rgba(239,68,68,0.8);">Could not load domain config: ${_esc(e.message)}</div>`;
+  }
+}
+
+async function _instAddDomain() {
+  const input = document.getElementById('inst-domain-input');
+  const errEl = document.getElementById('inst-domain-err');
+  if (!input) return;
+
+  let domain = (input.value || '').trim().toLowerCase().replace(/^@/, '');
+  if (!domain || !domain.includes('.')) {
+    if (errEl) { errEl.textContent = 'Enter a valid domain (e.g. hopkinsmedicine.org).'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (errEl) errEl.style.display = 'none';
+
+  const domains = window._instCurrentDomains || [];
+  if (domains.indexOf(domain) !== -1) {
+    if (errEl) { errEl.textContent = 'Domain already registered.'; errEl.style.display = 'block'; }
+    return;
+  }
+
+  const updated = [...domains, domain];
+  try {
+    await firebase.database().ref('workspaces/' + window._instCurrentKey + '/auth_domains').set(updated);
+    window._instCurrentDomains = updated;
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('INST_DOMAIN_ADDED', { domain });
+    if (typeof showToast === 'function') showToast('Domain @' + domain + ' added.', 3000);
+    input.value = '';
+    // Re-render section with updated domains
+    const body = document.getElementById('inst-admin-body');
+    const sec = document.getElementById('inst-domain-config-section');
+    if (sec) sec.remove();
+    if (body) await _instRenderDomainConfig(body, window._instCurrentKey, _instAdminMembers || []);
+  } catch(e) {
+    if (errEl) { errEl.textContent = 'Failed to save: ' + e.message; errEl.style.display = 'block'; }
+  }
+}
+
+async function _instRemoveDomain(domain) {
+  if (!domain || !confirm('Remove domain @' + domain + '?')) return;
+  const domains = (window._instCurrentDomains || []).filter(d => d !== domain);
+  try {
+    await firebase.database().ref('workspaces/' + window._instCurrentKey + '/auth_domains').set(domains);
+    window._instCurrentDomains = domains;
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('INST_DOMAIN_REMOVED', { domain });
+    if (typeof showToast === 'function') showToast('Domain @' + domain + ' removed.', 3000);
+    const body = document.getElementById('inst-admin-body');
+    const sec = document.getElementById('inst-domain-config-section');
+    if (sec) sec.remove();
+    if (body) await _instRenderDomainConfig(body, window._instCurrentKey, _instAdminMembers || []);
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Failed to remove domain: ' + e.message, 4000);
+  }
 }
 
 /**
@@ -52,6 +216,15 @@ async function _loadInstMembers(body) {
     if (!res.ok) throw new Error(data.error || 'Failed to load members');
     _instAdminMembers = data.keys || [];
     _renderMemberTable(body);
+
+    // Render Domain Access Configuration below the member table
+    try {
+      const instKey = await _instGetInstKey();
+      await _instRenderDomainConfig(body, instKey, _instAdminMembers);
+    } catch(domErr) {
+      // Non-fatal: domain config section is additive
+      console.warn('[inst-admin] domain config unavailable:', domErr.message);
+    }
   } catch(e) {
     if (body) body.innerHTML = `<div style="color:rgba(239,68,68,0.8);font-size:0.84rem;">Error loading members: ${_esc(e.message)}</div>`;
   }

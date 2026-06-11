@@ -5,6 +5,9 @@
 
 function _saRenderCommand(container) {
   container.innerHTML = `
+  <!-- ALERT BANNER: workspace threshold alerts (hidden when no alerts) -->
+  <div id="sa-alert-banner" style="display:none;margin-bottom:10px;"></div>
+
   <!-- ROW 1: GAI + Instruments + Alert zones -->
   <div style="display:grid;grid-template-columns:240px 1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
 
@@ -174,6 +177,31 @@ function _saRenderCommand(container) {
       <span style="width:6px;height:6px;border-radius:50%;background:${_C.cyan};box-shadow:0 0 6px ${_C.cyan};animation:sa-pulse 2s infinite;"></span>
       <div class="sa-section-eyebrow" style="margin-bottom:0;">Live Assessment Stream</div>
       <div id="sa-feed-count" style="margin-left:auto;font-size:0.74rem;letter-spacing:0.12em;text-transform:uppercase;color:${_C.dim};"></div>
+      <button onclick="_saToggleAlertConfig()" title="Threshold alert settings"
+        style="background:none;border:1px solid ${_C.border};border-radius:4px;padding:2px 7px;cursor:pointer;font-size:0.82rem;color:${_C.dim};line-height:1.4;margin-left:8px;transition:border-color 0.2s;">⚙</button>
+    </div>
+    <div id="sa-alert-config-row" style="display:none;margin-bottom:12px;padding:10px 12px;background:rgba(56,189,248,0.04);border:1px solid ${_C.border};border-radius:6px;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:${_C.dim};white-space:nowrap;">Alert thresholds</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:${_C.muted};">
+          Critical % (&lt;0.55 score)
+          <input id="sa-cfg-crit" type="number" min="1" max="100" value="${_saAlertConfig.criticalPct}"
+            onchange="_saAlertConfigSave()"
+            style="width:52px;background:rgba(15,23,42,0.6);border:1px solid ${_C.border};border-radius:4px;color:${_C.text};padding:2px 6px;font-size:0.82rem;text-align:center;" />
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:${_C.muted};">
+          Surge multiple
+          <input id="sa-cfg-surge" type="number" min="1.1" max="20" step="0.1" value="${_saAlertConfig.surgeMultiple}"
+            onchange="_saAlertConfigSave()"
+            style="width:52px;background:rgba(15,23,42,0.6);border:1px solid ${_C.border};border-radius:4px;color:${_C.text};padding:2px 6px;font-size:0.82rem;text-align:center;" />
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:${_C.muted};">
+          <input id="sa-cfg-enabled" type="checkbox" ${_saAlertConfig.enabled ? 'checked' : ''}
+            onchange="_saAlertConfigSave()" />
+          Enabled
+        </label>
+        <div style="font-size:0.74rem;color:${_C.dim};margin-left:auto;">Changes save automatically</div>
+      </div>
     </div>
     <div id="sa-live-feed" style="display:flex;flex-direction:column;max-height:220px;overflow-y:auto;">
       <div style="font-size:0.90rem;color:${_C.dim};font-style:italic;padding:8px 0;">Initializing live stream…</div>
@@ -504,6 +532,9 @@ function _saRefreshCommandUI(todayTs) {
 
   // ── Anomaly queue (sidebar) ───────────────────────────────────────────────
   _saRunAnomalyDetection();
+
+  // ── Workspace threshold alerts ────────────────────────────────────────────
+  _saCheckThresholds();
 }
 
 // ── 24-Hour Heatmap ───────────────────────────────────────────────────────────
@@ -635,6 +666,23 @@ function _saMMASScore(rec) {
 }
 
 let _saFeedItemCount = 0;
+
+// ── Workspace Threshold Alert System ─────────────────────────────────────────
+let _saPendingAlerts = [];
+
+// Load persisted config from sessionStorage, falling back to defaults
+var _saAlertConfig = (function() {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem('_saAlertConfig') || 'null');
+    return {
+      criticalPct:    (stored && stored.criticalPct  != null) ? +stored.criticalPct  : 30,
+      surgeMultiple:  (stored && stored.surgeMultiple != null) ? +stored.surgeMultiple : 3,
+      enabled:        (stored && stored.enabled       != null) ? !!stored.enabled      : true,
+    }
+  } catch(e) {
+    return { criticalPct: 30, surgeMultiple: 3, enabled: true }
+  }
+}());
 
 function _saFeedItem(rec, instrument) {
   if (!rec) return;
@@ -871,4 +919,156 @@ function _saRunAnomalyDetection() {
     }
   }, delay);
 })(0);
+
+// ── Workspace Threshold Alert Check ──────────────────────────────────────────
+
+function _saCheckThresholds() {
+  if (!_saAlertConfig.enabled) {
+    _saPendingAlerts = []
+    _saRenderAlertBanner()
+    return
+  }
+
+  const mmas = _saCache.mmas || []
+  const mmasOnly = mmas.filter(r => r.tool !== 'map' && r.map_q1 === undefined)
+  if (!mmasOnly.length) return
+
+  // Dismissed IDs persisted in sessionStorage
+  let dismissed = {}
+  try { dismissed = JSON.parse(sessionStorage.getItem('_saAlertDismissed') || '{}') } catch(e) {}
+
+  const now = Date.now()
+  const h24 = now - 24 * 3600 * 1000
+  const critThreshold = _saAlertConfig.criticalPct / 100  // e.g. 0.30
+
+  // Build per-workspace record groups
+  const byWs = {}
+  mmasOnly.forEach(r => {
+    const code = (r.institution_code || 'Unknown').toUpperCase()
+    if (!byWs[code]) byWs[code] = []
+    byWs[code].push(r)
+  })
+
+  const alerts = []
+
+  Object.entries(byWs).forEach(([code, recs]) => {
+    const total = recs.length
+    if (!total) return
+
+    // Critical adherence %: records with score/8 < 0.55
+    const critCount = recs.filter(r => ((r.score || 0) / 8) < 0.55).length
+    const critPct   = critCount / total
+
+    if (critPct > critThreshold) {
+      const id = `crit:${code}`
+      if (!dismissed[id]) {
+        alerts.push({
+          id,
+          code,
+          type:    'critical',
+          metric:  'Low-adherence %',
+          current: (critPct * 100).toFixed(1) + '%',
+          limit:   _saAlertConfig.criticalPct + '%',
+          color:   _C.red,
+        })
+      }
+    }
+
+    // Surge: 24h submissions vs daily average (all-time avg per day)
+    const oldest  = Math.min(...recs.map(r => r.timestamp || now))
+    const daySpan = Math.max(1, (now - oldest) / 86400000)
+    const dailyAvg = total / daySpan
+    const count24h  = recs.filter(r => (r.timestamp || 0) >= h24).length
+
+    if (dailyAvg > 0 && count24h >= _saAlertConfig.surgeMultiple * dailyAvg) {
+      const id = `surge:${code}`
+      if (!dismissed[id]) {
+        alerts.push({
+          id,
+          code,
+          type:    'surge',
+          metric:  '24h surge',
+          current: count24h + ' submissions',
+          limit:   _saAlertConfig.surgeMultiple + 'x avg (' + dailyAvg.toFixed(1) + '/day)',
+          color:   _C.amber,
+        })
+      }
+    }
+  })
+
+  _saPendingAlerts = alerts
+  _saRenderAlertBanner()
+}
+
+// ── Alert Banner Renderer ─────────────────────────────────────────────────────
+
+function _saRenderAlertBanner() {
+  const banner = document.getElementById('sa-alert-banner')
+  if (!banner) return
+
+  if (!_saPendingAlerts.length) {
+    banner.style.display = 'none'
+    banner.innerHTML = ''
+    return
+  }
+
+  banner.style.display = 'block'
+  banner.innerHTML = `
+    <div style="border-radius:6px;overflow:hidden;border:1px solid rgba(239,68,68,0.3);">
+      <div style="background:rgba(239,68,68,0.07);padding:7px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(239,68,68,0.15);">
+        <span style="width:6px;height:6px;border-radius:50%;background:${_C.red};box-shadow:0 0 5px ${_C.red};flex-shrink:0;"></span>
+        <span style="font-size:0.70rem;letter-spacing:0.20em;text-transform:uppercase;color:rgba(239,68,68,0.8);font-weight:600;">
+          Workspace Threshold Alerts (${_saPendingAlerts.length})
+        </span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        ${_saPendingAlerts.map(a => `
+          <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:rgba(239,68,68,0.03);border-bottom:1px solid rgba(239,68,68,0.08);">
+            <span style="width:5px;height:5px;border-radius:50%;background:${a.color};flex-shrink:0;box-shadow:0 0 4px ${a.color};"></span>
+            <span style="font-size:0.80rem;font-weight:600;color:${a.color};letter-spacing:0.06em;white-space:nowrap;">${_esc(a.code)}</span>
+            <span style="font-size:0.80rem;color:${_C.muted};">${_esc(a.metric)}:</span>
+            <span style="font-size:0.82rem;font-weight:700;color:${a.color};">${_esc(a.current)}</span>
+            <span style="font-size:0.78rem;color:${_C.dim};">threshold: ${_esc(a.limit)}</span>
+            <button
+              onclick="_saAlertDismiss('${_esc(a.id)}')"
+              title="Dismiss this alert"
+              style="margin-left:auto;background:none;border:1px solid rgba(239,68,68,0.25);border-radius:3px;padding:1px 7px;cursor:pointer;font-size:0.78rem;color:rgba(239,68,68,0.55);line-height:1.5;flex-shrink:0;transition:border-color 0.2s;">✕</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>`
+}
+
+// ── Alert Dismiss ─────────────────────────────────────────────────────────────
+
+function _saAlertDismiss(id) {
+  let dismissed = {}
+  try { dismissed = JSON.parse(sessionStorage.getItem('_saAlertDismissed') || '{}') } catch(e) {}
+  dismissed[id] = Date.now()
+  try { sessionStorage.setItem('_saAlertDismissed', JSON.stringify(dismissed)) } catch(e) {}
+  _saPendingAlerts = _saPendingAlerts.filter(a => a.id !== id)
+  _saRenderAlertBanner()
+}
+
+// ── Alert Config Toggle ───────────────────────────────────────────────────────
+
+function _saToggleAlertConfig() {
+  const row = document.getElementById('sa-alert-config-row')
+  if (!row) return
+  row.style.display = row.style.display === 'none' ? 'block' : 'none'
+}
+
+// ── Alert Config Persist ──────────────────────────────────────────────────────
+
+function _saAlertConfigSave() {
+  const critEl    = document.getElementById('sa-cfg-crit')
+  const surgeEl   = document.getElementById('sa-cfg-surge')
+  const enabledEl = document.getElementById('sa-cfg-enabled')
+  if (critEl)    _saAlertConfig.criticalPct   = Math.max(1, Math.min(100, +critEl.value   || 30))
+  if (surgeEl)   _saAlertConfig.surgeMultiple  = Math.max(1.1, +surgeEl.value || 3)
+  if (enabledEl) _saAlertConfig.enabled        = enabledEl.checked
+  try { sessionStorage.setItem('_saAlertConfig', JSON.stringify(_saAlertConfig)) } catch(e) {}
+  // Re-run threshold check with new values
+  _saCheckThresholds()
+}
 

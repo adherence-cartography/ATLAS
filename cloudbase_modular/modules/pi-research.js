@@ -147,6 +147,7 @@ async function initPiResearchPanel() {
       renderPiVelocity(records, savedTarget);
       renderPiHeatmap(records, allowedWS);
       renderPiConsort(records);
+      renderPiSequentialAnalysis(records, savedTarget);
       // P1: Data quality check after cohort load
       if (typeof _piCheckDataQuality === 'function') _piCheckDataQuality(records, window._rppPeacsData || dashPeacsData || []);
       // P2: Enrollment velocity card
@@ -3083,3 +3084,177 @@ async function sendTestPulseDigest() {
 
 window.savePulsePreferences  = savePulsePreferences;
 window.sendTestPulseDigest   = sendTestPulseDigest;
+
+// ── Sequential Analysis Monitor ───────────────────────────────────────────────
+/**
+ * Renders an O'Brien-Fleming sequential analysis monitor into #pi-sequential-analysis.
+ * Reads the cohort's adherence scores (score/8), computes a Z-statistic against the
+ * null-hypothesis mean of 0.5, and compares it to the O'Brien-Fleming boundary for
+ * the current interim look. The K selector recalculates everything client-side.
+ *
+ * @param {Array}  records  - Filtered assessment records (same array used by renderPiVelocity)
+ * @param {number} target   - Enrollment target (N_target)
+ */
+function renderPiSequentialAnalysis(records, target) {
+  const wrap = document.getElementById('pi-sequential-analysis');
+  if (!wrap) return;
+
+  // ── Constants ──
+  const Z_ALPHA_HALF = 1.96; // two-sided α = 0.05
+  const BASELINE     = 0.5;  // H₀ mean adherence
+  const MIN_N        = 10;
+
+  // ── Derive N_target with safe fallback ──
+  const N_target = (target > 0 ? target :
+    (workspaceProfile?.enrollment_target || workspaceProfile?.target_enrollment || 100));
+
+  // ── Scores: use record.score (out of 8) ──
+  const validScores = records
+    .map(r => (r.score != null ? +r.score / 8 : null))
+    .filter(v => v !== null && !isNaN(v));
+  const N_current = validScores.length;
+
+  // ── Insufficient data guard ──
+  if (N_current < MIN_N) {
+    wrap.innerHTML =
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:20px 24px;">' +
+        '<div style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Sequential Analysis Monitor</div>' +
+        '<div style="font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">Insufficient data for sequential analysis (minimum ' + MIN_N + ' records)</div>' +
+      '</div>';
+    return;
+  }
+
+  // ── Helper: render function called on K change ──
+  function _renderWithK(K) {
+    K = Math.max(2, Math.min(5, +K || 4));
+
+    // Current look k
+    const k_raw = Math.floor(K * N_current / N_target);
+    const k = Math.min(K, Math.max(1, k_raw));
+
+    // O'Brien-Fleming boundary at look k
+    const c_k = Z_ALPHA_HALF * Math.sqrt(K / k);
+
+    // Z-statistic
+    const mean_sum = validScores.reduce((a, b) => a + b, 0);
+    const current_mean = mean_sum / N_current;
+    const ss = validScores.reduce((a, v) => a + (v - current_mean) ** 2, 0);
+    const sd = N_current > 1 ? Math.sqrt(ss / (N_current - 1)) : 0;
+    const Z  = sd > 0 ? (current_mean - BASELINE) / (sd / Math.sqrt(N_current)) : 0;
+    const absZ = Math.abs(Z);
+
+    // Status
+    let statusText, statusColor, statusBg, statusBorder;
+    if (absZ > c_k * 1.2) {
+      statusText   = 'CONSIDER STOPPING — boundary breached';
+      statusColor  = '#ef4444';
+      statusBg     = 'rgba(239,68,68,0.10)';
+      statusBorder = 'rgba(239,68,68,0.30)';
+    } else if (absZ > c_k * 0.8) {
+      statusText   = 'APPROACHING BOUNDARY — monitor closely';
+      statusColor  = '#f59e0b';
+      statusBg     = 'rgba(245,158,11,0.10)';
+      statusBorder = 'rgba(245,158,11,0.30)';
+    } else {
+      statusText   = 'CONTINUE — within bounds';
+      statusColor  = '#2ec98a';
+      statusBg     = 'rgba(46,201,138,0.10)';
+      statusBorder = 'rgba(46,201,138,0.30)';
+    }
+
+    // Progress bar (text-based)
+    const pct = N_target > 0 ? Math.min(100, (N_current / N_target) * 100) : 0;
+    const barFilled = Math.round(pct / 5); // 20-char bar
+    const barEmpty  = 20 - barFilled;
+    const barStr    = '█'.repeat(barFilled) + '░'.repeat(barEmpty);
+
+    // K selector options
+    const kOptions = [2, 3, 4, 5].map(v =>
+      '<option value="' + v + '"' + (v === K ? ' selected' : '') + '>' + v + '</option>'
+    ).join('');
+
+    wrap.innerHTML =
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:20px 24px;">' +
+
+        // ── Header ──
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">' +
+          '<div style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);">Sequential Analysis Monitor</div>' +
+          '<span title="O\'Brien-Fleming α-spending boundaries. The critical value at look k of K total looks is Z_{α/2} × √(K/k), which is more conservative at early looks and relaxes toward study end." ' +
+            'style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.25);color:var(--base);font-family:var(--font-mono);font-size:0.60rem;cursor:default;flex-shrink:0;">?</span>' +
+        '</div>' +
+
+        // ── Three stat boxes ──
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">' +
+
+          // Box 1: N
+          '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">' +
+            '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Current N / Target</div>' +
+            '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.40rem;font-weight:300;color:var(--bright);line-height:1.1;">' +
+              N_current.toLocaleString() + '<span style="font-size:0.85rem;color:var(--dim);"> / ' + N_target.toLocaleString() + '</span>' +
+            '</div>' +
+            '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);margin-top:4px;">look ' + k + ' of ' + K + '</div>' +
+          '</div>' +
+
+          // Box 2: Z vs boundary
+          '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">' +
+            '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Z-Statistic vs Boundary</div>' +
+            '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.40rem;font-weight:300;color:var(--bright);line-height:1.1;">' +
+              'Z\u00A0=\u00A0' + Z.toFixed(2) +
+            '</div>' +
+            '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);margin-top:4px;">boundary ' + c_k.toFixed(2) + '</div>' +
+          '</div>' +
+
+          // Box 3: Status badge
+          '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;justify-content:center;">' +
+            '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Status</div>' +
+            '<div style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;' +
+              'background:' + statusBg + ';border:1px solid ' + statusBorder + ';color:' + statusColor + ';' +
+              'border-radius:5px;padding:5px 9px;line-height:1.4;">' +
+              statusText +
+            '</div>' +
+          '</div>' +
+
+        '</div>' +
+
+        // ── Progress bar ──
+        '<div style="margin-bottom:12px;">' +
+          '<div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);margin-bottom:4px;">' +
+            '<span>Enrollment progress</span>' +
+            '<span>' + pct.toFixed(1) + '%</span>' +
+          '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.70rem;color:var(--base);letter-spacing:0.05em;overflow:hidden;white-space:nowrap;">' +
+            barStr +
+          '</div>' +
+          '<div style="font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);margin-top:3px;">' +
+            N_current.toLocaleString() + ' of ' + N_target.toLocaleString() + ' records' +
+          '</div>' +
+        '</div>' +
+
+        // ── K selector ──
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
+          '<label style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);">Planned looks (K):</label>' +
+          '<select id="pi-seq-k-select" onchange="(function(){var k=+document.getElementById(\'pi-seq-k-select\').value;renderPiSequentialAnalysis(window._piAllRecords||[],window._piSeqTarget||0,k);})()" ' +
+            'style="font-family:var(--font-mono);font-size:0.72rem;background:var(--card2);border:1px solid var(--border2);color:var(--muted);border-radius:5px;padding:4px 8px;outline:none;cursor:pointer;">' +
+            kOptions +
+          '</select>' +
+        '</div>' +
+
+        // ── Disclaimer ──
+        '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);line-height:1.6;border-top:1px solid var(--border);padding-top:10px;">' +
+          'O\'Brien-Fleming \u03b1-spending. Not a substitute for formal DSMB review.' +
+        '</div>' +
+
+      '</div>';
+  }
+
+  // Cache records and target so the K selector can re-invoke without re-fetching
+  window._piAllRecords = records;
+  window._piSeqTarget  = target;
+
+  // Read K from existing selector if present (preserves user selection across re-renders)
+  const existingSel = document.getElementById('pi-seq-k-select');
+  const K = existingSel ? (+existingSel.value || 4) : 4;
+  _renderWithK(K);
+}
+
+window.renderPiSequentialAnalysis = renderPiSequentialAnalysis;

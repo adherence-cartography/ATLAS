@@ -2,21 +2,22 @@
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PLATFORM TAB — Administrative Oversight
-// Sub-sections: Workspaces · Campaigns · API Keys · Letters · Site Banner · System
+// Sub-sections: Workspaces · Campaigns · Internal Keys · Partner APIs · Letters · Site Banner · System
 // ══════════════════════════════════════════════════════════════════════════════
 
 let _saPlatTab = 'workspaces';
 let _saPlatWsAll = [];
 
 const _SA_PLAT_SUBS = [
-  { id: 'workspaces', label: '⬡ Workspaces' },
-  { id: 'campaigns',  label: '◆ Campaigns'  },
-  { id: 'api',        label: '◈ API Keys'   },
-  { id: 'letters',    label: '✉ Letters'    },
-  { id: 'banner',     label: '📢 Banner'     },
-  { id: 'modules',    label: '◫ Module Paths'},
-  { id: 'requests',   label: '◐ Requests'   },
-  { id: 'system',     label: '◉ System'     },
+  { id: 'workspaces', label: '⬡ Workspaces'   },
+  { id: 'campaigns',  label: '◆ Campaigns'    },
+  { id: 'api',        label: '◈ Internal Keys' },
+  { id: 'partners',   label: '⬡ Partner APIs' },
+  { id: 'letters',    label: '✉ Letters'      },
+  { id: 'banner',     label: '📢 Banner'       },
+  { id: 'modules',    label: '◫ Module Paths' },
+  { id: 'requests',   label: '◐ Requests'     },
+  { id: 'system',     label: '◉ System'       },
 ];
 
 function _saRenderPlatform(container) {
@@ -54,6 +55,7 @@ function _saPlatNav(tab) {
     case 'workspaces': _saPlatWorkspaces(body); break;
     case 'campaigns':  _saPlatCampaigns(body);  break;
     case 'api':        _saPlatApiKeys(body);    break;
+    case 'partners':   (window.saPartnersInit ? window.saPartnersInit(body) : (body.innerHTML = `<div style="color:${_C.muted};padding:20px;">Partner API module not loaded.</div>`)); break;
     case 'letters':    _saPlatLetters(body);    break;
     case 'banner':     _saPlatBanner(body);        break;
     case 'modules':    _saPlatModulePaths(body);  break;

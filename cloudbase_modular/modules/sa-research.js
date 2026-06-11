@@ -433,10 +433,30 @@ function _saResRenderAnalysis(body) {
     </div>
 
     <!-- Results -->
-    <div id="sa-ana-results">
-      <div class="sa-panel" style="display:flex;align-items:center;justify-content:center;height:300px;flex-direction:column;gap:10px;">
-        <div style="font-size:1.5rem;opacity:0.15;">◬</div>
-        <div style="font-size:0.90rem;color:${_C.dim};">Configure settings and click Run Analysis.</div>
+    <div>
+      <div id="sa-ana-results">
+        <div class="sa-panel" style="display:flex;align-items:center;justify-content:center;height:300px;flex-direction:column;gap:10px;">
+          <div style="font-size:1.5rem;opacity:0.15;">◬</div>
+          <div style="font-size:0.90rem;color:${_C.dim};">Configure settings and click Run Analysis.</div>
+        </div>
+      </div>
+
+      <!-- Patient Trajectories panel -->
+      <div style="margin-top:18px;">
+        <div class="sa-panel" style="padding:0;overflow:hidden;">
+          <div style="padding:12px 16px;border-bottom:1px solid ${_C.border};display:flex;align-items:center;justify-content:space-between;">
+            <div class="sa-section-eyebrow" style="margin:0;">Patient Trajectories · MMAS-8</div>
+            <button id="sa-traj-toggle-btn" onclick="_saToggleTrajectoryView()"
+              style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.10em;text-transform:uppercase;
+                     padding:5px 12px;border-radius:5px;cursor:pointer;transition:all 0.15s;
+                     background:transparent;border:1px solid ${_C.border};color:${_C.muted};">
+              ◎ Trajectory View
+            </button>
+          </div>
+          <div id="sa-traj-body" style="padding:14px 16px;">
+            <div style="font-size:0.86rem;color:${_C.dim};padding:20px 0;text-align:center;">Toggle Trajectory View to group patients by longitudinal submissions.</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>`;
@@ -1769,6 +1789,225 @@ function _saResRenderRefs(body) {
       </div>
     </div>`).join('')}
   </div>`).join('')}`;
+}
+
+// ── PATIENT TRAJECTORIES ─────────────────────────────────────────────────────
+
+let _saTrajViewActive = false;
+
+/**
+ * Returns a deterministic blinded display ID for a patient_number using a
+ * simple djb2-variant hash scoped to the current workspace.
+ */
+function _saBlindPatientId(pn) {
+  const input = (typeof currentWorkspace !== 'undefined' ? currentWorkspace : '') + '|' + String(pn);
+  let h = 5381;
+  for (let i = 0; i < input.length; i++) h = ((h << 5) + h) ^ input.charCodeAt(i);
+  return 'PT' + (h >>> 0).toString(16).toUpperCase().padStart(8, '0');
+}
+
+/**
+ * Groups MMAS-8 records by patient_number, sorts each group chronologically,
+ * and returns trajectory summaries.
+ * @param {Object[]} records - MMAS-8 records from _saCache.mmas
+ * @returns {Array<{patient_number: string, blind_id: string, records: Object[],
+ *                  first_ts: number, last_ts: number,
+ *                  first_score: number, last_score: number, mean_score: number}>}
+ */
+function _saGroupByPatient(records) {
+  const byPat = {};
+  records.forEach(r => {
+    const pn = r.patient_number != null ? String(r.patient_number).trim() : null;
+    if (!pn) return; // skip records without a patient_number
+    if (!byPat[pn]) byPat[pn] = [];
+    byPat[pn].push(r);
+  });
+  return Object.entries(byPat).map(([pn, recs]) => {
+    recs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    const scores = recs.map(r => {
+      if (r.map_q1 !== undefined) {
+        // MAP record — compute normalised score 0-8 equivalent
+        return Math.pow(Math.max(0,
+          ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3 *
+          ((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3 *
+          (0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2)
+        ), 1/3) * 8;
+      }
+      return +(r.score) || 0;
+    });
+    const mean = scores.length ? scores.reduce((a,v)=>a+v,0)/scores.length : 0;
+    return {
+      patient_number: pn,
+      blind_id:       _saBlindPatientId(pn),
+      records:        recs,
+      first_ts:       recs[0].timestamp  || 0,
+      last_ts:        recs[recs.length-1].timestamp || 0,
+      first_score:    scores[0]    || 0,
+      last_score:     scores[scores.length-1] || 0,
+      mean_score:     mean,
+      scores,
+    };
+  }).sort((a, b) => b.records.length - a.records.length);
+}
+
+/**
+ * Renders a single trajectory row sparkline as inline SVG colored dots.
+ * Each dot is colored by adherence level: red <0.55 norm, amber 0.55-0.74, green >=0.75.
+ */
+function _saTrajSparkline(scores) {
+  // Normalize 0-8 → 0-1 for coloring (MMAS-8 max = 8)
+  const dots = scores.map(sc => {
+    const norm = sc / 8;
+    const col = norm >= 0.75 ? '#10b981' : norm >= 0.55 ? '#f59e0b' : '#ef4444';
+    return `<circle r="4.5" cy="9" cx="9" fill="${col}" opacity="0.85"/>`;
+  });
+  // Layout dots horizontally
+  const gap = 14;
+  const w = Math.max(scores.length * gap, gap);
+  const svgParts = scores.map((sc, i) => {
+    const norm = sc / 8;
+    const col = norm >= 0.75 ? '#10b981' : norm >= 0.55 ? '#f59e0b' : '#ef4444';
+    return `<circle cx="${6 + i * gap}" cy="8" r="4" fill="${col}" opacity="0.85"/>`;
+  });
+  // Add connecting line between dots
+  if (scores.length > 1) {
+    const linePoints = scores.map((_, i) => `${6 + i * gap},8`).join(' ');
+    svgParts.unshift(`<polyline points="${linePoints}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" stroke-linejoin="round"/>`);
+  }
+  return `<svg width="${6 + (scores.length - 1) * gap + 6}" height="16" style="overflow:visible;vertical-align:middle;">${svgParts.join('')}</svg>`;
+}
+
+/**
+ * Renders the patient trajectory table into a container element.
+ * @param {HTMLElement} container
+ * @param {Array} grouped - Output of _saGroupByPatient
+ */
+function _saRenderTrajectories(container, grouped) {
+  if (!grouped.length) {
+    container.innerHTML = `<div style="font-size:0.86rem;color:${_C.dim};padding:24px 0;text-align:center;">
+      No multi-submission patient data found. Trajectory view requires records with a <code>patient_number</code> field.</div>`;
+    return;
+  }
+
+  // Look up PEACS data for these patient_numbers
+  const peacsByPat = {};
+  const peacsRecs = _saCache.peacs || [];
+  peacsRecs.forEach(r => {
+    const pn = r.patient_number != null ? String(r.patient_number).trim() : null;
+    if (!pn) return;
+    if (!peacsByPat[pn] || (r.timestamp||0) > (peacsByPat[pn].timestamp||0)) {
+      peacsByPat[pn] = r;
+    }
+  });
+
+  const rows = grouped.map((g, idx) => {
+    const delta = g.last_score - g.first_score;
+    const dir   = Math.abs(delta) < 0.5 ? '→' : delta > 0 ? '↑' : '↓';
+    const dirCol = dir === '↑' ? '#10b981' : dir === '↓' ? '#ef4444' : '#f59e0b';
+    const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
+    const meanCol = g.mean_score/8 >= 0.75 ? '#10b981' : g.mean_score/8 >= 0.55 ? '#f59e0b' : '#ef4444';
+
+    // PEACS phenotype badge
+    let phenoBadge = '';
+    const pr = peacsByPat[g.patient_number];
+    if (pr && pr.base != null && pr.mvmt != null && pr.strata != null &&
+        typeof _peacsComputeConfidence === 'function') {
+      const conf = _peacsComputeConfidence(pr);
+      const PHENOTYPE_COLORS = {
+        'Intentional Resistor':'#ef4444','Routine Forgetter':'#f59e0b',
+        'Situational Skipper':'#8b6ff5','Side-Effect Avoider':'#3b82f6','Optimistic Stopper':'#10b981'
+      };
+      const pcol = PHENOTYPE_COLORS[conf.primary] || '#6b8099';
+      const pct  = ((conf.scores[conf.primary]||0)*100).toFixed(0);
+      phenoBadge = `<span style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;padding:2px 7px;border-radius:10px;
+        background:${pcol}1a;border:1px solid ${pcol}44;color:${pcol};white-space:nowrap;">${conf.primary} ${pct}%</span>`;
+    }
+
+    const rowId = `sa-traj-row-${idx}`;
+    const subId = `sa-traj-sub-${idx}`;
+
+    return `<tr id="${rowId}" style="border-bottom:1px solid ${_C.border};cursor:pointer;transition:background 0.12s;"
+        onclick="(function(){const s=document.getElementById('${subId}');if(s){s.style.display=s.style.display==='none'?'table-row':'none';}})()"
+        onmouseover="this.style.background='${_C.navy}'" onmouseout="this.style.background='transparent'">
+      <td style="padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:${_C.amber};" title="Patient: ${_saEsc(g.patient_number)}">${_saEsc(g.blind_id)}</td>
+      <td style="padding:8px 12px;font-size:0.84rem;color:${_C.muted};text-align:center;">${g.records.length}</td>
+      <td style="padding:8px 12px;font-size:0.80rem;color:${_C.dim};white-space:nowrap;">${fmtDate(g.first_ts)}</td>
+      <td style="padding:8px 12px;font-size:0.80rem;color:${_C.dim};white-space:nowrap;">${fmtDate(g.last_ts)}</td>
+      <td style="padding:8px 12px;">${_saTrajSparkline(g.scores)}</td>
+      <td style="padding:8px 12px;font-size:1.0rem;font-weight:700;color:${dirCol};text-align:center;">${dir}</td>
+      <td style="padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:0.86rem;font-weight:700;color:${meanCol};">${(g.mean_score).toFixed(2)}</td>
+      <td style="padding:8px 12px;">${phenoBadge}</td>
+    </tr>
+    <tr id="${subId}" style="display:none;border-bottom:1px solid ${_C.border};">
+      <td colspan="8" style="padding:0;">
+        <div style="background:${_C.bg2};padding:10px 16px;border-left:3px solid ${_C.amber};">
+          <div style="font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;color:${_C.dim};margin-bottom:8px;">All Submissions — ${_saEsc(g.blind_id)}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:0.80rem;">
+            <thead><tr>
+              ${['#','Date','Score','Norm','Tier'].map(h=>`<th style="padding:4px 10px;text-align:left;color:${_C.dim};font-weight:400;font-size:0.70rem;letter-spacing:0.12em;text-transform:uppercase;">${h}</th>`).join('')}
+            </tr></thead>
+            <tbody>
+              ${g.records.map((r, ri) => {
+                const sc = g.scores[ri];
+                const norm = sc/8;
+                const tier = sc >= 7 ? 'High' : sc >= 6 ? 'Medium' : 'Low';
+                const tCol = sc >= 7 ? '#10b981' : sc >= 6 ? '#f59e0b' : '#ef4444';
+                const ts   = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+                return `<tr style="border-bottom:1px solid ${_C.border};">
+                  <td style="padding:4px 10px;color:${_C.dim};">${ri+1}</td>
+                  <td style="padding:4px 10px;color:${_C.muted};">${ts}</td>
+                  <td style="padding:4px 10px;color:${tCol};font-weight:700;">${sc.toFixed(2)}</td>
+                  <td style="padding:4px 10px;color:${_C.muted};">${norm.toFixed(3)}</td>
+                  <td style="padding:4px 10px;color:${tCol};">${tier}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+  <div style="overflow-x:auto;">
+    <div style="font-size:0.80rem;color:${_C.dim};margin-bottom:10px;">${grouped.length} patients with repeated submissions. Patient IDs are blinded (djb2 hash). Click row to expand submissions.</div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="background:${_C.bg2};">
+        ${['Patient ID','N','First','Last','Score Trend','Dir','Mean','PEACS Phenotype'].map(h=>
+          `<th style="padding:8px 12px;text-align:left;font-size:0.70rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};border-bottom:1px solid ${_C.border};white-space:nowrap;">${h}</th>`
+        ).join('')}
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+/**
+ * Toggles between Trajectory View and the default placeholder in the trajectory panel.
+ */
+function _saToggleTrajectoryView() {
+  _saTrajViewActive = !_saTrajViewActive;
+  const btn  = document.getElementById('sa-traj-toggle-btn');
+  const body = document.getElementById('sa-traj-body');
+  if (!btn || !body) return;
+
+  if (_saTrajViewActive) {
+    btn.style.background   = _C.amberFaint;
+    btn.style.borderColor  = 'rgba(212,168,67,0.35)';
+    btn.style.color        = _C.amber;
+    btn.textContent        = '◎ Record View';
+
+    // Build trajectory data from MMAS-8 records only
+    const mmasOnly = (_saCache.mmas || []).filter(r => r.tool !== 'map' && r.map_q1 === undefined);
+    const grouped  = _saGroupByPatient(mmasOnly);
+    _saRenderTrajectories(body, grouped);
+  } else {
+    btn.style.background   = 'transparent';
+    btn.style.borderColor  = _C.border;
+    btn.style.color        = _C.muted;
+    btn.textContent        = '◎ Trajectory View';
+    body.innerHTML = `<div style="font-size:0.86rem;color:${_C.dim};padding:20px 0;text-align:center;">Toggle Trajectory View to group patients by longitudinal submissions.</div>`;
+  }
 }
 
 function _saResCopyRef(groupIdx, refIdx) {

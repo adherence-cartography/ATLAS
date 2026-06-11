@@ -1,0 +1,9 @@
+{
+  "name": "atlas-partner-api",
+  "version": "1.0.0",
+  "description": "ATLAS Partner API — generic instrument submission API for third-party integrations",
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

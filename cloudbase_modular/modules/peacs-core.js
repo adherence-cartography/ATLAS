@@ -1209,6 +1209,94 @@ function getPeacsDiag(pe, b, m, s) {
   return {primary:'Critical Adherence Risk',type:'Intensive Support Protocol',actions:['Immediate care team consultation','Consider supervised dosing or home health','Comprehensive social services evaluation','Alternative formulation review (long-acting, combination)','Emergency support network establishment']};
 }
 
+// ── PHENOTYPE CONFIDENCE SCORING ──────────────────────────────────────────────
+/**
+ * Computes relative confidence scores (0-1) for all 5 PEACS phenotypes based on
+ * the BASE, MVMT, and STRATA dimension scores of a record.
+ * Returns { primary: string, scores: { [phenotype]: number } }
+ * @param {Object} record - PEACS record with base, mvmt, strata (0-1) fields
+ * @returns {{ primary: string, scores: Object.<string, number> }}
+ */
+function _peacsComputeConfidence(record) {
+  const b = parseFloat(record.base)   || 0;
+  const m = parseFloat(record.mvmt)   || 0;
+  const s = parseFloat(record.strata) || 0;
+
+  // For Optimistic Stopper, we need trajectory info — use pe as a proxy.
+  // High PE with declining signal: use composite pe value relative to dims.
+  const pe = parseFloat(record.pe) || Math.pow(Math.max(0, b * m * s), 1/3);
+
+  // Raw affinity scores per phenotype based on domain pattern
+  // Intentional Resistor:  low BASE, moderate MVMT, moderate STRATA
+  const irScore = (1 - b) * 0.6 + (1 - Math.abs(m - 0.5)) * 0.2 + (1 - Math.abs(s - 0.5)) * 0.2;
+
+  // Routine Forgetter:  moderate BASE, very low MVMT, moderate STRATA
+  const rfScore = (1 - Math.abs(b - 0.6)) * 0.2 + (1 - m) * 0.6 + (1 - Math.abs(s - 0.55)) * 0.2;
+
+  // Situational Skipper:  high BASE, oscillating MVMT, high STRATA
+  const ssScore = b * 0.35 + (1 - Math.abs(m - 0.5)) * 0.3 + s * 0.35;
+
+  // Side-Effect Avoider:  low BASE (fear-driven), low-moderate MVMT, low-moderate STRATA
+  const seScore = (1 - b) * 0.5 + (1 - Math.abs(m - 0.4)) * 0.25 + (1 - Math.abs(s - 0.5)) * 0.25;
+
+  // Optimistic Stopper:  high PE but low trajectory — high starting PE relative to current
+  // Approximate with: moderately high BASE but lower m+s relative to b
+  const osScore = b * 0.5 + (b > 0 ? Math.max(0, b - (m + s) / 2) : 0) * 0.5;
+
+  const rawMap = {
+    'Intentional Resistor':  Math.max(0, irScore),
+    'Routine Forgetter':     Math.max(0, rfScore),
+    'Situational Skipper':   Math.max(0, ssScore),
+    'Side-Effect Avoider':   Math.max(0, seScore),
+    'Optimistic Stopper':    Math.max(0, osScore),
+  };
+
+  const total = Object.values(rawMap).reduce((a, v) => a + v, 0) || 1;
+  const scores = {};
+  let primary = 'Routine Forgetter';
+  let maxScore = -1;
+  for (const [name, raw] of Object.entries(rawMap)) {
+    scores[name] = raw / total;
+    if (scores[name] > maxScore) { maxScore = scores[name]; primary = name; }
+  }
+  return { primary, scores };
+}
+
+/**
+ * Renders a horizontal confidence bar chart for all 5 PEACS phenotypes.
+ * The primary phenotype row is highlighted. Uses inline CSS.
+ * @param {{ primary: string, scores: Object.<string, number> }} conf - Output of _peacsComputeConfidence
+ * @returns {string} HTML string
+ */
+function _peacsConfidenceBar(conf) {
+  const PHENOTYPE_COLORS = {
+    'Intentional Resistor': '#ef4444',
+    'Routine Forgetter':    '#f59e0b',
+    'Situational Skipper':  '#8b6ff5',
+    'Side-Effect Avoider':  '#3b82f6',
+    'Optimistic Stopper':   '#10b981',
+  };
+  const rows = Object.entries(conf.scores)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, pct]) => {
+      const isPrimary = name === conf.primary;
+      const col = PHENOTYPE_COLORS[name] || '#6b8099';
+      const pctStr = (pct * 100).toFixed(1) + '%';
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <div style="width:130px;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:${isPrimary ? col : 'rgba(200,214,232,0.45)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${name}</div>
+        <div style="flex:1;height:10px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${(pct * 100).toFixed(1)}%;background:${col};opacity:${isPrimary ? '0.85' : '0.35'};border-radius:4px;transition:width 0.4s;"></div>
+        </div>
+        <div style="width:38px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:${isPrimary ? col : 'rgba(200,214,232,0.4)'};">${pctStr}</div>
+      </div>`;
+    }).join('');
+
+  return `<div style="margin:12px 0;padding:12px 14px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(200,214,232,0.4);margin-bottom:9px;">Phenotype Confidence</div>
+    ${rows}
+  </div>`;
+}
+
 function _updatePeacsFloaterLegacy() {
   const zoneEl = document.getElementById('fl-zone');
   if (peEl) { peEl.textContent = pe!==null ? pe.toFixed(4) : '—'; peEl.style.color = zone.color; }
@@ -1431,6 +1519,7 @@ function renderPeacsResults(b, m, s, pe) {
     </div>
     <div style="font-family:var(--font-mono);font-size:0.80rem;padding:8px 12px;border-radius:7px;background:${zone.color}18;border:1px solid ${zone.color}44;color:${zone.color};margin-bottom:16px;">${zone.label}</div>
     ${pe !== null ? `<div id="pr-pe-triangle" style="margin:14px 0;"></div>` : ''}
+    ${(b !== null && m !== null && s !== null) ? _peacsConfidenceBar(_peacsComputeConfidence({base:b, mvmt:m, strata:s, pe})) : ''}
     <div class="peacs-diag-box">
       <div class="peacs-diag-title">${diag.primary}</div>
       <div class="peacs-diag-type">${diag.type}</div>
@@ -2600,6 +2689,7 @@ function loadPeacsDiagnostics() {
           <div class="peacs-score-chip"><div class="peacs-score-val" style="color:${z.color}">${(a.pe||0).toFixed(4)}</div><div class="peacs-score-lbl">PE</div></div>
         </div>
         <div style="font-family:var(--font-mono);font-size:0.88rem;padding:6px 10px;border-radius:6px;background:${z.color}18;border:1px solid ${z.color}44;color:${z.color};margin-bottom:12px;">${z.label}</div>
+        ${_peacsConfidenceBar(_peacsComputeConfidence(a))}
         <div class="peacs-diag-box">
           <div class="peacs-diag-title">${diag.primary}</div>
           <div class="peacs-diag-type">${diag.type}</div>

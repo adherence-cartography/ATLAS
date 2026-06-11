@@ -328,7 +328,9 @@ async function _saAiBriefWithClaude() {
   try {
     const useProxy   = !!ATLAS_AI_PROXY_URL;
     const endpoint   = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
-    const idToken    = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
+    const fbUser     = useProxy ? firebase.auth().currentUser : null;
+    if (useProxy && !fbUser) throw new Error('Not signed in');
+    const idToken    = useProxy ? (await fbUser.getIdToken()) : null;
     const reqHeaders = useProxy
       ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
       : { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
@@ -343,7 +345,11 @@ async function _saAiBriefWithClaude() {
         messages: [{ role: 'user', content: `Generate the daily intelligence brief for ${ctx.date}.\n\nPlatform data: ${JSON.stringify(ctx)}` }],
       }),
     });
-    if (!res.ok) throw new Error(`API ${res.status}`);
+    if (!res.ok) {
+      let errMsg = 'API ' + res.status;
+      try { const errBody = await res.json(); errMsg = errBody.error || errBody.message || errMsg; } catch(_) {}
+      throw new Error(errMsg);
+    }
     const data = await res.json();
     const text = data.content?.[0]?.text || '';
     if (text) {
@@ -776,6 +782,9 @@ async function _saAiNlqAnswer(q) {
   if (key || ATLAS_AI_PROXY_URL) {
     try { return await _saAiCallClaude(q, key); }
     catch(err) {
+      // Try the rule engine as fallback; only show error if it has no specific answer
+      const fallback = _saAiRuleAnswer(q);
+      if (!fallback.startsWith('Summary:')) return fallback;
       return `Unable to reach Claude AI (${err.message || 'network error'}). Try again in a moment.`;
     }
   }
@@ -892,84 +901,177 @@ async function _saAiCallClaude(query, apiKey) {
   // ── Derived data ──────────────────────────────────────────────────────────────
   const wsDataCodes = new Set(mmasOnly.map(r=>r.institution_code||r.workspace).filter(Boolean));
 
-  // Per-country MMAS adherence (top 40 by volume)
-  const mmas_by_country = _tallyMean(mmasOnly, 'country', 40);
+  // Helper: build {n, mean, low_n, high_n} rollups keyed by a string field
+  // low = score < 0.55 (MMAS low adherence threshold); high = score >= 0.85
+  const _tallyFull = (recs, scoreKey, field, topN=40, isMap=false) => {
+    const map = {};
+    for (const r of recs) {
+      const v = _trunc((r[field]||'').trim());
+      if (!v || v === 'Unknown') continue;
+      const s = isMap ? _mapPE(r) : (r[scoreKey]||0)/8;
+      if (!map[v]) map[v] = { n:0, sum:0, low:0, high:0 };
+      map[v].n++;
+      map[v].sum += s;
+      if (s < 0.55) map[v].low++;
+      if (s >= 0.85) map[v].high++;
+    }
+    return Object.entries(map).sort((a,b)=>b[1].n-a[1].n).slice(0,topN)
+      .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high }; return obj; }, {});
+  };
 
-  // Per-workspace MMAS adherence (top 15 by volume)
+  // ── MMAS-8 breakdowns ─────────────────────────────────────────────────────────
+  const mmas_by_country  = _tallyFull(mmasOnly, 'score', 'country', 40);
+  const mmas_by_city     = (() => {
+    const map = {};
+    for (const r of mmasOnly) {
+      const city = _trunc((r.city||'').trim()); const ctry = _trunc((r.country||'').trim());
+      if (!city || city==='Unknown' || !ctry) continue;
+      const k = city+', '+ctry; const s = (r.score||0)/8;
+      if (!map[k]) map[k]={ n:0,sum:0,low:0,high:0,country:ctry };
+      map[k].n++; map[k].sum+=s;
+      if(s<0.55) map[k].low++; if(s>=0.85) map[k].high++;
+    }
+    return Object.entries(map).filter(([,v])=>v.n>=2).sort((a,b)=>b[1].n-a[1].n).slice(0,60)
+      .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high, country:v.country }; return obj; }, {});
+  })();
+
   const mmas_by_workspace = [...wsDataCodes].map(code => {
     const recs = mmasOnly.filter(r=>(r.institution_code||r.workspace)===code);
-    return { code, n:recs.length, mean:+(recs.reduce((s,r)=>s+(r.score||0)/8,0)/recs.length).toFixed(3) };
+    const mean = recs.reduce((s,r)=>s+(r.score||0)/8,0)/recs.length;
+    return { code, n:recs.length, mean:+mean.toFixed(3),
+      low_n: recs.filter(r=>(r.score||0)/8<0.55).length,
+      high_n: recs.filter(r=>(r.score||0)/8>=0.85).length };
   }).sort((a,b)=>b.n-a.n).slice(0,15)
-    .reduce((obj,w)=>{ obj[w.code]={n:w.n,mean:w.mean}; return obj; }, {});
+    .reduce((obj,w)=>{ obj[w.code]={n:w.n,mean:w.mean,low_n:w.low_n,high_n:w.high_n}; return obj; }, {});
 
-  // Top conditions globally with count + mean adherence (top 15, names capped at 50 chars)
-  const conditions_global = _tallyMean(mmasOnly, 'condition', 15);
+  // Conditions and drugs (MMAS)
+  const conditions_global   = _tallyMean(mmasOnly, 'condition', 15);
+  const drugs_global        = _tallyMean(mmasOnly, 'drug_name', 12);
+  const dosing_frequency    = _tally(mmasOnly, 'dosing_frequency', 8);
 
-  // Top conditions per country — only for countries that actually have condition data
-  // Single-pass: build a country→condition map instead of re-filtering per country
+  // Conditions per country (top 20 countries, top 5 conditions each)
   const _ctryCondMap = {};
   for (const r of mmasOnly) {
-    const c = _trunc((r.country||'').trim());
-    const cond = _trunc((r.condition||'').trim());
+    const c = _trunc((r.country||'').trim()); const cond = _trunc((r.condition||'').trim());
     if (!c || !cond) continue;
     if (!_ctryCondMap[c]) _ctryCondMap[c] = {};
-    _ctryCondMap[c][cond] = (_ctryCondMap[c][cond]||0) + 1;
+    _ctryCondMap[c][cond] = (_ctryCondMap[c][cond]||0)+1;
   }
   const conditions_by_country = Object.entries(_ctryCondMap)
-    .filter(([,v])=>Object.keys(v).length > 0)
-    .sort((a,b)=>{
-      const na = Object.values(a[1]).reduce((s,n)=>s+n,0);
-      const nb = Object.values(b[1]).reduce((s,n)=>s+n,0);
-      return nb - na;
-    })
-    .slice(0, 20) // top 20 countries
-    .reduce((obj,[c,condMap])=>{
-      // top 4 conditions per country
-      obj[c] = Object.entries(condMap).sort((a,b)=>b[1]-a[1]).slice(0,4)
-        .reduce((o,[k,n])=>{ o[k]=n; return o; }, {});
+    .sort((a,b)=>Object.values(b[1]).reduce((s,n)=>s+n,0)-Object.values(a[1]).reduce((s,n)=>s+n,0))
+    .slice(0,20)
+    .reduce((obj,[c,cm])=>{
+      obj[c]=Object.entries(cm).sort((a,b)=>b[1]-a[1]).slice(0,5).reduce((o,[k,n])=>{ o[k]=n; return o; },{});
       return obj;
     }, {});
 
-  // Top drugs globally (top 12)
-  const drugs_global = _tallyMean(mmasOnly, 'drug_name', 12);
+  // ── MAP breakdowns ────────────────────────────────────────────────────────────
+  const map_by_country = _tallyFull(mapRecs, null, 'country', 30, true);
+  const map_by_city    = (() => {
+    const map = {};
+    for (const r of mapRecs) {
+      const city = _trunc((r.city||'').trim()); const ctry = _trunc((r.country||'').trim());
+      if (!city || city==='Unknown' || !ctry) continue;
+      const k = city+', '+ctry; const s = _mapPE(r);
+      if (!map[k]) map[k]={ n:0,sum:0,low:0,high:0,country:ctry };
+      map[k].n++; map[k].sum+=s;
+      if(s<0.55) map[k].low++; if(s>=0.85) map[k].high++;
+    }
+    return Object.entries(map).filter(([,v])=>v.n>=2).sort((a,b)=>b[1].n-a[1].n).slice(0,40)
+      .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high, country:v.country }; return obj; }, {});
+  })();
+  const map_conditions = _tallyMean(mapRecs, 'condition', 12);
+  const map_drugs      = _tallyMean(mapRecs, 'drug_name',  10);
 
-  // Demographics distributions
+  // ── PEACS breakdowns ──────────────────────────────────────────────────────────
+  const peacsScored = peacs.filter(r=>r.pe!=null);
+  const _peScore    = r => +r.pe;
+  const peacs_by_country = (() => {
+    const map = {};
+    for (const r of peacsScored) {
+      const v = _trunc((r.country||'').trim()); if (!v||v==='Unknown') continue;
+      const s = _peScore(r);
+      if (!map[v]) map[v]={ n:0,sum:0,low:0,high:0 };
+      map[v].n++; map[v].sum+=s;
+      if(s<0.55) map[v].low++; if(s>=0.85) map[v].high++;
+    }
+    return Object.entries(map).sort((a,b)=>b[1].n-a[1].n).slice(0,30)
+      .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high }; return obj; }, {});
+  })();
+  const peacs_by_city = (() => {
+    const map = {};
+    for (const r of peacsScored) {
+      const city = _trunc((r.city||'').trim()); const ctry = _trunc((r.country||'').trim());
+      if (!city||city==='Unknown'||!ctry) continue;
+      const k = city+', '+ctry; const s = _peScore(r);
+      if (!map[k]) map[k]={ n:0,sum:0,low:0,high:0,country:ctry };
+      map[k].n++; map[k].sum+=s;
+      if(s<0.55) map[k].low++; if(s>=0.85) map[k].high++;
+    }
+    return Object.entries(map).filter(([,v])=>v.n>=2).sort((a,b)=>b[1].n-a[1].n).slice(0,30)
+      .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high, country:v.country }; return obj; }, {});
+  })();
+
+  // Demographics distributions (MMAS)
   const demographics = {
-    gender:    _tally(mmasOnly, 'gender',          6),
-    age_range: _tally(mmasOnly, 'age_range',       8),
-    education: _tally(mmasOnly, 'education_level', 6),
+    gender:           _tally(mmasOnly, 'gender',          6),
+    age_range:        _tally(mmasOnly, 'age_range',       8),
+    education:        _tally(mmasOnly, 'education_level', 6),
+    dosing_frequency: _tally(mmasOnly, 'dosing_frequency',6),
   };
 
-  // ── Context object — guard total size to ~20KB ────────────────────────────────
+  // ── Context object ────────────────────────────────────────────────────────────
   const ctx = {
-    mmas_total: mmasOnly.length,
+    date: new Date().toISOString().slice(0,10),
+    // MMAS-8
+    mmas_total:       mmasOnly.length,
     mmas_global_mean: +mmasMean.toFixed(3),
-    mmas_mean_30d: r30.length ? +(r30.reduce((s,r)=>s+(r.score||0)/8,0)/r30.length).toFixed(3) : null,
-    mmas_critical_n: mmasOnly.filter(r=>(r.score||0)/8<0.55).length,
-    mmas_high_n:     mmasOnly.filter(r=>(r.score||0)/8>=0.85).length,
-    mmas_by_country,
-    mmas_by_workspace,
-    conditions_global,
-    conditions_by_country,
-    drugs_global,
-    demographics,
-    map_total: mapRecs.length,
-    map_mean_pe: mapMean !== null ? +mapMean.toFixed(3) : null,
-    peacs_total: peacs.length,
-    peacs_mean_pe: peacsMean !== null ? +peacsMean.toFixed(3) : null,
-    peacs_critical_n: peacs.filter(r=>(r.pe!=null?+r.pe:1)<0.55).length,
+    mmas_mean_30d:    r30.length ? +(r30.reduce((s,r)=>s+(r.score||0)/8,0)/r30.length).toFixed(3) : null,
+    mmas_low_n:       mmasOnly.filter(r=>(r.score||0)/8<0.55).length,
+    mmas_high_n:      mmasOnly.filter(r=>(r.score||0)/8>=0.85).length,
+    mmas_by_country,   // {country:{n,mean,low_n,high_n}}
+    mmas_by_city,      // {"city, country":{n,mean,low_n,high_n,country}}
+    mmas_by_workspace, // {workspace:{n,mean,low_n,high_n}}
+    conditions_global,     // {condition:{n,mean}}
+    conditions_by_country, // {country:{condition:count}}
+    drugs_global,          // {drug:{n,mean}}
+    dosing_frequency,      // {frequency:count}
+    // MAP
+    map_total:       mapRecs.length,
+    map_global_mean: mapMean !== null ? +mapMean.toFixed(3) : null,
+    map_low_n:       mapRecs.filter(r=>_mapPE(r)<0.55).length,
+    map_high_n:      mapRecs.filter(r=>_mapPE(r)>=0.85).length,
+    map_by_country,  // {country:{n,mean,low_n,high_n}}
+    map_by_city,     // {"city, country":{n,mean,low_n,high_n,country}}
+    map_conditions,  // {condition:{n,mean}}
+    map_drugs,       // {drug:{n,mean}}
+    // PEACS
+    peacs_total:       peacs.length,
+    peacs_global_mean: peacsMean !== null ? +peacsMean.toFixed(3) : null,
+    peacs_low_n:       peacsScored.filter(r=>_peScore(r)<0.55).length,
+    peacs_high_n:      peacsScored.filter(r=>_peScore(r)>=0.85).length,
+    peacs_by_country,  // {country:{n,mean,low_n,high_n}}
+    peacs_by_city,     // {"city, country":{n,mean,low_n,high_n,country}}
+    // Platform
+    demographics,      // {gender, age_range, education, dosing_frequency}
     workspace_count: wsDataCodes.size,
   };
 
-  // Safety valve: if JSON is over 24KB, drop the workspace table (least often needed)
-  const ctxStr = JSON.stringify(ctx);
-  const ctxFinal = ctxStr.length > 24576
-    ? JSON.stringify({ ...ctx, mmas_by_workspace: undefined })
-    : ctxStr;
+  // Safety valve: trim to ~40KB — drop secondary tables if context grows too large
+  // Priority: keep country/city data (most useful); drop workspace then MAP/PEACS city tables
+  let ctxFinal = JSON.stringify(ctx);
+  if (ctxFinal.length > 40960)
+    ctxFinal = JSON.stringify({ ...ctx, mmas_by_workspace: undefined });
+  if (ctxFinal.length > 40960)
+    ctxFinal = JSON.stringify({ ...ctx, mmas_by_workspace: undefined, map_by_city: undefined, peacs_by_city: undefined });
+  if (ctxFinal.length > 40960)
+    ctxFinal = JSON.stringify({ ...ctx, mmas_by_workspace: undefined, map_by_city: undefined, peacs_by_city: undefined, mmas_by_city: undefined });
   const model      = sessionStorage.getItem('atlas_claude_model')||'claude-haiku-4-5-20251001';
   const useProxy   = !!ATLAS_AI_PROXY_URL;
   const endpoint   = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
-  const idToken    = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
+  const fbUser     = useProxy ? firebase.auth().currentUser : null;
+  if (useProxy && !fbUser) throw new Error('Not signed in');
+  const idToken    = useProxy ? (await fbUser.getIdToken()) : null;
   const reqHeaders = useProxy
     ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
     : { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
@@ -980,12 +1082,17 @@ async function _saAiCallClaude(query, apiKey) {
     body:JSON.stringify({model, max_tokens:500,
       system:`You are ATLAS AI, an adherence science intelligence assistant in ATLAS Mission Control. Answer questions using ONLY the real platform data provided in the JSON context. Never say you lack data if it is present in the context.
 
+All numeric adherence values are on a 0–1 scale (e.g. 0.716 = 71.6%). low_n = patients below 0.55 (low adherence); high_n = patients at or above 0.85 (high adherence).
+
 Data fields:
-- mmas_by_country: {country: {n, mean}} — MMAS-8 mean adherence (0–1 scale) and record count per country
-- conditions_global: {condition: {n, mean}} — top conditions globally with record count and mean MMAS-8
-- conditions_by_country: {country: {condition: count}} — top conditions per country
-- drugs_global: {drug: {n, mean}} — top medications with count and mean adherence
-- demographics: {gender, age_range, education} — patient distribution tallies
+MMAS-8: mmas_by_country, mmas_by_city — {n, mean, low_n, high_n} per location
+MAP: map_by_country, map_by_city — {n, mean, low_n, high_n} per location (PE score)
+PEACS: peacs_by_country, peacs_by_city — {n, mean, low_n, high_n} per location (PE score)
+conditions_global, conditions_by_country — condition prevalence and MMAS-8 mean
+map_conditions, map_drugs — MAP-specific condition and drug breakdowns
+drugs_global — top medications with adherence means
+dosing_frequency — global dosing frequency distribution
+demographics — gender, age_range, education, dosing_frequency tallies
 
 For regional questions (e.g. "Western Europe", "Asia"), use your geographic knowledge to identify which countries in mmas_by_country or conditions_by_country belong to that region, then aggregate.
 
@@ -994,7 +1101,11 @@ Rules: express means as % (0.716 = 71.6%); cite exact numbers from context; 2–
 Context: ${ctxFinal}`,
       messages:[{role:'user',content:query}]}),
   });
-  if (!res.ok) throw new Error('API '+res.status);
+  if (!res.ok) {
+    let errMsg = 'API ' + res.status;
+    try { const errBody = await res.json(); errMsg = errBody.error || errBody.message || errMsg; } catch(_) {}
+    throw new Error(errMsg);
+  }
   const data = await res.json();
   return data.content?.[0]?.text||'No response.';
 }
@@ -1112,7 +1223,9 @@ async function _saAiCfgTest() {
   if(st)st.innerHTML=`<span style="color:${_C.dim};">Testing connection…</span>`;
   try {
     const endpoint  = useProxy ? ATLAS_AI_PROXY_URL : 'https://api.anthropic.com/v1/messages';
-    const idToken   = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
+    const fbUser2   = useProxy ? firebase.auth().currentUser : null;
+    if (useProxy && !fbUser2) throw new Error('Not signed in');
+    const idToken   = useProxy ? (await fbUser2.getIdToken()) : null;
     const hdrs = useProxy
       ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
       : { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };

@@ -9,6 +9,7 @@ binding = "ASSETS"
 [vars]
 LAMBDA_URL = "https://fv3y62xuce6w3t37oj73x5gzcq0uwdqo.lambda-url.us-east-1.on.aws"
 LAMBDA_URL_UAE = "https://krbqzf0ozg.execute-api.me-central-1.amazonaws.com"
+PARTNER_API_URL = "https://w0g7ua5h93.execute-api.us-east-1.amazonaws.com"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"

@@ -25,10 +25,18 @@ if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(
       JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}')
-    )
+    ),
+    databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://adherence-project-2026-default-rtdb.firebaseio.com'
   });
 }
-const db = admin.database();
+
+// Lazy-initialize the database reference — only /inst/* routes need it
+// Keeps /claude working even if the DB URL is misconfigured
+let _db = null;
+function getDb() {
+  if (!_db) _db = admin.database();
+  return _db;
+}
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const ALLOWED_MODELS   = ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6'];
@@ -134,10 +142,17 @@ async function handleClaude(event, headers) {
       status:        result.status
     }));
 
-    return { statusCode: result.status, headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(result.body) };
+    // If Anthropic itself returned an error, surface it clearly rather than proxying raw status
+    if (result.status >= 400) {
+      const anthErr = result.body?.error?.message || result.body?.error || 'Anthropic error';
+      console.error('[claude] Anthropic returned', result.status, anthErr);
+      return jsonResp(502, { error: `Anthropic: ${anthErr}` }, headers);
+    }
+
+    return { statusCode: 200, headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(result.body) };
   } catch(e) {
     console.error('[claude] Anthropic call failed:', e.message);
-    return jsonResp(502, { error: 'AI service unavailable' }, headers);
+    return jsonResp(502, { error: 'AI service unavailable: ' + e.message }, headers);
   }
 }
 
@@ -156,7 +171,7 @@ async function handleInstListMembers(event, headers) {
     return jsonResp(400, { error: 'workspace claim missing from token' }, headers);
 
   try {
-    const snap = await db.ref('workspaces')
+    const snap = await getDb().ref('workspaces')
       .orderByChild('parent_institution')
       .equalTo(workspace)
       .once('value');
@@ -225,7 +240,7 @@ async function handleInstProvisionKey(event, headers) {
   };
 
   try {
-    await db.ref('workspaces/' + newKey).set(profile);
+    await getDb().ref('workspaces/' + newKey).set(profile);
     console.log(JSON.stringify({ route: '/inst/provision-key', newKey, email, role: memberRole, institution: workspace }));
     return jsonResp(200, { key: newKey, profile }, headers);
   } catch(e) {
@@ -256,14 +271,14 @@ async function handleInstRevokeKey(event, headers) {
   if (!key) return jsonResp(400, { error: 'key is required' }, headers);
 
   try {
-    const snap = await db.ref('workspaces/' + key).once('value');
+    const snap = await getDb().ref('workspaces/' + key).once('value');
     if (!snap.exists()) return jsonResp(404, { error: 'Key not found: ' + key }, headers);
 
     const profile = snap.val();
     if (role !== 'superadmin' && profile.parent_institution !== workspace)
       return jsonResp(403, { error: 'Key does not belong to your institution' }, headers);
 
-    await db.ref('workspaces/' + key).update({ active: false, revoked_at: Date.now(), revoked_by: workspace });
+    await getDb().ref('workspaces/' + key).update({ active: false, revoked_at: Date.now(), revoked_by: workspace });
     console.log(JSON.stringify({ route: '/inst/revoke-key', key, institution: workspace }));
     return jsonResp(200, { revoked: true, key }, headers);
   } catch(e) {

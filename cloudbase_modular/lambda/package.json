@@ -1,0 +1,16 @@
+{
+  "name": "lambda",
+  "version": "1.0.0",
+  "description": "This folder contains AWS Lambda functions that serve as server-side proxies for the ATLAS platform. They keep sensitive credentials out of the browser environment and enforce authentication before reaching external APIs.",
+  "main": "adherence-pulse.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "firebase-admin": "^14.0.0"
+  }
+}
