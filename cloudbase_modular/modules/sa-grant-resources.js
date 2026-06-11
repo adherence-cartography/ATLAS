@@ -133,7 +133,7 @@ const _SGR_TEMPLATES = [
     id: 'platform-desc',
     title: 'ATLAS Platform Description',
     desc: 'For any grant application: general platform introduction',
-    text: 'This study will utilize the ATLAS (Adherence Tracking and Longitudinal Assessment System) platform (atlas.adherence.cc), developed by Philip Morisky, ScD, MS, MPH, Professor Emeritus, UCLA Fielding School of Public Health, and creator of the Morisky Medication Adherence Scale (MMAS). ATLAS provides IRB-grade data management, validated adherence instruments (MMAS-8, MAP, PEACS), real-time analytics, and export capabilities compliant with HIPAA and GDPR requirements. The platform is used by researchers in 150+ countries and serves as infrastructure for the ATLAS International Research Consortium (AIRC).'
+    text: 'This study will utilize the ATLAS (Adherence Tracking and Longitudinal Assessment System) platform (atlas.adherence.cc), developed by Philip Morisky, MBA, Chief Optimus, Adherence Cartography. ATLAS is built on the scientific foundation of the Morisky Medication Adherence Scale (MMAS), originally developed by Dr. Donald E. Morisky, ScD, MS, MPH, Professor Emeritus, UCLA Fielding School of Public Health. ATLAS provides IRB-grade data management, validated adherence instruments (MMAS-8, MAP, PEACS), real-time analytics, and export capabilities compliant with HIPAA and GDPR requirements. The platform is used by researchers in 150+ countries and serves as infrastructure for the ATLAS International Research Consortium (AIRC).'
   },
   {
     id: 'data-mgmt',
@@ -151,7 +151,7 @@ const _SGR_TEMPLATES = [
     id: 'mmas-justification',
     title: 'Instrument Justification: MMAS-8',
     desc: 'For grant sections requiring justification of the MMAS-8 instrument',
-    text: 'The 8-item Morisky Medication Adherence Scale (MMAS-8), developed by Morisky, Ang, Krousel-Wood, and Ward (2008), is the most widely validated self-report adherence instrument in the literature, with over 3,000 peer-reviewed citations. The MMAS-8 classifies adherence as high (score = 8), medium (6 to less than 8), or low (less than 6) and demonstrates sensitivity of 0.93 and specificity of 0.53 for identifying non-adherent patients in hypertension populations (Morisky et al., 2008). Use of the MMAS-8 in this study is conducted under formal license agreement with the copyright holder, Philip Morisky, ScD, in compliance with established terms for research use.'
+    text: 'The 8-item Morisky Medication Adherence Scale (MMAS-8), developed by Morisky, Ang, Krousel-Wood, and Ward (2008), is the most widely validated self-report adherence instrument in the literature, with over 3,000 peer-reviewed citations. The MMAS-8 classifies adherence as high (score = 8), medium (6 to less than 8), or low (less than 6) and demonstrates sensitivity of 0.93 and specificity of 0.53 for identifying non-adherent patients in hypertension populations (Morisky et al., 2008). Use of the MMAS-8 in this study is conducted under formal license agreement with the copyright holder, MMAR LLC, in compliance with established terms for research use.'
   },
   {
     id: 'budget-atlas',
@@ -163,7 +163,7 @@ const _SGR_TEMPLATES = [
     id: 'airc-statement',
     title: 'AIRC Consortium Membership Statement',
     desc: 'For collaboration and team science sections demonstrating global network',
-    text: 'The investigators are members of the ATLAS International Research Consortium (AIRC), a global network of adherence researchers coordinated by Philip Morisky, ScD, Professor Emeritus, UCLA Fielding School of Public Health. AIRC membership provides access to the global ATLAS normative dataset, co-authorship pathways on consortium publications, and cross-site data harmonization infrastructure. The consortium currently includes member institutions across [X] countries and [Y] active studies.'
+    text: 'The investigators are members of the ATLAS International Research Consortium (AIRC), a global network of adherence researchers coordinated by Philip Morisky, MBA, Chief Optimus, Adherence Cartography. AIRC membership provides access to the global ATLAS normative dataset, co-authorship pathways on consortium publications, and cross-site data harmonization infrastructure. The consortium currently includes member institutions across [X] countries and [Y] active studies.'
   }
 ];
 
@@ -349,7 +349,7 @@ const _SGR_TIERS = [
     color: '#d4a843',
     benefits: [
       'Free ATLAS platform access for active study',
-      'Letter of Support from Philip Morisky, ScD',
+      'Letter of Support from Philip Morisky, MBA',
       'Co-authorship pathway on AIRC normative database paper',
       'Full grant template library access',
       'AIRC consortium directory listing',
@@ -624,7 +624,7 @@ function _sgrRenderSupport(container) {
 function _sgrRenderSupportForm(container, user) {
   const header = _sgrEl('div', { style:'margin-bottom:20px;' },
     '<div style="font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.7;max-width:680px;">' +
-    'Submit a request for a Letter of Support from Philip Morisky, ScD, for your grant application. Requests are reviewed within 5 business days. ' +
+    'Submit a request for a Letter of Support from Philip Morisky, MBA, for your grant application. Requests are reviewed within 5 business days. ' +
     'Include your submission deadline so we can prioritize accordingly.' +
     '</div>'
   );
