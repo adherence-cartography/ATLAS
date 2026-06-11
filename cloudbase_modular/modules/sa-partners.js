@@ -18,8 +18,8 @@ const _CP = window._ATLAS_COLORS || {
 };
 
 // ── Module-level state ────────────────────────────────────────────────────────
-let _partnersCache = [];
-let _partnerUsageCache = {};
+let _spPartnersCache = [];
+let _spPartnerUsageCache = {};
 
 // ── CSS (injected once, idempotent) ──────────────────────────────────────────
 function _spInjectStyles() {
@@ -44,9 +44,9 @@ function _spInjectStyles() {
     .sp-input{width:100%;background:var(--mc-bg2,#0a1527);border:1px solid var(--mc-border,rgba(212,168,67,0.12));color:var(--mc-text,rgba(205,216,232,0.92));font-family:'IBM Plex Mono',monospace;font-size:0.88rem;padding:8px 12px;border-radius:6px;outline:none;box-sizing:border-box;}
     .sp-input:focus{border-color:rgba(212,168,67,0.4);}
     .sp-label{font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--mc-dim,rgba(96,120,152,0.65));margin-bottom:5px;display:block;}
-    .sp-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9100;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+    .sp-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:10100;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
     .sp-modal{background:var(--mc-bg2,#0a1527);border:1px solid var(--mc-border-b,rgba(212,168,67,0.26));border-radius:14px;width:100%;max-width:560px;padding:32px 32px 28px;position:relative;}
-    .sp-slide-panel{position:fixed;top:0;right:0;width:520px;max-width:95vw;height:100vh;background:var(--mc-bg2,#0a1527);border-left:1px solid var(--mc-border-b,rgba(212,168,67,0.26));z-index:9200;overflow-y:auto;padding:28px 24px;box-sizing:border-box;}
+    .sp-slide-panel{position:fixed;top:0;right:0;width:520px;max-width:95vw;height:100vh;background:var(--mc-bg2,#0a1527);border-left:1px solid var(--mc-border-b,rgba(212,168,67,0.26));z-index:10200;overflow-y:auto;padding:28px 24px;box-sizing:border-box;}
     .sp-monospace-box{font-family:'IBM Plex Mono',monospace;font-size:0.90rem;background:var(--mc-bg,#070e1d);border:1px solid var(--mc-border,rgba(212,168,67,0.12));border-radius:6px;padding:12px 14px;color:var(--mc-amber,#d4a843);word-break:break-all;letter-spacing:0.04em;}
     .sp-bar-chart-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
     .sp-bar-chart-label{font-family:'IBM Plex Mono',monospace;font-size:0.66rem;color:var(--mc-dim,rgba(96,120,152,0.65));width:72px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -107,7 +107,7 @@ const _COUNTRIES = [
 // ── Main render ───────────────────────────────────────────────────────────────
 window.saPartnersRender = function(container) {
   _spInjectStyles();
-  if (!_partnersCache.length) {
+  if (!_spPartnersCache.length) {
     container.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
         <div>
@@ -137,8 +137,8 @@ window.saPartnersRender = function(container) {
     return;
   }
 
-  const cards = _partnersCache.map(p => {
-    const todayUsage = (_partnerUsageCache[p._key] && _partnerUsageCache[p._key][_spTodayKey()]) || 0;
+  const cards = _spPartnersCache.map(p => {
+    const todayUsage = (_spPartnerUsageCache[p._key] && _spPartnerUsageCache[p._key][_spTodayKey()]) || 0;
     const rateLimit  = p.rate_limit || 1000;
     const usagePct   = Math.min(100, Math.round(todayUsage / rateLimit * 100));
     const usageColor = usagePct >= 90 ? _CP.red : usagePct >= 70 ? _CP.amber : _CP.cyan;
@@ -204,9 +204,10 @@ window.saPartnersRender = function(container) {
       <div>
         <div style="font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:${_CP.amber};margin-bottom:4px;">Mission Control · Partners</div>
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:${_CP.text};">Partner Integrations</div>
+        <div style="font-size:0.84rem;color:${_CP.muted};margin-top:4px;">Formally onboarded institutional partners with org profiles, assigned instruments, usage tracking, and webhook support.</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:0.78rem;color:${_CP.dim};">${_partnersCache.length} partner${_partnersCache.length !== 1 ? 's' : ''}</span>
+        <span style="font-size:0.78rem;color:${_CP.dim};">${_spPartnersCache.length} partner${_spPartnersCache.length !== 1 ? 's' : ''}</span>
         <button onclick="_saPartnersOpenAddModal()"
           style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
                  padding:8px 18px;border-radius:7px;cursor:pointer;
@@ -452,7 +453,7 @@ function _spShowKeyRevealModal(apiKey, name, workspaceCode, secret) {
 
 // ── Edit Partner Modal ────────────────────────────────────────────────────────
 function _saPartnersOpenEditModal(apiKey) {
-  const partner = _partnersCache.find(p => p._key === apiKey);
+  const partner = _spPartnersCache.find(p => p._key === apiKey);
   if (!partner) { showToast('Partner not found.'); return; }
 
   const countryOptions = _COUNTRIES.map(c =>
@@ -637,7 +638,7 @@ window.saPartnersViewUsage = async function(apiKey, name) {
     const webhookRaw = (webhookSnap && webhookSnap.val()) || {};
 
     // Store in cache
-    _partnerUsageCache[apiKey] = usageData;
+    _spPartnerUsageCache[apiKey] = usageData;
 
     // Build 30-day chart data
     const days = [];
@@ -726,16 +727,16 @@ window.saPartnersLoad = async function() {
   try {
     const snap = await firebase.database().ref('partner_keys').once('value');
     const raw  = snap.val() || {};
-    _partnersCache = Object.entries(raw).map(([k, v]) => ({ _key: k, ...v }))
+    _spPartnersCache = Object.entries(raw).map(([k, v]) => ({ _key: k, ...v }))
       .sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
     // Load today's usage for all partners (parallel)
     const today = _spTodayKey();
-    await Promise.all(_partnersCache.map(async p => {
+    await Promise.all(_spPartnersCache.map(async p => {
       try {
         const uSnap = await firebase.database().ref('partner_usage/' + p._key + '/' + today).once('value');
-        if (!_partnerUsageCache[p._key]) _partnerUsageCache[p._key] = {};
-        _partnerUsageCache[p._key][today] = uSnap.val() || 0;
+        if (!_spPartnerUsageCache[p._key]) _spPartnerUsageCache[p._key] = {};
+        _spPartnerUsageCache[p._key][today] = uSnap.val() || 0;
       } catch (_) { /* non-fatal */ }
     }));
 

@@ -4233,7 +4233,6 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         <button class="pi-dash-tab" data-pi-tab="team" onclick="switchPiTab('team')" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;display:flex;align-items:center;gap:7px;">Team<span id="pi-team-tab-badge" style="display:none;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.08em;background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.3);color:var(--base);border-radius:10px;padding:1px 7px;"></span></button>
         <button class="pi-dash-tab" data-pi-tab="lab" onclick="switchPiTab('lab')" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Instr. Lab</button>
         <button class="pi-dash-tab" data-pi-tab="extcomp"       onclick="switchPiTab('extcomp')"       style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Method Comp.</button>
-        <button class="pi-dash-tab" data-pi-tab="psychometrics" onclick="switchPiTab('psychometrics')" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Psychometrics</button>
       </div>
 
       <!-- TAB PANEL: Overview (Dashboard) -->
@@ -5687,12 +5686,22 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     </div>
 
     <!-- ══ SECTION 9: PSYCHOMETRICS PANEL ══ -->
-<div id="rap-psych-section" style="display:none;margin-top:14px;background:var(--card);border:1px solid var(--border);border-top:2px solid rgba(78,156,245,0.4);border-radius:var(--r);overflow:hidden;">
+<div id="rap-psych-section" style="display:none;margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
 
+  <!-- ── Collapsible Module Header ── -->
+  <button onclick="(function(btn){var b=document.getElementById('rap-psych-body');var open=b.style.display!=='none';b.style.display=open?'none':'';btn.querySelector('.rap-psych-tog').textContent=open?'▶':'▼';})(this)" style="width:100%;padding:13px 20px;text-align:left;background:none;border:none;border-top:2px solid rgba(78,156,245,0.4);cursor:pointer;display:flex;align-items:center;gap:10px;">
+    <div style="width:3px;height:14px;background:rgba(78,156,245,0.7);border-radius:2px;flex-shrink:0;"></div>
+    <div style="flex:1;">
+      <div style="font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">Analytics · Instrument Validation</div>
+      <div style="font-family:var(--font-mono);font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Psychometric Analysis · MAP (Primary) · MMAS-8 (Criterion)</div>
+    </div>
+    <div class="rap-psych-tog" style="font-family:var(--font-mono);font-size:0.70rem;color:var(--dim);">▼</div>
+  </button>
+  <div id="rap-psych-body">
   <!-- ── Header ── -->
-  <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);">
+  <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);border-top:1px solid var(--border);">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-      <div class="rap-section-hdr" style="margin-bottom:0;">Psychometric Analysis · MAP (Primary) · MMAS-8 (Criterion)</div>
+      <div class="rap-section-hdr" style="margin-bottom:0;">Reliability Summary · MAP (Primary) · MMAS-8 (Criterion)</div>
       <button onclick="_rapCopyPsychTable()" style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.25);color:var(--base);border-radius:5px;padding:3px 10px;cursor:pointer;" onmouseenter="this.style.background='rgba(78,156,245,0.16)'" onmouseleave="this.style.background='rgba(78,156,245,0.08)'">⎘ Copy Reliability Table</button>
     </div>
     <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);">
@@ -5884,6 +5893,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     </details><!-- /#rap-validity-details -->
 
   </div><!-- /body -->
+  </div><!-- /rap-psych-body -->
 </div><!-- /#rap-psych-section -->
 <!-- ══ END SECTION 9 ══ -->
 
@@ -6939,6 +6949,8 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
 <script src="modules/sa-rescue.js" defer></script><!-- Data Rescue -->
 <script src="modules/sa-compliance.js" defer></script><!-- Compliance Hub -->
 <script src="modules/sa-partners.js" defer></script><!-- Partner API Management -->
+<script src="modules/sa-consortium.js" defer></script><!-- AIRC Mission Control: Members, Funding Board, Letters, Impact -->
+<script src="modules/sa-grant-resources.js" defer></script><!-- AIRC Grant Resource Center: Templates, Funding, Support, My AIRC -->
 <script src="modules/fhir-export.js" defer></script><!-- HL7 FHIR R4 export, SMART on FHIR launch, EHR webhook config -->
 <script src="modules/redcap-bridge.js" defer></script><!-- REDCap bidirectional sync, field mapping, auto-sync hook -->
 <script src="modules/esignature.js" defer></script><!-- 21 CFR Part 11 §11.50/§11.200 — electronic signature modal -->

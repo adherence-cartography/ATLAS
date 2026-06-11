@@ -130,6 +130,34 @@
       ".read": "auth != null && auth.token.role === 'superadmin'",
       ".write": "auth != null && auth.token.role === 'superadmin'"
     },
+    "partner_keys": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "consortium_members": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "consortium_letters": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "consortium_support_requests": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null"
+    },
+    "consortium_applications": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null"
+    },
+    "partner_usage": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "partner_webhook_log": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
     "workspaces": {
       ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.role === 'institution')",
       ".write": "auth != null && auth.token.role === 'superadmin'",
@@ -214,6 +242,14 @@
       "$workspace": {
         ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
         ".write": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)"
+      }
+    },
+    "airc_study_registry": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null && auth.token.role !== 'observer'",
+      "$record": {
+        ".read": "auth != null && (auth.token.role === 'superadmin' || (auth != null && data.child('uid').val() === auth.uid))",
+        ".validate": "newData.hasChildren(['title','uid','submitted_at']) && newData.child('title').isString() && newData.child('title').val().length <= 200 && newData.child('uid').isString() && newData.child('submitted_at').isNumber()"
       }
     }
   }

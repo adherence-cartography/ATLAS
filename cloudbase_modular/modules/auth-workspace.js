@@ -2984,8 +2984,8 @@ function enterResearcherDashboard() {
     else trajPanel.style.display = (_resRoleOk && hasModule('analytics_peacs')) ? '' : 'none';
   }
   if (benchPanel) {
-    if (_benchRoleOk && !hasModule('analytics_psychometrics')) _showModuleLocked(benchPanel, 'analytics_psychometrics');
-    else benchPanel.style.display = (_benchRoleOk && hasModule('analytics_psychometrics')) ? '' : 'none';
+    // Psychometrics Suite moved to Analysis tab — hidden from Analytics
+    benchPanel.style.display = 'none';
   }
 
   // PI Research Panel — velocity, retention, heatmap
@@ -3765,6 +3765,32 @@ function enterResearcherDashboard() {
           })();
         }
 
+        // ── MODULE · AIRC Grant Resource Center — researcher / PI card ──────
+        (function() {
+          if (document.getElementById('res-mod-airc')) return;
+          var _aircTarget = document.getElementById('researcher-patient-panel') || document.getElementById('res-analytics-panel');
+          if (!_aircTarget || !_aircTarget.parentNode) return;
+
+          var _aircMod = document.createElement('div');
+          _aircMod.id = 'res-mod-airc';
+          _aircMod.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;';
+          _aircMod.innerHTML =
+            '<div style="width:100%;padding:13px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">' +
+              '<div style="width:3px;height:14px;background:#d4a843;border-radius:2px;flex-shrink:0;"></div>' +
+              '<div style="flex:1;">' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">ATLAS International Research Consortium</div>' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Grant Resources · Funding · AIRC Membership</div>' +
+              '</div>' +
+            '</div>' +
+            '<div id="res-airc-body" style="padding:20px;">' +
+              '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">Loading AIRC resources…</div>' +
+            '</div>';
+
+          _aircTarget.parentNode.insertBefore(_aircMod, _aircTarget);
+
+          // Init is triggered by atlasTabSwitch side-effect when the AIRC tab is first clicked.
+        })();
+
         // ── ATLAS TAB RAIL — schedule post-init install ─────────────────────
         // Runs at 800ms so sentinel-panel (injected at 600ms) already exists.
         if (_isPiWs) {
@@ -3776,16 +3802,16 @@ function enterResearcherDashboard() {
               elements: ['pi-research-panel', 'res-mod-registry'] },
             { id: 'analytics',    icon: '∿', label: 'Analytics',
               elements: ['res-analytics-panel', 'res-advanced-accordion'] },
-            { id: 'validation',   icon: '◇', label: 'Validation',
-              elements: ['res-mod-validation'] },
+            { id: 'analysis',     icon: '∑', label: 'Analysis',
+              elements: ['res-mod-validation', 'res-mod-psycho'] },
             { id: 'publications', icon: '✦', label: 'Publications',
               elements: ['res-mod-apa-gen', 'res-mod-predictor', 'res-mod-power'] },
-            { id: 'statistics',   icon: '∑', label: 'Statistics',
-              elements: ['res-mod-psycho'] },
             { id: 'records',      icon: '≡', label: 'Records',
               elements: ['res-records-banner', 'res-mod-cohort-map', 'researcher-patient-panel'] },
             { id: 'admin',        icon: '⊘', label: 'Admin',
               elements: ['study-title-nudge', 'res-tools-bar'] },
+            { id: 'airc',         icon: '⬡', label: 'AIRC',
+              elements: ['res-mod-airc'] },
           ];
           setTimeout(function() {
             if (typeof window._atlasInstallRail === 'function') {
@@ -3807,6 +3833,8 @@ function enterResearcherDashboard() {
               elements: ['res-records-banner', 'res-mod-cohort-map', 'researcher-patient-panel'] },
             { id: 'research',     icon: '◈', label: 'Research',
               elements: ['res-mod-registry', 'res-tools-bar'] },
+            { id: 'airc',         icon: '⬡', label: 'AIRC',
+              elements: ['res-mod-airc'] },
           ];
           setTimeout(function() {
             if (typeof window._atlasInstallRail === 'function') {
@@ -3815,10 +3843,142 @@ function enterResearcherDashboard() {
           }, 800);
         }
 
+        // ── AIRC MEMBERSHIP NUDGE BANNER ─────────────────────────────────────
+        // Fires at 1500ms (after rail is installed at 800ms) so layout is stable.
+        // Shown only once: dismissed state persists in localStorage.
+        // Skipped if user is already an active or pending consortium member.
+        setTimeout(function() {
+          (function() {
+            if (localStorage.getItem('airc_nudge_dismissed') === '1') return;
+            var _nudgeUid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
+            if (!_nudgeUid) return;
+            firebase.database().ref('consortium_members/' + _nudgeUid).once('value').then(function(snap) {
+              var _memberData = snap.val();
+              if (_memberData && (_memberData.status === 'active' || _memberData.status === 'pending')) return;
+              var _nudgeDb = document.querySelector('#screen-dashboard .dash-body');
+              if (!_nudgeDb || document.getElementById('airc-nudge-banner')) return;
+              var _nudgeBanner = document.createElement('div');
+              _nudgeBanner.id = 'airc-nudge-banner';
+              _nudgeBanner.style.cssText = [
+                'width:100%',
+                'box-sizing:border-box',
+                'background:rgba(212,168,67,0.07)',
+                'border-left:3px solid #d4a843',
+                'padding:12px 20px',
+                'display:flex',
+                'align-items:center',
+                'gap:12px',
+                'flex-shrink:0',
+                'transition:opacity 0.3s',
+              ].join(';');
+              _nudgeBanner.innerHTML =
+                '<span style="font-size:1rem;color:#d4a843;flex-shrink:0;">&#x2B21;</span>' +
+                '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.75rem;color:var(--bright);flex:1;">' +
+                  '<strong>Join the AIRC</strong> &mdash; Access grant templates, letters of support, and the global research network.' +
+                '</span>' +
+                '<button id="airc-nudge-learn" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;background:#d4a843;color:#000;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;flex-shrink:0;">Learn More</button>' +
+                '<button id="airc-nudge-dismiss" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.85rem;background:transparent;border:none;color:var(--dim);cursor:pointer;padding:0 4px;flex-shrink:0;" title="Dismiss">&#x2715;</button>';
+              var _nudgeRail = document.getElementById('atlas-rail-wrapper');
+              if (_nudgeRail && _nudgeRail.parentNode === _nudgeDb) {
+                _nudgeDb.insertBefore(_nudgeBanner, _nudgeRail);
+              } else {
+                _nudgeDb.insertBefore(_nudgeBanner, _nudgeDb.firstChild);
+              }
+              document.getElementById('airc-nudge-learn').addEventListener('click', function() {
+                if (typeof window.atlasTabSwitch === 'function') window.atlasTabSwitch('airc');
+              });
+              document.getElementById('airc-nudge-dismiss').addEventListener('click', function() {
+                localStorage.setItem('airc_nudge_dismissed', '1');
+                var _b = document.getElementById('airc-nudge-banner');
+                if (_b) {
+                  _b.style.opacity = '0';
+                  setTimeout(function() { if (_b.parentNode) _b.parentNode.removeChild(_b); }, 300);
+                }
+              });
+            }).catch(function(err) {
+              console.warn('[ATLAS] AIRC nudge Firebase check failed (non-fatal):', err);
+            });
+          })();
+        }, 1500);
+
+        // ── AIRC MEMBERSHIP TIER BADGE (RAIL NAV) ────────────────────────────
+        // Fires at 2000ms (after rail at 800ms and nudge at 1500ms).
+        // Active/pending consortium members see their tier pinned to the
+        // bottom of the left rail nav (#atlas-rail-nav).
+        setTimeout(function() {
+          _sgrInjectMemberBadge();
+        }, 2000);
+
       }
     }
   }
   } catch(e) { console.warn('[ATLAS] Researcher modularization error (non-fatal):', e); }
+
+  // ── AIRC RAIL BADGE INJECTOR ─────────────────────────────────────────────────
+  // Injects a membership tier badge at the bottom of #atlas-rail-nav.
+  // Called at 2000ms inside the PI/Researcher workspace init block.
+  // Idempotent: skips if #airc-rail-badge already exists.
+  function _sgrInjectMemberBadge() {
+    var _railNav = document.getElementById('atlas-rail-nav');
+    if (!_railNav) return;
+    if (document.getElementById('airc-rail-badge')) return;
+    var _badgeUid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
+    if (!_badgeUid) return;
+    firebase.database().ref('consortium_members/' + _badgeUid).once('value').then(function(snap) {
+      var _bd = snap.val();
+      if (!_bd) return;
+      var _status = _bd.status;
+      if (_status !== 'active' && _status !== 'pending') return;
+      var _badge = document.createElement('div');
+      _badge.id = 'airc-rail-badge';
+      if (_status === 'active') {
+        var _tier = _bd.tier;
+        var _tierLabel = 'AIRC';
+        if (_tier === 'institutional_partner' || _tier === 1 || _tier === 'Tier 1') {
+          _tierLabel = 'Inst. Partner';
+        } else if (_tier === 'validation_partner' || _tier === 2 || _tier === 'Tier 2') {
+          _tierLabel = 'Validation';
+        } else if (_tier === 'research_affiliate' || _tier === 3 || _tier === 'Tier 3') {
+          _tierLabel = 'AIRC Member';
+        } else if (_tier === 'student_affiliate' || _tier === 4 || _tier === 'Tier 4') {
+          _tierLabel = 'Student Aff.';
+        } else if (_tier === 'industry_partner' || _tier === 5 || _tier === 'Tier 5') {
+          _tierLabel = 'Industry';
+        }
+        _badge.style.cssText = [
+          'margin-top:auto',
+          'padding:8px 4px 4px',
+          'display:flex',
+          'flex-direction:column',
+          'align-items:center',
+          'gap:3px',
+          'border-top:1px solid rgba(212,168,67,0.12)',
+        ].join(';');
+        _badge.innerHTML =
+          '<span style="font-size:1.0rem;color:#d4a843;line-height:1;">&#x2B21;</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.42rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(212,168,67,0.6);text-align:center;line-height:1.3;max-width:50px;">' +
+            _tierLabel +
+          '</span>';
+      } else {
+        // pending: muted badge
+        _badge.style.cssText = [
+          'margin-top:auto',
+          'padding:8px 4px 4px',
+          'display:flex',
+          'flex-direction:column',
+          'align-items:center',
+          'gap:3px',
+          'border-top:1px solid rgba(212,168,67,0.07)',
+        ].join(';');
+        _badge.innerHTML =
+          '<span style="font-size:1.0rem;color:rgba(212,168,67,0.3);line-height:1;">&#x2B21;</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.42rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(212,168,67,0.3);text-align:center;line-height:1.3;max-width:50px;">Pending</span>';
+      }
+      _railNav.appendChild(_badge);
+    }).catch(function(err) {
+      console.warn('[ATLAS] AIRC rail badge Firebase check failed (non-fatal):', err);
+    });
+  }
 
   // ── ATLAS TAB RAIL ENGINE ────────────────────────────────────────────────────
   // Generic left-rail installer shared across roles. Called via setTimeout so all

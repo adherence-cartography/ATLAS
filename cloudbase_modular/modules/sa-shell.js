@@ -336,6 +336,7 @@ const _ATLAS_MODULES = {
   research:     { id:'research',     icon:'◩', label:'Research',      roles:['superadmin'], scope:'data',  filter:'global' },
   observatory:  { id:'observatory',  icon:'◭', label:'Observatory',   roles:['superadmin'], scope:'monitor',filter:'global'},
   gai:          { id:'gai',          icon:'◎', label:'GAI Index',     roles:['superadmin'], scope:'data',  filter:'global' },
+  consortium:   { id:'consortium',   icon:'⬡', label:'Consortium',    roles:['superadmin'], scope:'admin', filter:'global' },
   platform:     { id:'platform',     icon:'◪', label:'Platform',      roles:['superadmin'], scope:'admin', filter:'global' },
   records:      { id:'records',      icon:'◫', label:'Data Ledger',   roles:['superadmin'], scope:'admin', filter:'global' },
   auditlog:     { id:'auditlog',     icon:'⊕', label:'Audit Log',     roles:['superadmin'], scope:'admin', filter:'global' },
@@ -466,6 +467,7 @@ function saTab(tabId) {
     case 'psychometrics': _saRenderPsychometrics(main); break;
     case 'ai':       _saRenderAI(main);       break;
     case 'research': _saRenderResearch(main);  break;
+    case 'consortium':    (window.saConsortiumInit ? window.saConsortiumInit(main) : (main.innerHTML = `<div style="color:${_C.muted};padding:20px;">Consortium module loading…</div>`)); break;
     case 'platform':     _saRenderPlatform(main);     break;
     case 'observatory':  _saRenderObservatory(main);  break;
     case 'gai':          _saRenderGAI(main);          break;

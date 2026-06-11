@@ -258,9 +258,10 @@ export default {
       }
     }
 
-    // ── All other routes: serve index.html or assess.html ────────────────────
+    // ── All other routes: serve index.html, assess.html, or public pages ─────
     const isAssessPath = url.pathname === '/assess' || url.pathname === '/assess/';
-    const assetPath = isAssessPath ? '/assess.html' : '/index.html';
+    const isConsortiumPath = url.pathname === '/consortium' || url.pathname === '/consortium/';
+    const assetPath = isAssessPath ? '/assess.html' : isConsortiumPath ? '/public/consortium.html' : '/index.html';
 
     const asset = await env.ASSETS.fetch(new Request(new URL(assetPath, request.url), request));
 

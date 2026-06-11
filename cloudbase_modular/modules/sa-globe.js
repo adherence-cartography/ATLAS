@@ -5,10 +5,11 @@
 
 // Globe state
 let _saGlobeMap       = null;   // mapboxgl.Map instance
-let _saGlobeLayers    = { density: true, heatmap: false, alerts: true, peacs: false, poi: false };
+let _saGlobeLayers    = { density: true, heatmap: false, alerts: true, peacs: false, poi: false, airc: false };
 let _saGlobeFilter    = 'all';  // 'all' | 'mmas' | 'map' | 'peacs'
 let _saGlobeClickPanel = null;  // current cluster detail panel content
 let _saPoiPopup       = null;   // active Mapbox popup for POI clicks
+let _saAircPopup      = null;   // active Mapbox popup for AIRC member clicks
 
 const _MB_TOKEN = ATLAS_MAPBOX_TOKEN;
 
@@ -39,6 +40,7 @@ function _saRenderGlobe(container) {
         ${_saLayerToggle('alerts',  '◐', 'Alert Zones',       _C.red,    true)}
         ${_saLayerToggle('peacs',   '◈', 'PEACS Activity',    _C.purple, false)}
         ${_saLayerToggle('poi',     '⬟', 'Verified POIs',     _C.green,  false)}
+        ${_saLayerToggle('airc',    '◎', 'AIRC Members',      '#d4a843', false)}
       </div>
       <!-- POI contribute button (shown when POI layer is active) -->
       <div id="sa-globe-poi-contrib-wrap" style="display:none;padding:8px 14px;border-bottom:1px solid ${_C.border};">
@@ -514,7 +516,7 @@ function saToggleLayer(layerId) {
   const on  = _saGlobeLayers[layerId];
   const col = layerId === 'density' ? _C.amber  : layerId === 'heatmap' ? _C.cyan
             : layerId === 'alerts'  ? _C.red     : layerId === 'poi'     ? _C.green
-            : _C.purple;
+            : layerId === 'airc'    ? '#d4a843'  : _C.purple;
   if (btn) {
     btn.style.background = on ? col : 'rgba(56,189,248,0.1)';
     const knob = btn.querySelector('span');
@@ -529,6 +531,10 @@ function saToggleLayer(layerId) {
       _saLoadPoiLayer(_saGlobeMap);
     }
   }
+  // Lazy-load the AIRC member layer the first time it is turned on
+  if (layerId === 'airc' && on && _saGlobeMap && !_saGlobeMap.getSource('airc-members')) {
+    _saLoadAircLayer(_saGlobeMap);
+  }
   _saGlobeApplyLayerVisibility();
 }
 
@@ -542,6 +548,7 @@ function _saGlobeApplyLayerVisibility() {
     alerts:  ['sa-alerts'],
     peacs:   ['sa-peacs-layer'],
     poi:     ['atlas-poi-layer'],
+    airc:    ['airc-dots'],
   };
 
   Object.entries(layerMap).forEach(([key, ids]) => {
@@ -700,5 +707,142 @@ function _saLoadPoiLayer(map) {
     }
   }).catch(err => {
     console.error('[ATLAS] _saLoadPoiLayer error:', err);
+  });
+}
+
+// ── AIRC Member Layer ─────────────────────────────────────────────────────────
+// Reads active consortium members from Firebase at consortium_members and
+// places one dot per member at the centroid of their country.
+// Dot color encodes tier: T1 gold, T2 blue, T3 green, T4 purple, T5 red.
+// Called lazily the first time the AIRC toggle is switched on.
+// Safe to call multiple times: guards on source existence.
+function _saLoadAircLayer(map) {
+  if (!map) return;
+  if (!window.database) {
+    console.warn('[ATLAS] _saLoadAircLayer: Firebase database not available');
+    return;
+  }
+
+  // Country name to approximate centroid [lng, lat]
+  const _aircCentroids = {
+    'United States':        [-98.35,  39.50],
+    'USA':                  [-98.35,  39.50],
+    'United Kingdom':       [ -3.44,  55.38],
+    'UK':                   [ -3.44,  55.38],
+    'Canada':               [-96.80,  56.13],
+    'Australia':            [133.78, -25.27],
+    'Brazil':               [-51.93, -14.24],
+    'Germany':              [ 10.45,  51.17],
+    'France':               [  2.21,  46.23],
+    'Italy':                [ 12.57,  41.87],
+    'Spain':                [ -3.75,  40.46],
+    'Netherlands':          [  5.29,  52.13],
+    'Sweden':               [ 18.64,  60.13],
+    'Switzerland':          [  8.23,  46.82],
+    'Japan':                [138.25,  36.20],
+    'China':                [104.20,  35.86],
+    'India':                [ 78.96,  20.59],
+    'South Korea':          [127.77,  35.91],
+    'Israel':               [ 34.85,  31.05],
+    'Iran':                 [ 53.69,  32.43],
+    'Saudi Arabia':         [ 45.08,  23.89],
+    'Egypt':                [ 30.80,  26.82],
+    'South Africa':         [ 25.08, -29.00],
+    'Nigeria':              [  8.68,   9.08],
+    'Mexico':               [-102.55,  23.63],
+    'Argentina':            [-63.62, -38.42],
+    'Colombia':             [-74.30,   4.57],
+    'Peru':                 [-75.02,  -9.19],
+    'Turkey':               [ 35.24,  38.96],
+    'Poland':               [ 19.15,  51.92],
+    'Czech Republic':       [ 15.47,  49.82],
+    'Portugal':             [ -8.22,  39.40],
+  };
+
+  // Tier color map
+  const _aircTierColors = {
+    1: '#d4a843',
+    2: '#4e9cf5',
+    3: '#2ec98a',
+    4: '#8b6ff5',
+    5: '#e05252',
+  };
+
+  database.ref('consortium_members').once('value').then(snap => {
+    const raw = snap.val() || {};
+    const features = [];
+
+    Object.entries(raw).forEach(([memberId, member]) => {
+      // Only plot active members
+      if (member.status && member.status !== 'active') return;
+
+      const centroid = _aircCentroids[member.country];
+      if (!centroid) return; // skip unrecognized countries silently
+
+      const tier = member.tier ? +member.tier : 0;
+      const dotColor = _aircTierColors[tier] || '#8b6ff5';
+
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: centroid },
+        properties: {
+          memberId:    memberId,
+          name:        member.name        || 'Unknown Member',
+          institution: member.institution || '',
+          country:     member.country     || '',
+          tier:        tier,
+          dotColor:    dotColor,
+        }
+      });
+    });
+
+    const geojson = { type: 'FeatureCollection', features };
+
+    // Source
+    if (map.getSource('airc-members')) {
+      map.getSource('airc-members').setData(geojson);
+    } else {
+      map.addSource('airc-members', { type: 'geojson', data: geojson });
+    }
+
+    // Layer
+    if (!map.getLayer('airc-dots')) {
+      map.addLayer({
+        id:     'airc-dots',
+        type:   'circle',
+        source: 'airc-members',
+        layout: { visibility: _saGlobeLayers.airc ? 'visible' : 'none' },
+        paint: {
+          'circle-radius':       8,
+          'circle-color':        ['get', 'dotColor'],
+          'circle-opacity':      0.90,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': 'rgba(255,255,255,0.35)',
+        }
+      });
+
+      // Click popup
+      map.on('click', 'airc-dots', e => {
+        const p      = e.features[0].properties;
+        const coords = e.features[0].geometry.coordinates.slice();
+
+        if (_saAircPopup) _saAircPopup.remove();
+        _saAircPopup = new mapboxgl.Popup({ closeButton: true, maxWidth: '260px' })
+          .setLngLat(coords)
+          .setHTML(`
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:#cdd8e8;padding:4px 2px;">
+              <div style="font-weight:700;font-size:0.88rem;margin-bottom:4px;color:#e8f0f8;">${_esc(p.name)}</div>
+              ${p.institution ? `<div style="margin-bottom:4px;color:rgba(200,215,230,0.85);">${_esc(p.institution)}</div>` : ''}
+              <div style="letter-spacing:0.1em;text-transform:uppercase;font-size:0.68rem;color:${p.dotColor};margin-bottom:6px;">Tier ${p.tier} Member</div>
+              ${p.country ? `<div style="color:rgba(138,160,184,0.9);">${_esc(p.country)}</div>` : ''}
+            </div>`)
+          .addTo(map);
+      });
+
+      map.on('mouseenter', 'airc-dots', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'airc-dots', () => { map.getCanvas().style.cursor = ''; });
+    }
+  }).catch(err => {
+    console.error('[ATLAS] _saLoadAircLayer error:', err);
   });
 }

@@ -11,8 +11,8 @@ let _saPlatWsAll = [];
 const _SA_PLAT_SUBS = [
   { id: 'workspaces', label: '⬡ Workspaces'   },
   { id: 'campaigns',  label: '◆ Campaigns'    },
-  { id: 'api',        label: '◈ Internal Keys' },
-  { id: 'partners',   label: '⬡ Partner APIs' },
+  { id: 'api',        label: '◈ Developer Keys' },
+  { id: 'partners',   label: '⬡ Partner APIs'  },
   { id: 'letters',    label: '✉ Letters'      },
   { id: 'banner',     label: '📢 Banner'       },
   { id: 'modules',    label: '◫ Module Paths' },
@@ -453,8 +453,12 @@ async function _saPlatApiKeys(container) {
     const raw = snap.val() || {};
     const entries = Object.entries(raw).map(([id,k])=>({id,...k})).sort((a,b)=>(b.created_at||0)-(a.created_at||0));
     container.innerHTML = `
+      <div style="margin-bottom:18px;">
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:${_C.text};margin-bottom:4px;">Developer Keys</div>
+        <div style="font-size:0.84rem;color:${_C.muted};">Raw API tokens for developers and technical integrators building with or embedding ATLAS. No org profile required.</div>
+      </div>
       <div style="background:${_C.surface};border:1px solid ${_C.border};border-radius:10px;padding:18px;margin-bottom:20px;">
-        <div style="font-size:0.72rem;letter-spacing:0.2em;text-transform:uppercase;color:${_C.amber};margin-bottom:12px;">Issue API Key</div>
+        <div style="font-size:0.72rem;letter-spacing:0.2em;text-transform:uppercase;color:${_C.amber};margin-bottom:12px;">Issue Developer Key</div>
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:10px;align-items:end;">
           <div>
             <label style="display:block;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">Client Name</label>

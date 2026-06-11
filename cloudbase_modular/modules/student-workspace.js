@@ -1794,6 +1794,14 @@ window.atlasTabSwitch = function(tabId) {
     // Refresh Clinical Practice Overview when returning to the tab
     setTimeout(_cpoUpdate, 80);
   }
+  if (tabId === 'airc') {
+    // Lazy-init AIRC Grant Resource Center on first visit
+    var _aircBody = document.getElementById('res-airc-body');
+    if (_aircBody && !_aircBody.dataset.inited && typeof window.saGrantResourcesInit === 'function') {
+      _aircBody.dataset.inited = '1';
+      window.saGrantResourcesInit(_aircBody);
+    }
+  }
 };
 // ── End ATLAS Tab Rail ──────────────────────────────────────────────────────
 
