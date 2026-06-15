@@ -18,6 +18,10 @@
 .guide-card.pharmacist{border-top:3px solid var(--purple);}
 .guide-card.pi{border-top:3px solid var(--gold);}
 .guide-card.institution{border-top:3px solid var(--blue);}
+.guide-card.lmic{border-top:3px solid #f97316;}
+.guide-tier.orange{color:#f97316;}
+.guide-link.orange{background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.25);color:#f97316;}
+.guide-link.orange:hover{background:rgba(249,115,22,0.16);}
 .guide-tier{font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:2px;}
 .guide-tier.green{color:var(--green);}
 .guide-tier.purple{color:var(--purple);}
@@ -68,13 +72,22 @@
       <li><a href="pharmacist-guide.html#getting-started" style="color:var(--purple);">→ Clinician (NP · PA · RN · MD · PharmD · CC) — first clinical session</a></li>
       <li><a href="pi-sop.html" style="color:var(--gold);">→ PI — pre-enrollment checklist</a></li>
       <li><a href="institution-runbook.html#getting-started" style="color:var(--blue);">→ Institution (Academic · Health System · AMC) — first week checklist</a></li>
+      <li><a href="lmic-researcher-guide.html#airc-application" style="color:#f97316;">→ LMIC Researcher — AIRC membership application</a></li>
     </ul>
   </div>
 
   <div style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.25);border-left:4px solid var(--gold);border-radius:10px;padding:22px 26px;margin-bottom:32px;">
     <div style="font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">What's New</div>
-    <h3 style="margin:0 0 14px;font-family:var(--font-d);font-size:1.15rem;font-weight:300;color:var(--bright);">What's New in v2026.05</h3>
+    <h3 style="margin:0 0 14px;font-family:var(--font-d);font-size:1.15rem;font-weight:300;color:var(--bright);">What's New in v2026.06.15 — TESSERA Pharmacy Gateway</h3>
     <ul style="margin:0;padding-left:20px;font-size:0.82rem;color:var(--muted);line-height:2.1;">
+      <li><strong style="color:var(--gold);">ATLAS Pharmacy Gateway v2</strong> — Standalone 4-screen tablet app (pharmacy.html) for community pharmacists. Administers the full 8-item MAP instrument at the pharmacy counter. 5 languages (EN/IT/ES/FR/AR), 72px touch targets, ~3 minute administration time. Deployed via QR-linked URL with site code (e.g. pharmacy.html?site=PH-ROM-001). Now includes Screen 5 site dashboard with real-time risk distribution, domain mean scores, and PEACS phenotype breakdown.</li>
+      <li><strong style="color:var(--gold);">FOFI Report Generation</strong> — Pharmacy dashboard (Screen 5) now has a "Generate FOFI Report" button. Produces a plain-text adherence report in FOFI/Order of Pharmacists format: summary, domain analysis, condition breakdown, PEACS phenotype distribution, clinical interpretation, and alert rate. Downloads as .txt file. Works in both live and demo modes.</li>
+      <li><strong style="color:var(--gold);">Pharmacy Demo Mode</strong> — Append ?demo=true to pharmacy.html URL (pharmacy.html?demo=true) to load 68 synthetic Rome pilot records. No Firebase reads or writes in demo mode. Immediate "View Dashboard (68 Sample Patients)" button on the setup screen bypasses the question flow. Ideal for stakeholder demonstrations. FOFI report also generates from demo data.</li>
+      <li><strong style="color:var(--gold);">Dual-Write Architecture</strong> — All three standalone apps (pharmacy.html, patient-map.html, chw.html) now write to two Firebase paths simultaneously: the silo path (pharmacy_assessments/, patient_self_assessments/, chw_assessments/) for per-site dashboards, and the main assessments/ path for the PI workspace count, global MAP globe, and longitudinal tracking. Pharmacy records include lat/lon coordinates (Rome: 41.9028, 12.4964) so they appear on the Mapbox MAP globe.</li>
+      <li><strong style="color:var(--gold);">MAP Instrument — Validated Questions</strong> — All three standalone apps (pharmacy.html, patient-map.html, chw.html) and the map-assessment.js module now use the correct validated MAP instrument questions. Q1 (Execution), Q2–Q3 (Architecture, 14-day rolling anchor), Q4 (Context-Guard), Q5 (Execution, "last dose as directed"), Q6 (Architecture), Q7 (Context-Guard), Q8 (Execution, ordinal). Previously contained MMAS-8 approximations.</li>
+      <li><strong style="color:var(--gold);">Patient Reference Code</strong> — Pharmacy setup screen now collects optional patient reference code (e.g. initials + birth year: MR1958). Stored as SITE_CODE + '_' + REF for repeat-visit longitudinal tracking without storing PII. Also collects age range and gender for SDoH fields in the assessments/ record.</li>
+      <li><strong style="color:var(--gold);">TESSERA GRC Consortium Page</strong> — New standalone page at /consortium (public/consortium.html). Italy/Rome shown as TESSERA Hub I (founding site) with SVG map, TESSERA SITE 001 badge, 2026 Rome pilot timeline (20–30 pharmacies, 500 patients, 6 months), key partner profiles (Giuseppe Guaglianone / FOFI, Prof. Stefano Vella / ISS-Ministry), MAP domain explainer, and membership benefits. Links directly to pharmacy demo mode.</li>
+      <li><strong style="color:var(--gold);">Italy as TESSERA Hub I on MAP Globe</strong> — A permanent gold marker at Rome (41.9028°N, 12.4964°E) is now always visible on the MAP mini-globe in the ATLAS PI dashboard, labelled "TESSERA Hub I — Rome". Visible regardless of whether real pharmacy data has been submitted. Real pharmacy submissions from PH-ROM-* site codes now include lat/lon and appear as standard green/amber/red dots on the same globe.</li>
       <li><strong style="color:var(--bright);">3 institution tiers</strong> — Academic (INST-ACAD, $399/mo: Research Hub · Grants · Thesis), Health System (INST-HLTH, $599/mo: Care Gap Monitor · MTM Billing · Command Center), and AMC (INST-AMC, $799/mo: all features). Superadmin "View As" panel now shows three institution buttons.</li>
       <li><strong style="color:var(--bright);">3 instruments</strong> — MMAS-8 (public screening), MAP (institutional cross-sectional, 8-item), PEACS (longitudinal 22-item: BASE / MVMT / STRATA)</li>
       <li><strong style="color:var(--bright);">Clinical Study Module</strong> — Site Activation Tracker and IRB Submission Assistant for funded PIs</li>
@@ -88,6 +101,11 @@
       <li><strong style="color:var(--bright);">Home Postal Code Field</strong> — Optional field in MAP intake form. Geocoded client-side via Nominatim; never stored to server. Enables geo-inference regardless of clinic vs. home setting.</li>
       <li><strong style="color:var(--bright);">Verified POI Network</strong> — Crowd-sourced infrastructure map. Authenticated users contribute pharmacies, hospitals, clinics, transport, food banks, and community centers. Two confirmations required for verification. Verified POIs appear on the SDoH Globe and feed PEACS geo-scoring.</li>
       <li><strong style="color:var(--bright);">Cinematic Globe</strong> — Now stays still unless a new assessment is submitted in real-time; globe flies to each new submission location as it arrives.</li>
+      <li><strong style="color:#f97316;">AIRC / LMIC Access Tier</strong> — Researchers at WHO/World Bank LMIC institutions can now apply for the ATLAS International Research Consortium program and receive free Researcher-tier access. Application is self-service through the Grant Resource Center. Approved members are automatically provisioned at login with no new key required.</li>
+      <li><strong style="color:#f97316;">LMIC Training Curriculum</strong> — Six-module structured curriculum on MAP/PEACS administration, interpretation, study design, and grant writing. Available in 10 languages (ES, PT, FR, HI, SW, ID, VI, TL, BN, AR). Accessible via the new Learning tab in the researcher dashboard rail.</li>
+      <li><strong style="color:#f97316;">LMIC Study Network and Grant Pipeline</strong> — Five pre-built study protocols (hypertension, HIV/ART, diabetes, TB, NCD normative) that auto-populate the study registry form. LMIC-filtered funding database. Fogarty D43 / R21 TW cover letter generator pre-filled from AIRC membership data.</li>
+      <li><strong style="color:#f97316;">Data-Lite / Bandwidth-Adaptive Mode</strong> — Automatic connection quality detection via the Network Information API and RTT probe. Activates a CSS lite-mode on 2G/slow connections, suppressing the globe, Mapbox maps, and Chart.js accordion. Manual toggle in the User Account panel. Responsive to network change events and browser data-saver flag.</li>
+      <li><strong style="color:#f97316;">Publication License Waiver for LMIC Researchers</strong> — AIRC members receive an automatic waiver recorded in the public registry at keys.adherence.cc. No flat-rate Publication License purchase required for data collected during active AIRC membership.</li>
     </ul>
   </div>
 
@@ -160,6 +178,34 @@
       <a href="institution-runbook.html" class="guide-link blue">Read Runbook →</a>
     </div>
 
+    <div class="guide-card" style="border-top:3px solid var(--gold);">
+      <div class="guide-tier gold">TESSERA GRC · Community Pharmacist · Standalone App</div>
+      <div class="guide-title">Pharmacy Gateway Guide</div>
+      <p class="guide-desc">For community pharmacists deploying the ATLAS Pharmacy Gateway (pharmacy.html). Covers the 4-screen tablet workflow — pharmacist setup, handing device to patient, reading MAP results (PE score, traffic light, PEACS phenotype), the prescriber alert flow, and the site dashboard. Includes FOFI report generation for Order of Pharmacists reporting, patient reference codes for repeat-visit tracking, and demo mode for stakeholder demonstrations. Administered in 5 languages (EN/IT/ES/FR/AR).</p>
+      <div class="guide-tags">
+        <span class="badge gold">Tablet app</span>
+        <span class="badge gold">MAP instrument</span>
+        <span class="badge gold">FOFI report</span>
+        <span class="badge gold">TESSERA</span>
+        <span class="badge gold">Multilingual</span>
+      </div>
+      <a href="https://atlas.adherence.cc/pharmacy.html?demo=true" class="guide-link gold" target="_blank" rel="noopener">View Live Demo →</a>
+    </div>
+
+    <div class="guide-card lmic">
+      <div class="guide-tier orange">LMIC Researcher · AIRC Program · Free tier</div>
+      <div class="guide-title">LMIC Researcher Guide</div>
+      <p class="guide-desc">For researchers at institutions in WHO/World Bank Low and Middle Income Countries. Covers the AIRC application and automatic Researcher-tier provisioning, the six-module MAP/PEACS training curriculum in 10 languages, Data-Lite bandwidth mode for low-connectivity field sites, the offline submission queue, five pre-built LMIC study protocols, and the Fogarty D43/R21 TW grant pipeline with AIRC-prefilled cover letter generator.</p>
+      <div class="guide-tags">
+        <span class="badge orange">AIRC membership</span>
+        <span class="badge orange">Free tier</span>
+        <span class="badge orange">Training</span>
+        <span class="badge orange">Fogarty</span>
+        <span class="badge orange">Offline</span>
+      </div>
+      <a href="lmic-researcher-guide.html" class="guide-link orange">Read LMIC Guide →</a>
+    </div>
+
     <div class="guide-card" style="border-top:3px solid var(--muted);">
       <div class="guide-tier" style="color:var(--muted);">Explorer · No key required</div>
       <div class="guide-title">Explorer Mode</div>
@@ -193,9 +239,17 @@
       <li><a href="pharmacist-guide.html#peacs">→ Understanding PEACS BASE · MVMT · STRATA</a></li>
       <li><a href="pharmacist-guide.html#mmas-pe">→ MAP PE Domain Analysis — Architecture · Execution · Context</a></li>
       <li><a href="institution-runbook.html#dashboard">→ Institution per-site PE breakdown panel</a></li>
+      <li><a href="https://atlas.adherence.cc/pharmacy.html?demo=true" style="color:var(--gold);">→ Pharmacy Gateway demo (68 Rome pilot records)</a></li>
+      <li><a href="https://atlas.adherence.cc/consortium" style="color:var(--gold);">→ TESSERA GRC consortium page</a></li>
       <li><a href="pi-sop.html#pi-dashboard">→ PI Research Dashboard — velocity · heatmap · dataset lock · audit log</a></li>
       <li><a href="pi-sop.html#pi-dashboard">→ Locking a dataset for IRB interim analysis</a></li>
       <li><a href="pi-sop.html#export">→ Generating the IRB Study Package</a></li>
+      <li><a href="lmic-researcher-guide.html#airc-application">→ AIRC application and LMIC tier provisioning</a></li>
+      <li><a href="lmic-researcher-guide.html#training">→ LMIC Training Curriculum — 6 modules, 10 languages</a></li>
+      <li><a href="lmic-researcher-guide.html#data-lite">→ Data-Lite mode and offline queue for field sites</a></li>
+      <li><a href="lmic-researcher-guide.html#protocols">→ Pre-built LMIC study protocols (hypertension, HIV/ART, diabetes, TB, NCD)</a></li>
+      <li><a href="lmic-researcher-guide.html#fogarty-letter">→ Fogarty D43 / R21 TW cover letter generator</a></li>
+      <li><a href="lmic-researcher-guide.html#publication">→ Publication license waiver for LMIC researchers</a></li>
     </ul>
   </div>
 
@@ -203,7 +257,7 @@
     ATLAS Platform © Adherence Cartography · Adherence Inc. · Long Beach, California<br/>
     MMAS-8® · MAP® — Licensed instruments · © Dr. Donald E. Morisky / Philip Morisky · TX 8-632-533 · All rights reserved<br/>
     PEACS v2.0 · Theory of Predictive Emergence © Philip Morisky · Zenodo DOI 10.5281/zenodo.18209699<br/>
-    Documentation version: 2026.05 · Updated: What's New v2026.05 — MAP, PEACS, Clinical Study Module, Patient Portal, ZOE Remote Mode, Multilingual UI, Benchmark comparison, Annual Report, SDoH Intelligence System, Home Postal Code Field, Verified POI Network, Cinematic Globe · For corrections or additions: <a href="mailto:info@adherence.cc">info@adherence.cc</a>
+    Documentation version: 2026.06 · Updated: What's New v2026.06 — AIRC/LMIC Access Tier, LMIC Training Curriculum (6 modules, 10 languages), LMIC Study Network and Grant Pipeline, Data-Lite bandwidth-adaptive mode, Publication License Waiver · v2026.05: MAP, PEACS, Clinical Study Module, Patient Portal, ZOE Remote Mode, Multilingual UI, Benchmark comparison, Annual Report, SDoH Intelligence System, Home Postal Code Field, Verified POI Network, Cinematic Globe · For corrections or additions: <a href="mailto:info@adherence.cc">info@adherence.cc</a>
   </footer>
 </div>
 </body>

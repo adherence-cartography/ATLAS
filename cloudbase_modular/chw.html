@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#080e1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ATLAS CHW Assessment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Firebase 9.23.0 (compat SDK for minimal CDN footprint) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+/* ── Reset and base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:     #080e1a;
+  --surface: #0d1525;
+  --card:    #111d30;
+  --base:    #4e9cf5;
+  --pe:      #d4a843;
+  --bright:  #e8f0f8;
+  --muted:   #6b8099;
+}
+
+html, body {
+  background: var(--ink);
+  color: var(--bright);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+#app {
+  max-width: 540px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  padding: 24px 18px 32px;
+}
+.screen.active { display: flex; }
+
+/* ── App header ──────────────────────────────────────────────────────── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  padding: 14px 18px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.app-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pe);
+}
+.app-logo span { color: var(--base); }
+.sync-badge {
+  display: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 10px;
+  background: rgba(212,168,67,0.12);
+  border: 1px solid rgba(212,168,67,0.30);
+  color: var(--pe);
+}
+.sync-badge.visible { display: block; }
+
+/* ── Screen headings ─────────────────────────────────────────────────── */
+.screen-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.60rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.screen-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--bright);
+  line-height: 1.2;
+  margin-bottom: 22px;
+}
+
+/* ── Form controls ───────────────────────────────────────────────────── */
+.field {
+  margin-bottom: 18px;
+}
+.field label {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.field input,
+.field select {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 17px;
+  background: var(--surface);
+  border: 2px solid rgba(255,255,255,0.10);
+  border-radius: 10px;
+  color: var(--bright);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.14s;
+}
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--base);
+}
+.field input::placeholder { color: var(--muted); }
+
+/* Dropdown arrow for selects */
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b8099' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+/* ── Primary button ──────────────────────────────────────────────────── */
+.btn-primary {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--base);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.14s, transform 0.08s;
+  margin-top: 8px;
+}
+.btn-primary:active { opacity: 0.85; transform: scale(0.99); }
+
+/* ── Answer buttons (YES/NO/Frequency) ──────────────────────────────── */
+.answer-btn {
+  display: block;
+  width: 100%;
+  min-height: 72px;
+  padding: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.14s, transform 0.08s;
+  margin-bottom: 12px;
+}
+.answer-btn:active { opacity: 0.85; transform: scale(0.99); }
+.answer-btn:last-child { margin-bottom: 0; }
+
+.btn-yes  { background: #10b981; }
+.btn-no   { background: #ef4444; }
+
+.btn-freq-0 { background: #10b981; }
+.btn-freq-1 { background: #4a9e75; }
+.btn-freq-2 { background: #d4a843; }
+.btn-freq-3 { background: #e06b35; }
+.btn-freq-4 { background: #ef4444; }
+
+/* ── Progress bar ────────────────────────────────────────────────────── */
+.progress-wrap {
+  margin-bottom: 24px;
+}
+.progress-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.progress-track {
+  height: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--base);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ── Question display ─────────────────────────────────────────────────── */
+.question-text {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--bright);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+.question-instruction {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.70rem;
+  letter-spacing: 0.10em;
+  color: var(--muted);
+  margin-bottom: 28px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.04);
+  border-left: 3px solid var(--base);
+  border-radius: 0 6px 6px 0;
+}
+
+/* ── Results: traffic light ──────────────────────────────────────────── */
+.traffic-light-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28px;
+  padding: 24px;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,0.07);
+}
+.traffic-light-circle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin-bottom: 14px;
+}
+.traffic-light-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.traffic-light-msg {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--bright);
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ── Domain summary rows ─────────────────────────────────────────────── */
+.domain-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 8px;
+}
+.domain-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.70rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.domain-rating {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+/* ── CHW action card ─────────────────────────────────────────────────── */
+.action-card {
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 2px solid;
+  margin-bottom: 20px;
+}
+.action-card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.60rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.action-card-text {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ── PE score display ────────────────────────────────────────────────── */
+.pe-display {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 18px;
+}
+.pe-number {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 2.4rem;
+  font-weight: 300;
+  color: var(--pe);
+}
+
+/* ── Save / flag buttons ──────────────────────────────────────────────── */
+.btn-save {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.14s;
+  margin-bottom: 12px;
+}
+.btn-save:active { opacity: 0.85; }
+
+.btn-flag {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 13px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.80rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--pe);
+  border: 2px solid rgba(212,168,67,0.40);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.btn-flag:active { background: rgba(212,168,67,0.10); }
+
+/* ── Toast / status ──────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17,29,48,0.97);
+  border: 1px solid rgba(78,156,245,0.40);
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--base);
+  z-index: 9999;
+  display: none;
+  white-space: nowrap;
+  max-width: calc(100vw - 40px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.toast.show { display: block; }
+.toast.error { border-color: rgba(239,68,68,0.40); color: #ef4444; }
+.toast.success { border-color: rgba(16,185,129,0.40); color: #10b981; }
+
+/* ── Card utility ────────────────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+/* ── Session info bar ────────────────────────────────────────────────── */
+.session-bar {
+  background: rgba(78,156,245,0.07);
+  border: 1px solid rgba(78,156,245,0.18);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.session-bar strong { color: var(--base); }
+</style>
+</head>
+
+<body>
+
+<!-- App header -->
+<div class="app-header">
+  <div class="app-logo">ATLAS <span>CHW</span></div>
+  <div class="sync-badge" id="syncBadge">Pending sync: <span id="syncCount">0</span></div>
+</div>
+
+<div id="app">
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SCREEN 0: CHW Login / Site Setup
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="screen active" id="screen0">
+    <div class="screen-eyebrow">ATLAS v8.7 / Community Health Worker</div>
+    <div class="screen-title">CHW Login</div>
+
+    <div class="field">
+      <label for="chwName">CHW Name</label>
+      <input type="text" id="chwName" placeholder="Your full name" autocomplete="name">
+    </div>
+
+    <div class="field">
+      <label for="siteId">Site ID / Village / Facility Code</label>
+      <input type="text" id="siteId" placeholder="e.g. KE-NAI-007" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label for="countrySelect">Country</label>
+      <select id="countrySelect">
+        <option value="">Select country...</option>
+        <option>Afghanistan</option><option>Angola</option><option>Argentina</option>
+        <option>Bangladesh</option><option>Bolivia</option><option>Brazil</option>
+        <option>Burkina Faso</option><option>Cambodia</option><option>Cameroon</option>
+        <option>Chad</option><option>Colombia</option><option>Congo (DRC)</option>
+        <option>Cote d'Ivoire</option><option>Ecuador</option><option>Egypt</option>
+        <option>Ethiopia</option><option>Ghana</option><option>Guatemala</option>
+        <option>Guinea</option><option>Haiti</option><option>Honduras</option>
+        <option>India</option><option>Indonesia</option><option>Iraq</option>
+        <option>Jordan</option><option>Kenya</option><option>Laos</option>
+        <option>Liberia</option><option>Madagascar</option><option>Malawi</option>
+        <option>Mali</option><option>Mexico</option><option>Mozambique</option>
+        <option>Myanmar</option><option>Nepal</option><option>Nicaragua</option>
+        <option>Niger</option><option>Nigeria</option><option>Pakistan</option>
+        <option>Papua New Guinea</option><option>Peru</option>
+        <option>Philippines</option><option>Rwanda</option><option>Senegal</option>
+        <option>Sierra Leone</option><option>Somalia</option><option>South Africa</option>
+        <option>South Sudan</option><option>Sudan</option><option>Tanzania</option>
+        <option>Timor-Leste</option><option>Togo</option><option>Uganda</option>
+        <option>Venezuela</option><option>Vietnam</option><option>Yemen</option>
+        <option>Zambia</option><option>Zimbabwe</option><option>Other</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="langSelect">Language</label>
+      <select id="langSelect">
+        <option value="en">English</option>
+        <option value="sw">Kiswahili</option>
+        <option value="fr">French</option>
+        <option value="hi">Hindi</option>
+        <option value="pt">Portuguese</option>
+        <option value="ar">Arabic</option>
+        <option value="es">Spanish</option>
+      </select>
+    </div>
+
+    <button class="btn-primary" onclick="beginDay()">Begin Day</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SCREEN 1: Patient Setup
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen1">
+    <div class="screen-eyebrow">Patient Setup</div>
+    <div class="screen-title">New Assessment</div>
+
+    <div class="session-bar" id="sessionBar">Loading session...</div>
+
+    <div class="field">
+      <label for="patientCode">Patient Reference Code (optional)</label>
+      <input type="text" id="patientCode" placeholder="e.g. HH-003" autocomplete="off" inputmode="text">
+    </div>
+
+    <div class="field">
+      <label for="conditionSelect">Condition</label>
+      <select id="conditionSelect">
+        <option>Hypertension</option>
+        <option>Diabetes</option>
+        <option>HIV-AIDS</option>
+        <option>Tuberculosis</option>
+        <option>Malaria</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <button class="btn-primary" onclick="startAssessment()">Start Assessment</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SCREEN 2: Questions
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen2">
+    <div class="progress-wrap">
+      <div class="progress-label" id="progressLabel">Question 1 of 8</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:12.5%;"></div>
+      </div>
+    </div>
+
+    <div class="question-text" id="questionText"></div>
+    <div class="question-instruction" id="questionInstruction"></div>
+    <div id="answerButtons"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SCREEN 3: Results / CHW Action Card
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen3">
+    <div class="screen-eyebrow">Assessment Complete</div>
+    <div class="screen-title">CHW Action Card</div>
+
+    <!-- Traffic light -->
+    <div class="traffic-light-wrap" id="trafficLightWrap">
+      <div class="traffic-light-circle" id="trafficCircle"></div>
+      <div class="traffic-light-label" id="trafficLabel"></div>
+      <div class="traffic-light-msg"   id="trafficMsg"></div>
+    </div>
+
+    <!-- PE score -->
+    <div class="pe-display">
+      PE Score: <span class="pe-number" id="peDisplay"></span>
+    </div>
+
+    <!-- Domain summary -->
+    <div class="domain-row">
+      <div class="domain-name">Beliefs about medicine</div>
+      <div class="domain-rating" id="archRating"></div>
+    </div>
+    <div class="domain-row">
+      <div class="domain-name">Daily routine</div>
+      <div class="domain-rating" id="execRating"></div>
+    </div>
+    <div class="domain-row" style="margin-bottom:20px;">
+      <div class="domain-name">Practical barriers</div>
+      <div class="domain-rating" id="ctxRating"></div>
+    </div>
+
+    <!-- CHW action -->
+    <div class="action-card" id="actionCard">
+      <div class="action-card-label" id="actionLabel">Recommended Action</div>
+      <div class="action-card-text"  id="actionText"></div>
+    </div>
+
+    <button class="btn-save" id="btnSave" onclick="saveAndNext(false)">Save and Next Patient</button>
+    <button class="btn-flag" id="btnFlag" onclick="saveAndNext(true)">Flag for Supervisor</button>
+  </div>
+
+</div><!-- /#app -->
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+
+// ── Firebase configuration ────────────────────────────────────────────────
+// Replace with your project's config before deployment.
+var FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBRUEGRPaIWHMlzn0lT9otbJQEYZs4Br1A",
+  authDomain:        "adherence-project-2026.firebaseapp.com",
+  databaseURL:       "https://adherence-project-2026-default-rtdb.firebaseio.com",
+  projectId:         "adherence-project-2026",
+  storageBucket:     "adherence-project-2026.firebasestorage.app",
+  messagingSenderId: "222566948658",
+  appId:             "1:222566948658:web:85528e19dd039c199a412b"
+};
+
+var _firebaseApp = null;
+var _db          = null;
+
+try {
+  _firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+  _db = firebase.database();
+} catch (e) {
+  console.warn('[CHW] Firebase init failed. Running in offline-only mode.', e);
+}
+
+// ── Local storage keys ────────────────────────────────────────────────────
+var CHW_QUEUE_KEY = 'atlas_chw_queue';
+
+// ── Session state ─────────────────────────────────────────────────────────
+var _session = {
+  chwName:   '',
+  siteId:    '',
+  country:   '',
+  language:  'en',
+};
+
+var _currentAssessment = {
+  patientCode: '',
+  condition:   '',
+  answers:     [],   // 0-indexed, length 8
+  currentQ:    0,
+};
+
+// ── i18n strings (minimal — question text and core labels) ────────────────
+var _i18n = {
+  en: {
+    q:  [
+      "Are there times when you forget to take your medicine?",
+      "In the last two weeks, did you choose to skip any doses? For example, because of side effects, cost, or feeling better?",
+      "In the last two weeks, did you take less medicine or stop on your own without telling your doctor, because of how it made you feel?",
+      "When your daily routine changes, like when you travel or work different hours, is it hard to keep up with your medicine?",
+      "Were you able to take your last dose as your doctor told you?",
+      "When you start to feel better, do you ever think about stopping or reducing your medicine on your own?",
+      "Does taking your medicine every day feel like a big challenge in your daily life?",
+      "In a normal week, how often do you have trouble taking all your medicine as prescribed?"
+    ],
+    inst: "Ask the patient this question. Tap their answer.",
+    yes: "YES", no: "NO",
+    freq: ["NEVER","RARELY","SOMETIMES","OFTEN","ALWAYS"],
+  },
+  sw: {
+    q:  [
+      "Je, kuna nyakati ambazo unasahau kumeza dawa yako?",
+      "Katika wiki mbili zilizopita, je, ulichagua kuruka kipimo chochote? Kwa mfano, kwa sababu ya madhara, gharama, au kuhisi vizuri zaidi?",
+      "Katika wiki mbili zilizopita, je, ulichukua dawa kidogo au kuacha peke yako bila kumwambia daktari, kwa sababu ya jinsi ilivyokufanya uhisi?",
+      "Wakati ratiba yako ya kila siku inabadilika, kama vile unaposafiri au kufanya kazi kwa masaa tofauti, je, ni vigumu kuendelea na dawa yako?",
+      "Je, uliweza kumeza kipimo chako cha mwisho kama daktari alivyoagiza?",
+      "Unapoanza kuhisi vizuri, je, wakati mwingine unafikiria kuacha au kupunguza dawa yako peke yako?",
+      "Je, kumeza dawa yako kila siku kunahisi kama changamoto kubwa katika maisha yako ya kila siku?",
+      "Katika wiki ya kawaida, mara ngapi una shida ya kumeza dawa zako zote kama ilivyoagizwa?"
+    ],
+    inst: "Uliza mgonjwa swali hili. Gonga jibu lao.",
+    yes: "NDIYO", no: "HAPANA",
+    freq: ["KAMWE","MARA CHACHE","WAKATI MWINGINE","MARA KWA MARA","SIKUZOTE"],
+  },
+  fr: {
+    q:  [
+      "Y a-t-il des moments ou vous oubliez de prendre votre medicament?",
+      "Au cours des deux dernieres semaines, avez-vous choisi de sauter des doses? Par exemple, a cause d'effets indesirables, du cout ou parce que vous vous sentiez mieux?",
+      "Au cours des deux dernieres semaines, avez-vous pris moins de medicament ou vous etes-vous arrete seul sans le dire a votre medecin, a cause de ce qu'il vous faisait ressentir?",
+      "Quand votre routine quotidienne change, par exemple quand vous voyagez ou travaillez a des horaires differents, est-il difficile de continuer a prendre votre medicament?",
+      "Avez-vous pu prendre votre derniere dose comme votre medecin vous l'a prescrit?",
+      "Quand vous commencez a vous sentir mieux, pensez-vous parfois a reduire ou arreter votre medicament de votre propre initiative?",
+      "Prendre votre medicament chaque jour vous semble-t-il un grand defi dans votre vie quotidienne?",
+      "Au cours d'une semaine normale, combien de fois avez-vous du mal a prendre tous vos medicaments comme prescrits?"
+    ],
+    inst: "Posez cette question au patient. Appuyez sur sa reponse.",
+    yes: "OUI", no: "NON",
+    freq: ["JAMAIS","RAREMENT","PARFOIS","SOUVENT","TOUJOURS"],
+  },
+  hi: {
+    q:  [
+      "क्या कभी-कभी ऐसा होता है कि आप अपनी दवा लेना भूल जाते हैं?",
+      "पिछले दो हफ्तों में, क्या ऐसा हुआ कि आपने जानबूझकर कोई खुराक छोड़ी? जैसे कि साइड इफेक्ट, खर्च, या बेहतर महसूस होने की वजह से?",
+      "पिछले दो हफ्तों में, क्या आपने बिना डॉक्टर को बताए खुद ही दवा कम की या बंद की, क्योंकि इससे आपको कुछ महसूस हो रहा था?",
+      "जब आपकी रोज़ की दिनचर्या बदलती है, जैसे यात्रा के दौरान या अलग-अलग घंटे काम करते समय, तो क्या दवा लेना मुश्किल लगता है?",
+      "क्या आप अपनी आखिरी खुराक डॉक्टर के निर्देश के अनुसार ले पाए?",
+      "जब आप बेहतर महसूस करने लगते हैं, तो क्या कभी-कभी आप सोचते हैं कि खुद ही दवा कम करें या रोक दें?",
+      "क्या हर रोज़ दवा लेना आपकी रोज़मर्रा की ज़िंदगी में एक बड़ी चुनौती लगती है?",
+      "एक सामान्य हफ्ते में, आपको कितनी बार सभी दवाएं निर्देशानुसार लेने में परेशानी होती है?"
+    ],
+    inst: "रोगी से यह प्रश्न पूछें। उनके उत्तर पर टैप करें।",
+    yes: "हाँ", no: "नहीं",
+    freq: ["कभी नहीं","शायद ही","कभी-कभी","अक्सर","हमेशा"],
+  },
+  pt: {
+    q:  [
+      "Ha momentos em que voce esquece de tomar seu remedio?",
+      "Nas ultimas duas semanas, houve momentos em que voce escolheu pular uma dose? Por exemplo, por causa de efeitos colaterais, custo ou por se sentir melhor?",
+      "Nas ultimas duas semanas, voce reduziu sua dose ou parou um remedio por conta propria, sem avisar seu medico ou equipe de saude, por causa de como estava se sentindo?",
+      "Quando sua rotina diaria muda, como quando voce viaja ou trabalha em horarios diferentes, e dificil manter seus remedios?",
+      "Voce conseguiu tomar sua ultima dose como o medico orientou?",
+      "Quando voce comeca a se sentir melhor, voce pensa em reduzir ou pausar seu remedio por conta propria?",
+      "Manter a rotina de tomar seu remedio todo dia parece um grande desafio na sua vida diaria?",
+      "Em uma semana normal, com que frequencia voce tem dificuldade de tomar todos os seus remedios como prescrito?"
+    ],
+    inst: "Faca esta pergunta ao paciente. Toque na resposta dele.",
+    yes: "SIM", no: "NAO",
+    freq: ["NUNCA","RARAMENTE","AS VEZES","FREQUENTEMENTE","SEMPRE"],
+  },
+  ar: {
+    q:  [
+      "هل تنسى أحيانًا أن تأخذ دواءك؟",
+      "هل قررت من تلقاء نفسك التوقف عن أخذ دواءك؟",
+      "هل أخذت كمية أقل من الدواء لأنه جعلك تشعر بالتعب؟",
+      "عندما تسافر، هل تنسى أخذ دواءك؟",
+      "هل أخذت دواءك أمس؟",
+      "عندما تشعر بتحسن، هل تتوقف عن أخذ الدواء؟",
+      "هل من الصعب أن تتذكر أخذ دواءك كل يوم؟",
+      "كم مرة تجد صعوبة في التذكر؟"
+    ],
+    inst: "اطرح هذا السؤال على المريض. اضغط على إجابته.",
+    yes: "نعم", no: "لا",
+    freq: ["أبدًا","نادرًا","أحيانًا","غالبًا","دائمًا"],
+  },
+  es: {
+    q:  [
+      "A veces, olvida tomar su medicamento?",
+      "Alguna vez ha decidido por su cuenta dejar de tomar su medicamento?",
+      "Alguna vez ha tomado menos medicamento porque le hizo sentir mal?",
+      "Cuando viaja, olvida tomar su medicamento?",
+      "Tomo su medicamento ayer?",
+      "Cuando se siente mejor, deja de tomar su medicamento?",
+      "Le resulta dificil recordar tomar su medicamento todos los dias?",
+      "Con que frecuencia tiene dificultad para recordar?"
+    ],
+    inst: "Haga esta pregunta al paciente. Toque su respuesta.",
+    yes: "SI", no: "NO",
+    freq: ["NUNCA","RARAMENTE","A VECES","CON FRECUENCIA","SIEMPRE"],
+  },
+};
+
+// Q8 ordinal -> numeric value
+var Q8_VALUES = { 0: 1.00, 1: 0.75, 2: 0.50, 3: 0.25, 4: 0.00 };
+
+// ── Utility: unique ID ─────────────────────────────────────────────────────
+function _uid() {
+  return 'chw_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+// ── Utility: toast notification ────────────────────────────────────────────
+var _toastTimer = null;
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { t.className = 'toast'; }, 3200);
+}
+
+// ── Offline queue management ───────────────────────────────────────────────
+function getQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(CHW_QUEUE_KEY) || '[]');
+  } catch (e) { return []; }
+}
+
+function saveQueue(q) {
+  try { localStorage.setItem(CHW_QUEUE_KEY, JSON.stringify(q)); } catch (e) {}
+}
+
+function enqueue(record) {
+  var q = getQueue();
+  q.push(record);
+  saveQueue(q);
+  updateSyncBadge();
+}
+
+function updateSyncBadge() {
+  var q = getQueue();
+  var badge = document.getElementById('syncBadge');
+  var count = document.getElementById('syncCount');
+  if (q.length > 0) {
+    count.textContent = q.length;
+    badge.className = 'sync-badge visible';
+  } else {
+    badge.className = 'sync-badge';
+  }
+}
+
+function flushQueue() {
+  if (!_db || !navigator.onLine) return;
+  var q = getQueue();
+  if (!q.length) return;
+
+  var remaining = [];
+  var promises  = q.map(function(record) {
+    return _db.ref('chw_assessments/' + record.id)
+      .set(Object.assign({}, record, { synced: true }))
+      .catch(function() { remaining.push(record); });
+  });
+
+  Promise.all(promises).then(function() {
+    saveQueue(remaining);
+    updateSyncBadge();
+    if (!remaining.length && q.length) {
+      showToast('All records synced to server.', 'success');
+    }
+  });
+}
+
+// ── Screen navigation ──────────────────────────────────────────────────────
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('screen' + n).classList.add('active');
+}
+
+// ── SCREEN 0: Begin Day ────────────────────────────────────────────────────
+function beginDay() {
+  var name    = document.getElementById('chwName').value.trim();
+  var siteId  = document.getElementById('siteId').value.trim();
+  var country = document.getElementById('countrySelect').value;
+  var lang    = document.getElementById('langSelect').value;
+
+  if (!name)    { showToast('Please enter your CHW name.', 'error'); return; }
+  if (!siteId)  { showToast('Please enter a site ID.', 'error'); return; }
+  if (!country) { showToast('Please select a country.', 'error'); return; }
+
+  _session.chwName  = name;
+  _session.siteId   = siteId;
+  _session.country  = country;
+  _session.language = lang;
+
+  sessionStorage.setItem('chw_session', JSON.stringify(_session));
+
+  // Set RTL for Arabic
+  document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+
+  updateSessionBar();
+  showScreen(1);
+}
+
+function updateSessionBar() {
+  var bar = document.getElementById('sessionBar');
+  bar.innerHTML = '<strong>' + esc(_session.chwName) + '</strong> / ' +
+    esc(_session.siteId) + ' / ' + esc(_session.country) +
+    ' <span style="color:#d4a843;">[' + esc(_session.language.toUpperCase()) + ']</span>';
+}
+
+// ── SCREEN 1: Start Assessment ─────────────────────────────────────────────
+function startAssessment() {
+  _currentAssessment = {
+    patientCode: document.getElementById('patientCode').value.trim(),
+    condition:   document.getElementById('conditionSelect').value,
+    answers:     new Array(8).fill(null),
+    currentQ:    0,
+  };
+  renderQuestion(0);
+  showScreen(2);
+}
+
+// ── SCREEN 2: Question rendering ───────────────────────────────────────────
+function renderQuestion(idx) {
+  var lang  = _session.language || 'en';
+  var L     = _i18n[lang] || _i18n.en;
+  var total = 8;
+
+  document.getElementById('progressLabel').textContent =
+    'Question ' + (idx + 1) + ' of ' + total;
+  document.getElementById('progressFill').style.width =
+    Math.round(((idx + 1) / total) * 100) + '%';
+
+  document.getElementById('questionText').textContent = L.q[idx];
+  document.getElementById('questionInstruction').textContent = L.inst;
+
+  var btnWrap = document.getElementById('answerButtons');
+  btnWrap.innerHTML = '';
+
+  if (idx < 7) {
+    // YES / NO
+    var yesBtn = document.createElement('button');
+    yesBtn.className   = 'answer-btn btn-yes';
+    yesBtn.textContent = L.yes;
+    // Per-question adherence direction handled in recordAnswerRaw via ADHERENT_ANSWER map
+    yesBtn.onclick = function() { recordAnswerRaw(idx, 'yes'); };
+
+    var noBtn = document.createElement('button');
+    noBtn.className   = 'answer-btn btn-no';
+    noBtn.textContent = L.no;
+    noBtn.onclick     = function() { recordAnswerRaw(idx, 'no'); };
+
+    btnWrap.appendChild(yesBtn);
+    btnWrap.appendChild(noBtn);
+  } else {
+    // Q8: 5-frequency buttons
+    var freqLabels = L.freq;
+    var freqClasses = ['btn-freq-0','btn-freq-1','btn-freq-2','btn-freq-3','btn-freq-4'];
+    freqLabels.forEach(function(label, fi) {
+      var btn = document.createElement('button');
+      btn.className   = 'answer-btn ' + freqClasses[fi];
+      btn.textContent = label;
+      btn.onclick     = function() { recordAnswerQ8(fi); };
+      btnWrap.appendChild(btn);
+    });
+  }
+}
+
+// ── Q1-Q7 adherence logic — MAP instrument ────────────────────────────────
+// Adherent (score=1) answers:
+//   Q1 (forget times):         NO = adherent
+//   Q2 (chose to skip):        NO = adherent
+//   Q3 (reduced/stopped own):  NO = adherent
+//   Q4 (routine change hard):  NO = adherent
+//   Q5 (last dose as directed): YES = adherent
+//   Q6 (think about pausing):  NO = adherent
+//   Q7 (big challenge daily):  NO = adherent
+var ADHERENT_ANSWER = {
+  0: 'no',  // Q1: NO = good
+  1: 'no',  // Q2: NO = good
+  2: 'no',  // Q3: NO = good
+  3: 'no',  // Q4: NO = good
+  4: 'yes', // Q5: YES = good
+  5: 'no',  // Q6: NO = good
+  6: 'no',  // Q7: NO = good
+};
+
+function recordAnswerRaw(idx, raw) {
+  var adherentAnswer = ADHERENT_ANSWER[idx];
+  var score = (raw === adherentAnswer) ? 1 : 0;
+  _currentAssessment.answers[idx] = score;
+  advanceQuestion(idx);
+}
+
+function recordAnswerQ8(freqIdx) {
+  // freqIdx: 0=Never(1.00), 1=Rarely(0.75), 2=Sometimes(0.50), 3=Often(0.25), 4=Always(0.00)
+  _currentAssessment.answers[7] = Q8_VALUES[freqIdx];
+  advanceQuestion(7);
+}
+
+function recordAnswer(idx, score) {
+  _currentAssessment.answers[idx] = score;
+  advanceQuestion(idx);
+}
+
+function advanceQuestion(idx) {
+  if (idx < 7) {
+    _currentAssessment.currentQ = idx + 1;
+    renderQuestion(idx + 1);
+  } else {
+    // All questions done
+    computeAndShowResults();
+  }
+}
+
+// ── MAP scoring ────────────────────────────────────────────────────────────
+function computeScores() {
+  var a = _currentAssessment.answers;
+  // Architecture = mean(Q2, Q3, Q6) = indices 1, 2, 5
+  var arch = (a[1] + a[2] + a[5]) / 3;
+  // Execution = mean(Q1, Q5, Q8) = indices 0, 4, 7
+  var exec = (a[0] + a[4] + a[7]) / 3;
+  // Context-Guard = 0.5 + 0.5 * mean(Q4, Q7) = indices 3, 6; floored at 0.5
+  var ctx  = 0.5 + 0.5 * ((a[3] + a[6]) / 2);
+  ctx = Math.max(0.5, ctx);
+  // PE = (A * E * Cg)^(1/3)
+  var pe = Math.pow(Math.max(0, arch * exec * ctx), 1 / 3);
+  // Additive (MMAS-8 style): sum of binary values for Q1-Q7 + Q8 ordinal
+  var additive = a.reduce(function(s, v) { return s + v; }, 0);
+
+  return { arch: arch, exec: exec, ctx: ctx, pe: pe, additive: additive };
+}
+
+// ── PEACS phenotype classification ────────────────────────────────────────
+function classifyPhenotype(scores) {
+  var a = _currentAssessment.answers;
+  // Side-effect avoider: Q3 (index 2) answered as non-adherent (took less due to side effects)
+  if (a[2] === 0 && scores.arch < 0.55) return 'Side-Effect Avoider';
+  // Intentional Resistor: low Architecture (intentional decisions), execution less impaired
+  if (scores.arch < 0.4 && scores.exec >= 0.45) return 'Intentional Resistor';
+  // Optimistic Stopper: stops when feeling better -- Q6 (index 5) non-adherent, low arch
+  if (a[5] === 0 && scores.pe < 0.65) return 'Optimistic Stopper';
+  // Situational Skipper: context barriers dominant, otherwise reasonable adherence intent
+  if (scores.ctx < 0.65 && scores.arch >= 0.5 && scores.exec >= 0.45) return 'Situational Skipper';
+  // Routine Forgetter: execution is the weakest link
+  if (scores.exec < 0.5) return 'Routine Forgetter';
+  // Catch-all for moderate-high PE with no clear single failure
+  return 'Routine Forgetter';
+}
+
+// ── Dominant domain ────────────────────────────────────────────────────────
+function dominantDomain(scores) {
+  var domains = [
+    { name: 'Architecture', score: scores.arch },
+    { name: 'Execution',    score: scores.exec },
+    { name: 'Context-Guard', score: scores.ctx },
+  ];
+  // Lowest score = most problematic domain
+  domains.sort(function(a, b) { return a.score - b.score; });
+  return domains[0].name;
+}
+
+// ── Traffic light ──────────────────────────────────────────────────────────
+function trafficLight(pe) {
+  if (pe >= 0.75) return 'GREEN';
+  if (pe >= 0.50) return 'AMBER';
+  return 'RED';
+}
+
+// ── SCREEN 3: Results ─────────────────────────────────────────────────────
+function computeAndShowResults() {
+  var scores   = computeScores();
+  var tl       = trafficLight(scores.pe);
+  var dominant = dominantDomain(scores);
+  var phenotype = classifyPhenotype(scores);
+
+  // Store results on _currentAssessment for saving
+  _currentAssessment._scores   = scores;
+  _currentAssessment._tl       = tl;
+  _currentAssessment._dominant = dominant;
+  _currentAssessment._phenotype = phenotype;
+
+  // Traffic light circle
+  var circleEl = document.getElementById('trafficCircle');
+  var labelEl  = document.getElementById('trafficLabel');
+  var msgEl    = document.getElementById('trafficMsg');
+
+  if (tl === 'GREEN') {
+    circleEl.style.background = '#10b981';
+    labelEl.style.color       = '#10b981';
+    labelEl.textContent       = 'GREEN / GOOD ADHERENCE';
+    msgEl.textContent         = 'Good adherence. Continue current support.';
+  } else if (tl === 'AMBER') {
+    circleEl.style.background = '#d4a843';
+    labelEl.style.color       = '#d4a843';
+    labelEl.textContent       = 'AMBER / SOME DIFFICULTIES';
+    msgEl.textContent         = 'Some difficulties. Schedule follow-up.';
+  } else {
+    circleEl.style.background = '#ef4444';
+    labelEl.style.color       = '#ef4444';
+    labelEl.textContent       = 'RED / NEEDS HELP';
+    msgEl.textContent         = 'Needs help. Refer to clinic.';
+  }
+
+  // PE display
+  document.getElementById('peDisplay').textContent = scores.pe.toFixed(2);
+
+  // Domain ratings
+  document.getElementById('archRating').textContent = domainRating(scores.arch, 'arch');
+  document.getElementById('archRating').style.color = domainColor(scores.arch);
+
+  document.getElementById('execRating').textContent = domainRating(scores.exec, 'exec');
+  document.getElementById('execRating').style.color = domainColor(scores.exec);
+
+  document.getElementById('ctxRating').textContent  = domainRating(scores.ctx, 'ctx');
+  document.getElementById('ctxRating').style.color  = domainColor(scores.ctx);
+
+  // CHW action card
+  var actionEl   = document.getElementById('actionCard');
+  var actionText = getActionText(tl, dominant);
+  var actionColor, actionBorder, actionBg;
+
+  if (tl === 'GREEN') {
+    actionColor  = '#10b981'; actionBorder = 'rgba(16,185,129,0.40)';
+    actionBg     = 'rgba(16,185,129,0.06)';
+  } else if (tl === 'AMBER') {
+    actionColor  = '#d4a843'; actionBorder = 'rgba(212,168,67,0.40)';
+    actionBg     = 'rgba(212,168,67,0.06)';
+  } else {
+    actionColor  = '#ef4444'; actionBorder = 'rgba(239,68,68,0.40)';
+    actionBg     = 'rgba(239,68,68,0.06)';
+  }
+
+  actionEl.style.background   = actionBg;
+  actionEl.style.borderColor  = actionBorder;
+  document.getElementById('actionLabel').style.color = actionColor;
+  document.getElementById('actionText').textContent  = actionText;
+
+  showScreen(3);
+}
+
+function domainRating(score, domain) {
+  if (domain === 'ctx') {
+    // ctx baseline is 0.5; meaningful range 0.5 to 1.0
+    if (score >= 0.825) return 'Few barriers';
+    if (score >= 0.675) return 'Some barriers';
+    return 'Many barriers';
+  }
+  if (score >= 0.75) return domain === 'arch' ? 'Strong' : 'On track';
+  if (score >= 0.45) return domain === 'arch' ? 'Some doubts' : 'Sometimes forgets';
+  return domain === 'arch' ? 'Needs discussion' : 'Often forgets';
+}
+
+function domainColor(score) {
+  if (score >= 0.75) return '#10b981';
+  if (score >= 0.50) return '#d4a843';
+  return '#ef4444';
+}
+
+function getActionText(tl, dominant) {
+  if (tl === 'RED') {
+    if (dominant === 'Architecture') {
+      return 'Refer to health worker or clinic. Patient may not believe medicine is helping.';
+    } else if (dominant === 'Execution') {
+      return 'Help patient make a reminder plan. Show them the blister pack organiser.';
+    } else {
+      return 'Check what is making it hard. Cost? Travel? Supply problems? Note barriers.';
+    }
+  }
+  if (tl === 'AMBER') {
+    return 'Schedule a follow-up visit in 2 to 4 weeks. Encourage patient.';
+  }
+  return 'Reassess in 3 months. Praise patient for keeping up with medicine.';
+}
+
+// ── Save and go to next patient ────────────────────────────────────────────
+function saveAndNext(flagged) {
+  var scores    = _currentAssessment._scores;
+  var tl        = _currentAssessment._tl;
+  var dominant  = _currentAssessment._dominant;
+  var phenotype = _currentAssessment._phenotype;
+  var a         = _currentAssessment.answers;
+
+  var record = {
+    id:               _uid(),
+    chw_name:         _session.chwName,
+    site_id:          _session.siteId,
+    country:          _session.country,
+    language:         _session.language,
+    patient_code:     _currentAssessment.patientCode || 'anon',
+    condition:        _currentAssessment.condition,
+    pe_score:         +(scores.pe.toFixed(4)),
+    arch_score:       +(scores.arch.toFixed(4)),
+    exec_score:       +(scores.exec.toFixed(4)),
+    ctx_score:        +(scores.ctx.toFixed(4)),
+    additive:         +(scores.additive.toFixed(4)),
+    peacs_phenotype:  phenotype,
+    traffic_light:    tl,
+    dominant_domain:  dominant,
+    flagged:          !!flagged,
+    assessment_mode:  'chw',
+    ts:               Date.now(),
+    synced:           false,
+    // Raw question scores
+    map_q1: a[0], map_q2: a[1], map_q3: a[2], map_q4: a[3],
+    map_q5: a[4], map_q6: a[5], map_q7: a[6], map_q8: a[7],
+  };
+
+  // Disable buttons to prevent double-tap
+  document.getElementById('btnSave').disabled = true;
+  document.getElementById('btnFlag').disabled = true;
+
+  _writeRecord(record, function(savedOk) {
+    document.getElementById('btnSave').disabled = false;
+    document.getElementById('btnFlag').disabled = false;
+
+    if (savedOk) {
+      showToast(flagged ? 'Saved and flagged for supervisor.' : 'Saved. Ready for next patient.', 'success');
+    } else {
+      showToast('Saved offline. Will sync when connected.', '');
+    }
+
+    // Reset patient form and go back to Screen 1
+    document.getElementById('patientCode').value = '';
+    document.getElementById('conditionSelect').selectedIndex = 0;
+    showScreen(1);
+  });
+}
+
+function _writeRecord(record, callback) {
+  if (!_db || !navigator.onLine) {
+    enqueue(record);
+    if (callback) callback(false);
+    return;
+  }
+
+  _db.ref('chw_assessments/' + record.id)
+    .set(Object.assign({}, record, { synced: true }))
+    .then(function() {
+      if (callback) callback(true);
+    })
+    .catch(function(err) {
+      console.warn('[CHW] Firebase write failed, queuing:', err);
+      enqueue(record);
+      if (callback) callback(false);
+    });
+}
+
+// ── HTML escape ────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Startup ────────────────────────────────────────────────────────────────
+(function init() {
+  // Restore session if page reloaded
+  try {
+    var stored = sessionStorage.getItem('chw_session');
+    if (stored) {
+      var sess = JSON.parse(stored);
+      if (sess && sess.chwName && sess.siteId && sess.country) {
+        _session = sess;
+        document.documentElement.dir = (sess.language === 'ar') ? 'rtl' : 'ltr';
+      }
+    }
+  } catch (e) {}
+
+  // Show sync badge on load if there are queued records
+  updateSyncBadge();
+
+  // Flush queue on load if online
+  if (navigator.onLine) flushQueue();
+
+  // Flush on reconnect
+  window.addEventListener('online', function() {
+    showToast('Connection restored. Syncing records...', '');
+    setTimeout(flushQueue, 800);
+  });
+
+  // Firebase reconnect event (Realtime Database .info/connected)
+  if (_db) {
+    _db.ref('.info/connected').on('value', function(snap) {
+      if (snap.val() === true) {
+        setTimeout(flushQueue, 1000);
+      }
+    });
+  }
+})();
+
+</script>
+</body>
+</html>

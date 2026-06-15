@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TESSERA GRC — Global Research Consortium · Italy as Founding Hub</title>
+<meta name="description" content="TESSERA GRC (Global Research Consortium) — Italy is the founding hub of the world's first pharmacist-led MAP adherence network. Rome Pilot 2026."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#080e1a;
+  --surface:#0d1525;
+  --card:#111d30;
+  --border:rgba(255,255,255,0.07);
+  --bright:#e8f0f8;
+  --muted:#6b8099;
+  --text:#cdd8e8;
+  --base:#4e9cf5;
+  --pe:#d4a843;
+  --optimal:#10b981;
+  --poor:#ef4444;
+  --arch:#f59e0b;
+  --font-display:'Cormorant Garamond',Georgia,serif;
+  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --r:12px;
+}
+html,body{
+  min-height:100%;
+  background:var(--ink);
+  color:var(--text);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 5%,  rgba(78,156,245,0.06) 0%,transparent 70%),
+    radial-gradient(ellipse 60% 60% at 85% 85%, rgba(212,168,67,0.07) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(16,185,129,0.03) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 40px;
+  background:rgba(8,14,26,0.92);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(212,168,67,0.15);
+}
+.nav-brand{display:flex;flex-direction:column;gap:2px;}
+.nav-badge{
+  font-family:var(--font-mono);font-size:0.64rem;
+  letter-spacing:0.3em;text-transform:uppercase;
+  color:rgba(212,168,67,0.55);
+  display:flex;align-items:center;gap:7px;
+}
+.nav-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:#10b981;box-shadow:0 0 6px #10b981;
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.35;}}
+.nav-title{
+  font-family:var(--font-display);
+  font-size:1.3rem;font-weight:300;
+  color:#fff;letter-spacing:0.04em;
+}
+.nav-title em{font-style:italic;color:rgba(212,168,67,0.85);}
+.nav-links{display:flex;align-items:center;gap:24px;}
+.nav-link{
+  font-family:var(--font-mono);font-size:0.73rem;
+  letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;
+  transition:color 0.2s;
+}
+.nav-link:hover{color:var(--bright);}
+.nav-cta{
+  font-family:var(--font-mono);font-size:0.73rem;
+  letter-spacing:0.14em;text-transform:uppercase;
+  padding:9px 20px;border-radius:7px;
+  border:1px solid rgba(212,168,67,0.4);
+  background:rgba(212,168,67,0.08);
+  color:rgba(212,168,67,0.9);
+  text-decoration:none;
+  transition:all 0.2s;
+}
+.nav-cta:hover{background:rgba(212,168,67,0.16);border-color:rgba(212,168,67,0.6);}
+
+/* ── Page ─────────────────────────────────────────────────────────────── */
+main{
+  position:relative;z-index:1;
+  max-width:1000px;margin:0 auto;
+  padding:0 32px 80px;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.hero{
+  padding:80px 0 60px;
+  text-align:center;
+}
+.hero-kicker{
+  font-family:var(--font-mono);font-size:0.72rem;
+  letter-spacing:0.36em;text-transform:uppercase;
+  color:rgba(212,168,67,0.7);
+  margin-bottom:20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+}
+.hero-kicker::before,.hero-kicker::after{
+  content:'';flex:1;max-width:60px;
+  height:1px;background:rgba(212,168,67,0.25);
+}
+.hero-headline{
+  font-family:var(--font-display);
+  font-size:clamp(2.4rem,5vw,3.8rem);
+  font-weight:300;color:#fff;
+  letter-spacing:0.03em;line-height:1.15;
+  margin-bottom:24px;
+}
+.hero-headline em{font-style:italic;color:rgba(212,168,67,0.85);}
+.hero-sub{
+  font-size:1.1rem;color:var(--muted);
+  line-height:1.7;max-width:640px;margin:0 auto 36px;
+}
+.hero-founding{
+  display:inline-flex;align-items:center;gap:10px;
+  background:rgba(16,185,129,0.07);
+  border:1px solid rgba(16,185,129,0.3);
+  border-radius:40px;
+  padding:10px 24px;
+  font-family:var(--font-mono);font-size:0.78rem;
+  letter-spacing:0.16em;text-transform:uppercase;
+  color:#10b981;
+}
+
+/* ── Italy founding strip ──────────────────────────────────────────────── */
+.italy-strip{
+  background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(212,168,67,0.05));
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;
+  padding:36px 40px;
+  margin-bottom:48px;
+  display:flex;align-items:flex-start;gap:32px;
+  flex-wrap:wrap;
+}
+.italy-flag{
+  font-size:4rem;flex-shrink:0;line-height:1;
+}
+.italy-content{flex:1;min-width:220px;}
+.italy-label{
+  font-family:var(--font-mono);font-size:0.68rem;
+  letter-spacing:0.3em;text-transform:uppercase;
+  color:#10b981;margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.italy-label::before{
+  content:'';width:18px;height:1px;
+  background:#10b981;
+}
+.italy-title{
+  font-family:var(--font-display);
+  font-size:2rem;font-weight:300;
+  color:#fff;margin-bottom:10px;
+}
+.italy-title em{font-style:italic;color:rgba(212,168,67,0.85);}
+.italy-desc{
+  font-size:0.97rem;color:var(--muted);
+  line-height:1.7;margin-bottom:20px;
+}
+.italy-stats{
+  display:flex;gap:24px;flex-wrap:wrap;
+}
+.italy-stat{display:flex;flex-direction:column;gap:3px;}
+.italy-stat-val{
+  font-family:var(--font-display);
+  font-size:1.7rem;font-weight:300;
+  color:var(--pe);line-height:1;
+}
+.italy-stat-label{
+  font-family:var(--font-mono);font-size:0.68rem;
+  letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--muted);
+}
+
+/* ── Rome SVG map placeholder ──────────────────────────────────────────── */
+.rome-map-wrap{
+  flex-shrink:0;
+  width:240px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+.rome-map-label{
+  font-family:var(--font-mono);font-size:0.64rem;
+  letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--muted);
+}
+
+/* ── Pilot timeline ─────────────────────────────────────────────────────── */
+.section-title{
+  font-family:var(--font-mono);font-size:0.72rem;
+  letter-spacing:0.28em;text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:24px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+.section-title span{color:var(--pe);}
+
+.timeline{
+  display:flex;flex-direction:column;gap:0;
+  margin-bottom:48px;
+  position:relative;
+}
+.timeline::before{
+  content:'';
+  position:absolute;left:20px;top:0;bottom:0;
+  width:1px;background:var(--border);
+  z-index:0;
+}
+.timeline-item{
+  display:flex;gap:28px;align-items:flex-start;
+  padding:20px 0 20px 0;
+  position:relative;z-index:1;
+}
+.timeline-dot{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--card);border:2px solid var(--pe);
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:0.72rem;
+  color:var(--pe);font-weight:500;
+  box-shadow:0 0 12px rgba(212,168,67,0.15);
+}
+.timeline-dot.done{
+  background:rgba(16,185,129,0.12);
+  border-color:#10b981;color:#10b981;
+  box-shadow:0 0 12px rgba(16,185,129,0.2);
+}
+.timeline-content{flex:1;padding-top:8px;}
+.timeline-phase{
+  font-family:var(--font-mono);font-size:0.68rem;
+  letter-spacing:0.22em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:4px;
+}
+.timeline-title{
+  font-size:1.05rem;color:var(--bright);font-weight:500;
+  margin-bottom:6px;
+}
+.timeline-desc{
+  font-size:0.92rem;color:var(--muted);line-height:1.6;
+}
+.timeline-tag{
+  display:inline-block;margin-top:8px;
+  font-family:var(--font-mono);font-size:0.68rem;
+  letter-spacing:0.14em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;
+  background:rgba(16,185,129,0.1);
+  border:1px solid rgba(16,185,129,0.25);
+  color:#10b981;
+}
+.timeline-tag.amber{
+  background:rgba(245,158,11,0.1);
+  border-color:rgba(245,158,11,0.25);
+  color:#f59e0b;
+}
+
+/* ── Key partners ─────────────────────────────────────────────────────── */
+.partners-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:16px;margin-bottom:48px;
+}
+.partner-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:24px;
+  transition:border-color 0.2s;
+}
+.partner-card:hover{border-color:rgba(255,255,255,0.14);}
+.partner-role{
+  font-family:var(--font-mono);font-size:0.65rem;
+  letter-spacing:0.22em;text-transform:uppercase;
+  color:var(--pe);margin-bottom:8px;
+}
+.partner-name{
+  font-size:1.05rem;color:var(--bright);font-weight:500;
+  margin-bottom:4px;
+}
+.partner-org{
+  font-size:0.88rem;color:var(--muted);margin-bottom:10px;
+  line-height:1.5;
+}
+.partner-track{
+  font-family:var(--font-mono);font-size:0.7rem;
+  letter-spacing:0.12em;
+  color:rgba(78,156,245,0.7);
+}
+
+/* ── What TESSERA provides ───────────────────────────────────────────── */
+.benefits-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:14px;margin-bottom:48px;
+}
+.benefit-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:20px;
+}
+.benefit-icon{
+  font-size:1.5rem;margin-bottom:10px;
+}
+.benefit-title{
+  font-size:0.95rem;color:var(--bright);font-weight:500;
+  margin-bottom:6px;
+}
+.benefit-desc{
+  font-size:0.85rem;color:var(--muted);line-height:1.6;
+}
+
+/* ── MAP instrument explainer ─────────────────────────────────────────── */
+.instrument-wrap{
+  background:rgba(212,168,67,0.04);
+  border:1px solid rgba(212,168,67,0.18);
+  border-radius:14px;padding:28px 32px;
+  margin-bottom:48px;
+}
+.instrument-title{
+  font-family:var(--font-display);
+  font-size:1.6rem;font-weight:300;
+  color:#fff;margin-bottom:8px;
+}
+.instrument-sub{
+  font-size:0.95rem;color:var(--muted);margin-bottom:20px;line-height:1.6;
+}
+.domain-row{display:flex;gap:14px;flex-wrap:wrap;}
+.domain-pill{
+  flex:1;min-width:180px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:16px 18px;
+}
+.domain-pill-label{
+  font-family:var(--font-mono);font-size:0.66rem;
+  letter-spacing:0.2em;text-transform:uppercase;
+  margin-bottom:6px;
+}
+.domain-pill-name{
+  font-size:0.97rem;color:var(--bright);font-weight:500;
+  margin-bottom:4px;
+}
+.domain-pill-qs{
+  font-family:var(--font-mono);font-size:0.72rem;
+  color:var(--muted);
+}
+.pe-formula{
+  margin-top:20px;
+  text-align:center;
+  font-family:var(--font-mono);font-size:0.9rem;
+  color:var(--muted);
+  padding:14px;
+  background:rgba(0,0,0,0.25);
+  border-radius:8px;
+}
+.pe-formula strong{color:var(--pe);}
+
+/* ── CTA strip ─────────────────────────────────────────────────────────── */
+.cta-strip{
+  background:linear-gradient(135deg,rgba(78,156,245,0.08),rgba(78,156,245,0.04));
+  border:1px solid rgba(78,156,245,0.2);
+  border-radius:16px;
+  padding:36px 40px;
+  display:flex;align-items:center;gap:28px;flex-wrap:wrap;
+}
+.cta-text{flex:1;min-width:220px;}
+.cta-title{
+  font-family:var(--font-display);
+  font-size:1.7rem;font-weight:300;
+  color:#fff;margin-bottom:8px;
+}
+.cta-desc{font-size:0.95rem;color:var(--muted);line-height:1.6;}
+.cta-actions{display:flex;flex-direction:column;gap:10px;min-width:190px;}
+.btn-primary{
+  display:block;
+  background:linear-gradient(135deg,rgba(78,156,245,0.25),rgba(78,156,245,0.15));
+  border:1px solid rgba(78,156,245,0.45);
+  border-radius:9px;padding:14px 24px;
+  font-family:var(--font-body);font-size:1rem;font-weight:500;
+  color:#fff;text-decoration:none;text-align:center;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-primary:hover{border-color:rgba(78,156,245,0.7);background:rgba(78,156,245,0.3);}
+.btn-secondary{
+  display:block;
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:9px;padding:12px 24px;
+  font-family:var(--font-mono);font-size:0.78rem;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;text-align:center;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-secondary:hover{border-color:rgba(255,255,255,0.18);color:var(--bright);}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+footer{
+  position:relative;z-index:1;
+  text-align:center;padding:32px 40px;
+  border-top:1px solid var(--border);
+  font-family:var(--font-mono);font-size:0.72rem;
+  letter-spacing:0.14em;color:rgba(107,128,153,0.5);
+}
+footer a{color:rgba(107,128,153,0.7);text-decoration:none;}
+footer a:hover{color:var(--muted);}
+
+@media(max-width:640px){
+  nav{padding:14px 20px;}
+  .nav-links{display:none;}
+  main{padding:0 18px 60px;}
+  .hero{padding:50px 0 40px;}
+  .italy-strip{padding:24px 20px;gap:18px;}
+  .rome-map-wrap{width:100%;}
+  .cta-strip{padding:24px 20px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-badge">
+      <span class="nav-dot"></span>
+      TESSERA GRC
+    </div>
+    <div class="nav-title">Global Research <em>Consortium</em></div>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="/">ATLAS Platform</a>
+    <a class="nav-link" href="/#section-map">MAP Instrument</a>
+    <a class="nav-link" href="/assess.html">Run Assessment</a>
+    <a class="nav-cta" href="mailto:info@scalacartafoundation.org">Join TESSERA</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ─── HERO ─────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-kicker">Scala Carta Foundation &middot; 2026</div>
+    <h1 class="hero-headline">
+      The world's first<br>pharmacist-led<br><em>adherence science network</em>
+    </h1>
+    <p class="hero-sub">
+      TESSERA GRC (Global Research Consortium) brings validated MAP adherence measurement
+      to pharmacies, clinics, and community health programs across five continents.
+      Italy is the founding hub.
+    </p>
+    <div class="hero-founding">
+      <span>&#9670;</span> TESSERA Hub I — Rome, Italy &mdash; Operational June 2026
+    </div>
+  </section>
+
+  <!-- ─── ITALY FOUNDING STRIP ──────────────────────────────────────────── -->
+  <section class="italy-strip">
+    <div class="italy-flag">&#127470;&#127481;</div>
+
+    <div class="italy-content">
+      <div class="italy-label">Founding TESSERA Hub</div>
+      <h2 class="italy-title">Italy · <em>Roma</em></h2>
+      <p class="italy-desc">
+        The Order of Pharmacists of Rome (FOFI) and the Istituto Superiore di Sanit&agrave;
+        are co-anchoring the first TESSERA pilot. Rome pharmacists are not mere dispensers.
+        They are the most trusted daily health contact for chronic-disease patients, and ATLAS
+        gives them a clinical instrument worthy of that role.
+      </p>
+      <div class="italy-stats">
+        <div class="italy-stat">
+          <div class="italy-stat-val">20–30</div>
+          <div class="italy-stat-label">Pilot pharmacies</div>
+        </div>
+        <div class="italy-stat">
+          <div class="italy-stat-val">500</div>
+          <div class="italy-stat-label">Target patients</div>
+        </div>
+        <div class="italy-stat">
+          <div class="italy-stat-val">6 mo</div>
+          <div class="italy-stat-label">Pilot duration</div>
+        </div>
+        <div class="italy-stat">
+          <div class="italy-stat-val">3</div>
+          <div class="italy-stat-label">Disease categories</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Italy SVG placeholder -->
+    <div class="rome-map-wrap">
+      <svg viewBox="0 0 220 300" width="220" style="opacity:0.85;">
+        <!-- Italy rough outline -->
+        <path d="M70,15 L90,12 L115,18 L130,28 L140,42 L142,60 L138,75 L145,88
+                 L155,95 L165,108 L168,122 L162,135 L155,148 L158,162
+                 L168,174 L178,185 L182,196 L175,208 L165,215 L155,222
+                 L148,235 L140,248 L130,258 L118,265 L108,268 L98,262
+                 L90,252 L82,240 L78,228 L82,215 L88,203 L82,192
+                 L72,182 L65,170 L60,158 L55,145 L52,130 L50,115
+                 L48,100 L52,85 L50,70 L48,55 L52,42 L60,28 Z"
+          fill="none" stroke="rgba(212,168,67,0.35)" stroke-width="1.5"/>
+        <!-- Sicily -->
+        <path d="M95,272 L112,268 L126,272 L132,282 L125,290 L112,293 L100,290 L92,282 Z"
+          fill="none" stroke="rgba(212,168,67,0.25)" stroke-width="1.5"/>
+        <!-- Rome marker -->
+        <circle cx="108" cy="155" r="7" fill="rgba(212,168,67,0.2)" stroke="#d4a843" stroke-width="1.5"/>
+        <circle cx="108" cy="155" r="3" fill="#d4a843"/>
+        <!-- Pulse ring -->
+        <circle cx="108" cy="155" r="12" fill="none" stroke="#d4a843" stroke-width="0.8" opacity="0.4"/>
+        <!-- Label -->
+        <text x="120" y="160" font-family="'IBM Plex Mono',monospace" font-size="8"
+          fill="#d4a843" opacity="0.9">ROME</text>
+        <text x="120" y="170" font-family="'IBM Plex Mono',monospace" font-size="6"
+          fill="rgba(212,168,67,0.6)">TESSERA Hub I</text>
+        <!-- TESSERA Site 001 badge -->
+        <rect x="60" y="22" width="100" height="18" rx="3"
+          fill="rgba(16,185,129,0.1)" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+        <text x="110" y="34" font-family="'IBM Plex Mono',monospace" font-size="7"
+          fill="#10b981" text-anchor="middle">TESSERA SITE 001</text>
+      </svg>
+      <div class="rome-map-label">Rome &middot; TESSERA Hub I</div>
+    </div>
+  </section>
+
+  <!-- ─── TIMELINE ─────────────────────────────────────────────────────── -->
+  <section style="margin-bottom:48px;">
+    <div class="section-title">Rome Pilot <span>&middot; 2026 Timeline</span></div>
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-dot done">Q1</div>
+        <div class="timeline-content">
+          <div class="timeline-phase">Q1 2026 &mdash; Completed</div>
+          <div class="timeline-title">Platform readiness &amp; Italian localization</div>
+          <div class="timeline-desc">ATLAS Pharmacy Gateway built with Italian, Spanish, French, and Arabic MAP questions. Firebase dual-write architecture connecting pharmacy data to the global ATLAS database.</div>
+          <span class="timeline-tag">Deployed</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot done">Q2</div>
+        <div class="timeline-content">
+          <div class="timeline-phase">Q2 2026 &mdash; Active</div>
+          <div class="timeline-title">FOFI engagement &amp; pharmacist onboarding</div>
+          <div class="timeline-desc">Order of Pharmacists of Rome (FOFI) formal partnership. First cohort of 20&ndash;30 pilot pharmacies receive QR-linked pharmacy.html deployments. Training on MAP assessment protocol and PEACS interpretation.</div>
+          <span class="timeline-tag amber">In Progress</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot">Q3</div>
+        <div class="timeline-content">
+          <div class="timeline-phase">Q3 2026 &mdash; Planned</div>
+          <div class="timeline-title">6-month data collection &amp; ISS MOU</div>
+          <div class="timeline-desc">Target: 500 patients across Hypertension, Diabetes, and Cardiovascular conditions. Istituto Superiore di Sanit&agrave; MOU signed. Real-world evidence package begins.</div>
+          <span class="timeline-tag amber">Scheduled</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot">Q4</div>
+        <div class="timeline-content">
+          <div class="timeline-phase">Q4 2026 &mdash; Planned</div>
+          <div class="timeline-title">Rome Adherence Profile publication</div>
+          <div class="timeline-desc">Peer-reviewed publication of the Rome Adherence Profile &mdash; the first city-level MAP normative dataset. TESSERA Site 002 nomination from LMIC partner region.</div>
+          <span class="timeline-tag amber">Planned</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── KEY PARTNERS ────────────────────────────────────────────────── -->
+  <section style="margin-bottom:48px;">
+    <div class="section-title">Founding <span>&middot; Key Contacts</span></div>
+    <div class="partners-grid">
+
+      <div class="partner-card">
+        <div class="partner-role">Track A — Pharmacy Network</div>
+        <div class="partner-name">Dr. Giuseppe Guaglianone</div>
+        <div class="partner-org">President, Order of Pharmacists of Rome (OMCeO Roma)<br>Central Committee, FOFI National Federation</div>
+        <div class="partner-track">FOFI pharmacy pilot lead &middot; 20&ndash;30 pharmacies &middot; PEACS quarterly reporting</div>
+      </div>
+
+      <div class="partner-card">
+        <div class="partner-role">Track B — Ministry &amp; WHO Pathway</div>
+        <div class="partner-name">Prof. Stefano Vella</div>
+        <div class="partner-org">Italian Ministry of Health &amp; Foreign Affairs<br>Global Fund Board Member &middot; WHO Adviser</div>
+        <div class="partner-track">ISS MOU &middot; WHO endorsement pathway &middot; LMIC scale strategy</div>
+      </div>
+
+      <div class="partner-card">
+        <div class="partner-role">Scientific Foundation</div>
+        <div class="partner-name">Scala Carta Foundation</div>
+        <div class="partner-org">501(c)(3) non-profit<br>Developer of MAP instrument &amp; TESSERA GRC</div>
+        <div class="partner-track">Platform governance &middot; normative database &middot; training &amp; certification</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── MAP INSTRUMENT ──────────────────────────────────────────────── -->
+  <section style="margin-bottom:48px;">
+    <div class="section-title">The MAP Instrument <span>&middot; What We Measure</span></div>
+    <div class="instrument-wrap">
+      <div class="instrument-title">Multidimensional Adherence Parameters</div>
+      <p class="instrument-sub">
+        MAP is an 8-item triadic adherence instrument validated across chronic-disease populations.
+        Unlike single-scale tools, MAP decomposes adherence into three independent behavioral domains,
+        producing a composite PE score and a PEACS phenotype classification. Pharmacists can administer
+        it at the counter in under 3 minutes.
+      </p>
+      <div class="domain-row">
+        <div class="domain-pill">
+          <div class="domain-pill-label" style="color:#f59e0b;">Architecture</div>
+          <div class="domain-pill-name">Intentional Decisions</div>
+          <div class="domain-pill-qs">Q2, Q3, Q6 &middot; Mean 0&ndash;1</div>
+        </div>
+        <div class="domain-pill">
+          <div class="domain-pill-label" style="color:#06b6d4;">Execution</div>
+          <div class="domain-pill-name">Habit &amp; Routine</div>
+          <div class="domain-pill-qs">Q1, Q5, Q8 &middot; Mean 0&ndash;1</div>
+        </div>
+        <div class="domain-pill">
+          <div class="domain-pill-label" style="color:#a78bfa;">Context-Guard</div>
+          <div class="domain-pill-name">Practical Barriers</div>
+          <div class="domain-pill-qs">Q4, Q7 &middot; Floor 0.50</div>
+        </div>
+      </div>
+      <div class="pe-formula">
+        PE = ( A &times; E &times; Cg )<sup>1/3</sup> &nbsp;&nbsp;&middot;&nbsp;&nbsp;
+        <strong>Additive 0&ndash;8</strong> &nbsp;&middot;&nbsp;
+        PEACS Phenotype Classification (6 types)
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── WHAT TESSERA PROVIDES ─────────────────────────────────────────── -->
+  <section style="margin-bottom:48px;">
+    <div class="section-title">TESSERA Membership <span>&middot; What You Receive</span></div>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="benefit-icon">&#9680;</div>
+        <div class="benefit-title">ATLAS Platform Access</div>
+        <div class="benefit-desc">Full ATLAS workspace with MAP, MMAS-8, and PEACS instruments. PI dashboard, longitudinal tracking, and real-world evidence export.</div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#128196;</div>
+        <div class="benefit-title">FOFI-Ready Reports</div>
+        <div class="benefit-desc">Automated monthly adherence reports in FOFI format, ready for regulatory submission. Condition breakdown, PEACS phenotype distribution, and domain analysis.</div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#127760;</div>
+        <div class="benefit-title">Global Normative Benchmarking</div>
+        <div class="benefit-desc">Compare your pharmacy's adherence profile against the global TESSERA database. Identify outliers, track cohort trends, and contribute to the normative dataset.</div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#9670;</div>
+        <div class="benefit-title">TESSERA Study ID</div>
+        <div class="benefit-desc">Formal consortium membership with a permanent TESSERA Study ID for publications, grant applications, and letters of support from the Scala Carta Foundation.</div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#127979;</div>
+        <div class="benefit-title">Training &amp; Certification</div>
+        <div class="benefit-desc">MAP pharmacist training module, PEACS interpretation guide, and pharmacist certification. Multilingual (5 languages including Italian).</div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#128200;</div>
+        <div class="benefit-title">Real-World Evidence Package</div>
+        <div class="benefit-desc">Structured RWE data export for AIFA, Ministry of Health submissions, and peer-reviewed publication. Designed for Italian regulatory pathways.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CTA ─────────────────────────────────────────────────────────── -->
+  <section class="cta-strip">
+    <div class="cta-text">
+      <div class="cta-title">Join TESSERA GRC</div>
+      <p class="cta-desc">
+        Whether you are a Rome pharmacist, an Italian institution, or a global research partner,
+        TESSERA GRC membership brings you into the founding cohort of the world's first
+        pharmacist-led adherence science network.
+      </p>
+    </div>
+    <div class="cta-actions">
+      <a class="btn-primary" href="mailto:info@scalacartafoundation.org?subject=TESSERA GRC Membership Enquiry — Rome Pilot">
+        Contact Us
+      </a>
+      <a class="btn-secondary" href="/assess.html">
+        Try the MAP Assessment
+      </a>
+      <a class="btn-secondary" href="/pharmacy.html?demo=true">
+        View Pharmacy Dashboard Demo
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    &copy; 2026 Scala Carta Foundation &middot; TESSERA GRC &middot; All rights reserved
+    &nbsp;&middot;&nbsp;
+    <a href="/">ATLAS Platform</a>
+    &nbsp;&middot;&nbsp;
+    <a href="mailto:info@scalacartafoundation.org">info@scalacartafoundation.org</a>
+  </p>
+  <p style="margin-top:8px;">
+    MAP instrument &amp; PEACS classification developed by Scala Carta Foundation &middot;
+    Platform deployed on ATLAS v8.7 via TESSERA GRC Node
+  </p>
+</footer>
+
+</body>
+</html>

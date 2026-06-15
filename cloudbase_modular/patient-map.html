@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>MAP Self-Assessment · ATLAS</title>
+<meta name="theme-color" content="#0d1525"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="MAP Self"/>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" integrity="sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0" crossorigin="anonymous"></script>
+<style>
+/* ── Design tokens ────────────────────────────────── */
+:root {
+  --ink: #080e1a;
+  --surface: #0d1525;
+  --card: #111d30;
+  --border: rgba(255,255,255,0.07);
+  --bright: #e8f0f8;
+  --muted: #6b8099;
+  --base: #4e9cf5;
+  --pe: #d4a843;
+  --pe-dim: rgba(212,168,67,0.15);
+  --exec: #4e9cf5;
+  --exec-dim: rgba(78,156,245,0.15);
+  --arch: #d4a843;
+  --arch-dim: rgba(212,168,67,0.12);
+  --ctx: #9b7fd4;
+  --ctx-dim: rgba(155,127,212,0.15);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--surface);
+  color: var(--bright);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── Screen system ────────────────────────────────── */
+.screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 0px);
+}
+.screen.active { display: flex; }
+
+/* ── Wordmark ─────────────────────────────────────── */
+.wordmark {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.wordmark span { color: var(--pe); }
+
+/* ── Welcome screen ───────────────────────────────── */
+#screen-welcome {
+  padding: 48px 28px 36px;
+  gap: 0;
+}
+.welcome-top { padding-bottom: 32px; }
+.welcome-hero {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 300;
+  line-height: 1.2;
+  color: var(--bright);
+  padding: 32px 0 16px;
+}
+.welcome-sub {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.6;
+  padding-bottom: 36px;
+}
+
+/* Language selector */
+.lang-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.lang-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.lang-btn {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 12px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.lang-btn.selected {
+  border-color: var(--pe);
+  color: var(--pe);
+  background: var(--pe-dim);
+}
+.lang-btn:active { transform: scale(0.97); }
+
+/* Patient code */
+.code-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.code-input {
+  width: 100%;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--bright);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  padding: 14px 16px;
+  margin-bottom: 32px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.code-input::placeholder { color: var(--muted); opacity: 0.6; }
+.code-input:focus { border-color: rgba(78,156,245,0.5); }
+
+/* Begin button */
+.btn-begin {
+  width: 100%;
+  background: var(--pe);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 20px;
+}
+.btn-begin:active { transform: scale(0.98); filter: brightness(0.95); }
+
+.powered-by {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+/* ── Question screen ──────────────────────────────── */
+#screen-question {
+  padding: 0;
+}
+.q-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  transition: color 0.15s;
+}
+.back-btn:active { color: var(--bright); }
+.back-arrow { font-size: 18px; line-height: 1; }
+
+.progress-dots {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.2s ease;
+}
+.dot.answered { background: var(--pe); }
+.dot.current {
+  background: var(--pe);
+  transform: scale(1.4);
+  box-shadow: 0 0 0 3px var(--pe-dim);
+}
+
+.domain-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+.domain-indicator.arch { background: var(--arch); }
+.domain-indicator.exec { background: var(--exec); }
+.domain-indicator.ctx { background: var(--ctx); }
+
+.q-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 28px 28px;
+}
+.q-number {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.q-text {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--bright);
+  flex: 1;
+  margin-bottom: 36px;
+}
+.q-text[data-rtl="true"] {
+  font-family: var(--font-body);
+  font-size: 22px;
+}
+
+/* Binary answer buttons */
+.answer-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ans-btn {
+  width: 100%;
+  height: 64px;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1.5px solid transparent;
+  letter-spacing: 0.01em;
+}
+.ans-btn:active { transform: scale(0.98); }
+.ans-yes {
+  background: var(--pe);
+  color: var(--ink);
+  border-color: var(--pe);
+}
+.ans-no {
+  background: transparent;
+  color: var(--bright);
+  border-color: rgba(255,255,255,0.18);
+}
+.ans-no:active { background: rgba(255,255,255,0.05); }
+
+/* Q8 ordinal options */
+.ordinal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ord-btn {
+  width: 100%;
+  height: 58px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  color: var(--bright);
+  font-family: var(--font-body);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  padding: 0 20px;
+}
+.ord-btn:active { background: rgba(78,156,245,0.1); border-color: var(--base); }
+
+/* ── Results screen ───────────────────────────────── */
+#screen-results {
+  padding: 0 0 40px;
+  overflow-y: auto;
+}
+.results-header {
+  background: linear-gradient(180deg, var(--card) 0%, var(--surface) 100%);
+  padding: 48px 28px 32px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.check-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(212,168,67,0.12);
+  border: 2px solid var(--pe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 30px;
+  animation: checkPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both;
+}
+@keyframes checkPop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.results-complete-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.results-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--bright);
+}
+
+/* PE score circles */
+.score-section {
+  padding: 28px 28px 20px;
+  text-align: center;
+}
+.score-circles {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.score-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(212,168,67,0.3);
+  transition: all 0.3s ease;
+}
+.score-circle.filled {
+  background: var(--pe);
+  border-color: var(--pe);
+  box-shadow: 0 0 12px rgba(212,168,67,0.4);
+}
+.score-circle-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.score-sentence {
+  font-size: 16px;
+  color: var(--bright);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* Domain insight cards */
+.domains-section { padding: 8px 20px 0; }
+.domain-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 10px;
+}
+.domain-card-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.domain-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.domain-dot.arch { background: var(--arch); }
+.domain-dot.exec { background: var(--exec); }
+.domain-dot.ctx { background: var(--ctx); }
+.domain-bar-track {
+  height: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.domain-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+.fill-arch { background: var(--arch); }
+.fill-exec { background: var(--exec); }
+.fill-ctx { background: var(--ctx); }
+.domain-insight {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* Support tip */
+.tip-card {
+  margin: 10px 20px 0;
+  background: rgba(78,156,245,0.07);
+  border: 1px solid rgba(78,156,245,0.18);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.tip-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--base);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.tip-text {
+  font-size: 14px;
+  color: var(--bright);
+  line-height: 1.6;
+}
+
+/* Action buttons */
+.actions-section { padding: 24px 20px 0; display: flex; flex-direction: column; gap: 10px; }
+.btn-action-primary {
+  width: 100%;
+  padding: 17px 20px;
+  background: var(--pe);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-action-primary:active { transform: scale(0.98); }
+.btn-action-secondary {
+  width: 100%;
+  padding: 16px 20px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--bright);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-action-secondary:active { background: rgba(255,255,255,0.04); }
+
+/* Save feedback */
+.save-feedback {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 0 0;
+  min-height: 20px;
+  transition: color 0.3s;
+}
+.save-feedback.ok { color: #4ade80; }
+.save-feedback.err { color: #f87171; }
+
+/* ── Share / Summary screen ───────────────────────── */
+#screen-share {
+  padding: 0 0 40px;
+  overflow-y: auto;
+}
+.share-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px 0;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+.share-back {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.share-title-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.summary-card {
+  margin: 20px 20px 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+}
+.summary-card-header {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--bright);
+  margin-bottom: 4px;
+}
+.summary-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  letter-spacing: 0.05em;
+}
+.summary-score-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.summary-circles { display: flex; gap: 8px; }
+.summary-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(212,168,67,0.25);
+}
+.summary-circle.filled {
+  background: var(--pe);
+  border-color: var(--pe);
+}
+.summary-score-label {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.summary-pe-value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  color: var(--pe);
+  margin-left: auto;
+}
+
+.summary-domain-row {
+  margin-bottom: 14px;
+}
+.summary-domain-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.summary-domain-name {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.summary-domain-pct {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+.summary-bar-track {
+  height: 5px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.summary-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.summary-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.copy-btn {
+  width: 100%;
+  padding: 16px;
+  margin-top: 16px;
+  background: var(--base);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-btn:active { transform: scale(0.98); }
+.copy-feedback {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #4ade80;
+  min-height: 20px;
+  margin-top: 8px;
+}
+
+.share-action-btns {
+  padding: 16px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── RTL support ──────────────────────────────────── */
+[dir="rtl"] .q-text {
+  text-align: right;
+}
+[dir="rtl"] .back-arrow { transform: scaleX(-1); display: inline-block; }
+[dir="rtl"] .domain-card-label { flex-direction: row-reverse; }
+[dir="rtl"] .summary-domain-name { flex-direction: row-reverse; }
+
+/* ── Transition animations ────────────────────────── */
+.screen-enter {
+  animation: slideIn 0.22s ease both;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.screen-enter-back {
+  animation: slideInBack 0.22s ease both;
+}
+@keyframes slideInBack {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 1: WELCOME
+═══════════════════════════════════════════════════ -->
+<section id="screen-welcome" class="screen active" role="main">
+  <div class="welcome-top">
+    <div class="wordmark"><span>ATLAS</span> · MAP Self</div>
+  </div>
+  <h1 class="welcome-hero" id="wlc-hero">How are you doing with your medications?</h1>
+  <p class="welcome-sub" id="wlc-sub">This takes about 3 minutes. Your answers are private and help your care team understand how to support you.</p>
+
+  <div class="lang-label" id="wlc-lang-label">Select your language</div>
+  <div class="lang-grid">
+    <button class="lang-btn selected" data-lang="en" onclick="selectLang('en')">English</button>
+    <button class="lang-btn" data-lang="it" onclick="selectLang('it')">Italiano</button>
+    <button class="lang-btn" data-lang="es" onclick="selectLang('es')">Español</button>
+    <button class="lang-btn" data-lang="fr" onclick="selectLang('fr')">Français</button>
+    <button class="lang-btn" data-lang="ar" onclick="selectLang('ar')">العربية</button>
+  </div>
+
+  <p class="code-label" id="wlc-code-label">Enter your patient code if your doctor or pharmacist gave you one (optional)</p>
+  <input class="code-input" id="patient-code-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. PT-2024-001" maxlength="32" aria-label="Patient code"/>
+
+  <button class="btn-begin" id="btn-begin" onclick="beginAssessment()">Begin</button>
+  <p class="powered-by" id="wlc-powered">Powered by MAP · Multidimensional Adherence Parameters</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 2: QUESTION
+═══════════════════════════════════════════════════ -->
+<section id="screen-question" class="screen" role="main" aria-live="polite">
+  <div class="q-topbar">
+    <button class="back-btn" id="back-btn" onclick="goBack()" aria-label="Go back">
+      <span class="back-arrow">&#8592;</span>
+    </button>
+    <div class="progress-dots" id="progress-dots" aria-label="Question progress"></div>
+    <div class="domain-indicator" id="domain-indicator" aria-hidden="true"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-number" id="q-number"></div>
+    <p class="q-text" id="q-text"></p>
+    <div class="answer-pair" id="answer-pair"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 3: RESULTS
+═══════════════════════════════════════════════════ -->
+<section id="screen-results" class="screen" role="main">
+  <div class="results-header">
+    <div class="check-circle" aria-hidden="true">&#10003;</div>
+    <div class="results-complete-label" id="res-complete-label">Assessment complete</div>
+    <div class="results-title" id="res-title">Your Results</div>
+  </div>
+
+  <div class="score-section">
+    <div class="score-circles" id="score-circles" role="img" aria-label="Adherence score"></div>
+    <div class="score-circle-label" id="score-circle-label">Your medication adherence level</div>
+    <p class="score-sentence" id="score-sentence"></p>
+  </div>
+
+  <div class="domains-section">
+    <!-- Architecture -->
+    <div class="domain-card">
+      <div class="domain-card-label">
+        <span class="domain-dot arch"></span>
+        <span id="dom-arch-label">Your feelings about your medication</span>
+      </div>
+      <div class="domain-bar-track"><div class="domain-bar-fill fill-arch" id="bar-arch" style="width:0%"></div></div>
+      <p class="domain-insight" id="insight-arch"></p>
+    </div>
+    <!-- Execution -->
+    <div class="domain-card">
+      <div class="domain-card-label">
+        <span class="domain-dot exec"></span>
+        <span id="dom-exec-label">Your daily medication routine</span>
+      </div>
+      <div class="domain-bar-track"><div class="domain-bar-fill fill-exec" id="bar-exec" style="width:0%"></div></div>
+      <p class="domain-insight" id="insight-exec"></p>
+    </div>
+    <!-- Context-Guard -->
+    <div class="domain-card">
+      <div class="domain-card-label">
+        <span class="domain-dot ctx"></span>
+        <span id="dom-ctx-label">Practical challenges</span>
+      </div>
+      <div class="domain-bar-track"><div class="domain-bar-fill fill-ctx" id="bar-ctx" style="width:0%"></div></div>
+      <p class="domain-insight" id="insight-ctx"></p>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-label" id="tip-label">Support tip</div>
+    <p class="tip-text" id="tip-text"></p>
+  </div>
+
+  <div class="actions-section">
+    <button class="btn-action-primary" id="btn-share" onclick="showShareScreen()"></button>
+    <button class="btn-action-secondary" id="btn-save" onclick="saveResults()"></button>
+    <button class="btn-action-secondary" id="btn-remind" onclick="setReminder()"></button>
+    <div class="save-feedback" id="save-feedback"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 4: CARE TEAM SUMMARY
+═══════════════════════════════════════════════════ -->
+<section id="screen-share" class="screen" role="main">
+  <div class="share-header">
+    <button class="share-back" onclick="showScreen('screen-results',true)" aria-label="Back to results">&#8592;</button>
+    <span class="share-title-label" id="share-header-label">Care Team Summary</span>
+  </div>
+
+  <div class="summary-card" id="summary-card">
+    <div class="summary-card-header" id="sum-title">MAP Self-Assessment Summary</div>
+    <div class="summary-meta" id="sum-meta"></div>
+
+    <div class="summary-score-row">
+      <div>
+        <div class="summary-circles" id="sum-circles"></div>
+        <div class="summary-score-label" id="sum-score-label">Medication adherence level</div>
+      </div>
+      <div class="summary-pe-value" id="sum-pe-value"></div>
+    </div>
+
+    <div class="summary-domain-row">
+      <div class="summary-domain-label">
+        <span class="summary-domain-name"><span class="domain-dot arch"></span><span id="sum-arch-label">Feelings about medication</span></span>
+        <span class="summary-domain-pct" id="sum-arch-pct"></span>
+      </div>
+      <div class="summary-bar-track"><div class="summary-bar-fill fill-arch" id="sum-bar-arch" style="width:0%"></div></div>
+    </div>
+    <div class="summary-domain-row">
+      <div class="summary-domain-label">
+        <span class="summary-domain-name"><span class="domain-dot exec"></span><span id="sum-exec-label">Daily routine</span></span>
+        <span class="summary-domain-pct" id="sum-exec-pct"></span>
+      </div>
+      <div class="summary-bar-track"><div class="summary-bar-fill fill-exec" id="sum-bar-exec" style="width:0%"></div></div>
+    </div>
+    <div class="summary-domain-row">
+      <div class="summary-domain-label">
+        <span class="summary-domain-name"><span class="domain-dot ctx"></span><span id="sum-ctx-label">Practical challenges</span></span>
+        <span class="summary-domain-pct" id="sum-ctx-pct"></span>
+      </div>
+      <div class="summary-bar-track"><div class="summary-bar-fill fill-ctx" id="sum-bar-ctx" style="width:0%"></div></div>
+    </div>
+
+    <div class="summary-footer">Generated by ATLAS MAP-Self &middot; adherence.cc</div>
+    <button class="copy-btn" id="copy-btn" onclick="copySummary()"></button>
+    <div class="copy-feedback" id="copy-feedback"></div>
+  </div>
+
+  <div class="share-action-btns">
+    <button class="btn-action-secondary" onclick="showScreen('screen-results',true)" id="share-back-btn">Back to my results</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     FIREBASE + APP LOGIC
+═══════════════════════════════════════════════════ -->
+<script>
+/* ── Firebase init ────────────────────────────────── */
+const firebaseConfig = {
+  apiKey: "AIzaSyBRUEGRPaIWHMlzn0lT9otbJQEYZs4Br1A",
+  authDomain: "adherence-project-2026.firebaseapp.com",
+  databaseURL: "https://adherence-project-2026-default-rtdb.firebaseio.com",
+  projectId: "adherence-project-2026",
+  storageBucket: "adherence-project-2026.firebasestorage.app",
+  messagingSenderId: "222566948658",
+  appId: "1:222566948658:web:85528e19dd039c199a412b"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ── Translations ─────────────────────────────────── */
+const _SELF_TRANS = {
+  en: {
+    hero: "How are you doing with your medications?",
+    sub: "This takes about 3 minutes. Your answers are private and help your care team understand how to support you.",
+    langLabel: "Select your language",
+    codeLabel: "Enter your patient code if your doctor or pharmacist gave you one (optional)",
+    codePlaceholder: "e.g. PT-2024-001",
+    begin: "Begin",
+    powered: "Powered by MAP \u00b7 Multidimensional Adherence Parameters",
+    qLabel: "Question",
+    of: "of",
+    yes: "Yes",
+    no: "No",
+    completeLabel: "Assessment complete",
+    resultsTitle: "Your Results",
+    scoreLabel: "Your medication adherence level",
+    domArchLabel: "Your feelings about your medication",
+    domExecLabel: "Your daily medication routine",
+    domCtxLabel: "Practical challenges",
+    tipLabel: "Support tip",
+    btnShare: "Share with my care team",
+    btnSave: "Save my results",
+    btnRemind: "Take again in 30 days",
+    savingMsg: "Saving...",
+    savedMsg: "Saved successfully.",
+    saveErrMsg: "Could not save. Please try again.",
+    reminderMsg: "Set a phone reminder for 30 days from now. Your intent has been noted.",
+    shareHeaderLabel: "Care Team Summary",
+    sumTitle: "MAP Self-Assessment Summary",
+    sumScoreLabel: "Medication adherence level",
+    sumArchLabel: "Feelings about medication",
+    sumExecLabel: "Daily routine",
+    sumCtxLabel: "Practical challenges",
+    copyBtn: "Copy to clipboard",
+    copiedMsg: "Copied to clipboard!",
+    shareBackBtn: "Back to my results",
+    questions: [
+      { text: "Are there times when you forget to take your medications?", type: "binary" },
+      { text: "In the past two weeks, have there been times when you chose to skip a dose — for example, because of side effects, cost, or feeling better?", type: "binary" },
+      { text: "In the past two weeks, did you reduce your dose or stop a medication on your own, without telling your doctor or care team, because of how it was making you feel?", type: "binary" },
+      { text: "When your daily routine changes — for example, when traveling, working different hours, or staying away from home — do you find it hard to keep up with your medications?", type: "binary" },
+      { text: "Were you able to take your last dose as directed?", type: "binary" },
+      { text: "When you start feeling better or your symptoms improve, do you ever think about reducing or pausing your medication on your own?", type: "binary" },
+      { text: "Does keeping up with your medication routine feel like a big challenge in your everyday life?", type: "binary" },
+      { text: "In a typical week, how often do you have trouble taking all your medications as prescribed?", type: "ordinal",
+        options: ["Never", "Rarely", "Sometimes", "Often", "All the time"] }
+    ],
+    peTiers: [
+      "Your overall adherence is strong.",
+      "You\u2019re doing well with some areas to watch.",
+      "There are some areas where you could use more support.",
+      "This is something worth discussing with your doctor or pharmacist."
+    ],
+    archInsights: [
+      "It sounds like you have some doubts about your medications that might be worth discussing with your doctor.",
+      "You may have some questions about whether your medications are really helping.",
+      "You feel confident about why you\u2019re taking your medications."
+    ],
+    execInsights: [
+      "Remembering to take your medications regularly seems to be a challenge.",
+      "Sometimes remembering your medications can be tricky.",
+      "You\u2019re keeping up with your medication routine well."
+    ],
+    ctxInsights: [
+      "There are practical things making it harder to take your medications consistently.",
+      "Sometimes your schedule or travel makes it harder to stick to your medications.",
+      "Your day-to-day life doesn\u2019t seem to get in the way of your medications."
+    ],
+    tips: {
+      arch: "Tip: If you\u2019re uncertain about your medications, writing down your questions before your next appointment can help you get answers.",
+      exec: "Tip: Keeping your medications somewhere you\u2019ll see them every day, like next to your toothbrush, can help build the habit.",
+      ctx: "Tip: Ask your pharmacist about blister packs or pill organisers that make travelling with your medications easier."
+    }
+  },
+
+  it: {
+    hero: "Come stai seguendo la terapia farmacologica?",
+    sub: "Ci vogliono circa 3 minuti. Le tue risposte sono private e aiutano il tuo team di cura a capire come supportarti.",
+    langLabel: "Seleziona la lingua",
+    codeLabel: "Inserisci il codice paziente se il tuo medico o farmacista te ne ha fornito uno (opzionale)",
+    codePlaceholder: "es. PT-2024-001",
+    begin: "Inizia",
+    powered: "Powered by MAP \u00b7 Multidimensional Adherence Parameters",
+    qLabel: "Domanda",
+    of: "di",
+    yes: "S\u00ec",
+    no: "No",
+    completeLabel: "Valutazione completata",
+    resultsTitle: "I tuoi risultati",
+    scoreLabel: "Il tuo livello di aderenza alla terapia",
+    domArchLabel: "Come ti senti riguardo ai tuoi farmaci",
+    domExecLabel: "La tua routine quotidiana con i farmaci",
+    domCtxLabel: "Sfide pratiche",
+    tipLabel: "Consiglio di supporto",
+    btnShare: "Condividi con il mio team di cura",
+    btnSave: "Salva i miei risultati",
+    btnRemind: "Rifai il test tra 30 giorni",
+    savingMsg: "Salvataggio in corso...",
+    savedMsg: "Salvato con successo.",
+    saveErrMsg: "Impossibile salvare. Riprova.",
+    reminderMsg: "Imposta un promemoria sul telefono tra 30 giorni. La tua preferenza \u00e8 stata registrata.",
+    shareHeaderLabel: "Riepilogo per il team di cura",
+    sumTitle: "Riepilogo MAP Self-Assessment",
+    sumScoreLabel: "Livello di aderenza alla terapia",
+    sumArchLabel: "Percezione dei farmaci",
+    sumExecLabel: "Routine quotidiana",
+    sumCtxLabel: "Sfide pratiche",
+    copyBtn: "Copia negli appunti",
+    copiedMsg: "Copiato negli appunti!",
+    shareBackBtn: "Torna ai miei risultati",
+    questions: [
+      { text: "Ci sono momenti in cui dimentica di prendere i suoi farmaci?", type: "binary" },
+      { text: "Nelle ultime due settimane, ci sono stati momenti in cui ha scelto di saltare una dose, ad esempio per effetti collaterali, costi o perch\u00e9 si sentiva meglio?", type: "binary" },
+      { text: "Nelle ultime due settimane, ha ridotto la dose o sospeso un farmaco da solo, senza dirlo al medico o al team curante, a causa di come la faceva sentire?", type: "binary" },
+      { text: "Quando la sua routine quotidiana cambia, ad esempio in viaggio, con orari di lavoro diversi o fuori casa, trova difficile mantenere la sua terapia?", type: "binary" },
+      { text: "\u00c8 riuscito a prendere l\u2019ultima dose come prescritto?", type: "binary" },
+      { text: "Quando inizia a sentirsi meglio o i sintomi migliorano, pensa mai di ridurre o sospendere il farmaco da solo?", type: "binary" },
+      { text: "Tenere il passo con la sua routine farmacologica le sembra una grande sfida nella vita quotidiana?", type: "binary" },
+      { text: "In una settimana tipica, quanto spesso ha difficolt\u00e0 a prendere tutti i suoi farmaci come prescritto?", type: "ordinal",
+        options: ["Mai", "Raramente", "A volte", "Spesso", "Sempre"] }
+    ],
+    peTiers: [
+      "La sua aderenza complessiva \u00e8 ottima.",
+      "Sta andando bene, con qualche area da monitorare.",
+      "Ci sono alcune aree in cui potrebbe beneficiare di maggiore supporto.",
+      "Questo \u00e8 qualcosa che vale la pena discutere con il suo medico o farmacista."
+    ],
+    archInsights: [
+      "Sembra che abbia qualche dubbio sui suoi farmaci che potrebbe valere la pena discutere.",
+      "Potrebbe avere alcune domande sull\u2019efficacia dei suoi farmaci.",
+      "Si sente sicuro del perch\u00e9 sta assumendo i suoi farmaci."
+    ],
+    execInsights: [
+      "Ricordare di prendere i farmaci regolarmente sembra essere una sfida.",
+      "A volte ricordarsi dei farmaci pu\u00f2 essere difficile.",
+      "Sta mantenendo bene la routine con i suoi farmaci."
+    ],
+    ctxInsights: [
+      "Ci sono questioni pratiche che rendono pi\u00f9 difficile seguire la terapia.",
+      "A volte il suo programma o i viaggi rendono pi\u00f9 difficile seguire la terapia.",
+      "La vita quotidiana non sembra ostacolare l\u2019assunzione dei farmaci."
+    ],
+    tips: {
+      arch: "Consiglio: Se ha dubbi sui suoi farmaci, annotare le domande prima della prossima visita pu\u00f2 aiutarla a ottenere risposte.",
+      exec: "Consiglio: Tenere i farmaci in un posto visibile ogni giorno, come vicino allo spazzolino da denti, pu\u00f2 aiutare a creare l\u2019abitudine.",
+      ctx: "Consiglio: Chieda al suo farmacista di blister o portapillole che facilitino il trasporto dei farmaci in viaggio."
+    }
+  },
+
+  es: {
+    hero: "\u00bfC\u00f3mo est\u00e1s llevando tu tratamiento?",
+    sub: "Tarda unos 3 minutos. Tus respuestas son privadas y ayudan a tu equipo de salud a entender c\u00f3mo apoyarte.",
+    langLabel: "Selecciona tu idioma",
+    codeLabel: "Ingresa tu c\u00f3digo de paciente si tu m\u00e9dico o farmac\u00e9utico te lo proporcion\u00f3 (opcional)",
+    codePlaceholder: "ej. PT-2024-001",
+    begin: "Comenzar",
+    powered: "Powered by MAP \u00b7 Multidimensional Adherence Parameters",
+    qLabel: "Pregunta",
+    of: "de",
+    yes: "S\u00ed",
+    no: "No",
+    completeLabel: "Evaluaci\u00f3n completa",
+    resultsTitle: "Tus resultados",
+    scoreLabel: "Tu nivel de adherencia a la medicaci\u00f3n",
+    domArchLabel: "Tu actitud hacia tu medicaci\u00f3n",
+    domExecLabel: "Tu rutina diaria de medicaci\u00f3n",
+    domCtxLabel: "Desaf\u00edos pr\u00e1cticos",
+    tipLabel: "Consejo de apoyo",
+    btnShare: "Compartir con mi equipo de salud",
+    btnSave: "Guardar mis resultados",
+    btnRemind: "Repetir en 30 d\u00edas",
+    savingMsg: "Guardando...",
+    savedMsg: "Guardado con \u00e9xito.",
+    saveErrMsg: "No se pudo guardar. Int\u00e9ntalo de nuevo.",
+    reminderMsg: "Configura un recordatorio en tu tel\u00e9fono para dentro de 30 d\u00edas. Tu intenci\u00f3n ha sido registrada.",
+    shareHeaderLabel: "Resumen para el equipo de salud",
+    sumTitle: "Resumen MAP Self-Assessment",
+    sumScoreLabel: "Nivel de adherencia a la medicaci\u00f3n",
+    sumArchLabel: "Actitud hacia la medicaci\u00f3n",
+    sumExecLabel: "Rutina diaria",
+    sumCtxLabel: "Desaf\u00edos pr\u00e1cticos",
+    copyBtn: "Copiar al portapapeles",
+    copiedMsg: "\u00a1Copiado al portapapeles!",
+    shareBackBtn: "Volver a mis resultados",
+    questions: [
+      { text: "\u00bfHay momentos en que olvidas tomar tus medicamentos?", type: "binary" },
+      { text: "En las \u00faltimas dos semanas, \u00bfhubo momentos en que elegiste saltarte una dosis, por ejemplo por efectos secundarios, costo o sentirte mejor?", type: "binary" },
+      { text: "En las \u00faltimas dos semanas, \u00bfreduciste tu dosis o suspendiste un medicamento por cuenta propia, sin decirle a tu m\u00e9dico o equipo de atenci\u00f3n, por c\u00f3mo te estaba haciendo sentir?", type: "binary" },
+      { text: "Cuando tu rutina diaria cambia, por ejemplo al viajar, trabajar en horarios diferentes o estar fuera de casa, \u00bfte resulta dif\u00edcil mantener tu medicaci\u00f3n?", type: "binary" },
+      { text: "\u00bfPudiste tomar tu \u00faltima dosis como se te indic\u00f3?", type: "binary" },
+      { text: "Cuando empiezas a sentirte mejor o tus s\u00edntomas mejoran, \u00bfpiensas alguna vez en reducir o pausar tu medicaci\u00f3n por cuenta propia?", type: "binary" },
+      { text: "\u00bfMantener tu rutina de medicaci\u00f3n te parece un gran desaf\u00edo en tu vida cotidiana?", type: "binary" },
+      { text: "En una semana t\u00edpica, \u00bfcon qu\u00e9 frecuencia tienes dificultades para tomar todos tus medicamentos como se te prescribieron?", type: "ordinal",
+        options: ["Nunca", "Raramente", "A veces", "Con frecuencia", "Siempre"] }
+    ],
+    peTiers: [
+      "Tu adherencia general es s\u00f3lida.",
+      "Lo est\u00e1s haciendo bien, con algunas \u00e1reas a vigilar.",
+      "Hay algunas \u00e1reas donde podr\u00edas necesitar m\u00e1s apoyo.",
+      "Esto es algo que vale la pena comentar con tu m\u00e9dico o farmac\u00e9utico."
+    ],
+    archInsights: [
+      "Parece que tienes algunas dudas sobre tu medicaci\u00f3n que podr\u00edas discutir con tu m\u00e9dico.",
+      "Puede que tengas preguntas sobre si tu medicaci\u00f3n realmente te est\u00e1 ayudando.",
+      "Te sientes seguro sobre por qu\u00e9 est\u00e1s tomando tu medicaci\u00f3n."
+    ],
+    execInsights: [
+      "Recordar tomar tu medicaci\u00f3n regularmente parece ser un desaf\u00edo.",
+      "A veces puede ser complicado recordar la medicaci\u00f3n.",
+      "Est\u00e1s llevando bien tu rutina de medicaci\u00f3n."
+    ],
+    ctxInsights: [
+      "Hay cosas pr\u00e1cticas que dificultan tomar tu medicaci\u00f3n de forma constante.",
+      "A veces tu agenda o los viajes dificultan seguir con tu medicaci\u00f3n.",
+      "Tu vida diaria no parece interferir con tu medicaci\u00f3n."
+    ],
+    tips: {
+      arch: "Consejo: Si tienes dudas sobre tu medicaci\u00f3n, anotar tus preguntas antes de tu pr\u00f3xima cita puede ayudarte a obtener respuestas.",
+      exec: "Consejo: Guardar tu medicaci\u00f3n en un lugar visible cada d\u00eda, como junto a tu cepillo de dientes, puede ayudarte a crear el h\u00e1bito.",
+      ctx: "Consejo: Pregunta a tu farmac\u00e9utico sobre bl\u00edsters o pastilleros que faciliten llevar tu medicaci\u00f3n cuando viajas."
+    }
+  },
+
+  fr: {
+    hero: "Comment allez-vous avec vos m\u00e9dicaments?",
+    sub: "Cela prend environ 3 minutes. Vos r\u00e9ponses sont priv\u00e9es et aident votre \u00e9quipe soignante \u00e0 comprendre comment vous soutenir.",
+    langLabel: "S\u00e9lectionnez votre langue",
+    codeLabel: "Entrez votre code patient si votre m\u00e9decin ou pharmacien vous en a donn\u00e9 un (facultatif)",
+    codePlaceholder: "ex. PT-2024-001",
+    begin: "Commencer",
+    powered: "Propuls\u00e9 par MAP \u00b7 Multidimensional Adherence Parameters",
+    qLabel: "Question",
+    of: "sur",
+    yes: "Oui",
+    no: "Non",
+    completeLabel: "\u00c9valuation termin\u00e9e",
+    resultsTitle: "Vos r\u00e9sultats",
+    scoreLabel: "Votre niveau d\u2019adh\u00e9sion au traitement",
+    domArchLabel: "Votre ressenti envers vos m\u00e9dicaments",
+    domExecLabel: "Votre routine quotidienne de m\u00e9dicaments",
+    domCtxLabel: "D\u00e9fis pratiques",
+    tipLabel: "Conseil de soutien",
+    btnShare: "Partager avec mon \u00e9quipe soignante",
+    btnSave: "Enregistrer mes r\u00e9sultats",
+    btnRemind: "Refaire dans 30 jours",
+    savingMsg: "Enregistrement...",
+    savedMsg: "Enregistr\u00e9 avec succ\u00e8s.",
+    saveErrMsg: "Impossible d\u2019enregistrer. Veuillez r\u00e9essayer.",
+    reminderMsg: "Configurez un rappel sur votre t\u00e9l\u00e9phone dans 30 jours. Votre intention a \u00e9t\u00e9 enregistr\u00e9e.",
+    shareHeaderLabel: "R\u00e9sum\u00e9 pour l\u2019\u00e9quipe soignante",
+    sumTitle: "R\u00e9sum\u00e9 MAP Auto-\u00e9valuation",
+    sumScoreLabel: "Niveau d\u2019adh\u00e9sion au traitement",
+    sumArchLabel: "Ressenti envers les m\u00e9dicaments",
+    sumExecLabel: "Routine quotidienne",
+    sumCtxLabel: "D\u00e9fis pratiques",
+    copyBtn: "Copier dans le presse-papiers",
+    copiedMsg: "Copi\u00e9 dans le presse-papiers!",
+    shareBackBtn: "Retour \u00e0 mes r\u00e9sultats",
+    questions: [
+      { text: "Y a-t-il des moments o\u00f9 vous oubliez de prendre vos m\u00e9dicaments?", type: "binary" },
+      { text: "Au cours des deux derni\u00e8res semaines, y a-t-il eu des moments o\u00f9 vous avez choisi de sauter une dose, par exemple en raison d\u2019effets ind\u00e9sirables, du co\u00fbt ou parce que vous vous sentiez mieux?", type: "binary" },
+      { text: "Au cours des deux derni\u00e8res semaines, avez-vous r\u00e9duit votre dose ou arr\u00eat\u00e9 un m\u00e9dicament de votre propre chef, sans en informer votre m\u00e9decin ou votre \u00e9quipe soignante, en raison de ce qu\u2019il vous faisait ressentir?", type: "binary" },
+      { text: "Lorsque votre routine quotidienne change, par exemple en voyage, avec des horaires de travail diff\u00e9rents ou loin de chez vous, trouvez-vous difficile de suivre votre traitement?", type: "binary" },
+      { text: "Avez-vous pu prendre votre derni\u00e8re dose comme prescrit?", type: "binary" },
+      { text: "Lorsque vous commencez \u00e0 vous sentir mieux ou que vos sympt\u00f4mes s\u2019am\u00e9liorent, pensez-vous parfois \u00e0 r\u00e9duire ou interrompre votre m\u00e9dicament de votre propre initiative?", type: "binary" },
+      { text: "Suivre votre routine m\u00e9dicamenteuse vous semble-t-il un grand d\u00e9fi dans votre vie quotidienne?", type: "binary" },
+      { text: "Au cours d\u2019une semaine typique, \u00e0 quelle fr\u00e9quence avez-vous du mal \u00e0 prendre tous vos m\u00e9dicaments comme prescrits?", type: "ordinal",
+        options: ["Jamais", "Rarement", "Parfois", "Souvent", "Tout le temps"] }
+    ],
+    peTiers: [
+      "Votre adh\u00e9sion globale au traitement est solide.",
+      "Vous vous en sortez bien, avec quelques points \u00e0 surveiller.",
+      "Il y a des domaines o\u00f9 vous pourriez b\u00e9n\u00e9ficier d\u2019un soutien suppl\u00e9mentaire.",
+      "Cela m\u00e9rite d\u2019\u00eatre discut\u00e9 avec votre m\u00e9decin ou votre pharmacien."
+    ],
+    archInsights: [
+      "Il semble que vous ayez des doutes sur vos m\u00e9dicaments qu\u2019il serait utile d\u2019aborder avec votre m\u00e9decin.",
+      "Vous vous posez peut-\u00eatre des questions sur l\u2019efficacit\u00e9 de vos m\u00e9dicaments.",
+      "Vous avez confiance dans les raisons pour lesquelles vous prenez vos m\u00e9dicaments."
+    ],
+    execInsights: [
+      "Se souvenir de prendre vos m\u00e9dicaments r\u00e9guli\u00e8rement semble \u00eatre un d\u00e9fi.",
+      "Il peut parfois \u00eatre difficile de se souvenir de ses m\u00e9dicaments.",
+      "Vous maintenez bien votre routine de m\u00e9dicaments."
+    ],
+    ctxInsights: [
+      "Des aspects pratiques compliquent la prise r\u00e9guli\u00e8re de vos m\u00e9dicaments.",
+      "Parfois, votre emploi du temps ou vos voyages rendent plus difficile le suivi de vos m\u00e9dicaments.",
+      "Votre vie quotidienne ne semble pas interf\u00e9rer avec la prise de vos m\u00e9dicaments."
+    ],
+    tips: {
+      arch: "Conseil: Si vous \u00eates incertain au sujet de vos m\u00e9dicaments, noter vos questions avant votre prochain rendez-vous peut vous aider \u00e0 obtenir des r\u00e9ponses.",
+      exec: "Conseil: Garder vos m\u00e9dicaments dans un endroit visible chaque jour, comme \u00e0 c\u00f4t\u00e9 de votre brosse \u00e0 dents, peut vous aider \u00e0 cr\u00e9er l\u2019habitude.",
+      ctx: "Conseil: Demandez \u00e0 votre pharmacien des plaquettes ou des piluliers qui facilitent le transport de vos m\u00e9dicaments en voyage."
+    }
+  },
+
+  ar: {
+    hero: "\u0643\u064a\u0641 \u062d\u0627\u0644\u0643 \u0645\u0639 \u062f\u0648\u0627\u0626\u0643\u061f",
+    sub: "\u064a\u0633\u062a\u063a\u0631\u0642 \u0647\u0630\u0627 \u062d\u0648\u0627\u0644\u064a 3 \u062f\u0642\u0627\u0626\u0642. \u0625\u062c\u0627\u0628\u0627\u062a\u0643 \u062e\u0627\u0635\u0629 \u0648\u062a\u0633\u0627\u0639\u062f \u0641\u0631\u064a\u0642 \u0631\u0639\u0627\u064a\u062a\u0643 \u0639\u0644\u0649 \u0641\u0647\u0645 \u0643\u064a\u0641\u064a\u0629 \u062f\u0639\u0645\u0643.",
+    langLabel: "\u0627\u062e\u062a\u0631 \u0644\u063a\u062a\u0643",
+    codeLabel: "\u0623\u062f\u062e\u0644 \u0631\u0645\u0632 \u0627\u0644\u0645\u0631\u064a\u0636 \u0625\u0630\u0627 \u0623\u0639\u0637\u0627\u0643 \u0637\u0628\u064a\u0628\u0643 \u0623\u0648 \u0635\u064a\u062f\u0644\u0627\u0646\u064a\u0643 \u0631\u0645\u0632\u064b\u0627 (\u0627\u062e\u062a\u064a\u0627\u0631\u064a)",
+    codePlaceholder: "\u0645\u062b\u0627\u0644: PT-2024-001",
+    begin: "\u0627\u0628\u062f\u0623",
+    powered: "Powered by MAP \u00b7 Multidimensional Adherence Parameters",
+    qLabel: "\u0633\u0624\u0627\u0644",
+    of: "\u0645\u0646",
+    yes: "\u0646\u0639\u0645",
+    no: "\u0644\u0627",
+    completeLabel: "\u0627\u0643\u062a\u0645\u0644 \u0627\u0644\u062a\u0642\u064a\u064a\u0645",
+    resultsTitle: "\u0646\u062a\u0627\u0626\u062c\u0643",
+    scoreLabel: "\u0645\u0633\u062a\u0648\u0649 \u0627\u0644\u062a\u0632\u0627\u0645\u0643 \u0628\u0627\u0644\u062f\u0648\u0627\u0621",
+    domArchLabel: "\u0645\u0634\u0627\u0639\u0631\u0643 \u062a\u062c\u0627\u0647 \u062f\u0648\u0627\u0626\u0643",
+    domExecLabel: "\u0631\u0648\u062a\u064a\u0646\u0643 \u0627\u0644\u064a\u0648\u0645\u064a \u0645\u0639 \u0627\u0644\u062f\u0648\u0627\u0621",
+    domCtxLabel: "\u062a\u062d\u062f\u064a\u0627\u062a \u0639\u0645\u0644\u064a\u0629",
+    tipLabel: "\u0646\u0635\u064a\u062d\u0629 \u062f\u0639\u0645",
+    btnShare: "\u0645\u0634\u0627\u0631\u0643\u0629 \u0645\u0639 \u0641\u0631\u064a\u0642 \u0631\u0639\u0627\u064a\u062a\u064a",
+    btnSave: "\u062d\u0641\u0638 \u0646\u062a\u0627\u0626\u062c\u064a",
+    btnRemind: "\u0625\u0639\u0627\u062f\u0629 \u0628\u0639\u062f 30 \u064a\u0648\u0645\u064b\u0627",
+    savingMsg: "\u062c\u0627\u0631\u064a \u0627\u0644\u062d\u0641\u0638...",
+    savedMsg: "\u062a\u0645 \u0627\u0644\u062d\u0641\u0638 \u0628\u0646\u062c\u0627\u062d.",
+    saveErrMsg: "\u062a\u0639\u0630\u0631 \u0627\u0644\u062d\u0641\u0638. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.",
+    reminderMsg: "\u0627\u0636\u0628\u0637 \u062a\u0630\u0643\u064a\u0631\u064b\u0627 \u0639\u0644\u0649 \u0647\u0627\u062a\u0641\u0643 \u0628\u0639\u062f 30 \u064a\u0648\u0645\u064b\u0627. \u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0646\u064a\u062a\u0643.",
+    shareHeaderLabel: "\u0645\u0644\u062e\u0635 \u0641\u0631\u064a\u0642 \u0627\u0644\u0631\u0639\u0627\u064a\u0629",
+    sumTitle: "\u0645\u0644\u062e\u0635 \u0627\u0644\u062a\u0642\u064a\u064a\u0645 \u0627\u0644\u0630\u0627\u062a\u064a MAP",
+    sumScoreLabel: "\u0645\u0633\u062a\u0648\u0649 \u0627\u0644\u062a\u0632\u0627\u0645 \u0628\u0627\u0644\u062f\u0648\u0627\u0621",
+    sumArchLabel: "\u0645\u0634\u0627\u0639\u0631 \u062a\u062c\u0627\u0647 \u0627\u0644\u062f\u0648\u0627\u0621",
+    sumExecLabel: "\u0627\u0644\u0631\u0648\u062a\u064a\u0646 \u0627\u0644\u064a\u0648\u0645\u064a",
+    sumCtxLabel: "\u062a\u062d\u062f\u064a\u0627\u062a \u0639\u0645\u0644\u064a\u0629",
+    copyBtn: "\u0646\u0633\u062e \u0625\u0644\u0649 \u0627\u0644\u062d\u0627\u0641\u0638\u0629",
+    copiedMsg: "\u062a\u0645 \u0627\u0644\u0646\u0633\u062e \u0625\u0644\u0649 \u0627\u0644\u062d\u0627\u0641\u0638\u0629!",
+    shareBackBtn: "\u0627\u0644\u0631\u062c\u0648\u0639 \u0625\u0644\u0649 \u0646\u062a\u0627\u0626\u062c\u064a",
+    questions: [
+      { text: "\u0647\u0644 \u0647\u0646\u0627\u0643 \u0623\u0648\u0642\u0627\u062a \u062a\u0646\u0633\u0649 \u0641\u064a\u0647\u0627 \u062a\u0646\u0627\u0648\u0644 \u0623\u062f\u0648\u064a\u062a\u0643\u061f", type: "binary" },
+      { text: "\u062e\u0644\u0627\u0644 \u0627\u0644\u0623\u0633\u0628\u0648\u0639\u064a\u0646 \u0627\u0644\u0645\u0627\u0636\u064a\u064a\u0646\u060c \u0647\u0644 \u0643\u0627\u0646\u062a \u0647\u0646\u0627\u0643 \u0623\u0648\u0642\u0627\u062a \u0627\u062e\u062a\u0631\u062a \u0641\u064a\u0647\u0627 \u062a\u062e\u0637\u064a \u062c\u0631\u0639\u0629\u060c \u0645\u062b\u0644\u0627\u064b \u0628\u0633\u0628\u0628 \u0627\u0644\u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u062c\u0627\u0646\u0628\u064a\u0629 \u0623\u0648 \u0627\u0644\u062a\u0643\u0644\u0641\u0629 \u0623\u0648 \u0627\u0644\u0634\u0639\u0648\u0631 \u0628\u062a\u062d\u0633\u0646\u061f", type: "binary" },
+      { text: "\u062e\u0644\u0627\u0644 \u0627\u0644\u0623\u0633\u0628\u0648\u0639\u064a\u0646 \u0627\u0644\u0645\u0627\u0636\u064a\u064a\u0646\u060c \u0647\u0644 \u0642\u0644\u0644\u062a \u062c\u0631\u0639\u062a\u0643 \u0623\u0648 \u0623\u0648\u0642\u0641\u062a \u062f\u0648\u0627\u0621\u064b \u0628\u0646\u0641\u0633\u0643 \u062f\u0648\u0646 \u0625\u062e\u0628\u0627\u0631 \u0637\u0628\u064a\u0628\u0643 \u0623\u0648 \u0641\u0631\u064a\u0642 \u0627\u0644\u0631\u0639\u0627\u064a\u0629\u060c \u0628\u0633\u0628\u0628 \u0645\u0627 \u0643\u0627\u0646 \u064a\u062c\u0639\u0644\u0643 \u062a\u0634\u0639\u0631 \u0628\u0647\u061f", type: "binary" },
+      { text: "\u0639\u0646\u062f\u0645\u0627 \u062a\u062a\u063a\u064a\u0631 \u0631\u0648\u062a\u064a\u0646\u0643 \u0627\u0644\u064a\u0648\u0645\u064a\u0629\u060c \u0645\u062b\u0644\u0627\u064b \u0639\u0646\u062f \u0627\u0644\u0633\u0641\u0631 \u0623\u0648 \u0627\u0644\u0639\u0645\u0644 \u0628\u0633\u0627\u0639\u0627\u062a \u0645\u062e\u062a\u0644\u0641\u0629 \u0623\u0648 \u0627\u0644\u0628\u0639\u062f \u0639\u0646 \u0627\u0644\u0645\u0646\u0632\u0644\u060c \u0647\u0644 \u062a\u062c\u062f \u0635\u0639\u0648\u0628\u0629 \u0641\u064a \u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645 \u0628\u0623\u062f\u0648\u064a\u062a\u0643\u061f", type: "binary" },
+      { text: "\u0647\u0644 \u062a\u0645\u0643\u0646\u062a \u0645\u0646 \u062a\u0646\u0627\u0648\u0644 \u062c\u0631\u0639\u062a\u0643 \u0627\u0644\u0623\u062e\u064a\u0631\u0629 \u0643\u0645\u0627 \u0648\u0635\u0641 \u0644\u0643 \u0627\u0644\u0637\u0628\u064a\u0628\u061f", type: "binary" },
+      { text: "\u0639\u0646\u062f\u0645\u0627 \u062a\u0628\u062f\u0623 \u0641\u064a \u0627\u0644\u0634\u0639\u0648\u0631 \u0628\u062a\u062d\u0633\u0646 \u0623\u0648 \u062a\u062a\u0631\u0627\u062c\u0639 \u0627\u0644\u0623\u0639\u0631\u0627\u0636\u060c \u0647\u0644 \u062a\u0641\u0643\u0631 \u0623\u062d\u064a\u0627\u0646\u064b\u0627 \u0641\u064a \u062a\u0642\u0644\u064a\u0644 \u062f\u0648\u0627\u0626\u0643 \u0623\u0648 \u0625\u064a\u0642\u0627\u0641\u0647\u0627 \u0628\u0646\u0641\u0633\u0643\u061f", type: "binary" },
+      { text: "\u0647\u0644 \u064a\u0628\u062f\u0648 \u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645 \u0628\u0631\u0648\u062a\u064a\u0646 \u062a\u0646\u0627\u0648\u0644 \u0627\u0644\u062f\u0648\u0627\u0621 \u062a\u062d\u062f\u064a\u064b\u0627 \u0643\u0628\u064a\u0631\u064b\u0627 \u0641\u064a \u062d\u064a\u0627\u062a\u0643 \u0627\u0644\u064a\u0648\u0645\u064a\u0629\u061f", type: "binary" },
+      { text: "\u0641\u064a \u0623\u0633\u0628\u0648\u0639 \u0639\u0627\u062f\u064a\u060c \u0643\u0645 \u0645\u0631\u0629 \u062a\u062c\u062f \u0635\u0639\u0648\u0628\u0629 \u0641\u064a \u062a\u0646\u0627\u0648\u0644 \u062c\u0645\u064a\u0639 \u0623\u062f\u0648\u064a\u062a\u0643 \u0643\u0645\u0627 \u0648\u0635\u0641\u062a \u0644\u0643\u061f", type: "ordinal",
+        options: ["\u0623\u0628\u062f\u064b\u0627", "\u0646\u0627\u062f\u0631\u064b\u0627", "\u0623\u062d\u064a\u0627\u0646\u064b\u0627", "\u063a\u0627\u0644\u0628\u064b\u0627", "\u062f\u0627\u0626\u0645\u064b\u0627"] }
+    ],
+    peTiers: [
+      "\u0627\u0644\u062a\u0632\u0627\u0645\u0643 \u0627\u0644\u0639\u0627\u0645 \u0628\u0627\u0644\u062f\u0648\u0627\u0621 \u062c\u064a\u062f.",
+      "\u0623\u0646\u062a \u062a\u0633\u064a\u0631 \u0628\u0634\u0643\u0644 \u062c\u064a\u062f\u060c \u0645\u0639 \u0628\u0639\u0636 \u0627\u0644\u062c\u0648\u0627\u0646\u0628 \u0627\u0644\u062a\u064a \u062a\u0633\u062a\u062d\u0642 \u0627\u0644\u0645\u062a\u0627\u0628\u0639\u0629.",
+      "\u062b\u0645\u0629 \u0628\u0639\u0636 \u0627\u0644\u062c\u0648\u0627\u0646\u0628 \u0627\u0644\u062a\u064a \u0642\u062f \u062a\u062d\u062a\u0627\u062c \u0641\u064a\u0647\u0627 \u0625\u0644\u0649 \u0645\u0632\u064a\u062f \u0645\u0646 \u0627\u0644\u062f\u0639\u0645.",
+      "\u0647\u0630\u0627 \u0634\u064a\u0621 \u064a\u0633\u062a\u062d\u0642 \u0645\u0646\u0627\u0642\u0634\u062a\u0647 \u0645\u0639 \u0637\u0628\u064a\u0628\u0643 \u0623\u0648 \u0635\u064a\u062f\u0644\u0627\u0646\u064a\u0643."
+    ],
+    archInsights: [
+      "\u064a\u0628\u062f\u0648 \u0623\u0646 \u0644\u062f\u064a\u0643 \u0628\u0639\u0636 \u0627\u0644\u0634\u0643\u0648\u0643 \u062d\u0648\u0644 \u062f\u0648\u0627\u0626\u0643 \u0642\u062f \u062a\u0633\u062a\u062d\u0642 \u0645\u0646\u0627\u0642\u0634\u062a\u0647\u0627 \u0645\u0639 \u0637\u0628\u064a\u0628\u0643.",
+      "\u0631\u0628\u0645\u0627 \u0644\u062f\u064a\u0643 \u0623\u0633\u0626\u0644\u0629 \u062d\u0648\u0644 \u0645\u062f\u0649 \u0641\u0627\u0626\u062f\u0629 \u062f\u0648\u0627\u0626\u0643.",
+      "\u0623\u0646\u062a \u0648\u0627\u062b\u0642 \u0645\u0646 \u0633\u0628\u0628 \u062a\u0646\u0627\u0648\u0644\u0643 \u0644\u062f\u0648\u0627\u0626\u0643."
+    ],
+    execInsights: [
+      "\u064a\u0628\u062f\u0648 \u0623\u0646 \u062a\u0630\u0643\u0631 \u062a\u0646\u0627\u0648\u0644 \u062f\u0648\u0627\u0626\u0643 \u0628\u0627\u0646\u062a\u0638\u0627\u0645 \u064a\u0645\u062b\u0644 \u062a\u062d\u062f\u064a\u064b\u0627.",
+      "\u0642\u062f \u064a\u0643\u0648\u0646 \u0645\u0646 \u0627\u0644\u0635\u0639\u0628 \u0623\u062d\u064a\u0627\u0646\u064b\u0627 \u062a\u0630\u0643\u0631 \u062f\u0648\u0627\u0626\u0643.",
+      "\u0623\u0646\u062a \u062a\u062a\u0627\u0628\u0639 \u0631\u0648\u062a\u064a\u0646 \u062f\u0648\u0627\u0626\u0643 \u0628\u0634\u0643\u0644 \u062c\u064a\u062f."
+    ],
+    ctxInsights: [
+      "\u062b\u0645\u0629 \u0623\u0634\u064a\u0627\u0621 \u0639\u0645\u0644\u064a\u0629 \u062a\u062c\u0639\u0644 \u062a\u0646\u0627\u0648\u0644 \u062f\u0648\u0627\u0626\u0643 \u0628\u0627\u0646\u062a\u0638\u0627\u0645 \u0623\u0645\u0631\u064b\u0627 \u0635\u0639\u0628\u064b\u0627.",
+      "\u0623\u062d\u064a\u0627\u0646\u064b\u0627 \u064a\u062c\u0639\u0644 \u062c\u062f\u0648\u0644\u0643 \u0623\u0648 \u0627\u0644\u0633\u0641\u0631 \u0627\u0644\u062a\u0632\u0627\u0645\u0643 \u0628\u0627\u0644\u062f\u0648\u0627\u0621 \u0623\u0645\u0631\u064b\u0627 \u0623\u0635\u0639\u0628.",
+      "\u062d\u064a\u0627\u062a\u0643 \u0627\u0644\u064a\u0648\u0645\u064a\u0629 \u0644\u0627 \u062a\u0628\u062f\u0648 \u0639\u0627\u0626\u0642\u064b\u0627 \u0628\u064a\u0646\u0643 \u0648\u0628\u064a\u0646 \u062a\u0646\u0627\u0648\u0644 \u062f\u0648\u0627\u0626\u0643."
+    ],
+    tips: {
+      arch: "\u0646\u0635\u064a\u062d\u0629: \u0625\u0630\u0627 \u0643\u0646\u062a \u063a\u064a\u0631 \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u062f\u0648\u0627\u0626\u0643\u060c \u0641\u0625\u0646 \u062a\u062f\u0648\u064a\u0646 \u0623\u0633\u0626\u0644\u062a\u0643 \u0642\u0628\u0644 \u0645\u0648\u0639\u062f\u0643 \u0627\u0644\u062a\u0627\u0644\u064a \u064a\u0645\u0643\u0646 \u0623\u0646 \u064a\u0633\u0627\u0639\u062f\u0643 \u0639\u0644\u0649 \u0627\u0644\u062d\u0635\u0648\u0644 \u0639\u0644\u0649 \u0625\u062c\u0627\u0628\u0627\u062a.",
+      exec: "\u0646\u0635\u064a\u062d\u0629: \u0627\u062d\u062a\u0641\u0638 \u0628\u062f\u0648\u0627\u0626\u0643 \u0641\u064a \u0645\u0643\u0627\u0646 \u0645\u0631\u0626\u064a \u0643\u0644 \u064a\u0648\u0645\u060c \u0645\u062b\u0644 \u0628\u062c\u0627\u0646\u0628 \u0641\u0631\u0634\u0627\u0629 \u0623\u0633\u0646\u0627\u0646\u0643\u060c \u0644\u064a\u0633\u0627\u0639\u062f\u0643 \u0639\u0644\u0649 \u0628\u0646\u0627\u0621 \u0627\u0644\u0639\u0627\u062f\u0629.",
+      ctx: "\u0646\u0635\u064a\u062d\u0629: \u0627\u0633\u0623\u0644 \u0635\u064a\u062f\u0644\u0627\u0646\u064a\u0643 \u0639\u0646 \u0639\u0628\u0648\u0627\u062a \u0627\u0644\u0623\u0642\u0631\u0627\u0635 \u0623\u0648 \u062d\u0627\u0641\u0638\u0627\u062a \u0627\u0644\u062d\u0628\u0648\u0628 \u0627\u0644\u062a\u064a \u062a\u0633\u0647\u0644 \u062d\u0645\u0644 \u062f\u0648\u0627\u0626\u0643 \u0639\u0646\u062f \u0627\u0644\u0633\u0641\u0631."
+    }
+  }
+};
+
+/* ── Question domain map ──────────────────────────── */
+// Q index 0-7 (Q1-Q8)
+// domain: arch=Architecture, exec=Execution, ctx=Context-Guard
+const Q_DOMAIN = ['exec','arch','arch','ctx','exec','arch','ctx','exec'];
+
+/* ── PEACS phenotype logic ────────────────────────── */
+function classifyPhenotype(scores, answers) {
+  // answers: array of 0/1 per question (Q8 already converted)
+  // scores: { arch, exec, ctx, pe }
+  const a = scores.arch;
+  const e = scores.exec;
+  const c = scores.ctx;
+
+  // Architecture failure: Q2, Q3, Q6 non-adherent
+  const archFail = (1 - answers[1]) + (1 - answers[2]) + (1 - answers[5]);
+  // Execution failure: Q1, Q5 non-adherent
+  const execFail = (1 - answers[0]) + (1 - answers[4]);
+  // Q8 ordinal failure contribution (mapped value low means poor)
+  const q8fail = 1 - answers[7];
+  const execFailTotal = execFail + q8fail;
+  // Context failure: Q4, Q7 non-adherent
+  const ctxFail = (1 - answers[3]) + (1 - answers[6]);
+
+  // Side-Effect Avoider: Q3 is main trigger (cut back due to side effects)
+  if (answers[2] === 0 && a < 0.6) return 'Side-Effect Avoider';
+  // Intentional Resistor: deliberate non-adherence, high arch failure, Q2 and Q6 both non-adherent
+  if (answers[1] === 0 && answers[5] === 0 && a < 0.5) return 'Intentional Resistor';
+  // Optimistic Stopper: stops when feels better
+  if (answers[5] === 0 && a < 0.65 && e > 0.5) return 'Optimistic Stopper';
+  // Situational Skipper: context-driven
+  if (c < 0.65 && ctxFail >= 1 && a >= 0.6) return 'Situational Skipper';
+  // Routine Forgetter: execution-driven
+  if (e < 0.65 && execFailTotal >= 1) return 'Routine Forgetter';
+  // Default for low scores
+  if (a < 0.65) return 'Intentional Resistor';
+  if (e < 0.65) return 'Routine Forgetter';
+  return 'Routine Forgetter';
+}
+
+/* ── MAP scoring ──────────────────────────────────── */
+function computeScores(rawAnswers) {
+  // rawAnswers: [Q1..Q8] each 0..1
+  // Q5 (index 4): Yes=adherent, scored inverted vs others
+  // Binary adherent=1 mapping:
+  // Q1: Yes=forget => NON-adherent (yes=0, no=1)
+  // Q2: Yes=decide not to => NON-adherent (yes=0, no=1)
+  // Q3: Yes=cut back => NON-adherent (yes=0, no=1)
+  // Q4: Yes=forget meds when travel => NON-adherent (yes=0, no=1)
+  // Q5: Yes=took meds yesterday => ADHERENT (yes=1, no=0)
+  // Q6: Yes=stop when better => NON-adherent (yes=0, no=1)
+  // Q7: Yes=hassle => NON-adherent (yes=0, no=1)
+  // Q8: ordinal mapped separately
+  const A_scores = [rawAnswers[1], rawAnswers[2], rawAnswers[5]];
+  const E_scores = [rawAnswers[0], rawAnswers[4], rawAnswers[7]];
+  const C_scores = [rawAnswers[3], rawAnswers[6]];
+
+  const arch = mean(A_scores);
+  const exec = mean(E_scores);
+  const ctxRaw = mean(C_scores);
+  const ctx = Math.max(0.5, 0.5 + 0.5 * ctxRaw);
+  const pe = Math.pow(arch * exec * ctx, 1/3);
+  const additive = arch + exec + ctx; // 0-3 scale
+
+  return { arch, exec, ctx, pe, additive };
+}
+
+function mean(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((a,b) => a+b, 0) / arr.length;
+}
+
+/* ── App state ────────────────────────────────────── */
+let state = {
+  lang: 'en',
+  currentQ: 0,       // 0-indexed
+  answers: [],       // raw numeric answers per Q (0..1)
+  scores: null,
+  phenotype: null,
+  patientCode: '',
+  saveId: null
+};
+
+/* ── Language handling ────────────────────────────── */
+function selectLang(lang) {
+  state.lang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.lang === lang);
+  });
+  const t = _SELF_TRANS[lang];
+  document.getElementById('wlc-hero').textContent = t.hero;
+  document.getElementById('wlc-sub').textContent = t.sub;
+  document.getElementById('wlc-lang-label').textContent = t.langLabel;
+  document.getElementById('wlc-code-label').textContent = t.codeLabel;
+  document.getElementById('patient-code-input').placeholder = t.codePlaceholder;
+  document.getElementById('btn-begin').textContent = t.begin;
+  document.getElementById('wlc-powered').textContent = t.powered;
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+}
+
+/* ── Screen transitions ───────────────────────────── */
+function showScreen(id, back) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const next = document.getElementById(id);
+  next.classList.add('active');
+  next.classList.remove('screen-enter','screen-enter-back');
+  void next.offsetWidth; // reflow
+  next.classList.add(back ? 'screen-enter-back' : 'screen-enter');
+  window.scrollTo(0,0);
+}
+
+/* ── Begin assessment ─────────────────────────────── */
+function beginAssessment() {
+  state.currentQ = 0;
+  state.answers = [];
+  state.patientCode = document.getElementById('patient-code-input').value.trim().toUpperCase();
+  renderQuestion();
+  showScreen('screen-question', false);
+}
+
+/* ── Render a question ────────────────────────────── */
+function renderQuestion() {
+  const t = _SELF_TRANS[state.lang];
+  const q = t.questions[state.currentQ];
+  const qi = state.currentQ;
+  const total = t.questions.length;
+  const domain = Q_DOMAIN[qi];
+
+  // Progress dots
+  const dotsEl = document.getElementById('progress-dots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    if (i < qi) d.classList.add('answered');
+    if (i === qi) d.classList.add('current');
+    dotsEl.appendChild(d);
+  }
+
+  // Domain indicator
+  const di = document.getElementById('domain-indicator');
+  di.className = 'domain-indicator ' + domain;
+  di.title = domain === 'arch' ? 'Medication beliefs' : domain === 'exec' ? 'Routine & recall' : 'Context & environment';
+
+  // Q number
+  document.getElementById('q-number').textContent = t.qLabel + ' ' + (qi+1) + ' ' + t.of + ' ' + total;
+
+  // Q text
+  const qText = document.getElementById('q-text');
+  qText.textContent = q.text;
+  qText.setAttribute('data-rtl', state.lang === 'ar' ? 'true' : 'false');
+
+  // Set RTL on q-body if Arabic
+  const qBody = document.querySelector('.q-body');
+  qBody.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
+
+  // Answers
+  const pairEl = document.getElementById('answer-pair');
+  pairEl.innerHTML = '';
+
+  if (q.type === 'binary') {
+    const yesBtn = document.createElement('button');
+    yesBtn.className = 'ans-btn ans-yes';
+    yesBtn.textContent = t.yes;
+    yesBtn.onclick = () => answerBinary('yes', qi);
+
+    const noBtn = document.createElement('button');
+    noBtn.className = 'ans-btn ans-no';
+    noBtn.textContent = t.no;
+    noBtn.onclick = () => answerBinary('no', qi);
+
+    pairEl.appendChild(yesBtn);
+    pairEl.appendChild(noBtn);
+  } else {
+    // Ordinal Q8
+    const list = document.createElement('div');
+    list.className = 'ordinal-list';
+    const ordValues = [1.00, 0.75, 0.50, 0.25, 0.00]; // Never=1.00 ... All the time=0.00
+    q.options.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'ord-btn';
+      btn.textContent = opt;
+      btn.onclick = () => answerOrdinal(ordValues[idx], qi);
+      list.appendChild(btn);
+    });
+    pairEl.appendChild(list);
+  }
+}
+
+/* ── Answer logic ─────────────────────────────────── */
+function answerBinary(val, qi) {
+  // Q5 (index 4): Yes = adherent (1). All others: Yes = non-adherent (0).
+  let score;
+  if (qi === 4) {
+    score = val === 'yes' ? 1 : 0;
+  } else {
+    score = val === 'yes' ? 0 : 1;
+  }
+  recordAnswer(qi, score);
+}
+
+function answerOrdinal(score, qi) {
+  recordAnswer(qi, score);
+}
+
+function recordAnswer(qi, score) {
+  state.answers[qi] = score;
+  if (qi + 1 < _SELF_TRANS[state.lang].questions.length) {
+    state.currentQ = qi + 1;
+    renderQuestion();
+  } else {
+    finishAssessment();
+  }
+}
+
+/* ── Go back ──────────────────────────────────────── */
+function goBack() {
+  if (state.currentQ === 0) {
+    showScreen('screen-welcome', true);
+  } else {
+    state.currentQ--;
+    renderQuestion();
+  }
+}
+
+/* ── Finish & compute ─────────────────────────────── */
+function finishAssessment() {
+  state.scores = computeScores(state.answers);
+  state.phenotype = classifyPhenotype(state.scores, state.answers);
+  renderResults();
+  showScreen('screen-results', false);
+}
+
+/* ── PE tier helpers ──────────────────────────────── */
+function getPETierIndex(pe) {
+  if (pe >= 0.90) return 0; // strong
+  if (pe >= 0.75) return 1; // doing well
+  if (pe >= 0.45) return 2; // needs support
+  return 3;                  // discuss with doctor
+}
+
+function getPECircles(pe) {
+  if (pe >= 0.90) return 5;
+  if (pe >= 0.75) return 4;
+  if (pe >= 0.60) return 3;
+  if (pe >= 0.45) return 2;
+  return 1;
+}
+
+function getDomainInsightIndex(val) {
+  if (val < 0.5) return 0;
+  if (val < 0.75) return 1;
+  return 2;
+}
+
+function getDominantFailDomain(scores) {
+  // Find domain with lowest score
+  const { arch, exec, ctx } = scores;
+  if (arch <= exec && arch <= ctx) return 'arch';
+  if (exec <= arch && exec <= ctx) return 'exec';
+  return 'ctx';
+}
+
+/* ── Render results ───────────────────────────────── */
+function renderResults() {
+  const t = _SELF_TRANS[state.lang];
+  const s = state.scores;
+  const pe = s.pe;
+
+  // Labels
+  document.getElementById('res-complete-label').textContent = t.completeLabel;
+  document.getElementById('res-title').textContent = t.resultsTitle;
+  document.getElementById('score-circle-label').textContent = t.scoreLabel;
+  document.getElementById('dom-arch-label').textContent = t.domArchLabel;
+  document.getElementById('dom-exec-label').textContent = t.domExecLabel;
+  document.getElementById('dom-ctx-label').textContent = t.domCtxLabel;
+  document.getElementById('tip-label').textContent = t.tipLabel;
+  document.getElementById('btn-share').textContent = t.btnShare;
+  document.getElementById('btn-save').textContent = t.btnSave;
+  document.getElementById('btn-remind').textContent = t.btnRemind;
+
+  // PE circles
+  const circleCount = getPECircles(pe);
+  const circlesEl = document.getElementById('score-circles');
+  circlesEl.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const c = document.createElement('div');
+    c.className = 'score-circle' + (i < circleCount ? ' filled' : '');
+    circlesEl.appendChild(c);
+  }
+
+  // PE sentence
+  document.getElementById('score-sentence').textContent = t.peTiers[getPETierIndex(pe)];
+
+  // Domain bars (animate after brief delay)
+  setTimeout(() => {
+    document.getElementById('bar-arch').style.width = Math.round(s.arch * 100) + '%';
+    document.getElementById('bar-exec').style.width = Math.round(s.exec * 100) + '%';
+    document.getElementById('bar-ctx').style.width = Math.round(s.ctx * 100) + '%';
+  }, 300);
+
+  // Domain insights
+  document.getElementById('insight-arch').textContent = t.archInsights[getDomainInsightIndex(s.arch)];
+  document.getElementById('insight-exec').textContent = t.execInsights[getDomainInsightIndex(s.exec)];
+  document.getElementById('insight-ctx').textContent = t.ctxInsights[getDomainInsightIndex(s.ctx)];
+
+  // Support tip
+  const failDomain = getDominantFailDomain(s);
+  document.getElementById('tip-text').textContent = t.tips[failDomain];
+
+  // Clear feedback
+  document.getElementById('save-feedback').textContent = '';
+  document.getElementById('save-feedback').className = 'save-feedback';
+}
+
+/* ── Save to Firebase ─────────────────────────────── */
+function saveResults() {
+  const t = _SELF_TRANS[state.lang];
+  const fb = document.getElementById('save-feedback');
+  fb.textContent = t.savingMsg;
+  fb.className = 'save-feedback';
+
+  const s = state.scores;
+  // ?ws= lets a clinician pre-tag results to their workspace
+  // e.g. patient-map.html?ws=abc123 so their ATLAS portal shows the result
+  const _wsRef = (new URLSearchParams(window.location.search)).get('ws') || null;
+
+  const payload = {
+    patient_code: state.patientCode || null,
+    workspace_key: _wsRef,
+    pe_score: parseFloat(s.pe.toFixed(4)),
+    arch_score: parseFloat(s.arch.toFixed(4)),
+    exec_score: parseFloat(s.exec.toFixed(4)),
+    ctx_score: parseFloat(s.ctx.toFixed(4)),
+    additive: parseFloat(s.additive.toFixed(4)),
+    low_adherence: s.pe < 0.6,
+    peacs_phenotype: state.phenotype,
+    language: state.lang,
+    ts: firebase.database.ServerValue.TIMESTAMP,
+    source: 'map-self'
+  };
+
+  const ref = db.ref('patient_self_assessments').push();
+  state.saveId = ref.key;
+  ref.set(payload)
+    .then(() => {
+      fb.textContent = t.savedMsg;
+      fb.className = 'save-feedback ok';
+    })
+    .catch(() => {
+      fb.textContent = t.saveErrMsg;
+      fb.className = 'save-feedback err';
+    });
+}
+
+/* ── Set reminder intent ──────────────────────────── */
+function setReminder() {
+  const t = _SELF_TRANS[state.lang];
+  const fb = document.getElementById('save-feedback');
+
+  const thirtyDays = Date.now() + 30 * 24 * 60 * 60 * 1000;
+  const payload = {
+    patient_code: state.patientCode || null,
+    intent: 'remind_30d',
+    remind_at: thirtyDays,
+    source: 'map-self',
+    ts: firebase.database.ServerValue.TIMESTAMP
+  };
+
+  db.ref('patient_self_assessments_intents').push(payload).catch(() => {});
+  fb.textContent = t.reminderMsg;
+  fb.className = 'save-feedback ok';
+}
+
+/* ── Show share screen ────────────────────────────── */
+function showShareScreen() {
+  const t = _SELF_TRANS[state.lang];
+  const s = state.scores;
+
+  // Header labels
+  document.getElementById('share-header-label').textContent = t.shareHeaderLabel;
+  document.getElementById('sum-title').textContent = t.sumTitle;
+  document.getElementById('copy-btn').textContent = t.copyBtn;
+  document.getElementById('share-back-btn').textContent = t.shareBackBtn;
+  document.getElementById('sum-score-label').textContent = t.sumScoreLabel;
+  document.getElementById('sum-arch-label').textContent = t.sumArchLabel;
+  document.getElementById('sum-exec-label').textContent = t.sumExecLabel;
+  document.getElementById('sum-ctx-label').textContent = t.sumCtxLabel;
+
+  // Date
+  const now = new Date();
+  const dateStr = now.toLocaleDateString(state.lang === 'ar' ? 'ar-EG' : state.lang === 'it' ? 'it-IT' : state.lang === 'es' ? 'es-ES' : state.lang === 'fr' ? 'fr-FR' : 'en-US', { year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('sum-meta').textContent = dateStr + (state.patientCode ? ' \u00b7 ' + state.patientCode : '');
+
+  // PE circles
+  const circleCount = getPECircles(s.pe);
+  const sumCircles = document.getElementById('sum-circles');
+  sumCircles.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const c = document.createElement('div');
+    c.className = 'summary-circle' + (i < circleCount ? ' filled' : '');
+    sumCircles.appendChild(c);
+  }
+  document.getElementById('sum-pe-value').textContent = Math.round(s.pe * 100) + '%';
+
+  // Domain bars
+  const archPct = Math.round(s.arch * 100);
+  const execPct = Math.round(s.exec * 100);
+  const ctxPct = Math.round(s.ctx * 100);
+  document.getElementById('sum-arch-pct').textContent = archPct + '%';
+  document.getElementById('sum-exec-pct').textContent = execPct + '%';
+  document.getElementById('sum-ctx-pct').textContent = ctxPct + '%';
+
+  setTimeout(() => {
+    document.getElementById('sum-bar-arch').style.width = archPct + '%';
+    document.getElementById('sum-bar-exec').style.width = execPct + '%';
+    document.getElementById('sum-bar-ctx').style.width = ctxPct + '%';
+  }, 200);
+
+  document.getElementById('copy-feedback').textContent = '';
+  showScreen('screen-share', false);
+}
+
+/* ── Copy summary ─────────────────────────────────── */
+function copySummary() {
+  const t = _SELF_TRANS[state.lang];
+  const s = state.scores;
+  const now = new Date().toLocaleDateString();
+  const circles = '\u25cf'.repeat(getPECircles(s.pe)) + '\u25cb'.repeat(5 - getPECircles(s.pe));
+
+  const text = [
+    t.sumTitle,
+    now + (state.patientCode ? ' | ' + state.patientCode : ''),
+    '',
+    t.sumScoreLabel + ': ' + circles + ' (' + Math.round(s.pe * 100) + '%)',
+    '',
+    t.sumArchLabel + ': ' + Math.round(s.arch * 100) + '%',
+    t.sumExecLabel + ': ' + Math.round(s.exec * 100) + '%',
+    t.sumCtxLabel + ': ' + Math.round(s.ctx * 100) + '%',
+    '',
+    'Generated by ATLAS MAP-Self | adherence.cc'
+  ].join('\n');
+
+  const fb = document.getElementById('copy-feedback');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      fb.textContent = t.copiedMsg;
+    }).catch(() => fallbackCopy(text, fb, t));
+  } else {
+    fallbackCopy(text, fb, t);
+  }
+}
+
+function fallbackCopy(text, fb, t) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    fb.textContent = t.copiedMsg;
+  } catch(e) {
+    fb.textContent = '!';
+  }
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>

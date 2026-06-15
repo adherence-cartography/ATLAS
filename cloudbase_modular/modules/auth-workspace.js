@@ -878,7 +878,12 @@ function _grantWorkspaceAccess(code, profile, opts) {
       const myStudiesBtn = document.getElementById('my-studies-btn');
       if (myStudiesBtn) myStudiesBtn.style.display = lopRoles.has(actualRole) ? 'flex' : 'none';
       closeWorkspaceModal();
-      enterResearcherDashboard();
+      // Load LMIC access tier from Firebase before rendering dashboard (non-blocking)
+      const _authUser = window.firebase && window.firebase.auth ? window.firebase.auth().currentUser : null;
+      const _lmicLoad = (_authUser && typeof loadLMICTierFromFirebase === 'function')
+        ? loadLMICTierFromFirebase(_authUser.uid)
+        : Promise.resolve();
+      _lmicLoad.then(() => enterResearcherDashboard()).catch(() => enterResearcherDashboard());
       const name = profile.name || code;
       const welcomeMsg = (typeof isClinician === 'function' && isClinician())
         ? `✓ Welcome, ${name} — patient panel is active.`
@@ -934,6 +939,11 @@ function restoreWorkspaceSession() {
           if (typeof enterResearcherDashboard === 'function') enterResearcherDashboard();
         }
       }).catch(() => {});
+    }
+    // Load LMIC tier from Firebase on session restore (non-blocking)
+    const _restoreAuthUser = window.firebase && window.firebase.auth ? window.firebase.auth().currentUser : null;
+    if (_restoreAuthUser && typeof loadLMICTierFromFirebase === 'function') {
+      loadLMICTierFromFirebase(_restoreAuthUser.uid).catch(() => {});
     }
     return true;
   }
@@ -1083,6 +1093,23 @@ function initDashMiniMaps() {
         dashMiniMap.addSource('mini-map-pts', {type:'geojson', data:{type:'FeatureCollection',features}});
         dashMiniMap.addLayer({id:'mini-map-pts-layer', type:'circle', source:'mini-map-pts',
           paint:{'circle-radius':2.5,'circle-color':['get','color'],'circle-opacity':0.85,'circle-blur':0.3}});
+        // ── TESSERA Site 001 — Rome, Italy (founding hub — always visible) ──────
+        // Displayed as a gold pulsing ring so Giuseppe / Stefano can see Rome
+        // on the MAP globe even before large-scale data accumulates.
+        const _tesseraRome = {type:'FeatureCollection',features:[{
+          type:'Feature',
+          geometry:{type:'Point',coordinates:[12.4964, 41.9028]}, // Rome lat/lon
+          properties:{label:'TESSERA Hub I — Rome', site:'PH-ROM', tier:'founding'}
+        }]};
+        if (!dashMiniMap.getSource('tessera-sites')) {
+          dashMiniMap.addSource('tessera-sites', {type:'geojson', data:_tesseraRome});
+          // Outer glow ring
+          dashMiniMap.addLayer({id:'tessera-sites-glow', type:'circle', source:'tessera-sites',
+            paint:{'circle-radius':9,'circle-color':'#d4a843','circle-opacity':0.25,'circle-blur':1}});
+          // Inner solid dot
+          dashMiniMap.addLayer({id:'tessera-sites-dot', type:'circle', source:'tessera-sites',
+            paint:{'circle-radius':4,'circle-color':'#d4a843','circle-opacity':0.95,'circle-stroke-width':1.5,'circle-stroke-color':'#fff9e6'}});
+        }
         // Live listener — MAP records only
         if (!window._miniMapLiveInited) {
           window._miniMapLiveInited = true;
@@ -3765,7 +3792,7 @@ function enterResearcherDashboard() {
           })();
         }
 
-        // ── MODULE · AIRC Grant Resource Center — researcher / PI card ──────
+        // ── MODULE · TESSERA GRC Grant Resource Center — researcher / PI card ──────
         (function() {
           if (document.getElementById('res-mod-airc')) return;
           var _aircTarget = document.getElementById('researcher-patient-panel') || document.getElementById('res-analytics-panel');
@@ -3778,17 +3805,149 @@ function enterResearcherDashboard() {
             '<div style="width:100%;padding:13px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">' +
               '<div style="width:3px;height:14px;background:#d4a843;border-radius:2px;flex-shrink:0;"></div>' +
               '<div style="flex:1;">' +
-                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">ATLAS International Research Consortium</div>' +
-                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Grant Resources · Funding · AIRC Membership</div>' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">TESSERA GRC (Global Research Consortium)</div>' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Grant Resources · Funding · TESSERA GRC Membership</div>' +
               '</div>' +
             '</div>' +
             '<div id="res-airc-body" style="padding:20px;">' +
-              '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">Loading AIRC resources…</div>' +
+              '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">Loading TESSERA GRC resources…</div>' +
             '</div>';
 
           _aircTarget.parentNode.insertBefore(_aircMod, _aircTarget);
 
-          // Init is triggered by atlasTabSwitch side-effect when the AIRC tab is first clicked.
+          // LMIC Training module — injected alongside TESSERA GRC, lazy-inited on tab click
+          if (!document.getElementById('res-mod-lmic-training')) {
+            var _lmicMod = document.createElement('div');
+            _lmicMod.id = 'res-mod-lmic-training';
+            _lmicMod.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;';
+            _lmicMod.innerHTML =
+              '<div style="width:100%;padding:13px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">' +
+                '<div style="width:3px;height:14px;background:#f97316;border-radius:2px;flex-shrink:0;"></div>' +
+                '<div style="flex:1;">' +
+                  '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">TESSERA GRC · LMIC Capacity Building</div>' +
+                  '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Research Training Curriculum</div>' +
+                '</div>' +
+              '</div>' +
+              '<div id="res-lmic-training-body" style="padding:20px;">' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">Loading training curriculum…</div>' +
+              '</div>';
+            _aircTarget.parentNode.insertBefore(_lmicMod, _aircTarget);
+          }
+
+          // Wave 1-4 module panels — injected alongside TESSERA GRC, lazy-inited on tab click
+
+          var _waveModules = [
+            {
+              id: 'res-mod-pharmacy',
+              bodyId: 'res-pharmacy-body',
+              color: '#2ec98a',
+              eyebrow: 'Pharmacy Network',
+              title: 'FOFI Pharmacy Gateway',
+              loading: 'Loading pharmacy network data\u2026'
+            },
+            {
+              id: 'res-mod-country-intel',
+              bodyId: 'res-country-intel-body',
+              color: '#38bdf8',
+              eyebrow: 'Geographic Intelligence',
+              title: 'Country Intelligence Portal',
+              loading: 'Loading country intelligence\u2026'
+            },
+            {
+              id: 'res-mod-predictive',
+              bodyId: 'res-predictive-body',
+              color: '#ef4444',
+              eyebrow: 'AI Prediction Engine',
+              title: 'Dropout Risk Dashboard',
+              loading: 'Loading dropout risk model\u2026'
+            },
+            {
+              id: 'res-mod-longitudinal',
+              bodyId: 'res-longitudinal-body',
+              color: '#8b6ff5',
+              eyebrow: 'Longitudinal Tracking',
+              title: 'MAP Session Trajectories',
+              loading: 'Loading longitudinal tracking\u2026'
+            },
+            {
+              id: 'res-mod-isr',
+              bodyId: 'res-isr-body',
+              color: '#d4a843',
+              eyebrow: 'Pharma Partnership',
+              title: 'ISR Study Builder',
+              loading: 'Loading ISR study builder\u2026'
+            },
+            {
+              id: 'res-mod-maas',
+              bodyId: 'res-maas-body',
+              color: '#38bdf8',
+              eyebrow: 'MAP-as-a-Service',
+              title: 'MaaS API Portal',
+              loading: 'Loading MaaS portal\u2026'
+            },
+            {
+              id: 'res-mod-dhis2',
+              bodyId: 'res-dhis2-body',
+              color: '#f97316',
+              eyebrow: 'DHIS2 Integration',
+              title: 'DHIS2 Connect & Sync',
+              loading: 'Loading DHIS2 integration\u2026'
+            },
+            {
+              id: 'res-mod-certification',
+              bodyId: 'res-certification-body',
+              color: '#d4a843',
+              eyebrow: 'MAP Certification',
+              title: 'Certification Hub',
+              loading: 'Loading certification hub\u2026'
+            },
+            {
+              id: 'res-mod-heor',
+              bodyId: 'res-heor-body',
+              color: '#2ec98a',
+              eyebrow: 'Health Economics',
+              title: 'HEOR Cost Analysis',
+              loading: 'Loading HEOR dashboard\u2026'
+            },
+            {
+              id: 'res-mod-open-data',
+              bodyId: 'res-open-data-body',
+              color: '#4e9cf5',
+              eyebrow: 'Open Data / GAI',
+              title: 'Open Data Portal',
+              loading: 'Loading open data portal\u2026'
+            },
+            {
+              id: 'res-mod-equity',
+              bodyId: 'res-equity-body',
+              color: '#8b6ff5',
+              eyebrow: 'Equity & CHW',
+              title: 'Equity Score Dashboard',
+              loading: 'Loading equity dashboard\u2026'
+            }
+          ];
+
+          _waveModules.forEach(function(m) {
+            if (!document.getElementById(m.id)) {
+              var _mod = document.createElement('div');
+              _mod.id = m.id;
+              _mod.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;';
+              _mod.innerHTML =
+                '<div style="width:100%;padding:13px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">' +
+                  '<div style="width:3px;height:14px;background:' + m.color + ';border-radius:2px;flex-shrink:0;"></div>' +
+                  '<div style="flex:1;">' +
+                    '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">' + m.eyebrow + '</div>' +
+                    '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">' + m.title + '</div>' +
+                  '</div>' +
+                '</div>' +
+                '<div id="' + m.bodyId + '" style="padding:20px;">' +
+                  '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">' + m.loading + '</div>' +
+                '</div>';
+              _aircTarget.parentNode.insertBefore(_mod, _aircTarget);
+            }
+          });
+
+          // Init is triggered by atlasTabSwitch side-effect when the TESSERA tab or learning tab is first clicked.
         })();
 
         // ── ATLAS TAB RAIL — schedule post-init install ─────────────────────
@@ -3810,8 +3969,21 @@ function enterResearcherDashboard() {
               elements: ['res-records-banner', 'res-mod-cohort-map', 'researcher-patient-panel'] },
             { id: 'admin',        icon: '⊘', label: 'Admin',
               elements: ['study-title-nudge', 'res-tools-bar'] },
-            { id: 'airc',         icon: '⬡', label: 'AIRC',
+            { id: 'airc',         icon: '⬡', label: 'TESSERA',
               elements: ['res-mod-airc'] },
+            { id: 'learning',     icon: '🌍', label: 'Learning',
+              elements: ['res-mod-lmic-training'] },
+            { id: 'pharmacy',      icon: '⊛', label: 'Pharmacy',   elements: ['res-mod-pharmacy'] },
+            { id: 'intel',         icon: '◉', label: 'Intel',       elements: ['res-mod-country-intel'] },
+            { id: 'predict',       icon: '∿', label: 'Predict',     elements: ['res-mod-predictive'] },
+            { id: 'tracking',      icon: '≋', label: 'Tracking',    elements: ['res-mod-longitudinal'] },
+            { id: 'isr',           icon: '◫', label: 'ISR',         elements: ['res-mod-isr'] },
+            { id: 'heor',          icon: '∑', label: 'HEOR',        elements: ['res-mod-heor'] },
+            { id: 'certification', icon: '✦', label: 'Certify',     elements: ['res-mod-certification'] },
+            { id: 'opendata',      icon: '⬡', label: 'Open Data',   elements: ['res-mod-open-data'] },
+            { id: 'equity',        icon: '◈', label: 'Equity',      elements: ['res-mod-equity'] },
+            { id: 'maas',          icon: '⊕', label: 'MaaS',        elements: ['res-mod-maas'] },
+            { id: 'dhis2',         icon: '≡', label: 'DHIS2',       elements: ['res-mod-dhis2'] },
           ];
           setTimeout(function() {
             if (typeof window._atlasInstallRail === 'function') {
@@ -3833,8 +4005,14 @@ function enterResearcherDashboard() {
               elements: ['res-records-banner', 'res-mod-cohort-map', 'researcher-patient-panel'] },
             { id: 'research',     icon: '◈', label: 'Research',
               elements: ['res-mod-registry', 'res-tools-bar'] },
-            { id: 'airc',         icon: '⬡', label: 'AIRC',
+            { id: 'airc',         icon: '⬡', label: 'TESSERA',
               elements: ['res-mod-airc'] },
+            { id: 'learning',     icon: '🌍', label: 'Learning',
+              elements: ['res-mod-lmic-training'] },
+            { id: 'intel',         icon: '◉', label: 'Intel',       elements: ['res-mod-country-intel'] },
+            { id: 'tracking',      icon: '≋', label: 'Tracking',    elements: ['res-mod-longitudinal'] },
+            { id: 'heor',          icon: '∑', label: 'HEOR',        elements: ['res-mod-heor'] },
+            { id: 'certification', icon: '✦', label: 'Certify',     elements: ['res-mod-certification'] },
           ];
           setTimeout(function() {
             if (typeof window._atlasInstallRail === 'function') {
@@ -3843,7 +4021,7 @@ function enterResearcherDashboard() {
           }, 800);
         }
 
-        // ── AIRC MEMBERSHIP NUDGE BANNER ─────────────────────────────────────
+        // ── TESSERA GRC MEMBERSHIP NUDGE BANNER ─────────────────────────────────────
         // Fires at 1500ms (after rail is installed at 800ms) so layout is stable.
         // Shown only once: dismissed state persists in localStorage.
         // Skipped if user is already an active or pending consortium member.
@@ -3874,7 +4052,7 @@ function enterResearcherDashboard() {
               _nudgeBanner.innerHTML =
                 '<span style="font-size:1rem;color:#d4a843;flex-shrink:0;">&#x2B21;</span>' +
                 '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.75rem;color:var(--bright);flex:1;">' +
-                  '<strong>Join the AIRC</strong> &mdash; Access grant templates, letters of support, and the global research network.' +
+                  '<strong>Join TESSERA GRC</strong> &mdash; Access grant templates, letters of support, and the global research network.' +
                 '</span>' +
                 '<button id="airc-nudge-learn" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;background:#d4a843;color:#000;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;flex-shrink:0;">Learn More</button>' +
                 '<button id="airc-nudge-dismiss" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.85rem;background:transparent;border:none;color:var(--dim);cursor:pointer;padding:0 4px;flex-shrink:0;" title="Dismiss">&#x2715;</button>';
@@ -3896,12 +4074,12 @@ function enterResearcherDashboard() {
                 }
               });
             }).catch(function(err) {
-              console.warn('[ATLAS] AIRC nudge Firebase check failed (non-fatal):', err);
+              console.warn('[ATLAS] TESSERA GRC nudge Firebase check failed (non-fatal):', err);
             });
           })();
         }, 1500);
 
-        // ── AIRC MEMBERSHIP TIER BADGE (RAIL NAV) ────────────────────────────
+        // ── TESSERA GRC MEMBERSHIP TIER BADGE (RAIL NAV) ────────────────────────────
         // Fires at 2000ms (after rail at 800ms and nudge at 1500ms).
         // Active/pending consortium members see their tier pinned to the
         // bottom of the left rail nav (#atlas-rail-nav).
@@ -3914,7 +4092,7 @@ function enterResearcherDashboard() {
   }
   } catch(e) { console.warn('[ATLAS] Researcher modularization error (non-fatal):', e); }
 
-  // ── AIRC RAIL BADGE INJECTOR ─────────────────────────────────────────────────
+  // ── TESSERA GRC RAIL BADGE INJECTOR ─────────────────────────────────────────────────
   // Injects a membership tier badge at the bottom of #atlas-rail-nav.
   // Called at 2000ms inside the PI/Researcher workspace init block.
   // Idempotent: skips if #airc-rail-badge already exists.
@@ -3933,13 +4111,13 @@ function enterResearcherDashboard() {
       _badge.id = 'airc-rail-badge';
       if (_status === 'active') {
         var _tier = _bd.tier;
-        var _tierLabel = 'AIRC';
+        var _tierLabel = 'TESSERA GRC';
         if (_tier === 'institutional_partner' || _tier === 1 || _tier === 'Tier 1') {
           _tierLabel = 'Inst. Partner';
         } else if (_tier === 'validation_partner' || _tier === 2 || _tier === 'Tier 2') {
           _tierLabel = 'Validation';
         } else if (_tier === 'research_affiliate' || _tier === 3 || _tier === 'Tier 3') {
-          _tierLabel = 'AIRC Member';
+          _tierLabel = 'TESSERA GRC Member';
         } else if (_tier === 'student_affiliate' || _tier === 4 || _tier === 'Tier 4') {
           _tierLabel = 'Student Aff.';
         } else if (_tier === 'industry_partner' || _tier === 5 || _tier === 'Tier 5') {
@@ -3976,7 +4154,7 @@ function enterResearcherDashboard() {
       }
       _railNav.appendChild(_badge);
     }).catch(function(err) {
-      console.warn('[ATLAS] AIRC rail badge Firebase check failed (non-fatal):', err);
+      console.warn('[ATLAS] TESSERA GRC rail badge Firebase check failed (non-fatal):', err);
     });
   }
 
