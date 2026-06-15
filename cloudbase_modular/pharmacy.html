@@ -964,67 +964,67 @@ body::before{
 
   <div class="setup-body">
     <div class="setup-intro">
-      <h2>Pharmacy Assessment Setup</h2>
-      <p>Configure the session before handing the tablet to your patient. This takes about 10 seconds.</p>
+      <h2 id="setup-intro-h2">Pharmacy Assessment Setup</h2>
+      <p id="setup-intro-p">Configure the session before handing the tablet to your patient. This takes about 10 seconds.</p>
     </div>
 
     <div class="setup-fields">
       <div class="pharmacy-name-row">
         <div class="field-group">
-          <label class="field-label" for="pharmacy-name">Pharmacy Name (optional)</label>
+          <label class="field-label" for="pharmacy-name" id="lbl-pharmacy-name">Pharmacy Name (optional)</label>
           <input class="field-input" type="text" id="pharmacy-name" placeholder="e.g. Farmacia Roma Centrale"/>
         </div>
       </div>
 
       <div class="field-group">
-        <label class="field-label" for="condition-select">Patient Condition</label>
+        <label class="field-label" for="condition-select" id="lbl-condition">Patient Condition</label>
         <select class="field-select" id="condition-select">
-          <option value="">Select condition...</option>
-          <option value="Hypertension">Hypertension</option>
-          <option value="Diabetes">Diabetes</option>
-          <option value="Cardiovascular">Cardiovascular</option>
+          <option value="" id="opt-condition-default">Select condition...</option>
+          <option value="Hypertension" id="opt-condition-hyp">Hypertension</option>
+          <option value="Diabetes" id="opt-condition-dia">Diabetes</option>
+          <option value="Cardiovascular" id="opt-condition-cvd">Cardiovascular</option>
           <option value="HIV">HIV</option>
-          <option value="Other">Other</option>
+          <option value="Other" id="opt-condition-other">Other</option>
         </select>
       </div>
 
       <div class="field-group">
-        <label class="field-label" for="medication-input">Medication Type (optional)</label>
+        <label class="field-label" for="medication-input" id="lbl-medication">Medication Type (optional)</label>
         <input class="field-input" type="text" id="medication-input" placeholder="e.g. ACE inhibitor, Metformin..."/>
       </div>
 
       <div class="pharmacy-name-row">
         <div class="field-group">
-          <label class="field-label" for="age-select">Patient Age Range (optional)</label>
+          <label class="field-label" for="age-select" id="lbl-age">Patient Age Range (optional)</label>
           <select class="field-select" id="age-select">
-            <option value="">Select age range...</option>
+            <option value="" id="opt-age-default">Select age range...</option>
             <option value="18-30">18 – 30</option>
             <option value="31-50">31 – 50</option>
             <option value="51-64">51 – 64</option>
             <option value="65+">65 +</option>
-            <option value="prefer_not">Prefer not to say</option>
+            <option value="prefer_not" id="opt-age-prefer-not">Prefer not to say</option>
           </select>
         </div>
         <div class="field-group">
-          <label class="field-label" for="gender-select">Gender (optional)</label>
+          <label class="field-label" for="gender-select" id="lbl-gender">Gender (optional)</label>
           <select class="field-select" id="gender-select">
-            <option value="">Select...</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="non_binary">Non-binary</option>
-            <option value="prefer_not">Prefer not to say</option>
+            <option value="" id="opt-gender-default">Select...</option>
+            <option value="male" id="opt-gender-male">Male</option>
+            <option value="female" id="opt-gender-female">Female</option>
+            <option value="non_binary" id="opt-gender-nb">Non-binary</option>
+            <option value="prefer_not" id="opt-gender-pnts">Prefer not to say</option>
           </select>
         </div>
       </div>
 
       <div class="field-group">
-        <label class="field-label" for="patient-ref-input">Patient Reference Code (optional)</label>
+        <label class="field-label" for="patient-ref-input" id="lbl-patient-ref">Patient Reference Code (optional)</label>
         <input class="field-input" type="text" id="patient-ref-input"
           placeholder="e.g. initials + birth year: MR1958 — enables repeat-visit tracking"/>
       </div>
 
       <div class="field-group">
-        <label class="field-label" for="language-select">Language</label>
+        <label class="field-label" for="language-select" id="lbl-language">Language</label>
         <select class="field-select" id="language-select">
           <option value="en">English</option>
           <option value="it">Italian</option>
@@ -1039,21 +1039,21 @@ body::before{
       <div class="begin-btn-inner">
         <span class="begin-btn-icon">&#9654;</span>
         <span class="begin-btn-text">
-          <span class="begin-btn-label">Begin Assessment</span>
-          <span class="begin-btn-sub">Hand tablet to patient &middot; approximately 3 minutes</span>
+          <span class="begin-btn-label" id="begin-btn-label">Begin Assessment</span>
+          <span class="begin-btn-sub" id="begin-btn-sub">Hand tablet to patient &middot; approximately 3 minutes</span>
         </span>
       </div>
     </button>
 
-    <div class="setup-footnote">
+    <div class="setup-footnote" id="setup-footnote">
       MAP &middot; Multidimensional Adherence Parameters<br>
       Administered by pharmacist &middot; Patient reference codes are non-identifying
     </div>
 
     <!-- Demo shortcut: only rendered when ?demo=true is in URL -->
     <div id="demo-shortcut" style="display:none;margin-top:20px;text-align:center;">
-      <div style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(245,158,11,0.7);margin-bottom:12px;">Demo Mode Active</div>
-      <button onclick="viewDashboard()" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.35);border-radius:var(--r);color:rgba(245,158,11,0.85);font-family:var(--font-body);font-size:1rem;font-weight:500;padding:16px 32px;cursor:pointer;width:100%;transition:all 0.2s;" onmouseover="this.style.background='rgba(245,158,11,0.18)'" onmouseout="this.style.background='rgba(245,158,11,0.1)'">
+      <div id="demo-mode-label" style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(245,158,11,0.7);margin-bottom:12px;">Demo Mode Active</div>
+      <button id="demo-shortcut-btn" onclick="viewDashboard()" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.35);border-radius:var(--r);color:rgba(245,158,11,0.85);font-family:var(--font-body);font-size:1rem;font-weight:500;padding:16px 32px;cursor:pointer;width:100%;transition:all 0.2s;" onmouseover="this.style.background='rgba(245,158,11,0.18)'" onmouseout="this.style.background='rgba(245,158,11,0.1)'">
         &#128202; View Dashboard (68 Sample Patients)
       </button>
     </div>
@@ -1066,9 +1066,9 @@ body::before{
     <div class="header-brand">
       <div class="header-badge">
         <span class="header-badge-dot"></span>
-        Patient Assessment
+        <span id="hdr-badge-question">Patient Assessment</span>
       </div>
-      <div class="header-title"><em>MAP</em> Questions</div>
+      <div class="header-title" id="hdr-title-question"><em>MAP</em> Questions</div>
     </div>
     <div class="header-meta">
       <div class="header-tessera">ATLAS v8.7</div>
@@ -1105,9 +1105,9 @@ body::before{
     <div class="header-brand">
       <div class="header-badge">
         <span class="header-badge-dot"></span>
-        Assessment Complete
+        <span id="hdr-badge-results">Assessment Complete</span>
       </div>
-      <div class="header-title"><em>MAP</em> Results</div>
+      <div class="header-title" id="hdr-title-results"><em>MAP</em> Results</div>
     </div>
     <div class="header-meta">
       <div class="header-tessera">TESSERA GRC</div>
@@ -1118,16 +1118,16 @@ body::before{
     <div class="traffic-light" id="traffic-light">
       <div class="tl-icon" id="tl-icon"></div>
       <div class="tl-status" id="tl-status"></div>
-      <div class="tl-pe">MAP PE Score: <span id="tl-pe-val"></span> / 1.00</div>
+      <div class="tl-pe"><span id="tl-pe-label">MAP PE Score:</span> <span id="tl-pe-val"></span> <span id="tl-pe-suffix">/ 1.00</span></div>
     </div>
 
     <div class="domain-bars">
-      <div class="domain-bars-title">Domain Breakdown</div>
+      <div class="domain-bars-title" id="domain-breakdown-title">Domain Breakdown</div>
       <div class="domain-bar-row">
         <div class="domain-bar-meta">
           <div class="domain-bar-label">
             <span class="dot" style="background:var(--arch)"></span>
-            Architecture
+            <span id="domain-arch-text">Architecture</span>
           </div>
           <div class="domain-bar-pct" id="arch-pct" style="color:var(--arch)"></div>
         </div>
@@ -1139,7 +1139,7 @@ body::before{
         <div class="domain-bar-meta">
           <div class="domain-bar-label">
             <span class="dot" style="background:var(--exec)"></span>
-            Execution
+            <span id="domain-exec-text">Execution</span>
           </div>
           <div class="domain-bar-pct" id="exec-pct" style="color:var(--exec)"></div>
         </div>
@@ -1151,7 +1151,7 @@ body::before{
         <div class="domain-bar-meta">
           <div class="domain-bar-label">
             <span class="dot" style="background:var(--ctx)"></span>
-            Context-Guard
+            <span id="domain-ctx-text">Context-Guard</span>
           </div>
           <div class="domain-bar-pct" id="ctx-pct" style="color:var(--ctx)"></div>
         </div>
@@ -1164,13 +1164,13 @@ body::before{
     <div class="insight-card">
       <div class="insight-icon">&#128203;</div>
       <div class="insight-body">
-        <div class="insight-label">Clinical Insight</div>
+        <div class="insight-label" id="insight-label">Clinical Insight</div>
         <div class="insight-text" id="insight-text"></div>
       </div>
     </div>
 
     <div class="peacs-badge-row">
-      <div class="peacs-badge-label">PEACS Phenotype</div>
+      <div class="peacs-badge-label" id="peacs-label">PEACS Phenotype</div>
       <div class="peacs-badge" id="peacs-badge"></div>
     </div>
 
@@ -1179,15 +1179,15 @@ body::before{
         &#9888; Send Prescriber Alert
       </button>
       <div class="results-actions-row">
-        <button class="action-btn primary" onclick="saveAndReset()">
+        <button class="action-btn primary" id="btn-save-new" onclick="saveAndReset()">
           &#10003; Save and New Patient
         </button>
-        <button class="action-btn ghost" onclick="printSummary()">
+        <button class="action-btn ghost" id="btn-print" onclick="printSummary()">
           &#128438; Print Summary
         </button>
       </div>
       <div class="results-actions-row">
-        <button class="action-btn ghost" onclick="viewDashboard()">
+        <button class="action-btn ghost" id="btn-view-dashboard" onclick="viewDashboard()">
           &#128202; View Pharmacy Dashboard
         </button>
       </div>
@@ -1201,9 +1201,9 @@ body::before{
     <div class="header-brand">
       <div class="header-badge">
         <span class="header-badge-dot" style="background:#ef4444;box-shadow:0 0 6px #ef4444;"></span>
-        Prescriber Alert
+        <span id="hdr-badge-alert">Prescriber Alert</span>
       </div>
-      <div class="header-title"><em>MAP</em> Alert Card</div>
+      <div class="header-title" id="hdr-title-alert"><em>MAP</em> Alert Card</div>
     </div>
     <div class="header-meta">
       <div class="header-tessera">ATLAS Pharmacy Gateway</div>
@@ -1214,26 +1214,26 @@ body::before{
     <div class="alert-header-card">
       <div class="alert-header-icon">&#9888;</div>
       <div class="alert-header-text">
-        <div class="alert-header-title">Adherence Risk Identified</div>
-        <div class="alert-header-sub">High Risk &middot; Prescriber Notification Recommended</div>
+        <div class="alert-header-title" id="alert-header-title">Adherence Risk Identified</div>
+        <div class="alert-header-sub" id="alert-header-sub">High Risk &middot; Prescriber Notification Recommended</div>
       </div>
     </div>
 
     <div class="alert-card">
-      <div class="alert-card-title">ATLAS MAP Alert</div>
+      <div class="alert-card-title" id="alert-card-title">ATLAS MAP Alert</div>
       <div id="alert-fields"></div>
     </div>
 
     <div class="alert-actions">
-      <button class="alert-copy-btn" onclick="copyAlert()">
+      <button class="alert-copy-btn" id="btn-copy-alert" onclick="copyAlert()">
         &#128203; Copy to Clipboard
       </button>
-      <button class="alert-email-btn" onclick="emailAlert()">
+      <button class="alert-email-btn" id="btn-email-alert" onclick="emailAlert()">
         &#9993; Send via Email
       </button>
     </div>
 
-    <button class="alert-back-btn" onclick="showScreen('screen-results')">
+    <button class="alert-back-btn" id="btn-back-results" onclick="showScreen('screen-results')">
       &#8592; Back to Results
     </button>
   </div>
@@ -1245,26 +1245,26 @@ body::before{
     <div class="header-brand">
       <div class="header-badge">
         <span class="header-badge-dot"></span>
-        Site Dashboard
+        <span id="hdr-badge-dashboard">Site Dashboard</span>
       </div>
-      <div class="header-title"><em>MAP</em> Statistics</div>
+      <div class="header-title" id="hdr-title-dashboard"><em>MAP</em> Statistics</div>
     </div>
     <div class="header-meta">
       <div class="header-tessera" id="dash-site-label"></div>
-      <div class="header-scala">This Month</div>
+      <div class="header-scala" id="dash-this-month">This Month</div>
     </div>
   </header>
 
   <div class="dash-body">
     <div id="dash-demo-banner" style="display:none;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:12px 18px;margin-bottom:4px;display:none;align-items:center;gap:12px;">
       <span style="font-size:1.1rem;">&#9888;</span>
-      <span style="font-family:var(--font-mono);font-size:0.75rem;letter-spacing:0.14em;text-transform:uppercase;color:#f59e0b;">Demo Mode &mdash; Rome Pilot Sample Data. No real Firebase reads or writes.</span>
+      <span id="demo-banner-text" style="font-family:var(--font-mono);font-size:0.75rem;letter-spacing:0.14em;text-transform:uppercase;color:#f59e0b;">Demo Mode &mdash; Rome Pilot Sample Data. No real Firebase reads or writes.</span>
     </div>
     <div id="dash-content">
       <div class="dash-loading">Loading site data&#8230;</div>
     </div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
-      <button class="dash-back-btn" onclick="showScreen('screen-setup')" style="flex:1;min-width:160px;">
+      <button class="dash-back-btn" id="btn-back-assessment" onclick="showScreen('screen-setup')" style="flex:1;min-width:160px;">
         &#8592; Back to Assessment
       </button>
       <button class="dash-back-btn" id="fofi-report-btn" onclick="generateFOFIReport()" style="flex:1;min-width:160px;border-color:rgba(212,168,67,0.35);color:rgba(212,168,67,0.85);">
@@ -1444,6 +1444,234 @@ const QUESTION_TRANSLATIONS = {
 };
 
 // ═══════════════════════════════════════════
+// UI STRING TRANSLATIONS (static UI elements)
+// ═══════════════════════════════════════════
+const UI_STRINGS = {
+  en: {
+    setup_intro_h2:'Pharmacy Assessment Setup',
+    setup_intro_p:'Configure the session before handing the tablet to your patient. This takes about 10 seconds.',
+    lbl_pharmacy_name:'Pharmacy Name (optional)',
+    lbl_condition:'Patient Condition',
+    opt_condition_default:'Select condition...',
+    opt_condition_hyp:'Hypertension', opt_condition_dia:'Diabetes',
+    opt_condition_cvd:'Cardiovascular', opt_condition_other:'Other',
+    lbl_medication:'Medication Type (optional)',
+    ph_medication:'e.g. ACE inhibitor, Metformin...',
+    lbl_age:'Patient Age Range (optional)',
+    opt_age_default:'Select age range...',
+    opt_age_prefer_not:'Prefer not to say',
+    lbl_gender:'Gender (optional)',
+    opt_gender_default:'Select...',
+    opt_gender_male:'Male', opt_gender_female:'Female',
+    opt_gender_nb:'Non-binary', opt_gender_pnts:'Prefer not to say',
+    lbl_patient_ref:'Patient Reference Code (optional)',
+    ph_patient_ref:'e.g. initials + birth year: MR1958 \u2014 enables repeat-visit tracking',
+    lbl_language:'Language',
+    begin_label:'Begin Assessment',
+    begin_sub:'Hand tablet to patient \u00b7 approximately 3 minutes',
+    setup_footnote:'MAP \u00b7 Multidimensional Adherence Parameters<br>Administered by pharmacist \u00b7 Patient reference codes are non-identifying',
+    demo_mode_label:'Demo Mode Active',
+    demo_shortcut_btn:'\uD83D\uDCCA View Dashboard (68 Sample Patients)',
+    hdr_badge_question:'Patient Assessment',
+    hdr_title_question:'Questions',
+    q_back:'\u2190 Back',
+    hdr_badge_results:'Assessment Complete',
+    hdr_title_results:'Results',
+    tl_pe_label:'MAP PE Score:',
+    tl_pe_suffix:'/ 1.00',
+    domain_breakdown_title:'Domain Breakdown',
+    domain_arch:'Architecture', domain_exec:'Execution', domain_ctx:'Context-Guard',
+    insight_label:'Clinical Insight',
+    peacs_label:'PEACS Phenotype',
+    btn_alert:'\u26A0 Send Prescriber Alert',
+    btn_save_new:'\u2713 Save and New Patient',
+    btn_print:'\uD83D\uDDA8 Print Summary',
+    btn_dashboard:'\uD83D\uDCCA View Pharmacy Dashboard',
+    tl_green:'Adherence Strong: Low Risk',
+    tl_amber:'Elevated Risk: Monitor',
+    tl_red:'High Risk: Prescriber Alert Recommended',
+    hdr_badge_alert:'Prescriber Alert',
+    hdr_title_alert:'Alert Card',
+    alert_header_title:'Adherence Risk Identified',
+    alert_header_sub:'High Risk \u00b7 Prescriber Notification Recommended',
+    alert_card_title:'ATLAS MAP Alert',
+    btn_copy:'\uD83D\uDCCB Copy to Clipboard',
+    btn_email:'\u2709 Send via Email',
+    btn_back_results:'\u2190 Back to Results',
+    hdr_badge_dashboard:'Site Dashboard',
+    hdr_title_dashboard:'Statistics',
+    dash_this_month:'This Month',
+    demo_banner_text:'Demo Mode \u2014 Rome Pilot Sample Data. No real Firebase reads or writes.',
+    btn_back_assessment:'\u2190 Back to Assessment',
+    btn_fofi:'\uD83D\uDCC4 Generate FOFI Report',
+    insight_arch:'This patient may have doubts about whether their medication is working. A conversation with their prescriber about treatment goals is recommended.',
+    insight_exec:'This patient has a habit or routine gap. A structured reminder system or blister pack could help.',
+    insight_ctx:'This patient faces practical barriers (travel, convenience, access). A prescriber discussion about simplifying the regimen may help.',
+    peacs_full:'Full Adherent',
+    peacs_forgetter:'Routine Forgetter',
+    peacs_skipper:'Situational Skipper',
+    peacs_stopper:'Optimistic Stopper',
+    peacs_resistor:'Intentional Resistor',
+    peacs_mixed:'Mixed Adherence Profile',
+    af_patient:'Patient', af_date:'Date', af_pe:'MAP PE Score',
+    af_risk:'Risk Level', af_domain:'Primary Domain Failure',
+    af_rec:'Clinical Recommendation', af_action:'Recommended Action',
+    af_action_val:'Please discuss adherence barriers at next appointment.',
+    af_instrument:'Instrument',
+    af_assessed:'patient assessed at',
+    q_counter_format:'Question {n} of 8',
+  },
+  it: {
+    setup_intro_h2:'Configurazione Valutazione Farmacia',
+    setup_intro_p:'Configura la sessione prima di consegnare il tablet al paziente. Ci vogliono circa 10 secondi.',
+    lbl_pharmacy_name:'Nome Farmacia (opzionale)',
+    lbl_condition:'Condizione del Paziente',
+    opt_condition_default:'Seleziona condizione...',
+    opt_condition_hyp:'Ipertensione', opt_condition_dia:'Diabete',
+    opt_condition_cvd:'Cardiovascolare', opt_condition_other:'Altro',
+    lbl_medication:'Tipo di Farmaco (opzionale)',
+    ph_medication:'es. ACE inibitore, Metformina...',
+    lbl_age:'Fascia d\'Et\u00e0 del Paziente (opzionale)',
+    opt_age_default:'Seleziona fascia d\'et\u00e0...',
+    opt_age_prefer_not:'Preferisco non rispondere',
+    lbl_gender:'Sesso (opzionale)',
+    opt_gender_default:'Seleziona...',
+    opt_gender_male:'Maschio', opt_gender_female:'Femmina',
+    opt_gender_nb:'Non binario', opt_gender_pnts:'Preferisco non rispondere',
+    lbl_patient_ref:'Codice di Riferimento Paziente (opzionale)',
+    ph_patient_ref:'es. iniziali + anno di nascita: MR1958 \u2014 abilita tracciamento visite ripetute',
+    lbl_language:'Lingua',
+    begin_label:'Inizia Valutazione',
+    begin_sub:'Consegna il tablet al paziente \u00b7 circa 3 minuti',
+    setup_footnote:'MAP \u00b7 Parametri Multidimensionali di Aderenza<br>Somministrato dal farmacista \u00b7 I codici di riferimento sono non identificativi',
+    demo_mode_label:'Modalit\u00e0 Demo Attiva',
+    demo_shortcut_btn:'\uD83D\uDCCA Visualizza Dashboard (68 Pazienti Campione)',
+    hdr_badge_question:'Valutazione Paziente',
+    hdr_title_question:'Domande',
+    q_back:'\u2190 Indietro',
+    hdr_badge_results:'Valutazione Completata',
+    hdr_title_results:'Risultati',
+    tl_pe_label:'Punteggio MAP PE:',
+    tl_pe_suffix:'/ 1.00',
+    domain_breakdown_title:'Analisi per Dominio',
+    domain_arch:'Architettura', domain_exec:'Esecuzione', domain_ctx:'Contesto-Guardia',
+    insight_label:'Valutazione Clinica',
+    peacs_label:'Fenotipo PEACS',
+    btn_alert:'\u26A0 Invia Allerta al Prescrittore',
+    btn_save_new:'\u2713 Salva e Nuovo Paziente',
+    btn_print:'\uD83D\uDDA8 Stampa Riepilogo',
+    btn_dashboard:'\uD83D\uDCCA Visualizza Dashboard Farmacia',
+    tl_green:'Aderenza Elevata: Basso Rischio',
+    tl_amber:'Rischio Aumentato: Da Monitorare',
+    tl_red:'Alto Rischio: Allerta Prescrittore Raccomandata',
+    hdr_badge_alert:'Allerta Prescrittore',
+    hdr_title_alert:'Scheda Allerta',
+    alert_header_title:'Rischio di Non Aderenza Rilevato',
+    alert_header_sub:'Alto Rischio \u00b7 Notifica al Prescrittore Raccomandata',
+    alert_card_title:'Allerta MAP ATLAS',
+    btn_copy:'\uD83D\uDCCB Copia negli Appunti',
+    btn_email:'\u2709 Invia via Email',
+    btn_back_results:'\u2190 Torna ai Risultati',
+    hdr_badge_dashboard:'Dashboard Sito',
+    hdr_title_dashboard:'Statistiche',
+    dash_this_month:'Questo Mese',
+    demo_banner_text:'Modalit\u00e0 Demo \u2014 Dati Campione Pilota Roma. Nessuna lettura o scrittura Firebase reale.',
+    btn_back_assessment:'\u2190 Torna alla Valutazione',
+    btn_fofi:'\uD83D\uDCC4 Genera Rapporto FOFI',
+    insight_arch:'Questo paziente potrebbe avere dubbi sull\'efficacia del suo farmaco. Si raccomanda una conversazione con il prescrittore sugli obiettivi terapeutici.',
+    insight_exec:'Questo paziente presenta una lacuna nell\'abitudine o nella routine. Un sistema di promemoria strutturato o una confezione blister potrebbe essere utile.',
+    insight_ctx:'Questo paziente incontra barriere pratiche (viaggi, comodit\u00e0, accesso). Una discussione con il prescrittore per semplificare la terapia potrebbe essere utile.',
+    peacs_full:'Aderente Completo',
+    peacs_forgetter:'Dimenticante di Routine',
+    peacs_skipper:'Saltatore Situazionale',
+    peacs_stopper:'Ottimista Interruttore',
+    peacs_resistor:'Resistente Intenzionale',
+    peacs_mixed:'Profilo di Aderenza Misto',
+    af_patient:'Paziente', af_date:'Data', af_pe:'Punteggio MAP PE',
+    af_risk:'Livello di Rischio', af_domain:'Dominio Primario di Fallimento',
+    af_rec:'Raccomandazione Clinica', af_action:'Azione Raccomandata',
+    af_action_val:'Si prega di discutere le barriere all\'aderenza alla prossima visita.',
+    af_instrument:'Strumento',
+    af_assessed:'paziente valutato presso',
+    q_counter_format:'Domanda {n} di 8',
+  }
+};
+
+function _pgLang(){ return document.getElementById('language-select')?.value || 'en'; }
+function _pgS(key){ const s = UI_STRINGS[_pgLang()] || UI_STRINGS.en; return s[key] || UI_STRINGS.en[key] || key; }
+
+function _pgApplyLang(lang){
+  const s = UI_STRINGS[lang] || UI_STRINGS.en;
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+  const setHTML = (id, val) => { const el = document.getElementById(id); if(el) el.innerHTML = val; };
+  const setPH = (id, val) => { const el = document.getElementById(id); if(el) el.placeholder = val; };
+  // Setup screen
+  set('setup-intro-h2', s.setup_intro_h2);
+  set('setup-intro-p', s.setup_intro_p);
+  set('lbl-pharmacy-name', s.lbl_pharmacy_name);
+  set('lbl-condition', s.lbl_condition);
+  set('opt-condition-default', s.opt_condition_default);
+  set('opt-condition-hyp', s.opt_condition_hyp);
+  set('opt-condition-dia', s.opt_condition_dia);
+  set('opt-condition-cvd', s.opt_condition_cvd);
+  set('opt-condition-other', s.opt_condition_other);
+  set('lbl-medication', s.lbl_medication);
+  setPH('medication-input', s.ph_medication);
+  set('lbl-age', s.lbl_age);
+  set('opt-age-default', s.opt_age_default);
+  set('opt-age-prefer-not', s.opt_age_prefer_not);
+  set('lbl-gender', s.lbl_gender);
+  set('opt-gender-default', s.opt_gender_default);
+  set('opt-gender-male', s.opt_gender_male);
+  set('opt-gender-female', s.opt_gender_female);
+  set('opt-gender-nb', s.opt_gender_nb);
+  set('opt-gender-pnts', s.opt_gender_pnts);
+  set('lbl-patient-ref', s.lbl_patient_ref);
+  setPH('patient-ref-input', s.ph_patient_ref);
+  set('lbl-language', s.lbl_language);
+  set('begin-btn-label', s.begin_label);
+  set('begin-btn-sub', s.begin_sub);
+  setHTML('setup-footnote', s.setup_footnote);
+  set('demo-mode-label', s.demo_mode_label);
+  set('demo-shortcut-btn', s.demo_shortcut_btn);
+  // Question screen
+  set('hdr-badge-question', s.hdr_badge_question);
+  setHTML('hdr-title-question', '<em>MAP</em> ' + s.hdr_title_question);
+  set('q-back-btn', s.q_back);
+  // Results screen
+  set('hdr-badge-results', s.hdr_badge_results);
+  setHTML('hdr-title-results', '<em>MAP</em> ' + s.hdr_title_results);
+  set('tl-pe-label', s.tl_pe_label);
+  set('tl-pe-suffix', s.tl_pe_suffix);
+  set('domain-breakdown-title', s.domain_breakdown_title);
+  set('domain-arch-text', s.domain_arch);
+  set('domain-exec-text', s.domain_exec);
+  set('domain-ctx-text', s.domain_ctx);
+  set('insight-label', s.insight_label);
+  set('peacs-label', s.peacs_label);
+  set('alert-btn', s.btn_alert);
+  set('btn-save-new', s.btn_save_new);
+  set('btn-print', s.btn_print);
+  set('btn-view-dashboard', s.btn_dashboard);
+  // Alert screen
+  set('hdr-badge-alert', s.hdr_badge_alert);
+  setHTML('hdr-title-alert', '<em>MAP</em> ' + s.hdr_title_alert);
+  set('alert-header-title', s.alert_header_title);
+  set('alert-header-sub', s.alert_header_sub);
+  set('alert-card-title', s.alert_card_title);
+  set('btn-copy-alert', s.btn_copy);
+  set('btn-email-alert', s.btn_email);
+  set('btn-back-results', s.btn_back_results);
+  // Dashboard screen
+  set('hdr-badge-dashboard', s.hdr_badge_dashboard);
+  setHTML('hdr-title-dashboard', '<em>MAP</em> ' + s.hdr_title_dashboard);
+  set('dash-this-month', s.dash_this_month);
+  set('demo-banner-text', s.demo_banner_text);
+  set('btn-back-assessment', s.btn_back_assessment);
+  set('fofi-report-btn', s.btn_fofi);
+}
+
+// ═══════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════
 let currentQ = 0;
@@ -1514,7 +1742,7 @@ function renderQuestion(idx){
   fill.style.background = domainColors[q.domain];
 
   // Counter
-  document.getElementById('q-counter').textContent = 'Question ' + (idx+1) + ' of ' + total;
+  document.getElementById('q-counter').textContent = _pgS('q_counter_format').replace('{n}', idx+1);
 
   // Domain badge
   const badge = document.getElementById('q-domain-badge');
@@ -1638,46 +1866,42 @@ function computeMAP(ans){
   return {A, E, Cg, PE, additive, low_adherence};
 }
 
-function classifyPEACS(scores){
+function classifyPEACS(scores, lang){
+  const s = UI_STRINGS[lang] || UI_STRINGS.en;
   const {A, E, Cg, PE, low_adherence} = scores;
-  if(!low_adherence && PE >= 0.75) return 'Full Adherent';
+  if(!low_adherence && PE >= 0.75) return s.peacs_full;
   // Find lowest domain
   const domainVals = [{d:'A', v:A}, {d:'E', v:E}, {d:'Cg', v:Cg}];
   domainVals.sort((a,b)=>a.v-b.v);
   const lowest = domainVals[0].d;
   if(lowest === 'A'){
-    // Architecture failure: decision-based
-    if(A < 0.34) return 'Intentional Resistor';
-    return 'Optimistic Stopper';
+    if(A < 0.34) return s.peacs_resistor;
+    return s.peacs_stopper;
   }
   if(lowest === 'E'){
-    if(scores.ans && scores.ans[7] <= 0.25) return 'Routine Forgetter';
-    return 'Routine Forgetter';
+    return s.peacs_forgetter;
   }
   if(lowest === 'Cg'){
-    if(scores.ans && (scores.ans[3] < 1 || scores.ans[6] < 1)) return 'Situational Skipper';
-    return 'Situational Skipper';
+    return s.peacs_skipper;
   }
-  return 'Mixed Adherence Profile';
+  return s.peacs_mixed;
 }
 
-function getInsight(scores){
+function getInsight(scores, lang){
+  const s = UI_STRINGS[lang] || UI_STRINGS.en;
   const {A, E, Cg} = scores;
   const domains = [{d:'A',v:A},{d:'E',v:E},{d:'Cg',v:Cg}];
   domains.sort((a,b)=>a.v-b.v);
   const lowest = domains[0].d;
-  if(lowest === 'A'){
-    return 'This patient may have doubts about whether their medication is working. A conversation with their prescriber about treatment goals is recommended.';
-  }
-  if(lowest === 'E'){
-    return 'This patient has a habit or routine gap. A structured reminder system or blister pack could help.';
-  }
-  return 'This patient faces practical barriers (travel, convenience, access). A prescriber discussion about simplifying the regimen may help.';
+  if(lowest === 'A') return s.insight_arch;
+  if(lowest === 'E') return s.insight_exec;
+  return s.insight_ctx;
 }
 
-function getFailureDomain(scores){
+function getFailureDomain(scores, lang){
+  const s = UI_STRINGS[lang] || UI_STRINGS.en;
   const {A, E, Cg} = scores;
-  const domains = [{d:'Architecture',v:A},{d:'Execution',v:E},{d:'Context-Guard',v:Cg}];
+  const domains = [{d:s.domain_arch,v:A},{d:s.domain_exec,v:E},{d:s.domain_ctx,v:Cg}];
   domains.sort((a,b)=>a.v-b.v);
   return domains[0].d;
 }
@@ -1692,12 +1916,14 @@ function getTrafficLight(PE){
 // SCREEN 3: RESULTS
 // ═══════════════════════════════════════════
 function computeAndShowResults(){
+  const lang = _pgLang();
+  const s = UI_STRINGS[lang] || UI_STRINGS.en;
   const scores = computeMAP(answers);
   scores.ans = answers;
   const tl = getTrafficLight(scores.PE);
-  const peacs = classifyPEACS(scores);
-  const insight = getInsight(scores);
-  const failDomain = getFailureDomain(scores);
+  const peacs = classifyPEACS(scores, lang);
+  const insight = getInsight(scores, lang);
+  const failDomain = getFailureDomain(scores, lang);
 
   calcResults = {scores, tl, peacs, insight, failDomain};
 
@@ -1707,9 +1933,9 @@ function computeAndShowResults(){
 
   const icons = {green:'&#9989;', amber:'&#9888;', red:'&#128680;'};
   const statuses = {
-    green:'Adherence Strong: Low Risk',
-    amber:'Elevated Risk: Monitor',
-    red:'High Risk: Prescriber Alert Recommended'
+    green: s.tl_green,
+    amber: s.tl_amber,
+    red:   s.tl_red
   };
   document.getElementById('tl-icon').innerHTML = icons[tl];
   const statusEl = document.getElementById('tl-status');
@@ -2021,7 +2247,10 @@ function _renderDashboardFromRecords(content, month){
   });
   const dominant = Object.entries(failCounts).sort((a,b)=>b[1]-a[1])[0][0];
   const topPeacs = Object.entries(peacsCount).sort((a,b)=>b[1]-a[1])[0];
-  const monthLabel = new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const lang = _pgLang();
+  const s = UI_STRINGS[lang] || UI_STRINGS.en;
+  const locale = lang === 'it' ? 'it-IT' : 'en-GB';
+  const monthLabel = new Date().toLocaleDateString(locale,{month:'long',year:'numeric'});
 
   // Condition breakdown rows
   const condRows = Object.entries(condCount).map(([c,s])=>`
@@ -2038,29 +2267,29 @@ function _renderDashboardFromRecords(content, month){
   content.innerHTML = `
     <div class="dash-stat-row">
       <div class="dash-stat-card">
-        <div class="dash-stat-label">Assessments</div>
+        <div class="dash-stat-label">${lang==='it'?'Valutazioni':'Assessments'}</div>
         <div class="dash-stat-value">${total}</div>
         <div class="dash-stat-sub">${monthLabel}</div>
       </div>
       <div class="dash-stat-card">
-        <div class="dash-stat-label">Mean PE Score</div>
+        <div class="dash-stat-label">${lang==='it'?'Punteggio PE Medio':'Mean PE Score'}</div>
         <div class="dash-stat-value" style="color:var(--pe)">${meanPE.toFixed(2)}</div>
         <div class="dash-stat-sub">0.00 – 1.00</div>
       </div>
       <div class="dash-stat-card">
-        <div class="dash-stat-label">High Risk</div>
+        <div class="dash-stat-label">${lang==='it'?'Alto Rischio':'High Risk'}</div>
         <div class="dash-stat-value" style="color:var(--poor)">${dist.red}</div>
-        <div class="dash-stat-sub">${total>0?((dist.red/total)*100).toFixed(0):0}% of patients</div>
+        <div class="dash-stat-sub">${total>0?((dist.red/total)*100).toFixed(0):0}% ${lang==='it'?'dei pazienti':'of patients'}</div>
       </div>
     </div>
 
     <div class="dash-card">
-      <div class="dash-section-title">Risk Distribution</div>
+      <div class="dash-section-title">${lang==='it'?'Distribuzione del Rischio':'Risk Distribution'}</div>
       <div class="dash-risk-row">
         ${[
-          {label:'Low Risk (Green)',  count:dist.green, color:'#10b981'},
-          {label:'Monitor (Amber)',   count:dist.amber, color:'#f59e0b'},
-          {label:'High Risk (Red)',   count:dist.red,   color:'#ef4444'}
+          {label: lang==='it'?'Basso Rischio (Verde)':'Low Risk (Green)',  count:dist.green, color:'#10b981'},
+          {label: lang==='it'?'Da Monitorare (Ambra)':'Monitor (Amber)',   count:dist.amber, color:'#f59e0b'},
+          {label: lang==='it'?'Alto Rischio (Rosso)':'High Risk (Red)',    count:dist.red,   color:'#ef4444'}
         ].map(r=>`
           <div class="dash-risk-item">
             <span class="dash-risk-dot" style="background:${r.color}"></span>
@@ -2075,12 +2304,12 @@ function _renderDashboardFromRecords(content, month){
     </div>
 
     <div class="dash-card">
-      <div class="dash-section-title">Domain Mean Scores</div>
+      <div class="dash-section-title">${lang==='it'?'Punteggi Medi per Dominio':'Domain Mean Scores'}</div>
       <div class="dash-domain-row">
         ${[
-          {name:'Architecture',  val:meanA,  color:'var(--arch)'},
-          {name:'Execution',     val:meanE,  color:'var(--exec)'},
-          {name:'Context-Guard', val:meanCg, color:'var(--ctx)'}
+          {name: s.domain_arch,  val:meanA,  color:'var(--arch)'},
+          {name: s.domain_exec,  val:meanE,  color:'var(--exec)'},
+          {name: s.domain_ctx,   val:meanCg, color:'var(--ctx)'}
         ].map(d=>`
           <div class="dash-domain-item">
             <div class="dash-domain-meta">
@@ -2100,18 +2329,18 @@ function _renderDashboardFromRecords(content, month){
 
     ${condRows ? `
     <div class="dash-card">
-      <div class="dash-section-title">Condition Breakdown (High Risk %)</div>
+      <div class="dash-section-title">${lang==='it'?'Ripartizione per Patologia (% Alto Rischio)':'Condition Breakdown (High Risk %)'}</div>
       <div class="dash-risk-row">${condRows}</div>
     </div>` : ''}
 
     <div class="dash-alert-box">
       <div style="font-size:1.4rem">&#9888;</div>
       <div style="flex:1">
-        <div class="dash-alert-label">Dominant Failure Domain This Month</div>
+        <div class="dash-alert-label">${lang==='it'?'Dominio di Fallimento Dominante Questo Mese':'Dominant Failure Domain This Month'}</div>
         <div class="dash-alert-val">${dominant}</div>
       </div>
       <div style="text-align:right">
-        <div class="dash-alert-label">Top PEACS Phenotype</div>
+        <div class="dash-alert-label">${lang==='it'?'Fenotipo PEACS Più Frequente':'Top PEACS Phenotype'}</div>
         <div style="font-family:var(--font-mono);font-size:0.82rem;color:var(--pe)">${topPeacs?topPeacs[0]:'—'}</div>
       </div>
     </div>
@@ -2124,10 +2353,11 @@ function _renderDashboardFromRecords(content, month){
 // ═══════════════════════════════════════════
 function generateFOFIReport(){
   const btn = document.getElementById('fofi-report-btn');
-  if(btn){ btn.textContent = '&#8987; Generating…'; btn.disabled = true; }
+  const lang = _pgLang();
+  if(btn){ btn.textContent = lang==='it' ? '\u231b Generazione\u2026' : '\u231b Generating\u2026'; btn.disabled = true; }
 
   const finish = (reportText) => {
-    if(btn){ btn.innerHTML = '&#128196; Generate FOFI Report'; btn.disabled = false; }
+    if(btn){ btn.innerHTML = lang==='it' ? '\uD83D\uDCC4 Genera Rapporto FOFI' : '\uD83D\uDCC4 Generate FOFI Report'; btn.disabled = false; }
     const blob = new Blob([reportText], {type:'text/plain;charset=utf-8'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -2137,28 +2367,33 @@ function generateFOFIReport(){
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    pgToast('FOFI report downloaded.', 'success');
+    pgToast(lang==='it' ? 'Rapporto FOFI scaricato.' : 'FOFI report downloaded.', 'success');
   };
 
   const buildReport = (records) => {
+    const it = (lang === 'it');
+    const locale = it ? 'it-IT' : 'en-GB';
     const now = new Date();
-    const monthLabel = now.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
-    const reportDate = now.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+    const monthLabel = now.toLocaleDateString(locale,{month:'long',year:'numeric'});
+    const reportDate = now.toLocaleDateString(locale,{day:'2-digit',month:'long',year:'numeric'});
     const total = records.length;
+    const siteName = _PG_DEMO
+      ? (it ? 'PH-ROM-001 (MODALITA\' DEMO)' : 'PH-ROM-001 (DEMO MODE \u2014 sample data)')
+      : _PG_SITE_CODE;
     if(total === 0){
       return [
         '================================================================',
-        'ATLAS MAP PHARMACY ADHERENCE REPORT',
-        'Order of Pharmacists of Rome / FOFI',
+        it ? 'RAPPORTO ATLAS MAP ADERENZA FARMACIA' : 'ATLAS MAP PHARMACY ADHERENCE REPORT',
+        it ? 'Ordine dei Farmacisti di Roma / FOFI' : 'Order of Pharmacists of Rome / FOFI',
         '================================================================',
         '',
-        `Generated: ${reportDate}`,
-        `Workspace: ${_PG_DEMO?'PH-ROM-001 (DEMO)':_PG_SITE_CODE}`,
+        (it ? 'Generato: ' : 'Generated: ') + reportDate,
+        (it ? 'Area di lavoro: ' : 'Workspace: ') + siteName,
         '',
-        'No assessment data recorded for this reporting period.',
+        it ? 'Nessun dato di valutazione registrato per questo periodo.' : 'No assessment data recorded for this reporting period.',
         '',
         '================================================================',
-        'END OF REPORT',
+        it ? 'FINE RAPPORTO' : 'END OF REPORT',
         '================================================================'
       ].join('\n');
     }
@@ -2183,79 +2418,88 @@ function generateFOFIReport(){
     const dom=Object.entries(failCounts).sort((a,b)=>b[1]-a[1])[0][0];
     const pct=(n,t)=>t>0?(n/t*100).toFixed(0)+'%':'0%';
     const meanPE=(sumPE/total).toFixed(3),meanA=(sumA/total).toFixed(3),meanE=(sumE/total).toFixed(3),meanCg=(sumCg/total).toFixed(3);
+    const patLabel = it ? 'pazienti' : 'patients';
+    const hrLabel  = it ? 'alto rischio' : 'high-risk';
     const condLines=Object.entries(condRisk).map(([c,s])=>
-      `    ${c}: ${s.total} patients, ${s.red} high-risk (${pct(s.red,s.total)})`).join('\n');
+      `    ${c}: ${s.total} ${patLabel}, ${s.red} ${hrLabel} (${pct(s.red,s.total)})`).join('\n');
     const peacsLines=Object.entries(peacs).map(([p,c])=>
       `    ${p}: ${c} (${pct(c,total)})`).join('\n');
-    const domInterp = dom==='Architecture'
-      ? 'A significant proportion of patients are making intentional decisions not to take\ntheir medication. Patient education sessions and prescriber communication about\ntreatment goals are recommended.'
-      : dom==='Execution'
-      ? 'Most adherence failures are habit- or routine-based. Structured reminders,\nblister packaging, or adherence apps may reduce this gap.'
-      : 'Adherence failures are predominantly context-driven. Simplifying regimens,\nproviding emergency supplies, or flexible dosing options could significantly\nimprove adherence in this cohort.';
-    const site = _PG_DEMO ? 'PH-ROM-001 (DEMO MODE — sample data)' : _PG_SITE_CODE;
+    const domItMap = {'Architecture':'Architettura','Execution':'Esecuzione','Context-Guard':'Contesto-Guardia'};
+    const domLabel = it ? (domItMap[dom] || dom) : dom;
+    const domInterp = it
+      ? (dom==='Architecture'
+        ? 'Una quota significativa di pazienti sta prendendo decisioni intenzionali di non\nassumere il farmaco. Si raccomandano sessioni di educazione terapeutica e\ncomunicazione con il prescrittore sugli obiettivi del trattamento.'
+        : dom==='Execution'
+        ? 'La maggior parte dei fallimenti di aderenza e\' di tipo abitudinale o routinario.\nSistemi di promemoria strutturati, confezioni blister o app di aderenza\npotrebbero ridurre questo gap.'
+        : 'I fallimenti di aderenza sono prevalentemente legati al contesto. Semplificare\nle terapie, fornire scorte di emergenza o opzioni di dosaggio flessibili potrebbe\nmigliorare significativamente l\'aderenza in questa coorte.')
+      : (dom==='Architecture'
+        ? 'A significant proportion of patients are making intentional decisions not to take\ntheir medication. Patient education sessions and prescriber communication about\ntreatment goals are recommended.'
+        : dom==='Execution'
+        ? 'Most adherence failures are habit- or routine-based. Structured reminders,\nblister packaging, or adherence apps may reduce this gap.'
+        : 'Adherence failures are predominantly context-driven. Simplifying regimens,\nproviding emergency supplies, or flexible dosing options could significantly\nimprove adherence in this cohort.');
     return [
       '================================================================',
-      'ATLAS MAP PHARMACY ADHERENCE REPORT',
-      'Order of Pharmacists of Rome / FOFI',
+      it ? 'RAPPORTO ATLAS MAP ADERENZA FARMACIA' : 'ATLAS MAP PHARMACY ADHERENCE REPORT',
+      it ? 'Ordine dei Farmacisti di Roma / FOFI' : 'Order of Pharmacists of Rome / FOFI',
       '================================================================',
       '',
-      `Report Generated:     ${reportDate}`,
-      `Reporting Period:     ${monthLabel}`,
-      `Pharmacy / Workspace: ${site}`,
-      `Instrument:           MAP (Multidimensional Adherence Parameters)`,
-      `Platform:             ATLAS Pharmacy Gateway v8.7.0`,
-      `Institution:          Scala Carta Foundation / TESSERA GRC`,
+      (it?'Rapporto Generato:   ':'Report Generated:    ') + reportDate,
+      (it?'Periodo di Riferi.:  ':'Reporting Period:    ') + monthLabel,
+      (it?'Farmacia / Codice:   ':'Pharmacy / Workspace:') + ' ' + siteName,
+      (it?'Strumento:           ':'Instrument:          ') + (it?'MAP (Parametri Multidimensionali di Aderenza)':'MAP (Multidimensional Adherence Parameters)'),
+      (it?'Piattaforma:         ':'Platform:            ') + 'ATLAS Pharmacy Gateway v8.7.0',
+      (it?'Istituzione:         ':'Institution:         ') + 'Scala Carta Foundation / TESSERA GRC',
       '',
       '----------------------------------------------------------------',
-      'SUMMARY',
+      it ? 'RIEPILOGO' : 'SUMMARY',
       '----------------------------------------------------------------',
       '',
-      `Total Assessments This Month:  ${total}`,
-      `Mean PE Composite Score:       ${meanPE} / 1.000`,
+      (it?`Totale Valutazioni Questo Mese:  ${total}`:`Total Assessments This Month:   ${total}`),
+      (it?`Punteggio PE Composito Medio:    ${meanPE} / 1.000`:`Mean PE Composite Score:        ${meanPE} / 1.000`),
       '',
-      'RISK DISTRIBUTION:',
-      `  Low Risk (Green):    ${dist.green} patients (${pct(dist.green,total)})`,
-      `  Monitor (Amber):     ${dist.amber} patients (${pct(dist.amber,total)})`,
-      `  High Risk (Red):     ${dist.red} patients (${pct(dist.red,total)})`,
-      '',
-      '----------------------------------------------------------------',
-      'DOMAIN ANALYSIS',
-      '----------------------------------------------------------------',
-      '',
-      `Architecture domain mean:   ${meanA}`,
-      '  (Reflects intentional adherence decisions and treatment beliefs)',
-      '',
-      `Execution domain mean:      ${meanE}`,
-      '  (Reflects routine habits, memory, and daily adherence behaviour)',
-      '',
-      `Context-Guard domain mean:  ${meanCg}`,
-      '  (Reflects practical barriers: travel, inconvenience, access)',
-      '',
-      `Dominant failure domain:    ${dom}`,
+      it ? 'DISTRIBUZIONE DEL RISCHIO:' : 'RISK DISTRIBUTION:',
+      (it?`  Basso Rischio (Verde): ${dist.green} pazienti (${pct(dist.green,total)})`:`  Low Risk (Green):    ${dist.green} patients (${pct(dist.green,total)})`),
+      (it?`  Da Monitorare (Ambra): ${dist.amber} pazienti (${pct(dist.amber,total)})`:`  Monitor (Amber):     ${dist.amber} patients (${pct(dist.amber,total)})`),
+      (it?`  Alto Rischio (Rosso):  ${dist.red} pazienti (${pct(dist.red,total)})`:`  High Risk (Red):     ${dist.red} patients (${pct(dist.red,total)})`),
       '',
       '----------------------------------------------------------------',
-      'CONDITION BREAKDOWN',
+      it ? 'ANALISI PER DOMINIO' : 'DOMAIN ANALYSIS',
       '----------------------------------------------------------------',
       '',
-      condLines || '    No condition data recorded.',
+      (it?`Media dominio Architettura:   ${meanA}`:`Architecture domain mean:   ${meanA}`),
+      (it?'  (Riflette decisioni intenzionali e credenze sul trattamento)':'  (Reflects intentional adherence decisions and treatment beliefs)'),
+      '',
+      (it?`Media dominio Esecuzione:     ${meanE}`:`Execution domain mean:      ${meanE}`),
+      (it?'  (Riflette abitudini, memoria e comportamento quotidiano)':'  (Reflects routine habits, memory, and daily adherence behaviour)'),
+      '',
+      (it?`Media dominio Contesto-Guard: ${meanCg}`:`Context-Guard domain mean:  ${meanCg}`),
+      (it?'  (Riflette barriere pratiche: viaggi, scomodita\', accesso)':'  (Reflects practical barriers: travel, inconvenience, access)'),
+      '',
+      (it?`Dominio di fallimento dominante: ${domLabel}`:`Dominant failure domain:    ${dom}`),
       '',
       '----------------------------------------------------------------',
-      'ADHERENCE PHENOTYPES (PEACS Classification)',
+      it ? 'RIPARTIZIONE PER PATOLOGIA' : 'CONDITION BREAKDOWN',
       '----------------------------------------------------------------',
       '',
-      peacsLines || '    No phenotype data available.',
+      condLines || (it ? '    Nessun dato per patologia registrato.' : '    No condition data recorded.'),
       '',
       '----------------------------------------------------------------',
-      'CLINICAL INTERPRETATION',
+      it ? 'FENOTIPI DI ADERENZA (Classificazione PEACS)' : 'ADHERENCE PHENOTYPES (PEACS Classification)',
       '----------------------------------------------------------------',
       '',
-      `The dominant failure domain for this reporting period is ${dom}.`,
+      peacsLines || (it ? '    Nessun dato fenotipico disponibile.' : '    No phenotype data available.'),
+      '',
+      '----------------------------------------------------------------',
+      it ? 'INTERPRETAZIONE CLINICA' : 'CLINICAL INTERPRETATION',
+      '----------------------------------------------------------------',
+      '',
+      it ? `Il dominio di fallimento dominante per questo periodo e\' ${domLabel}.` : `The dominant failure domain for this reporting period is ${dom}.`,
       '',
       domInterp,
       '',
       '================================================================',
-      'END OF REPORT',
-      `Generated by ATLAS Pharmacy Gateway | TESSERA GRC`,
+      it ? 'FINE RAPPORTO' : 'END OF REPORT',
+      it ? 'Generato da ATLAS Pharmacy Gateway | TESSERA GRC' : 'Generated by ATLAS Pharmacy Gateway | TESSERA GRC',
       '================================================================'
     ].join('\n');
   };
@@ -2290,19 +2534,26 @@ function generateFOFIReport(){
 // ═══════════════════════════════════════════
 function goToAlert(){
   if(!calcResults) return;
+  const lang = _pgLang();
+  const s = UI_STRINGS[lang] || UI_STRINGS.en;
   const {scores, failDomain, insight} = calcResults;
-  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-  const pharmName = sessionSetup.pharmacyName ? sessionSetup.pharmacyName : 'pharmacy counter';
+  const locale = lang === 'it' ? 'it-IT' : 'en-GB';
+  const today = new Date().toLocaleDateString(locale,{day:'2-digit',month:'long',year:'numeric'});
+  const pharmName = sessionSetup.pharmacyName ? sessionSetup.pharmacyName : (lang === 'it' ? 'banco farmacia' : 'pharmacy counter');
+  const riskLabel = lang === 'it' ? 'ALTO RISCHIO' : 'HIGH RISK';
+  const instVal = lang === 'it'
+    ? 'MAP (Parametri Multidimensionali di Aderenza) tramite ATLAS Pharmacy Gateway'
+    : 'MAP (Multidimensional Adherence Parameters) via ATLAS Pharmacy Gateway';
 
   const fieldDefs = [
-    {key:'Patient', val: (sessionSetup.condition || 'Unspecified condition') + ' patient assessed at ' + pharmName},
-    {key:'Date', val: today},
-    {key:'MAP PE Score', val: scores.PE.toFixed(2) + ' / 1.00', cls:'highlight'},
-    {key:'Risk Level', val: 'HIGH RISK', cls:'highlight'},
-    {key:'Primary Domain Failure', val: failDomain},
-    {key:'Clinical Recommendation', val: insight},
-    {key:'Recommended Action', val: 'Please discuss adherence barriers at next appointment.'},
-    {key:'Instrument', val: 'MAP (Multidimensional Adherence Parameters) via ATLAS Pharmacy Gateway'}
+    {key:s.af_patient, val: (sessionSetup.condition || (lang==='it'?'condizione non specificata':'Unspecified condition')) + ' — ' + s.af_assessed + ' ' + pharmName},
+    {key:s.af_date, val: today},
+    {key:s.af_pe, val: scores.PE.toFixed(2) + ' / 1.00', cls:'highlight'},
+    {key:s.af_risk, val: riskLabel, cls:'highlight'},
+    {key:s.af_domain, val: failDomain},
+    {key:s.af_rec, val: insight},
+    {key:s.af_action, val: s.af_action_val},
+    {key:s.af_instrument, val: instVal}
   ];
 
   const fieldsHtml = fieldDefs.map(f=>`
@@ -2318,19 +2569,28 @@ function goToAlert(){
 
 function buildAlertText(){
   if(!calcResults) return '';
+  const lang = _pgLang();
+  const s = UI_STRINGS[lang] || UI_STRINGS.en;
   const {scores, failDomain, insight} = calcResults;
-  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-  const pharmName = sessionSetup.pharmacyName || 'pharmacy counter';
+  const locale = lang === 'it' ? 'it-IT' : 'en-GB';
+  const today = new Date().toLocaleDateString(locale,{day:'2-digit',month:'long',year:'numeric'});
+  const pharmName = sessionSetup.pharmacyName || (lang==='it' ? 'banco farmacia' : 'pharmacy counter');
+  const riskLabel = lang === 'it' ? 'ALTO RISCHIO' : 'HIGH RISK';
+  const instVal = lang === 'it'
+    ? 'MAP (Parametri Multidimensionali di Aderenza) tramite ATLAS Pharmacy Gateway'
+    : 'MAP (Multidimensional Adherence Parameters) via ATLAS Pharmacy Gateway';
+  const headerLine = lang === 'it'
+    ? 'Allerta MAP ATLAS -- Rischio di Non Aderenza Rilevato'
+    : 'ATLAS MAP Alert -- Adherence Risk Identified';
   return [
-    'ATLAS MAP Alert -- Adherence Risk Identified',
-    '',
-    'Patient: ' + (sessionSetup.condition || 'Unspecified condition') + ' patient assessed at ' + pharmName,
-    'Date: ' + today,
-    'MAP PE Score: ' + scores.PE.toFixed(2) + ' / 1.00 -- HIGH RISK',
-    'Primary Domain Failure: ' + failDomain,
-    'Clinical Recommendation: ' + insight,
-    'Recommended Action: Please discuss adherence barriers at next appointment.',
-    'Instrument: MAP (Multidimensional Adherence Parameters) via ATLAS Pharmacy Gateway'
+    headerLine, '',
+    s.af_patient + ': ' + (sessionSetup.condition || (lang==='it'?'condizione non specificata':'Unspecified condition')) + ' — ' + s.af_assessed + ' ' + pharmName,
+    s.af_date + ': ' + today,
+    s.af_pe + ': ' + scores.PE.toFixed(2) + ' / 1.00 -- ' + riskLabel,
+    s.af_domain + ': ' + failDomain,
+    s.af_rec + ': ' + insight,
+    s.af_action + ': ' + s.af_action_val,
+    s.af_instrument + ': ' + instVal
   ].join('\n');
 }
 
@@ -2338,7 +2598,7 @@ function copyAlert(){
   const text = buildAlertText();
   if(navigator.clipboard){
     navigator.clipboard.writeText(text)
-      .then(()=>pgToast('Alert copied to clipboard.'))
+      .then(()=>pgToast(_pgLang()==='it' ? 'Allerta copiata negli appunti.' : 'Alert copied to clipboard.'))
       .catch(()=>pgToastFallbackCopy(text));
   } else {
     pgToastFallbackCopy(text);
@@ -2358,8 +2618,8 @@ function pgToastFallbackCopy(text){
   ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
   document.body.appendChild(ta);
   ta.select();
-  try{document.execCommand('copy');pgToast('Alert copied to clipboard.');}
-  catch(e){pgToast('Please copy the text manually.','warn');}
+  try{document.execCommand('copy');pgToast(_pgLang()==='it'?'Allerta copiata negli appunti.':'Alert copied to clipboard.');}
+  catch(e){pgToast(_pgLang()==='it'?'Copiare il testo manualmente.':'Please copy the text manually.','warn');}
   document.body.removeChild(ta);
 }
 
@@ -2382,6 +2642,16 @@ if(_PG_DEMO){
     if(sc) sc.style.display = 'block';
   }
 }
+
+// ── Language switch wiring ─────────────────────────────────────────────────
+(function _bootLang(){
+  const sel = document.getElementById('language-select');
+  if(sel){
+    sel.addEventListener('change', () => _pgApplyLang(sel.value));
+    // Apply default (en) on load so all elements are consistent
+    _pgApplyLang(sel.value || 'en');
+  }
+})();
 
 // ═══════════════════════════════════════════
 // TOAST UTILITY

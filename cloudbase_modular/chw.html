@@ -486,6 +486,7 @@ html, body {
       <label for="langSelect">Language</label>
       <select id="langSelect">
         <option value="en">English</option>
+        <option value="it">Italiano</option>
         <option value="sw">Kiswahili</option>
         <option value="fr">French</option>
         <option value="hi">Hindi</option>
@@ -502,18 +503,18 @@ html, body {
        SCREEN 1: Patient Setup
   ═══════════════════════════════════════════════════════════════════ -->
   <div class="screen" id="screen1">
-    <div class="screen-eyebrow">Patient Setup</div>
-    <div class="screen-title">New Assessment</div>
+    <div class="screen-eyebrow" id="chw-s1-eyebrow">Patient Setup</div>
+    <div class="screen-title" id="chw-s1-title">New Assessment</div>
 
     <div class="session-bar" id="sessionBar">Loading session...</div>
 
     <div class="field">
-      <label for="patientCode">Patient Reference Code (optional)</label>
+      <label for="patientCode" id="chw-lbl-patcode">Patient Reference Code (optional)</label>
       <input type="text" id="patientCode" placeholder="e.g. HH-003" autocomplete="off" inputmode="text">
     </div>
 
     <div class="field">
-      <label for="conditionSelect">Condition</label>
+      <label for="conditionSelect" id="chw-lbl-condition">Condition</label>
       <select id="conditionSelect">
         <option>Hypertension</option>
         <option>Diabetes</option>
@@ -524,7 +525,7 @@ html, body {
       </select>
     </div>
 
-    <button class="btn-primary" onclick="startAssessment()">Start Assessment</button>
+    <button class="btn-primary" id="chw-btn-start" onclick="startAssessment()">Start Assessment</button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════════════
@@ -547,8 +548,8 @@ html, body {
        SCREEN 3: Results / CHW Action Card
   ═══════════════════════════════════════════════════════════════════ -->
   <div class="screen" id="screen3">
-    <div class="screen-eyebrow">Assessment Complete</div>
-    <div class="screen-title">CHW Action Card</div>
+    <div class="screen-eyebrow" id="chw-s3-eyebrow">Assessment Complete</div>
+    <div class="screen-title" id="chw-s3-title">CHW Action Card</div>
 
     <!-- Traffic light -->
     <div class="traffic-light-wrap" id="trafficLightWrap">
@@ -564,15 +565,15 @@ html, body {
 
     <!-- Domain summary -->
     <div class="domain-row">
-      <div class="domain-name">Beliefs about medicine</div>
+      <div class="domain-name" id="chw-domain-arch">Beliefs about medicine</div>
       <div class="domain-rating" id="archRating"></div>
     </div>
     <div class="domain-row">
-      <div class="domain-name">Daily routine</div>
+      <div class="domain-name" id="chw-domain-exec">Daily routine</div>
       <div class="domain-rating" id="execRating"></div>
     </div>
     <div class="domain-row" style="margin-bottom:20px;">
-      <div class="domain-name">Practical barriers</div>
+      <div class="domain-name" id="chw-domain-ctx">Practical barriers</div>
       <div class="domain-rating" id="ctxRating"></div>
     </div>
 
@@ -651,6 +652,17 @@ var _i18n = {
     inst: "Ask the patient this question. Tap their answer.",
     yes: "YES", no: "NO",
     freq: ["NEVER","RARELY","SOMETIMES","OFTEN","ALWAYS"],
+    ui: {
+      beginDay:'Begin Day', startAssessment:'Start Assessment',
+      patientSetup:'Patient Setup', newAssessment:'New Assessment',
+      patientCode:'Patient Reference Code (optional)', condition:'Condition',
+      question:'Question', of:'of',
+      assessmentComplete:'Assessment Complete', actionCard:'CHW Action Card',
+      peScore:'PE Score', recommendedAction:'Recommended Action',
+      beliefs:'Beliefs about medicine', routine:'Daily routine', barriers:'Practical barriers',
+      saveNext:'Save and Next Patient', flagSupervisor:'Flag for Supervisor',
+      loadingSession:'Loading session...',
+    }
   },
   sw: {
     q:  [
@@ -726,6 +738,32 @@ var _i18n = {
     inst: "اطرح هذا السؤال على المريض. اضغط على إجابته.",
     yes: "نعم", no: "لا",
     freq: ["أبدًا","نادرًا","أحيانًا","غالبًا","دائمًا"],
+  },
+  it: {
+    q: [
+      "Ci sono momenti in cui dimentica di prendere i suoi farmaci?",
+      "Nelle ultime due settimane, ha scelto di saltare una dose? Ad esempio per effetti collaterali, costi o perch\u00e9 si sentiva meglio?",
+      "Nelle ultime due settimane, ha ridotto la dose o sospeso un farmaco da solo, senza dirlo al medico, a causa di come la faceva sentire?",
+      "Quando la sua routine quotidiana cambia, ad esempio in viaggio o con orari diversi, trova difficile mantenere la terapia?",
+      "\u00c8 riuscito a prendere l'ultima dose come prescritto?",
+      "Quando si sente meglio, pensa mai di ridurre o sospendere il farmaco da solo?",
+      "Tenere il passo con la sua terapia quotidiana le sembra una grande sfida?",
+      "In una settimana tipica, quanto spesso ha difficolt\u00e0 a prendere tutti i suoi farmaci come prescritto?"
+    ],
+    inst: "Fai questa domanda al paziente. Tocca la sua risposta.",
+    yes: "S\u00cc", no: "NO",
+    freq: ["MAI","RARAMENTE","A VOLTE","SPESSO","SEMPRE"],
+    ui: {
+      beginDay:'Inizia Giornata', startAssessment:'Inizia Valutazione',
+      patientSetup:'Configurazione Paziente', newAssessment:'Nuova Valutazione',
+      patientCode:'Codice Paziente (opzionale)', condition:'Patologia',
+      question:'Domanda', of:'di',
+      assessmentComplete:'Valutazione Completata', actionCard:'Scheda Azione CHW',
+      peScore:'Punteggio PE', recommendedAction:'Azione Raccomandata',
+      beliefs:'Credenze sul farmaco', routine:'Routine quotidiana', barriers:'Barriere pratiche',
+      saveNext:'Salva e Prossimo Paziente', flagSupervisor:'Segnala al Supervisore',
+      loadingSession:'Caricamento sessione...',
+    }
   },
   es: {
     q:  [
@@ -840,8 +878,29 @@ function beginDay() {
   // Set RTL for Arabic
   document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
 
+  _chwApplyLang(lang);
   updateSessionBar();
   showScreen(1);
+}
+
+function _chwApplyLang(lang) {
+  var L = _i18n[lang] || _i18n.en;
+  var ui = L.ui || {};
+  var set = function(id, val){ var el=document.getElementById(id); if(el&&val) el.textContent=val; };
+  // Screen 1
+  set('chw-s1-eyebrow', ui.patientSetup);
+  set('chw-s1-title',   ui.newAssessment);
+  set('chw-lbl-patcode', ui.patientCode);
+  set('chw-lbl-condition', ui.condition);
+  set('chw-btn-start',  ui.startAssessment);
+  // Screen 3
+  set('chw-s3-eyebrow', ui.assessmentComplete);
+  set('chw-s3-title',   ui.actionCard);
+  set('chw-domain-arch', ui.beliefs);
+  set('chw-domain-exec', ui.routine);
+  set('chw-domain-ctx',  ui.barriers);
+  set('btnSave', ui.saveNext);
+  set('btnFlag', ui.flagSupervisor);
 }
 
 function updateSessionBar() {
@@ -869,8 +928,8 @@ function renderQuestion(idx) {
   var L     = _i18n[lang] || _i18n.en;
   var total = 8;
 
-  document.getElementById('progressLabel').textContent =
-    'Question ' + (idx + 1) + ' of ' + total;
+  var qLabel = (L.ui && L.ui.question) ? L.ui.question + ' ' + (idx+1) + ' ' + L.ui.of + ' ' + total : 'Question ' + (idx + 1) + ' of ' + total;
+  document.getElementById('progressLabel').textContent = qLabel;
   document.getElementById('progressFill').style.width =
     Math.round(((idx + 1) / total) * 100) + '%';
 
@@ -1028,22 +1087,24 @@ function computeAndShowResults() {
   var labelEl  = document.getElementById('trafficLabel');
   var msgEl    = document.getElementById('trafficMsg');
 
+  var rLang = _session.language || 'en';
+  var tlLabels = rLang === 'it'
+    ? {GREEN:['VERDE / BUONA ADERENZA','Buona aderenza. Continuare il supporto attuale.'],
+       AMBER:['AMBRA / ALCUNE DIFFICOLTA\'','Alcune difficolt\u00e0. Programmare un follow-up.'],
+       RED:  ['ROSSO / HA BISOGNO DI AIUTO','Necessita di aiuto. Riferire alla clinica.']}
+    : {GREEN:['GREEN / GOOD ADHERENCE','Good adherence. Continue current support.'],
+       AMBER:['AMBER / SOME DIFFICULTIES','Some difficulties. Schedule follow-up.'],
+       RED:  ['RED / NEEDS HELP','Needs help. Refer to clinic.']};
+  var tlInfo = tlLabels[tl] || tlLabels['RED'];
   if (tl === 'GREEN') {
-    circleEl.style.background = '#10b981';
-    labelEl.style.color       = '#10b981';
-    labelEl.textContent       = 'GREEN / GOOD ADHERENCE';
-    msgEl.textContent         = 'Good adherence. Continue current support.';
+    circleEl.style.background = '#10b981'; labelEl.style.color = '#10b981';
   } else if (tl === 'AMBER') {
-    circleEl.style.background = '#d4a843';
-    labelEl.style.color       = '#d4a843';
-    labelEl.textContent       = 'AMBER / SOME DIFFICULTIES';
-    msgEl.textContent         = 'Some difficulties. Schedule follow-up.';
+    circleEl.style.background = '#d4a843'; labelEl.style.color = '#d4a843';
   } else {
-    circleEl.style.background = '#ef4444';
-    labelEl.style.color       = '#ef4444';
-    labelEl.textContent       = 'RED / NEEDS HELP';
-    msgEl.textContent         = 'Needs help. Refer to clinic.';
+    circleEl.style.background = '#ef4444'; labelEl.style.color = '#ef4444';
   }
+  labelEl.textContent = tlInfo[0];
+  msgEl.textContent   = tlInfo[1];
 
   // PE display
   document.getElementById('peDisplay').textContent = scores.pe.toFixed(2);
@@ -1076,22 +1137,25 @@ function computeAndShowResults() {
 
   actionEl.style.background   = actionBg;
   actionEl.style.borderColor  = actionBorder;
+  var rL = _i18n[_session.language] || _i18n.en;
+  var rUi = rL.ui || {};
   document.getElementById('actionLabel').style.color = actionColor;
+  if(rUi.recommendedAction) document.getElementById('actionLabel').textContent = rUi.recommendedAction;
   document.getElementById('actionText').textContent  = actionText;
 
   showScreen(3);
 }
 
 function domainRating(score, domain) {
+  var it = (_session.language === 'it');
   if (domain === 'ctx') {
-    // ctx baseline is 0.5; meaningful range 0.5 to 1.0
-    if (score >= 0.825) return 'Few barriers';
-    if (score >= 0.675) return 'Some barriers';
-    return 'Many barriers';
+    if (score >= 0.825) return it ? 'Poche barriere'   : 'Few barriers';
+    if (score >= 0.675) return it ? 'Alcune barriere'  : 'Some barriers';
+    return it ? 'Molte barriere' : 'Many barriers';
   }
-  if (score >= 0.75) return domain === 'arch' ? 'Strong' : 'On track';
-  if (score >= 0.45) return domain === 'arch' ? 'Some doubts' : 'Sometimes forgets';
-  return domain === 'arch' ? 'Needs discussion' : 'Often forgets';
+  if (score >= 0.75) return domain === 'arch' ? (it?'Forte':'Strong') : (it?'In pari':'On track');
+  if (score >= 0.45) return domain === 'arch' ? (it?'Alcuni dubbi':'Some doubts') : (it?'A volte dimentica':'Sometimes forgets');
+  return domain === 'arch' ? (it?'Necessita discussione':'Needs discussion') : (it?'Dimentica spesso':'Often forgets');
 }
 
 function domainColor(score) {
@@ -1101,19 +1165,20 @@ function domainColor(score) {
 }
 
 function getActionText(tl, dominant) {
+  var it = (_session.language === 'it');
   if (tl === 'RED') {
     if (dominant === 'Architecture') {
-      return 'Refer to health worker or clinic. Patient may not believe medicine is helping.';
+      return it ? 'Riferire all\'operatore sanitario o alla clinica. Il paziente potrebbe non credere che il farmaco aiuti.' : 'Refer to health worker or clinic. Patient may not believe medicine is helping.';
     } else if (dominant === 'Execution') {
-      return 'Help patient make a reminder plan. Show them the blister pack organiser.';
+      return it ? 'Aiutare il paziente a creare un piano di promemoria. Mostrare l\'organizzatore blister.' : 'Help patient make a reminder plan. Show them the blister pack organiser.';
     } else {
-      return 'Check what is making it hard. Cost? Travel? Supply problems? Note barriers.';
+      return it ? 'Verificare cosa rende difficile. Costi? Spostamenti? Problemi di approvvigionamento? Annotare le barriere.' : 'Check what is making it hard. Cost? Travel? Supply problems? Note barriers.';
     }
   }
   if (tl === 'AMBER') {
-    return 'Schedule a follow-up visit in 2 to 4 weeks. Encourage patient.';
+    return it ? 'Programmare una visita di follow-up in 2-4 settimane. Incoraggiare il paziente.' : 'Schedule a follow-up visit in 2 to 4 weeks. Encourage patient.';
   }
-  return 'Reassess in 3 months. Praise patient for keeping up with medicine.';
+  return it ? 'Rivalutare tra 3 mesi. Complimentarsi con il paziente per la costanza nella terapia.' : 'Reassess in 3 months. Praise patient for keeping up with medicine.';
 }
 
 // ── Save and go to next patient ────────────────────────────────────────────
