@@ -1,13 +1,15 @@
-// sa-consortium.js — ATLAS International Research Consortium (AIRC)
+// sa-consortium.js — TESSERA GRC (Global Research Consortium)
 // Mission Control module: member registry, funding board, letters of support, impact dashboard
 //
 // Firebase paths used:
-//   consortium_members/{id}  — superadmin read/write
-//   consortium_letters/{id}  — superadmin read/write
+//   consortium_members/{id}     — superadmin read/write
+//   consortium_letters/{id}     — superadmin read/write
+//   consortium_applications/{id} — PUBLIC write (tessera-signup form), superadmin read/write
 //
 // Firebase rules (add to database.rules.json):
-//   "consortium_members": { ".read": "auth.token.superadmin === true", ".write": "auth.token.superadmin === true" },
-//   "consortium_letters": { ".read": "auth.token.superadmin === true", ".write": "auth.token.superadmin === true" }
+//   "consortium_members":      { ".read": "auth.token.superadmin === true", ".write": "auth.token.superadmin === true" },
+//   "consortium_letters":      { ".read": "auth.token.superadmin === true", ".write": "auth.token.superadmin === true" },
+//   "consortium_applications": { ".read": "auth.token.superadmin === true", ".write": true }
 
 // ── Color constants (prefixed _CC to avoid conflicts with _C in sa-shell.js and _CP in sa-partners.js) ──
 const _CC = window._ATLAS_COLORS || {
@@ -22,9 +24,10 @@ const _CC = window._ATLAS_COLORS || {
 };
 
 // ── Module-level state ────────────────────────────────────────────────────────
-let _saCons_membersCache  = [];
-let _saCons_lettersCache  = [];
-let _saCons_activeSubTab  = 'members';
+let _saCons_membersCache      = [];
+let _saCons_lettersCache      = [];
+let _saCons_applicationsCache = [];
+let _saCons_activeSubTab      = 'members';
 let _saCons_tierFilter    = 'all';
 let _saCons_regionFilter  = 'all';
 let _saCons_fitFilter     = 'all';
@@ -88,7 +91,7 @@ const _CONS_FUNDING = [
     deadline: 'October (annually)',
     description: 'Funds research training programs that strengthen public health and biomedical research capacity in low- and middle-income countries. ATLAS consortium members in LMIC regions are ideal collaborating institutions.',
     url: 'https://www.fic.nih.gov/Programs/Pages/training-grants.aspx',
-    boilerplate: 'The ATLAS International Research Consortium (AIRC) partners with institutions across LMIC regions to deliver training in evidence-based medication adherence measurement. AIRC consortium members provide in-country mentorship and access to the validated MAP, MMAS-8, and PEACS instruments through the ATLAS platform, enabling sustainable local research capacity in adherence science.'
+    boilerplate: 'TESSERA GRC (Global Research Consortium) partners with institutions across LMIC regions to deliver training in evidence-based medication adherence measurement. TESSERA GRC consortium members provide in-country mentorship and access to the validated MAP, MMAS-8, and PEACS instruments through the ATLAS platform, enabling sustainable local research capacity in adherence science.'
   },
   {
     agency: 'NIH Fogarty',
@@ -118,7 +121,7 @@ const _CONS_FUNDING = [
     deadline: 'Rolling',
     description: 'Supports large cooperative research programs requiring coordinated multi-site infrastructure. ATLAS is the natural data coordination center for a medication adherence U54.',
     url: 'https://grants.nih.gov/grants/guide/pa-files/PAR-22-127.html',
-    boilerplate: 'The ATLAS platform serves as the data coordination infrastructure for the proposed Cooperative Research Center. Participating sites in the ATLAS International Research Consortium contribute harmonized adherence data using the MAP, MMAS-8, and PEACS instruments, enabling cross-site aggregation, normative benchmarking, and phenotype classification through a common computational framework.'
+    boilerplate: 'The ATLAS platform serves as the data coordination infrastructure for the proposed Cooperative Research Center. Participating sites in the Scala Carta Foundation contribute harmonized adherence data using the MAP, MMAS-8, and PEACS instruments, enabling cross-site aggregation, normative benchmarking, and phenotype classification through a common computational framework.'
   },
   {
     agency: 'Wellcome Trust',
@@ -138,7 +141,7 @@ const _CONS_FUNDING = [
     deadline: 'Rolling',
     description: 'Targets transformative solutions to global health challenges, including NCD medication adherence. ATLAS consortium members in Sub-Saharan Africa, South Asia, and Latin America align strongly.',
     url: 'https://www.grandchallenges.org/',
-    boilerplate: 'Medication non-adherence in LMIC settings represents a critical bottleneck in NCD care. The ATLAS platform, through the AIRC consortium, deploys validated adherence instruments (MAP, MMAS-8) in resource-limited settings with offline capability and multilingual scoring. This Grand Challenge proposal will scale ATLAS to 10 LMIC consortium sites, generating the first globally representative adherence normative database.'
+    boilerplate: 'Medication non-adherence in LMIC settings represents a critical bottleneck in NCD care. The ATLAS platform, through the TESSERA GRC consortium, deploys validated adherence instruments (MAP, MMAS-8) in resource-limited settings with offline capability and multilingual scoring. This Grand Challenge proposal will scale ATLAS to 10 LMIC consortium sites, generating the first globally representative adherence normative database.'
   },
   {
     agency: 'PAHO',
@@ -148,7 +151,7 @@ const _CONS_FUNDING = [
     deadline: 'Rolling',
     description: 'Supports health research in the Americas, particularly validation and implementation science projects. Ideal for ATLAS consortium members in Latin America conducting MAP or MMAS-8 validation work.',
     url: 'https://www.paho.org/en/research-development',
-    boilerplate: 'This PAHO Small Grant will fund the Spanish-language validation and normative calibration of the MAP adherence instrument in [country]. Conducted through the ATLAS International Research Consortium, the study will enroll [N] participants across [N] clinical sites, with real-time data entry and PEACS phenotype classification via the ATLAS platform.'
+    boilerplate: 'This PAHO Small Grant will fund the Spanish-language validation and normative calibration of the MAP adherence instrument in [country]. Conducted through the Scala Carta Foundation, the study will enroll [N] participants across [N] clinical sites, with real-time data entry and PEACS phenotype classification via the ATLAS platform.'
   },
   {
     agency: 'European Research Council',
@@ -158,7 +161,7 @@ const _CONS_FUNDING = [
     deadline: 'September (annually)',
     description: 'Supports early-career researchers in Europe with ambitious projects. ATLAS consortium members at European institutions are eligible. Adherence measurement methodology is a strong fit.',
     url: 'https://erc.europa.eu/apply-grant/starting-grant',
-    boilerplate: 'This ERC Starting Grant proposes the development of a pan-European adherence normative database using the ATLAS platform. As a member of the ATLAS International Research Consortium, the applying institution will contribute to a coordinated multicenter study across [N] EU countries, validating MAP and MMAS-8 instruments in culturally diverse European patient populations.'
+    boilerplate: 'This ERC Starting Grant proposes the development of a pan-European adherence normative database using the ATLAS platform. As a member of the Scala Carta Foundation, the applying institution will contribute to a coordinated multicenter study across [N] EU countries, validating MAP and MMAS-8 instruments in culturally diverse European patient populations.'
   },
   {
     agency: 'Horizon Europe',
@@ -208,7 +211,7 @@ const _CONS_FUNDING = [
     deadline: 'Rolling',
     description: 'Industry research partnership for medication adherence studies. ATLAS consortium infrastructure and validated instruments are ideal for industry-sponsored real-world evidence generation.',
     url: 'https://www.janssen.com/research-development',
-    boilerplate: 'The ATLAS International Research Consortium provides the validated psychometric infrastructure and global site network required for real-world adherence evidence generation. Through this Janssen partnership, ATLAS will deploy MAP-based adherence monitoring at [N] consortium sites, generating PEACS phenotype data and adherence trajectories for patients prescribed [therapeutic area] medications.'
+    boilerplate: 'The Scala Carta Foundation provides the validated psychometric infrastructure and global site network required for real-world adherence evidence generation. Through this Janssen partnership, ATLAS will deploy MAP-based adherence monitoring at [N] consortium sites, generating PEACS phenotype data and adherence trajectories for patients prescribed [therapeutic area] medications.'
   },
   {
     agency: 'AstraZeneca',
@@ -229,7 +232,7 @@ const _CONS_MILESTONES = [
   { year: '2018', event: 'ATLAS platform development begins' },
   { year: '2022', event: 'MAP (Medication Adherence Phenotyping) instrument validated' },
   { year: '2024', event: 'PEACS framework introduced; behavioral phenotype classification system established' },
-  { year: '2025', event: 'ATLAS International Research Consortium (AIRC) launched' },
+  { year: '2025', event: 'TESSERA GRC launched' },
   { year: '2026', event: 'Global normative database established across 30+ countries' },
 ];
 
@@ -348,15 +351,23 @@ function _saCons_regionTag(region) {
 
 // ── Sub-tab navigation render ─────────────────────────────────────────────────
 function _saCons_renderSubNav(container) {
+  const pendingCount = _saCons_applicationsCache.filter(a => a.status === 'pending').length;
+  const appLabel = 'Applications' + (pendingCount > 0
+    ? ` <span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;background:${_CC.orange};color:#000;font-size:0.54rem;font-weight:700;margin-left:5px;padding:0 3px;">${pendingCount}</span>`
+    : '');
   const tabs = [
-    { id: 'members',  label: 'Members'       },
-    { id: 'funding',  label: 'Funding Board' },
-    { id: 'letters',  label: 'Letters'       },
-    { id: 'impact',   label: 'Impact'        },
-    { id: 'registry', label: 'Registry'      },
+    { id: 'members',      label: 'Members'        },
+    { id: 'applications', label: appLabel          },
+    { id: 'funding',      label: 'Funding Board'  },
+    { id: 'letters',      label: 'Letters'        },
+    { id: 'impact',       label: 'Impact'         },
+    { id: 'registry',     label: 'Registry'       },
+    { id: 'exchange',     label: '◎ Exchange'     },
+    { id: 'tessera',      label: '⬡ Tessera Mosaic' },
   ];
   return tabs.map(t => `
     <button class="sc-subtab ${t.id === _saCons_activeSubTab ? 'sc-subtab-active' : 'sc-subtab-inactive'}"
+      data-tab-id="${t.id}"
       onclick="_saCons_switchTab('${t.id}',_saCons_getContainer())">${t.label}</button>
   `).join('');
 }
@@ -379,29 +390,51 @@ window._saCons_switchTab = function(tabId, contentEl) {
   });
   if (!contentEl) contentEl = document.getElementById('sc-tab-content');
   if (!contentEl) return;
-  if (tabId === 'members')  _saCons_renderMembers(contentEl);
-  if (tabId === 'funding')  _saCons_renderFunding(contentEl);
-  if (tabId === 'letters')  _saCons_renderLetters(contentEl);
-  if (tabId === 'impact')   _saCons_renderImpact(contentEl);
-  if (tabId === 'registry') _saCons_renderRegistry(contentEl);
+  if (tabId === 'members')      _saCons_renderMembers(contentEl);
+  if (tabId === 'funding')      _saCons_renderFunding(contentEl);
+  if (tabId === 'letters')      _saCons_renderLetters(contentEl);
+  if (tabId === 'impact')       _saCons_renderImpact(contentEl);
+  if (tabId === 'registry')     _saCons_renderRegistry(contentEl);
+  if (tabId === 'applications') _saCons_renderApplications(contentEl);
+  if (tabId === 'exchange') {
+    if (typeof window.saGrantRenderExchange === 'function') {
+      window.saGrantRenderExchange(contentEl);
+    } else {
+      contentEl.innerHTML = '<div style="padding:24px;font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:rgba(96,120,152,0.65);">Loading exchange…</div>';
+      var _exPoll = setInterval(function() {
+        if (typeof window.saGrantRenderExchange === 'function') {
+          clearInterval(_exPoll);
+          window.saGrantRenderExchange(contentEl);
+        }
+      }, 200);
+    }
+  }
+  if (tabId === 'tessera') _saCons_renderTessera(contentEl);
 };
 
 // ── Main shell ────────────────────────────────────────────────────────────────
 function _saCons_renderShell(container) {
+  const pendingCount = _saCons_applicationsCache.filter(a => a.status === 'pending').length;
+  const appLabel = 'Applications' + (pendingCount > 0
+    ? ` <span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;background:${_CC.orange};color:#000;font-size:0.54rem;font-weight:700;margin-left:5px;padding:0 3px;">${pendingCount}</span>`
+    : '');
   const tabs = [
-    { id: 'members',  label: 'Members'       },
-    { id: 'funding',  label: 'Funding Board' },
-    { id: 'letters',  label: 'Letters'       },
-    { id: 'impact',   label: 'Impact'        },
-    { id: 'registry', label: 'Registry'      },
+    { id: 'members',      label: 'Members'        },
+    { id: 'applications', label: appLabel          },
+    { id: 'funding',      label: 'Funding Board'  },
+    { id: 'letters',      label: 'Letters'        },
+    { id: 'impact',       label: 'Impact'         },
+    { id: 'registry',     label: 'Registry'       },
+    { id: 'exchange',     label: '◎ Exchange'     },
+    { id: 'tessera',      label: '⬡ Tessera Mosaic' },
   ];
 
   container.innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
       <div>
         <div style="font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:${_CC.amber};margin-bottom:4px;">Mission Control · Consortium</div>
-        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.6rem;font-weight:300;color:${_CC.text};line-height:1.2;">ATLAS International Research Consortium</div>
-        <div style="font-size:0.84rem;color:${_CC.muted};margin-top:5px;">AIRC — structured membership tier system, funding intelligence, letters of support, and global impact metrics.</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.6rem;font-weight:300;color:${_CC.text};line-height:1.2;">Scala Carta Foundation</div>
+        <div style="font-size:0.84rem;color:${_CC.muted};margin-top:5px;">TESSERA GRC — membership applications, registry, funding intelligence, letters of support, and global impact metrics.</div>
       </div>
     </div>
 
@@ -458,11 +491,14 @@ function _saCons_renderMembersUI(container) {
   }).join('');
 
   const rows = filtered.length ? filtered.map(m => {
-    const flag = _CONS_FLAGS[m.country] || '🌐';
+    const flag     = _CONS_FLAGS[m.country] || '🌐';
+    const lmicBadge = m.lmic_tier
+      ? `<span style="display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.10em;text-transform:uppercase;padding:1px 6px;border-radius:3px;border:1px solid rgba(249,115,22,0.35);background:rgba(249,115,22,0.07);color:#f97316;white-space:nowrap;margin-left:5px;">LMIC</span>`
+      : '';
     return `
       <tr>
         <td>
-          <div style="font-weight:600;color:${_CC.text};">${_saCons_esc(m.name || '—')}</div>
+          <div style="font-weight:600;color:${_CC.text};">${_saCons_esc(m.name || '—')}${lmicBadge}</div>
           <div style="font-size:0.76rem;color:${_CC.dim};margin-top:2px;">${_saCons_esc(m.contact_email || '')}</div>
         </td>
         <td style="color:${_CC.muted};">${_saCons_esc(m.institution || '—')}</td>
@@ -483,7 +519,25 @@ function _saCons_renderMembersUI(container) {
   const tierOptions = `<option value="all">All Tiers</option>` +
     Object.entries(_CONS_TIERS).map(([id, t]) => `<option value="${id}" ${_saCons_tierFilter === id ? 'selected' : ''}>${t.label}</option>`).join('');
 
-  container.innerHTML = `
+  // LMIC pending review banner — members awaiting approval who are LMIC-eligible
+  const lmicPending = _saCons_membersCache.filter(m => m.status === 'pending' && m.lmic_eligible);
+  const lmicPendingBanner = lmicPending.length ? `
+    <div style="background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.30);border-radius:9px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px;">
+      <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">🌍</div>
+      <div style="flex:1;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;font-weight:600;color:#f97316;margin-bottom:4px;">
+          ${lmicPending.length} LMIC Application${lmicPending.length !== 1 ? 's' : ''} Awaiting Review
+        </div>
+        <div style="font-size:0.78rem;color:rgba(138,160,184,0.85);line-height:1.55;">
+          ${lmicPending.map(m => `<strong style="color:rgba(205,216,232,0.92);">${_saCons_esc(m.name || '—')}</strong> · ${_saCons_esc(m.institution || '—')} · ${_saCons_esc(m.country || '—')}`).join(' &nbsp;|&nbsp; ')}
+        </div>
+        <div style="font-size:0.72rem;color:rgba(249,115,22,0.7);margin-top:5px;">
+          Edit each member, set status to Active, and check "Grant LMIC Researcher Access Tier" to provision fee-waived researcher access.
+        </div>
+      </div>
+    </div>` : '';
+
+  container.innerHTML = lmicPendingBanner + `
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:22px;">
       <div class="sc-stat-card">
         <div style="font-size:1.6rem;font-weight:700;color:${_CC.amber};font-family:'IBM Plex Mono',monospace;">${_saCons_membersCache.length}</div>
@@ -758,6 +812,25 @@ window._saCons_openEditMember = function(key) {
             <option value="inactive" ${m.status === 'inactive' ? 'selected' : ''}>Inactive</option>
           </select>
         </div>
+
+        ${/* LMIC access tier — auto-checked when country is LMIC-classified */''}
+        <div style="background:rgba(249,115,22,0.05);border:1px solid rgba(249,115,22,0.22);border-radius:8px;padding:12px 14px;">
+          <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;">
+            <input type="checkbox" id="sc-edit-lmic-tier"
+              ${(m.lmic_tier || (typeof isLMICCountry === 'function' && isLMICCountry(m.country))) ? 'checked' : ''}
+              style="width:15px;height:15px;margin-top:2px;cursor:pointer;accent-color:#f97316;flex-shrink:0;" />
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;font-weight:600;color:#f97316;">
+                Grant LMIC Researcher Access Tier
+              </div>
+              <div style="font-size:0.74rem;color:${_CC.muted};margin-top:3px;line-height:1.5;">
+                Waives all platform fees and elevates to full researcher capabilities
+                (unlimited exports, standard PEACS, publication license waived).
+                Writes to <code style="font-size:0.70rem;color:${_CC.dim};">lmic_access/{uid}</code> in Firebase.
+              </div>
+            </div>
+          </label>
+        </div>
       </div>
 
       <div id="sc-edit-member-error" style="display:none;margin-top:14px;font-size:0.82rem;color:${_CC.red};"></div>
@@ -793,6 +866,7 @@ window._saCons_saveEditMember = async function(key) {
   const country     = document.getElementById('sc-edit-country')?.value || '';
   const tier        = parseInt(document.getElementById('sc-edit-tier')?.value || '1', 10);
   const status      = document.getElementById('sc-edit-status')?.value || 'active';
+  const lmicTier    = !!(document.getElementById('sc-edit-lmic-tier')?.checked);
   const errEl       = document.getElementById('sc-edit-member-error');
   const saveBtn     = document.getElementById('sc-edit-member-save');
 
@@ -807,12 +881,42 @@ window._saCons_saveEditMember = async function(key) {
   errEl.style.display = 'none';
 
   try {
-    await firebase.database().ref('consortium_members/' + key).update({
+    const db = firebase.database();
+
+    // 1. Update consortium member record
+    await db.ref('consortium_members/' + key).update({
       name, contact_email: email, email, institution, study_title: study,
-      country, tier, instruments, status,
+      country, tier, instruments, status, lmic_tier: lmicTier,
     });
+
+    // 2. Provision or revoke LMIC access tier in Firebase (lmic_access/{uid})
+    //    key === uid (consortium_members are keyed by firebase auth uid)
+    if (lmicTier && status === 'active') {
+      // Find existing TESSERA ID from members cache if available
+      const cached = _saCons_membersCache.find(x => x._key === key);
+      const tesseraId = (cached && cached.tessera_id) || '';
+      await db.ref('lmic_access/' + key).set({
+        active:           true,
+        country:          country,
+        institution:      institution,
+        tessera_grc_id:   tesseraId,
+        granted_by:  'superadmin',
+        granted_at:  Date.now(),
+        email:       email,
+      });
+      if (typeof atlasAuditLog === 'function') atlasAuditLog('lmic_access_granted', { uid: key, country, institution });
+    } else if (!lmicTier) {
+      // Revoke: mark inactive rather than delete to preserve audit trail
+      const existing = await db.ref('lmic_access/' + key).once('value');
+      if (existing.val()) {
+        await db.ref('lmic_access/' + key + '/active').set(false);
+        if (typeof atlasAuditLog === 'function') atlasAuditLog('lmic_access_revoked', { uid: key });
+      }
+    }
+
     document.getElementById('sc-edit-member-overlay')?.remove();
-    if (typeof showToast === 'function') showToast('✓ Member updated.', 2200);
+    const lmicNote = lmicTier && status === 'active' ? ' LMIC researcher access provisioned.' : '';
+    if (typeof showToast === 'function') showToast('✓ Member updated.' + lmicNote, 2800);
     await _saCons_loadMembers();
     _saCons_renderMembersUI(document.getElementById('sc-tab-content'));
   } catch (e) {
@@ -1170,11 +1274,11 @@ ${l.grant_agency ? l.grant_agency : 'Funding Agency'}
 
 Dear Review Committee,
 
-I am writing on behalf of the ATLAS International Research Consortium (AIRC) and in my capacity as the developer of the Medication Adherence Report Scale (MMAS-8) and the Medication Adherence Phenotyping (MAP) instrument to express my strong support for the research proposal submitted by ${l.recipient_name} from ${l.institution}, ${l.country}${grantLine ? ', ' + grantLine : ''}.
+I am writing on behalf of TESSERA GRC (Global Research Consortium) and in my capacity as the developer of the Medication Adherence Report Scale (MMAS-8) and the Medication Adherence Phenotyping (MAP) instrument to express my strong support for the research proposal submitted by ${l.recipient_name} from ${l.institution}, ${l.country}${grantLine ? ', ' + grantLine : ''}.
 
 The proposed study, titled "${l.study_title}," represents a scientifically rigorous contribution to the field of medication adherence science. The research team has been granted authorization to use the ${instrumentLine} instrument(s) within the ATLAS platform framework for ${purposeLine}. This authorization has been reviewed and approved through the ATLAS consortium membership process, ensuring appropriate methodological oversight and psychometric integrity.
 
-The ATLAS International Research Consortium (AIRC) actively supports validated, multicenter research using MAP, MMAS-8, and the PEACS (Psychometric Execution and Adherence Classification System) behavioral phenotyping framework. The proposed research aligns with AIRC priorities and will contribute to the global normative database currently being established across consortium member sites. Consortium membership provides access to validated scoring algorithms, normative benchmarking, and collaborative analytical support.
+TESSERA GRC (Global Research Consortium) actively supports validated, multicenter research using MAP, MMAS-8, and the PEACS (Psychometric Execution and Adherence Classification System) behavioral phenotyping framework. The proposed research aligns with TESSERA GRC priorities and will contribute to the global normative database currently being established across consortium member sites. Consortium membership provides access to validated scoring algorithms, normative benchmarking, and collaborative analytical support.
 
 I fully endorse the qualifications of ${l.recipient_name} and the research team at ${l.institution} to conduct this work with fidelity to the psychometric standards required for MMAS-8 and MAP applications. I encourage favorable consideration of this proposal.
 
@@ -1184,7 +1288,7 @@ Philip R. Morisky, ScD, MSPH, MPH
 Professor Emeritus, UCLA Fielding School of Public Health
 Developer, Morisky Medication Adherence Scale (MMAS-8)
 Developer, Medication Adherence Phenotyping (MAP) Instrument
-Director, ATLAS International Research Consortium (AIRC)
+Director, TESSERA GRC
 atlasadherence.com`;
 
   const overlay = document.createElement('div');
@@ -1414,7 +1518,7 @@ function _saCons_renderRegistry(container) {
 
 async function _saCons_loadStudyRegistry() {
   try {
-    const snap = await firebase.database().ref('airc_study_registry').once('value');
+    const snap = await firebase.database().ref('tessera_study_registry').once('value');
     const raw  = snap.val() || {};
     _saCons_registryCache = Object.entries(raw)
       .map(function([k, v]) { return Object.assign({ _key: k }, v); })
@@ -1546,8 +1650,8 @@ window._saCons_openApproveModal = function(key) {
   _saCons_injectStyles();
 
   const year      = new Date().getFullYear();
-  const seqNum    = _saCons_nextAircSeq();
-  const prefilled = 'AIRC-' + year + '-' + String(seqNum).padStart(4, '0');
+  const seqNum    = _saCons_nextTesseraSeq();
+  const prefilled = 'TESSERA-' + year + '-' + String(seqNum).padStart(4, '0');
 
   const overlay = document.createElement('div');
   overlay.id = 'sc-approve-study-overlay';
@@ -1558,15 +1662,15 @@ window._saCons_openApproveModal = function(key) {
         style="position:absolute;top:16px;right:18px;background:none;border:none;color:${_CC.dim};font-size:1.3rem;cursor:pointer;line-height:1;"
         aria-label="Close">x</button>
 
-      <div style="font-size:0.70rem;letter-spacing:0.20em;text-transform:uppercase;color:${_CC.amber};margin-bottom:6px;">Issue AIRC Study ID</div>
+      <div style="font-size:0.70rem;letter-spacing:0.20em;text-transform:uppercase;color:${_CC.amber};margin-bottom:6px;">Issue TESSERA Study ID</div>
       <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;font-weight:300;color:${_CC.text};margin-bottom:6px;">${_saCons_esc(s.title || '(Untitled)')}</div>
       <div style="font-size:0.80rem;color:${_CC.dim};margin-bottom:20px;">${_saCons_esc(s.displayName || '')} &middot; ${_saCons_esc(s.institution || '')}</div>
 
       <div style="margin-bottom:18px;">
-        <label class="sc-label" for="sc-approve-airc-id">AIRC Study ID</label>
-        <input id="sc-approve-airc-id" class="sc-input" type="text" value="${_saCons_esc(prefilled)}"
+        <label class="sc-label" for="sc-approve-tessera-id">TESSERA Study ID</label>
+        <input id="sc-approve-tessera-id" class="sc-input" type="text" value="${_saCons_esc(prefilled)}"
           style="font-family:'IBM Plex Mono',monospace;font-size:1.0rem;letter-spacing:0.06em;color:${_CC.green};" />
-        <div style="font-size:0.72rem;color:${_CC.dim};margin-top:5px;">Format: AIRC-YYYY-XXXX. Edit if needed before issuing.</div>
+        <div style="font-size:0.72rem;color:${_CC.dim};margin-top:5px;">Format: TESSERA-YYYY-XXXX. Edit if needed before issuing.</div>
       </div>
 
       <div id="sc-approve-study-error" style="display:none;margin-bottom:14px;font-size:0.82rem;color:${_CC.red};"></div>
@@ -1592,14 +1696,14 @@ window._saCons_openApproveModal = function(key) {
 
   document.body.appendChild(overlay);
   overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-  setTimeout(function() { document.getElementById('sc-approve-airc-id')?.focus(); }, 60);
+  setTimeout(function() { document.getElementById('sc-approve-tessera-id')?.focus(); }, 60);
 };
 
-function _saCons_nextAircSeq() {
-  const approved = _saCons_registryCache.filter(function(s) { return s.status === 'approved' && s.airc_study_id; });
+function _saCons_nextTesseraSeq() {
+  const approved = _saCons_registryCache.filter(function(s) { return s.status === 'approved' && s.tessera_study_id; });
   let maxSeq = 0;
   approved.forEach(function(s) {
-    const match = (s.airc_study_id || '').match(/-(\d{4})$/);
+    const match = (s.tessera_study_id || '').match(/-(\d{4})$/);
     if (match) {
       const n = parseInt(match[1], 10);
       if (n > maxSeq) maxSeq = n;
@@ -1609,12 +1713,12 @@ function _saCons_nextAircSeq() {
 }
 
 window._saCons_issueStudyId = async function(key) {
-  const aircId  = (document.getElementById('sc-approve-airc-id')?.value || '').trim();
+  const tesseraId = (document.getElementById('sc-approve-tessera-id')?.value || '').trim();
   const errEl   = document.getElementById('sc-approve-study-error');
   const submitBtn = document.getElementById('sc-approve-study-submit');
 
-  if (!aircId) {
-    errEl.textContent = 'Please enter an AIRC Study ID.';
+  if (!tesseraId) {
+    errEl.textContent = 'Please enter a TESSERA Study ID.';
     errEl.style.display = 'block';
     return;
   }
@@ -1624,16 +1728,16 @@ window._saCons_issueStudyId = async function(key) {
   errEl.style.display = 'none';
 
   try {
-    await firebase.database().ref('airc_study_registry/' + key).update({
+    await firebase.database().ref('tessera_study_registry/' + key).update({
       status: 'approved',
-      airc_study_id: aircId,
+      tessera_study_id: tesseraId,
       approved_at: Date.now()
     });
     if (typeof atlasAuditLog === 'function') {
-      atlasAuditLog('airc_study_approved', { key: key, airc_study_id: aircId });
+      atlasAuditLog('tessera_study_approved', { key: key, tessera_study_id: tesseraId });
     }
     document.getElementById('sc-approve-study-overlay')?.remove();
-    if (typeof showToast === 'function') showToast('Study approved. AIRC ID issued: ' + aircId, 3000);
+    if (typeof showToast === 'function') showToast('Study approved. TESSERA ID issued: ' + tesseraId, 3000);
     await _saCons_loadStudyRegistry();
     _saCons_renderRegistryUI(document.getElementById('sc-tab-content'));
   } catch (e) {
@@ -1647,12 +1751,12 @@ window._saCons_issueStudyId = async function(key) {
 window._saCons_rejectStudy = async function(key, title) {
   if (!confirm('Reject study "' + title + '"?\n\nStatus will be set to rejected. This can be undone by editing the record directly in Firebase.')) return;
   try {
-    await firebase.database().ref('airc_study_registry/' + key).update({
+    await firebase.database().ref('tessera_study_registry/' + key).update({
       status: 'rejected',
       rejected_at: Date.now()
     });
     if (typeof atlasAuditLog === 'function') {
-      atlasAuditLog('airc_study_rejected', { key: key, title: title });
+      atlasAuditLog('tessera_study_rejected', { key: key, title: title });
     }
     if (typeof showToast === 'function') showToast('Study marked as rejected.', 2500);
     await _saCons_loadStudyRegistry();
@@ -1671,6 +1775,9 @@ window.saConsortiumInit = async function(container) {
   _saCons_injectStyles();
   container.innerHTML = `<div style="color:${_CC.muted};font-size:0.90rem;padding:20px 0;">Initializing consortium module…</div>`;
 
+  // Pre-load applications cache so badge count is accurate before shell renders
+  await _saCons_loadApplications().catch(() => {});
+
   // Render the shell with sub-tab nav
   _saCons_renderShell(container);
 
@@ -1680,6 +1787,8 @@ window.saConsortiumInit = async function(container) {
 
   if (_saCons_activeSubTab === 'members') {
     _saCons_renderMembers(contentEl);
+  } else if (_saCons_activeSubTab === 'applications') {
+    _saCons_renderApplications(contentEl);
   } else if (_saCons_activeSubTab === 'funding') {
     _saCons_renderFunding(contentEl);
   } else if (_saCons_activeSubTab === 'letters') {
@@ -1688,5 +1797,517 @@ window.saConsortiumInit = async function(container) {
     _saCons_renderImpact(contentEl);
   } else if (_saCons_activeSubTab === 'registry') {
     _saCons_renderRegistry(contentEl);
+  }
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// TAB: APPLICATIONS — Self-submitted via tessera-signup form
+// Firebase node: consortium_applications (publicly writable, admin readable)
+// ═════════════════════════════════════════════════════════════════════════════
+
+const _CONS_TIER_LABELS = {
+  1: 'Institutional Partner', 2: 'Validation Partner',
+  3: 'Research Affiliate',    4: 'Student Affiliate',
+  5: 'Industry Partner',
+};
+const _CONS_TIER_COLORS = {
+  1: '#d4a843', 2: '#38bdf8', 3: '#2ec98a', 4: '#8b6ff5', 5: '#f59e0b',
+};
+
+async function _saCons_loadApplications() {
+  try {
+    const snap = await firebase.database().ref('consortium_applications').once('value');
+    const raw  = snap.val() || {};
+    _saCons_applicationsCache = Object.entries(raw)
+      .map(([k, v]) => ({ _key: k, ...v }))
+      .sort((a, b) => (b.applied_at || 0) - (a.applied_at || 0));
+  } catch (_) {
+    _saCons_applicationsCache = [];
+  }
+}
+
+function _saCons_renderApplications(container) {
+  container.innerHTML = `<div style="color:${_CC.muted};font-size:0.88rem;padding:20px 0;">Loading applications…</div>`;
+  _saCons_loadApplications().then(() => _saCons_renderApplicationsUI(container));
+}
+
+function _saCons_renderApplicationsUI(container) {
+  const apps = _saCons_applicationsCache;
+  const pending  = apps.filter(a => a.status === 'pending');
+  const approved = apps.filter(a => a.status === 'approved' || a.status === 'active');
+  const rejected = apps.filter(a => a.status === 'rejected');
+
+  const pendingBanner = pending.length ? `
+    <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.28);border-radius:10px;padding:13px 18px;margin-bottom:22px;display:flex;align-items:flex-start;gap:12px;">
+      <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">📬</div>
+      <div style="flex:1;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;font-weight:600;color:${_CC.orange};margin-bottom:4px;letter-spacing:0.08em;">
+          ${pending.length} Application${pending.length !== 1 ? 's' : ''} Awaiting Review
+        </div>
+        <div style="font-size:0.76rem;color:${_CC.muted};line-height:1.5;">
+          Review and approve or reject each application below. Approved applications are automatically created as consortium members.
+        </div>
+      </div>
+    </div>` : '';
+
+  if (!apps.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:2.5rem;margin-bottom:16px;">📭</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:${_CC.dim};">No applications yet</div>
+        <div style="font-size:0.78rem;color:${_CC.dim};margin-top:8px;max-width:360px;margin-left:auto;margin-right:auto;line-height:1.55;">
+          Applications submitted via the TESSERA GRC signup page appear here automatically.
+          Share the signup link at tessera.adherence.cc to start receiving applications.
+        </div>
+      </div>`;
+    return;
+  }
+
+  const rows = apps.map(a => {
+    const tierColor  = _CONS_TIER_COLORS[a.tier] || _CC.dim;
+    const tierLabel  = _CONS_TIER_LABELS[a.tier]  || `Tier ${a.tier || '?'}`;
+    const statusColor = a.status === 'pending' ? _CC.orange
+      : a.status === 'approved' || a.status === 'active' ? _CC.green : _CC.red;
+    const statusLabel = a.status === 'pending' ? 'Pending'
+      : a.status === 'approved' || a.status === 'active' ? 'Approved' : 'Rejected';
+    const dateStr = a.applied_at
+      ? new Date(a.applied_at).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'})
+      : '—';
+    const lmicBadge = a.lmic_eligible
+      ? `<span style="display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.54rem;letter-spacing:0.10em;text-transform:uppercase;padding:1px 6px;border-radius:3px;border:1px solid rgba(249,115,22,0.32);background:rgba(249,115,22,0.07);color:${_CC.orange};white-space:nowrap;margin-left:5px;">Open Science</span>`
+      : '';
+    const osBadge = a.open_science
+      ? `<span style="display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.54rem;letter-spacing:0.10em;text-transform:uppercase;padding:1px 6px;border-radius:3px;border:1px solid rgba(249,115,22,0.22);background:rgba(249,115,22,0.05);color:${_CC.orange};white-space:nowrap;margin-left:3px;">OS Req</span>`
+      : '';
+
+    const actionBtns = a.status === 'pending' ? `
+      <button onclick="_saCons_approveApp('${a._key}')" style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;padding:5px 12px;border-radius:5px;border:none;background:${_CC.green};color:#000;cursor:pointer;font-weight:600;margin-right:5px;">Approve</button>
+      <button onclick="_saCons_rejectApp('${a._key}')" style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;padding:5px 10px;border-radius:5px;border:1px solid rgba(239,68,68,0.35);background:transparent;color:${_CC.red};cursor:pointer;">Reject</button>
+    ` : `<span style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;color:${statusColor};">${statusLabel}</span>`;
+
+    return `
+      <tr onclick="_saCons_openAppDrawer('${a._key}')" style="cursor:pointer;">
+        <td>
+          <div style="font-weight:600;color:${_CC.text};">${_saCons_esc(a.name || '—')}${lmicBadge}${osBadge}</div>
+          <div style="font-size:0.72rem;color:${_CC.dim};margin-top:2px;">${_saCons_esc(a.contact_email || '')}</div>
+        </td>
+        <td style="color:${_CC.muted};">${_saCons_esc(a.institution || '—')}</td>
+        <td style="color:${_CC.muted};">${_saCons_esc(a.country || '—')}</td>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.64rem;color:${tierColor};background:rgba(255,255,255,0.04);border:1px solid ${tierColor}30;padding:2px 8px;border-radius:4px;">${tierLabel}</span></td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:${_CC.dim};">${dateStr}</td>
+        <td onclick="event.stopPropagation();">${actionBtns}</td>
+      </tr>`;
+  }).join('');
+
+  container.innerHTML = pendingBanner + `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;">
+      <div style="background:${_CC.surface};border:1px solid ${_CC.border};border-radius:9px;padding:16px 18px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;font-weight:600;color:${_CC.orange};">${pending.length}</div>
+        <div style="font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:${_CC.dim};margin-top:4px;">Pending Review</div>
+      </div>
+      <div style="background:${_CC.surface};border:1px solid ${_CC.border};border-radius:9px;padding:16px 18px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;font-weight:600;color:${_CC.green};">${approved.length}</div>
+        <div style="font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:${_CC.dim};margin-top:4px;">Approved</div>
+      </div>
+      <div style="background:${_CC.surface};border:1px solid ${_CC.border};border-radius:9px;padding:16px 18px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;font-weight:600;color:${_CC.text};">${apps.length}</div>
+        <div style="font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:${_CC.dim};margin-top:4px;">Total Applications</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;border:1px solid ${_CC.border};border-radius:10px;">
+      <table class="sc-table" style="width:100%;">
+        <thead>
+          <tr>
+            <th>Applicant</th>
+            <th>Institution</th>
+            <th>Country</th>
+            <th>Tier</th>
+            <th>Applied</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+window._saCons_openAppDrawer = function(key) {
+  const a = _saCons_applicationsCache.find(x => x._key === key);
+  if (!a) return;
+  const tierLabel = _CONS_TIER_LABELS[a.tier] || `Tier ${a.tier || '?'}`;
+  const tierColor = _CONS_TIER_COLORS[a.tier] || _CC.dim;
+  const dateStr   = a.applied_at ? new Date(a.applied_at).toLocaleString() : '—';
+  const diseases  = Array.isArray(a.disease_areas) ? a.disease_areas.join(', ') : '—';
+  const insts     = Array.isArray(a.instruments) ? a.instruments.join(', ') : '—';
+  const isPending = a.status === 'pending';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sc-app-drawer';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-start;justify-content:flex-end;background:rgba(6,12,24,0.70);backdrop-filter:blur(4px);';
+  overlay.innerHTML = `
+    <div style="width:min(540px,100vw);height:100vh;overflow-y:auto;background:${_CC.surface};border-left:1px solid ${_CC.borderB};padding:28px 28px 60px;display:flex;flex-direction:column;gap:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.22em;text-transform:uppercase;color:${_CC.amber};margin-bottom:4px;">TESSERA GRC · Application</div>
+          <div style="font-size:1.22rem;font-weight:600;color:${_CC.bright};">${_saCons_esc(a.name || '—')}</div>
+          <div style="font-size:0.78rem;color:${_CC.dim};margin-top:2px;">${_saCons_esc(a.contact_email || '')}</div>
+        </div>
+        <button onclick="document.getElementById('sc-app-drawer')?.remove();" style="background:rgba(255,255,255,0.06);border:1px solid ${_CC.border};border-radius:6px;color:${_CC.muted};font-size:1.1rem;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+        ${[
+          ['Institution',   a.institution || '—'],
+          ['Department',    a.department  || '—'],
+          ['Country',       a.country     || '—'],
+          ['Role',          a.role        || '—'],
+          ['Applied',       dateStr],
+          ['Reference',     a.application_ref || '—'],
+          ['IRB Status',    a.irb_status  || '—'],
+          ['Enrollment',    a.enrollment ? String(a.enrollment) : '—'],
+          ['ORCID',         a.orcid       || '—'],
+          ['Open Science',  a.open_science ? 'Yes — requested' : 'Not requested'],
+        ].map(([l,v]) => `
+          <div style="background:${_CC.bg2};border:1px solid ${_CC.border};border-radius:7px;padding:10px 12px;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.16em;text-transform:uppercase;color:${_CC.dim};margin-bottom:4px;">${l}</div>
+            <div style="font-size:0.80rem;color:${_CC.text};">${_saCons_esc(v)}</div>
+          </div>`).join('')}
+      </div>
+
+      <div style="background:${_CC.bg2};border:1px solid rgba(${a.tier===1?'212,168,67':a.tier===2?'56,189,248':a.tier===3?'46,201,138':a.tier===4?'139,111,245':'245,158,11'},0.25);border-radius:8px;padding:13px 14px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:${tierColor};margin-bottom:5px;">Requested Tier</div>
+        <div style="font-size:0.84rem;color:${_CC.text};font-weight:600;">${tierLabel}</div>
+      </div>
+
+      ${a.study_title ? `<div style="background:${_CC.bg2};border:1px solid ${_CC.border};border-radius:8px;padding:13px 14px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:${_CC.dim};margin-bottom:5px;">Study / Research Focus</div>
+        <div style="font-size:0.82rem;color:${_CC.text};line-height:1.5;">${_saCons_esc(a.study_title)}</div>
+      </div>` : ''}
+
+      ${a.description ? `<div style="background:${_CC.bg2};border:1px solid ${_CC.border};border-radius:8px;padding:13px 14px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:${_CC.dim};margin-bottom:5px;">Research Description</div>
+        <div style="font-size:0.80rem;color:${_CC.muted};line-height:1.55;">${_saCons_esc(a.description)}</div>
+      </div>` : ''}
+
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+        ${diseases !== '—' ? `<div style="font-size:0.72rem;color:${_CC.dim};">Disease areas: <span style="color:${_CC.muted};">${_saCons_esc(diseases)}</span></div>` : ''}
+        ${insts !== '—'    ? `<div style="font-size:0.72rem;color:${_CC.dim};margin-top:4px;">Instruments: <span style="color:${_CC.muted};">${_saCons_esc(insts)}</span></div>` : ''}
+        ${a.referral       ? `<div style="font-size:0.72rem;color:${_CC.dim};margin-top:4px;">Referral: <span style="color:${_CC.muted};">${_saCons_esc(a.referral)}</span></div>` : ''}
+        ${a.linkedin       ? `<div style="font-size:0.72rem;margin-top:4px;"><a href="${_saCons_esc(a.linkedin)}" target="_blank" style="color:${_CC.cyan};">${_saCons_esc(a.linkedin)}</a></div>` : ''}
+      </div>
+
+      ${a.message ? `<div style="background:${_CC.bg2};border:1px solid ${_CC.border};border-radius:8px;padding:13px 14px;margin-bottom:18px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:${_CC.dim};margin-bottom:5px;">Applicant Message</div>
+        <div style="font-size:0.80rem;color:${_CC.muted};line-height:1.55;font-style:italic;">"${_saCons_esc(a.message)}"</div>
+      </div>` : ''}
+
+      ${isPending ? `
+        <div style="border-top:1px solid ${_CC.border};padding-top:20px;display:flex;flex-direction:column;gap:10px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:${_CC.dim};">Review Decision</div>
+          <div style="display:flex;gap:10px;">
+            <button onclick="_saCons_approveApp('${a._key}')" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;padding:12px;border-radius:7px;border:none;background:${_CC.green};color:#000;cursor:pointer;">Approve & Create Member</button>
+            <button onclick="_saCons_rejectApp('${a._key}')" style="flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;padding:12px 16px;border-radius:7px;border:1px solid rgba(239,68,68,0.35);background:transparent;color:${_CC.red};cursor:pointer;">Reject</button>
+          </div>
+          <div style="font-size:0.72rem;color:${_CC.dim};line-height:1.5;">
+            Approving will create a consortium_members record with status "pending" and copy all applicant data. You can then provision workspace access and issue a TESSERA ID from the Members tab.
+          </div>
+        </div>` : `
+        <div style="border-top:1px solid ${_CC.border};padding-top:16px;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:${a.status==='rejected'?_CC.red:_CC.green};">${a.status === 'rejected' ? 'Application rejected' : 'Application approved — member record created'}</span>
+        </div>`}
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+};
+
+window._saCons_approveApp = async function(key) {
+  const a = _saCons_applicationsCache.find(x => x._key === key);
+  if (!a) return;
+  if (!confirm(`Approve application from ${a.name || a.contact_email}?\n\nThis will create a consortium member record and mark the application as approved.`)) return;
+  try {
+    const db = firebase.database();
+    // 1. Create member record in consortium_members
+    const memberData = {
+      name:          a.name          || '',
+      contact_email: a.contact_email || a.email || '',
+      email:         a.email         || a.contact_email || '',
+      institution:   a.institution   || '',
+      department:    a.department    || '',
+      country:       a.country       || '',
+      role:          a.role          || '',
+      tier:          a.tier          || 3,
+      study_title:   a.study_title   || '',
+      disease_areas: a.disease_areas || [],
+      instruments:   a.instruments   || [],
+      irb_status:    a.irb_status    || '',
+      description:   a.description   || '',
+      open_science:  a.open_science  || false,
+      lmic_eligible: a.lmic_eligible || false,
+      lmic_tier:     a.open_science  || false,
+      orcid:         a.orcid         || '',
+      linkedin:      a.linkedin      || '',
+      preferred_name:a.preferred_name|| '',
+      referral:      a.referral      || '',
+      status:        'pending',
+      application_ref: a.application_ref || '',
+      applied_at:    a.applied_at    || Date.now(),
+      approved_at:   Date.now(),
+      tessera_id:    null,
+      source:        'tessera-signup-form-v1',
+    };
+    await db.ref('consortium_members').push(memberData);
+    // 2. Mark application as approved
+    await db.ref('consortium_applications/' + key + '/status').set('approved');
+    document.getElementById('sc-app-drawer')?.remove();
+    if (typeof showToast === 'function') showToast('✓ Application approved. Member record created — assign workspace and TESSERA ID in Members tab.', 4000);
+    await _saCons_loadApplications();
+    _saCons_renderApplicationsUI(document.getElementById('sc-tab-content'));
+  } catch (e) {
+    alert('Error approving application: ' + e.message);
+  }
+};
+
+window._saCons_rejectApp = async function(key) {
+  const a = _saCons_applicationsCache.find(x => x._key === key);
+  if (!a) return;
+  if (!confirm(`Reject application from ${a.name || a.contact_email}?\n\nThis marks the application as rejected. You can reverse this decision by editing the record directly in Firebase.`)) return;
+  try {
+    await firebase.database().ref('consortium_applications/' + key + '/status').set('rejected');
+    document.getElementById('sc-app-drawer')?.remove();
+    if (typeof showToast === 'function') showToast('Application marked as rejected.', 2500);
+    await _saCons_loadApplications();
+    _saCons_renderApplicationsUI(document.getElementById('sc-tab-content'));
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// TAB 8: TESSERA MOSAIC
+// Manages tessera_tiles in Firebase — each tile appears as a colored hex on
+// scalacartafoundation.org/mosaic/
+// ═════════════════════════════════════════════════════════════════════════════
+
+const _TESSERA_TIERS = {
+  institutional: { label: 'Institutional Partner', color: '#d4a843', border: 'rgba(212,168,67,0.4)', bg: 'rgba(212,168,67,0.08)' },
+  validation:    { label: 'Validation Partner',    color: '#06b6d4', border: 'rgba(6,182,212,0.4)',  bg: 'rgba(6,182,212,0.08)'  },
+  affiliate:     { label: 'Affiliate Partner',     color: '#10b981', border: 'rgba(16,185,129,0.4)', bg: 'rgba(16,185,129,0.08)' },
+  student:       { label: 'Student Affiliate',     color: '#8b6ff5', border: 'rgba(139,111,245,0.4)',bg: 'rgba(139,111,245,0.08)'},
+  industry:      { label: 'Industry Partner',      color: '#f59e0b', border: 'rgba(245,158,11,0.4)', bg: 'rgba(245,158,11,0.08)' },
+};
+
+let _saTessera_cache = [];
+
+async function _saTessera_load() {
+  const snap = await firebase.database().ref('tessera_tiles').orderByChild('joinedAt').once('value');
+  const raw  = snap.val() || {};
+  _saTessera_cache = Object.entries(raw)
+    .map(([k, v]) => ({ _key: k, ...v }))
+    .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+}
+
+function _saTessera_tierBadge(tier) {
+  const t = _TESSERA_TIERS[tier] || _TESSERA_TIERS.institutional;
+  return `<span style="display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;padding:2px 8px;border-radius:3px;border:1px solid ${t.border};background:${t.bg};color:${t.color};white-space:nowrap;">${_saCons_esc(t.label)}</span>`;
+}
+
+function _saTessera_hexSwatch(tier) {
+  const t = _TESSERA_TIERS[tier] || _TESSERA_TIERS.institutional;
+  const hw = 11, s = 13;
+  const pts = [
+    `${hw},0`, `${hw*2},${s*0.5}`, `${hw*2},${s*1.5}`,
+    `${hw},${s*2}`, `0,${s*1.5}`, `0,${s*0.5}`
+  ].join(' ');
+  return `<svg width="${hw*2}" height="${s*2}" viewBox="0 0 ${hw*2} ${s*2}" style="flex-shrink:0;vertical-align:middle;">
+    <polygon points="${pts}" fill="${t.color}" opacity="0.85"/>
+  </svg>`;
+}
+
+function _saCons_renderTessera(container) {
+  container.innerHTML = `<div style="color:${_CC.muted};padding:20px;font-size:0.90rem;">Loading tessera tiles…</div>`;
+  _saTessera_load().then(() => _saTessera_renderUI(container)).catch(e => {
+    container.innerHTML = `<div style="color:${_CC.red};padding:20px;">Error loading tiles: ${_saCons_esc(e.message)}</div>`;
+  });
+}
+
+function _saTessera_renderUI(container) {
+  const total = _saTessera_cache.length;
+  const countries = new Set(_saTessera_cache.map(t => t.country).filter(Boolean));
+
+  const tierCounts = {};
+  _saTessera_cache.forEach(t => {
+    const k = t.tier || 'institutional';
+    tierCounts[k] = (tierCounts[k] || 0) + 1;
+  });
+
+  const statCards = Object.entries(_TESSERA_TIERS).map(([key, t]) => `
+    <div style="background:${_CC.surface};border:1px solid ${t.border};border-radius:9px;padding:14px 16px;display:flex;flex-direction:column;gap:3px;min-width:130px;">
+      <div style="font-size:1.5rem;font-weight:700;color:${t.color};font-family:'IBM Plex Mono',monospace;line-height:1;">${tierCounts[key] || 0}</div>
+      <div style="font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.dim};">${_saCons_esc(t.label)}</div>
+    </div>`).join('');
+
+  const rows = _saTessera_cache.length ? _saTessera_cache.map((tile, seq) => `
+    <tr>
+      <td style="text-align:center;color:${_CC.dim};font-size:0.78rem;">${seq + 1}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:9px;">
+          ${_saTessera_hexSwatch(tile.tier)}
+          <div>
+            <div style="font-weight:600;color:${_CC.text};">${_saCons_esc(tile.name || '—')}</div>
+            <div style="font-size:0.75rem;color:${_CC.dim};margin-top:1px;">${_saCons_esc(tile.institution || '')}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-size:0.90rem;">${_saCons_esc(tile.countryFlag || '')} <span style="color:${_CC.muted};font-size:0.82rem;">${_saCons_esc(tile.country || '—')}</span></td>
+      <td>${_saTessera_tierBadge(tile.tier)}</td>
+      <td style="color:${_CC.dim};font-size:0.78rem;white-space:nowrap;">${tile.joinedAt ? new Date(tile.joinedAt).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—'}</td>
+      <td>
+        <button class="sc-action-btn sc-action-btn-danger"
+          onclick="_saTessera_remove('${_saCons_esc(tile._key)}','${_saCons_esc(tile.name || '')}')">
+          Remove
+        </button>
+      </td>
+    </tr>`).join('')
+    : `<tr><td colspan="6" style="text-align:center;padding:48px;color:${_CC.dim};font-size:0.88rem;">No tiles yet. Add the first partner below.</td></tr>`;
+
+  const tierOpts = Object.entries(_TESSERA_TIERS).map(([k, t]) =>
+    `<option value="${k}">${t.label}</option>`).join('');
+
+  const countryOpts = _CONS_COUNTRIES.map(c =>
+    `<option value="${_saCons_esc(c)}">${_saCons_esc(c)}</option>`).join('');
+
+  container.innerHTML = `
+    <!-- Stats row -->
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+      <div style="background:${_CC.surface};border:1px solid ${_CC.border};border-radius:9px;padding:14px 16px;display:flex;flex-direction:column;gap:3px;min-width:100px;">
+        <div style="font-size:1.5rem;font-weight:700;color:${_CC.amber};font-family:'IBM Plex Mono',monospace;line-height:1;">${total}</div>
+        <div style="font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.dim};">Total Tiles</div>
+      </div>
+      <div style="background:${_CC.surface};border:1px solid ${_CC.border};border-radius:9px;padding:14px 16px;display:flex;flex-direction:column;gap:3px;min-width:100px;">
+        <div style="font-size:1.5rem;font-weight:700;color:${_CC.cyan};font-family:'IBM Plex Mono',monospace;line-height:1;">${countries.size}</div>
+        <div style="font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.dim};">Countries</div>
+      </div>
+      ${statCards}
+    </div>
+
+    <!-- Live mosaic link -->
+    <div style="background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.14);border-radius:9px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap;">
+      <span style="font-size:0.82rem;color:${_CC.muted};">Live mosaic:</span>
+      <a href="https://scalacartafoundation.org/mosaic/" target="_blank" rel="noopener"
+        style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.08em;color:${_CC.amber};text-decoration:none;">
+        scalacartafoundation.org/mosaic/ ↗
+      </a>
+      <span style="font-size:0.78rem;color:${_CC.dim};">Tiles update live via Firebase listener.</span>
+    </div>
+
+    <!-- Add tile form -->
+    <div style="background:${_CC.surface};border:1px solid ${_CC.border};border-radius:10px;padding:20px 22px;margin-bottom:24px;">
+      <div style="font-size:0.70rem;letter-spacing:0.20em;text-transform:uppercase;color:${_CC.amber};margin-bottom:14px;">Add Partner Tile</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">
+        <div>
+          <label class="sc-label" for="sc-tess-name">Institution / Name <span style="color:${_CC.red};">*</span></label>
+          <input id="sc-tess-name" class="sc-input" type="text" placeholder="University of Porto" />
+        </div>
+        <div>
+          <label class="sc-label" for="sc-tess-country">Country</label>
+          <select id="sc-tess-country" class="sc-input" style="cursor:pointer;" onchange="_saTessera_updateFlag(this.value)">${countryOpts}</select>
+        </div>
+        <div>
+          <label class="sc-label" for="sc-tess-tier">Tier</label>
+          <select id="sc-tess-tier" class="sc-input" style="cursor:pointer;">${tierOpts}</select>
+        </div>
+        <div>
+          <label class="sc-label" for="sc-tess-flag">Flag Emoji</label>
+          <input id="sc-tess-flag" class="sc-input" type="text" placeholder="🇵🇹" maxlength="4" style="font-size:1.1rem;" />
+        </div>
+        <button id="sc-tess-add-btn" onclick="_saTessera_add()"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
+                 padding:9px 20px;border-radius:7px;cursor:pointer;white-space:nowrap;
+                 background:${_CC.amberFaint};border:1px solid ${_CC.amberDim};color:${_CC.amber};transition:all 0.15s;"
+          onmouseover="this.style.background='rgba(212,168,67,0.18)'" onmouseout="this.style.background='${_CC.amberFaint}'">
+          + Add Tile
+        </button>
+      </div>
+      <div id="sc-tess-err" style="display:none;margin-top:10px;font-size:0.80rem;color:${_CC.red};"></div>
+    </div>
+
+    <!-- Tiles table -->
+    <div style="overflow-x:auto;border:1px solid ${_CC.border};border-radius:10px;">
+      <table class="sc-table">
+        <thead>
+          <tr>
+            <th style="width:40px;">#</th>
+            <th>Name / Institution</th>
+            <th>Country</th>
+            <th>Tier</th>
+            <th>Added</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="sc-tess-tbody">${rows}</tbody>
+      </table>
+    </div>
+  `;
+
+  // Pre-fill flag for default country
+  const defaultCountry = document.getElementById('sc-tess-country')?.value;
+  if (defaultCountry) _saTessera_updateFlag(defaultCountry);
+}
+
+window._saTessera_updateFlag = function(country) {
+  const el = document.getElementById('sc-tess-flag');
+  if (!el) return;
+  const flag = _CONS_FLAGS[country] || '';
+  el.value = flag;
+};
+
+window._saTessera_add = async function() {
+  const name    = (document.getElementById('sc-tess-name')?.value || '').trim();
+  const country = document.getElementById('sc-tess-country')?.value || '';
+  const tier    = document.getElementById('sc-tess-tier')?.value    || 'institutional';
+  const flag    = (document.getElementById('sc-tess-flag')?.value  || '').trim();
+  const errEl   = document.getElementById('sc-tess-err');
+  const btn     = document.getElementById('sc-tess-add-btn');
+
+  if (!name) {
+    errEl.textContent = 'Institution / name is required.';
+    errEl.style.display = 'block';
+    document.getElementById('sc-tess-name')?.focus();
+    return;
+  }
+  errEl.style.display = 'none';
+  btn.textContent = 'Adding…';
+  btn.disabled = true;
+
+  try {
+    await firebase.database().ref('tessera_tiles').push({
+      name,
+      country,
+      countryFlag: flag,
+      tier,
+      joinedAt: Date.now(),
+    });
+    if (typeof showToast === 'function') showToast(`✓ "${name}" added to the Tessera mosaic.`, 2500);
+    document.getElementById('sc-tess-name').value = '';
+    await _saTessera_load();
+    _saTessera_renderUI(document.getElementById('sc-tab-content'));
+  } catch (e) {
+    errEl.textContent = 'Save failed: ' + e.message;
+    errEl.style.display = 'block';
+    btn.textContent = '+ Add Tile';
+    btn.disabled = false;
+  }
+};
+
+window._saTessera_remove = async function(key, name) {
+  if (!confirm(`Remove "${name}" from the Tessera mosaic?\n\nThis removes their tile from scalacartafoundation.org/mosaic/ immediately.`)) return;
+  try {
+    await firebase.database().ref('tessera_tiles/' + key).remove();
+    if (typeof showToast === 'function') showToast(`Tile removed.`, 2000);
+    await _saTessera_load();
+    _saTessera_renderUI(document.getElementById('sc-tab-content'));
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Remove failed: ' + e.message, 3000);
   }
 };
