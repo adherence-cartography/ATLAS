@@ -1794,23 +1794,54 @@ export const handler = async (event) => {
 // ADMIN ROUTES — superadmin Firebase token required in Authorization header
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Cache Firebase public signing keys (X.509 certs, refreshed per Cache-Control header)
+const _fbPubKeyCache = { certs: null, exp: 0 };
+async function _getFirebasePubKeys() {
+  if (_fbPubKeyCache.certs && Date.now() < _fbPubKeyCache.exp) return _fbPubKeyCache.certs;
+  return new Promise((res, rej) => {
+    https.get('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com', r => {
+      let d = ''; r.on('data', c => d += c); r.on('end', () => {
+        try {
+          const maxAge = parseInt((r.headers['cache-control'] || '').match(/max-age=(\d+)/)?.[1] || '3600', 10);
+          _fbPubKeyCache.certs = JSON.parse(d);
+          _fbPubKeyCache.exp   = Date.now() + maxAge * 1000;
+          res(_fbPubKeyCache.certs);
+        } catch(e) { rej(e); }
+      });
+    }).on('error', rej);
+  });
+}
+
 async function verifyAdminToken(event) {
   const auth = (event.headers?.authorization || event.headers?.Authorization || '').replace('Bearer ', '').trim();
   if (!auth) throw new Error('Missing Authorization header');
-  // Verify via Firebase token introspection endpoint
-  const url = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${process.env.FIREBASE_WEB_API_KEY}`;
-  const res = await new Promise((resolve, reject) => {
-    const payload = JSON.stringify({ idToken: auth });
-    const req = https.request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, r => {
-      let d = ''; r.on('data', c => d += c); r.on('end', () => resolve(JSON.parse(d)));
-    });
-    req.on('error', reject); req.write(payload); req.end();
-  });
-  if (res.error || !res.users?.length) throw new Error('Invalid token');
-  // Decode claims from the token itself (already verified by Firebase)
-  const payload = JSON.parse(Buffer.from(auth.split('.')[1], 'base64url').toString());
+
+  const parts = auth.split('.');
+  if (parts.length !== 3) throw new Error('Invalid token format');
+
+  const header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
+  const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+
+  // Verify expiry and clock skew
+  const now = Math.floor(Date.now() / 1000);
+  if (!payload.exp || payload.exp < now) throw new Error('Token expired');
+  if (payload.iat  && payload.iat > now + 300) throw new Error('Token iat in the future');
+
+  // Verify issuer and audience against known Firebase project
+  const projectId = process.env.FIREBASE_PROJECT_ID || 'adherence-project-2026';
+  if (payload.iss !== `https://securetoken.google.com/${projectId}`) throw new Error('Invalid token issuer');
+  if (payload.aud !== projectId) throw new Error('Invalid token audience');
+
+  // Verify RS256 signature using Firebase public keys — no Web API key needed
+  const certs = await _getFirebasePubKeys();
+  const cert  = certs[header.kid];
+  if (!cert) throw new Error('Unknown signing key: ' + header.kid);
+  const verifier = crypto.createVerify('RS256');
+  verifier.update(parts[0] + '.' + parts[1]);
+  if (!verifier.verify(cert, Buffer.from(parts[2], 'base64url'))) throw new Error('Invalid token signature');
+
+  // Check superadmin role in custom claims
   if (payload.role !== 'superadmin' && payload?.firebase?.sign_in_attributes?.role !== 'superadmin') {
-    // Check custom claims path
     const claims = payload?.['https://hasura.io/jwt/claims'] || payload;
     if (claims.role !== 'superadmin') throw new Error('Superadmin role required');
   }
