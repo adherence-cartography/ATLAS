@@ -82,6 +82,7 @@ async function _saPlatWorkspaces(container) {
       database.ref('workspaces').once('value').catch(() => null),
       database.ref('atlas_deleted_keys').once('value').catch(() => null),
     ]);
+    if (keysRes.error) throw new Error('Lambda: ' + keysRes.error);
     const deletedKeys = new Set(Object.keys((deletedSnap && deletedSnap.val()) || {}));
     const wsMap = {};
     if (wsSnap && wsSnap.val()) Object.entries(wsSnap.val()).forEach(([k,v]) => { wsMap[k.toUpperCase()] = v; });
@@ -90,7 +91,7 @@ async function _saPlatWorkspaces(container) {
     if (aSnap && aSnap.val()) Object.values(aSnap.val()).forEach(r => { const c=(r.institution_code||'').toUpperCase(); if(!c)return; const bucket=(r.tool==='map'||r.map_q1!==undefined)?mapCounts:mmasCounts; bucket[c]=(bucket[c]||0)+1; if(r.timestamp) lastSeen[c]=Math.max(lastSeen[c]||0,r.timestamp); });
     _tally(pSnap, peacsCounts);
     _saPlatWsAll = (keysRes.keys || [])
-      .filter(k => !deletedKeys.has((k.key||'').toUpperCase()) && !deletedKeys.has(k.key||''))
+      .filter(k => !deletedKeys.has(k.key||''))
       .map(k => {
         const ws = wsMap[(k.key||'').toUpperCase()] || {};
         return { ...k, ...(ws.name?{name:ws.name}:{}), ...(ws.institution?{institution:ws.institution}:{}),
