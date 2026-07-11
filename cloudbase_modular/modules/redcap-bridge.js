@@ -5,6 +5,10 @@
 
 'use strict';
 
+// Local HTML-escape — scoped to avoid collision with global _esc
+const _rcEsc = s => String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
 /** @type {Object|null} Current REDCap connection config for this workspace */
 let _redcapConfig = null;
 /** @type {boolean} Whether a sync is currently in progress */
@@ -168,7 +172,7 @@ function _renderREDCapConnected(panel) {
       <span style="font-size:1.2rem;">✓</span>
       <div>
         <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(46,201,138,0.8);margin-bottom:3px;">Connected</div>
-        <div style="font-size:0.82rem;color:var(--text,#c8d6e8);">${_esc(_redcapConfig.api_url || 'REDCap')}</div>
+        <div style="font-size:0.82rem;color:var(--text,#c8d6e8);">${_rcEsc(_redcapConfig.api_url || 'REDCap')}</div>
       </div>
       <button onclick="disconnectREDCap()" style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:0.60rem;text-transform:uppercase;background:none;border:1px solid rgba(239,68,68,0.3);color:rgba(239,68,68,0.7);padding:5px 10px;border-radius:5px;cursor:pointer;">Disconnect</button>
     </div>
@@ -211,7 +215,7 @@ async function saveREDCapConfig() {
     const res = await fetch(LAMBDA_URL + '/redcap-test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + await _accGetToken() },
-      body: JSON.stringify({ api_url: url, api_token: token })
+      body: JSON.stringify({ workspace_key: currentWorkspace, api_url: url, api_token: token })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Connection test failed');
@@ -328,7 +332,7 @@ async function syncATLAStoREDCap() {
     const data = await res.json();
 
     if (status) status.textContent = `✓ Pushed ${data.count || items.length} records. Errors: ${data.errors || 0}`;
-    if (log) log.innerHTML = (data.log || []).map(l => `<div>${_esc(String(l))}</div>`).join('');
+    if (log) log.innerHTML = (data.log || []).map(l => `<div>${_rcEsc(String(l))}</div>`).join('');
     if (typeof atlasAuditLog === 'function') atlasAuditLog('REDCAP_PUSH', { count: data.count, errors: data.errors });
 
   } catch(e) {
@@ -412,9 +416,15 @@ async function syncREDCapToATLAS() {
   }
 }
 
-function disconnectREDCap() {
+async function disconnectREDCap() {
   if (!confirm('Disconnect REDCap integration? Existing synced data will remain.')) return;
-  database.ref(`workspaces/${currentWorkspace}/redcap_config`).remove();
+  try {
+    await database.ref(`workspaces/${currentWorkspace}/redcap_config`).remove();
+  } catch(e) {
+    console.warn('[REDCap] disconnect failed:', e.message);
+    if (typeof showToast === 'function') showToast('Disconnect failed — check connection.', 3000);
+    return;
+  }
   _redcapConfig = null;
   const panel = document.getElementById('redcap-config-panel');
   if (panel) _renderREDCapSetup(panel);
