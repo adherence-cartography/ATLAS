@@ -17,6 +17,7 @@ const _SA_PLAT_SUBS = [
   { id: 'banner',     label: '📢 Banner'       },
   { id: 'modules',    label: '◫ Module Paths' },
   { id: 'requests',   label: '◐ Requests'     },
+  { id: 'sites',      label: '◉ TESSERA Sites' },
   { id: 'system',     label: '◉ System'       },
 ];
 
@@ -60,6 +61,7 @@ function _saPlatNav(tab) {
     case 'banner':     _saPlatBanner(body);        break;
     case 'modules':    _saPlatModulePaths(body);  break;
     case 'requests':   _saPlatRequests(body);     break;
+    case 'sites':      _saPlatSites(body);         break;
     case 'system':     _saPlatSystem(body);        break;
   }
 }
@@ -83,17 +85,20 @@ async function _saPlatWorkspaces(container) {
     const deletedKeys = new Set(Object.keys((deletedSnap && deletedSnap.val()) || {}));
     const wsMap = {};
     if (wsSnap && wsSnap.val()) Object.entries(wsSnap.val()).forEach(([k,v]) => { wsMap[k.toUpperCase()] = v; });
-    const mmasCounts = {}, peacsCounts = {}, lastSeen = {};
+    const mmasCounts = {}, mapCounts = {}, peacsCounts = {}, lastSeen = {};
     const _tally = (snap, counts) => { if (snap && snap.val()) Object.values(snap.val()).forEach(r => { const c=(r.institution_code||'').toUpperCase(); if(!c)return; counts[c]=(counts[c]||0)+1; if(r.timestamp) lastSeen[c]=Math.max(lastSeen[c]||0,r.timestamp); }); };
-    _tally(aSnap, mmasCounts); _tally(pSnap, peacsCounts);
+    if (aSnap && aSnap.val()) Object.values(aSnap.val()).forEach(r => { const c=(r.institution_code||'').toUpperCase(); if(!c)return; const bucket=(r.tool==='map'||r.map_q1!==undefined)?mapCounts:mmasCounts; bucket[c]=(bucket[c]||0)+1; if(r.timestamp) lastSeen[c]=Math.max(lastSeen[c]||0,r.timestamp); });
+    _tally(pSnap, peacsCounts);
     _saPlatWsAll = (keysRes.keys || [])
       .filter(k => !deletedKeys.has((k.key||'').toUpperCase()) && !deletedKeys.has(k.key||''))
       .map(k => {
         const ws = wsMap[(k.key||'').toUpperCase()] || {};
         return { ...k, ...(ws.name?{name:ws.name}:{}), ...(ws.institution?{institution:ws.institution}:{}),
           mmas: mmasCounts[(k.key||'').toUpperCase()]||0,
+          map: mapCounts[(k.key||'').toUpperCase()]||0,
           peacs: peacsCounts[(k.key||'').toUpperCase()]||0,
-          lastActive: lastSeen[(k.key||'').toUpperCase()]||0 };
+          lastActive: lastSeen[(k.key||'').toUpperCase()]||0,
+          region: ws.region || null };
       });
     _saPlatRenderWsTable(container, _saPlatWsAll);
   } catch(e) {
@@ -124,7 +129,7 @@ function _saPlatRenderWsTable(container, keys) {
       <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;">
         <thead>
           <tr style="border-bottom:1px solid ${_C.borderB};">
-            ${['Key','Name','Role','Institution','MMAS','PEACS','Last Active',''].map(h=>`<th style="text-align:left;padding:8px 10px;font-size:0.68rem;letter-spacing:0.16em;text-transform:uppercase;color:${_C.dim};font-weight:400;">${h}</th>`).join('')}
+            ${['Key','Name','Role','Institution','MMAS','MAP','PEACS','Last Active','Region',''].map(h=>`<th style="text-align:left;padding:8px 10px;font-size:0.68rem;letter-spacing:0.16em;text-transform:uppercase;color:${_C.dim};font-weight:400;">${h}</th>`).join('')}
           </tr>
         </thead>
         <tbody id="sa-plat-ws-tbody">
@@ -137,7 +142,7 @@ function _saPlatRenderWsTable(container, keys) {
 function _saPlatWsRows(keys) {
   const timeAgo = ts => { if(!ts)return'—'; const d=Date.now()-ts; if(d<86400000)return Math.floor(d/3600000)+'h ago'; if(d<30*86400000)return Math.floor(d/86400000)+'d ago'; return new Date(ts).toLocaleDateString(); };
   const roleColor = { superadmin:_C.amber, institution:_C.purple, pi:_C.blue, researcher:_C.cyan, student:_C.green, independent:_C.green, observer:_C.dim };
-  if (!keys.length) return `<tr><td colspan="8" style="padding:24px;text-align:center;color:${_C.dim};font-size:0.90rem;">No matches</td></tr>`;
+  if (!keys.length) return `<tr><td colspan="10" style="padding:24px;text-align:center;color:${_C.dim};font-size:0.90rem;">No matches</td></tr>`;
   return keys.map(k => {
     const rc = roleColor[k.role] || _C.muted;
     return `<tr style="border-bottom:1px solid ${_C.border};transition:background 0.12s;"
@@ -147,8 +152,12 @@ function _saPlatWsRows(keys) {
       <td style="padding:9px 10px;"><span style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:${rc}18;border:1px solid ${rc}44;color:${rc};">${_saEsc(k.role||'?')}</span></td>
       <td style="padding:9px 10px;font-size:0.84rem;color:${_C.muted};max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_saEsc(k.institution||'—')}</td>
       <td style="padding:9px 10px;font-size:0.88rem;color:${_C.text};text-align:right;">${k.mmas||0}</td>
+      <td style="padding:9px 10px;font-size:0.88rem;color:${_C.text};text-align:right;">${k.map||0}</td>
       <td style="padding:9px 10px;font-size:0.88rem;color:${_C.text};text-align:right;">${k.peacs||0}</td>
       <td style="padding:9px 10px;font-size:0.82rem;color:${_C.muted};">${timeAgo(k.lastActive)}</td>
+      <td style="padding:9px 10px;">
+        ${(()=>{ const r=k.region||'us'; const cfg={us:{label:'US',color:_C.blue},eu:{label:'EU',color:'#06b6d4'},uae:{label:'UAE',color:_C.green}}[r]||{label:r.toUpperCase(),color:_C.dim}; return `<button onclick="_saPlatWsSetRegion('${_saEsc(k.key||'')}','${r}')" title="Click to change data region" style="font-family:'IBM Plex Mono',monospace;font-size:0.64rem;letter-spacing:0.14em;text-transform:uppercase;padding:2px 8px;border-radius:4px;cursor:pointer;background:${cfg.color}18;border:1px solid ${cfg.color}44;color:${cfg.color};transition:all 0.15s;" onmouseover="this.style.background='${cfg.color}30'" onmouseout="this.style.background='${cfg.color}18'">${cfg.label}</button>`; })()}
+      </td>
       <td style="padding:9px 10px;">
         <div style="display:flex;gap:6px;">
           <button onclick="accOpenEditKey('${_saEsc(k.key||'')}');setTimeout(()=>{const o=document.getElementById('sa-overlay');if(o)o.style.zIndex='9800';},50);"
@@ -211,7 +220,7 @@ function _saPlatWsNew() {
         <!-- WORKSPACE -->
         <div>
           ${_sec('Workspace')}
-          <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:10px;">
+          <div style="display:grid;grid-template-columns:1.1fr 0.7fr 1fr;gap:10px;">
             <div>
               ${_lbl('Role','*')}
               <select id="sa-ws-new-role"
@@ -227,6 +236,15 @@ function _saPlatWsNew() {
                   <option value="institution_amc">Institution · Academic Med Ctr</option>
                 </optgroup>
               </select>
+            </div>
+            <div>
+              ${_lbl('Data Region')}
+              <select id="sa-ws-new-region" style="${_inpSty}cursor:pointer;">
+                <option value="us" selected>US — Virginia</option>
+                <option value="eu">EU — Frankfurt</option>
+                <option value="uae">UAE — Abu Dhabi</option>
+              </select>
+              ${_note('Routes Lambda + data writes.')}
             </div>
             <div>${_lbl('Display Name','(optional)')}${_inp('sa-ws-new-name','e.g. SIMAT Research Group')}
               ${_note('Key is auto-generated by the system and emailed to the recipient.')}</div>
@@ -303,6 +321,7 @@ function _saPlatWsNew() {
       const expiry     = document.getElementById('sa-ws-new-expiry')?.value||null;
       const note       = (document.getElementById('sa-ws-new-note')?.value||'').trim()||null;
       const dims       = ['base','mvmt','strata'].filter(d => document.getElementById('sa-ws-new-dim-'+d)?.checked);
+      const region     = document.getElementById('sa-ws-new-region')?.value || 'us';
       const _instTypeMap = { institution_academic:'academic', institution_health:'health', institution_amc:'amc' };
       // Firebase role — the actual role stored in the workspace profile
       const role = _instTypeMap[_roleRaw] ? 'institution' : _roleRaw;
@@ -348,6 +367,7 @@ function _saPlatWsNew() {
         if (campaign)       wsData.campaign_tag     = campaign;
         if (expiry)         wsData.expiry           = expiry;
         if (note)           wsData.sa_note          = note;
+        if (region && region !== 'us') wsData.region = region;
         await database.ref('workspaces/' + issuedKey).update(wsData);
         showToast(`Workspace ${issuedKey} created for ${email}.`, 4000);
         const container = document.getElementById('sa-plat-body');
@@ -384,6 +404,51 @@ async function _saPlatWsDelete(key, displayName) {
     showToast('Remove failed: ' + e.message, 3000);
   }
 }
+
+// ── Set Region ────────────────────────────────────────────────────────────────
+function _saPlatWsSetRegion(key, currentRegion) {
+  const regionCfg = {
+    us:  { label: 'US — Virginia (us-east-1)',        color: _C.blue,        desc: 'Default. Routes to US Lambda and Firebase RTDB.' },
+    eu:  { label: 'EU — Frankfurt (eu-central-1)',    color: '#06b6d4',      desc: 'GDPR. Routes to EU Lambda. Set workspaceProfile.region = eu.' },
+    uae: { label: 'UAE — Abu Dhabi (me-central-1)',   color: _C.green,       desc: 'UAE PDPL. Routes to ALTHIQA Lambda. Workspace key prefix should be ALTHIQA-.' }
+  };
+  const optHtml = Object.entries(regionCfg).map(([val, cfg]) => `
+    <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid ${val===currentRegion?cfg.color+'66':_C.border};background:${val===currentRegion?cfg.color+'12':'transparent'};cursor:pointer;margin-bottom:6px;transition:all 0.15s;"
+      onmouseover="this.style.background='${cfg.color}10'" onmouseout="this.style.background='${val===currentRegion?cfg.color+'12':'transparent'}'">
+      <input type="radio" name="sa-region-pick" value="${val}" ${val===currentRegion?'checked':''} style="margin-top:2px;accent-color:${cfg.color};">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.1em;color:${cfg.color};margin-bottom:2px;">${cfg.label}</div>
+        <div style="font-size:0.78rem;color:${_C.dim};line-height:1.5;">${cfg.desc}</div>
+      </div>
+    </label>`).join('');
+  _saShowModal({
+    title: `Data Region — ${key}`,
+    width: '480px',
+    body: `
+      <div style="font-size:0.80rem;color:${_C.muted};margin-bottom:14px;line-height:1.6;">
+        Select the AWS region where this workspace's data writes will be routed.
+        Takes effect on the user's next login.
+      </div>
+      ${optHtml}
+      <div id="sa-region-err" style="font-size:0.82rem;color:${_C.red};min-height:16px;margin-top:6px;"></div>`,
+    confirmLabel: 'Save Region',
+    onConfirm: async () => {
+      const picked = document.querySelector('input[name="sa-region-pick"]:checked')?.value;
+      if (!picked) { document.getElementById('sa-region-err').textContent = 'Select a region.'; return false; }
+      try {
+        await database.ref('workspaces/' + key + '/region').set(picked);
+        showToast(`Region for ${key} set to ${picked.toUpperCase()}.`, 3000);
+        const container = document.getElementById('sa-plat-body');
+        if (container) _saPlatWorkspaces(container);
+        return true;
+      } catch(e) {
+        document.getElementById('sa-region-err').textContent = 'Save failed: ' + e.message;
+        return false;
+      }
+    }
+  });
+}
+window._saPlatWsSetRegion = _saPlatWsSetRegion;
 
 // ── Campaigns ─────────────────────────────────────────────────────────────────
 
@@ -849,12 +914,12 @@ const _ATLAS_DEFAULT_PATHS = {
   student:     ['assess_mmas','assess_map','assess_peacs',
                 'analytics_mmas','analytics_psychometrics','analytics_peacs',
                 'analytics_power','analytics_geospatial',
-                'research_thesis','export_citation','export_irb','export_csv'],
+                'research_thesis','research_exchange','export_citation','export_irb','export_csv'],
 
   clinician:   ['assess_mmas','assess_map','assess_peacs','assess_zoe',
                 'analytics_sdoh','analytics_mmas',
                 'clinical_overview','clinical_care_gaps','clinical_billing','clinical_clinic_mode','clinical_sentinel',
-                'export_irb','export_csv','research_ivm'],
+                'export_irb','export_csv','research_ivm','research_exchange'],
 
   // independent workspaces inherit researcher defaults — no separate entry needed.
   // hasModule() in auth-roles.js aliases independent → researcher at runtime.
@@ -864,20 +929,23 @@ const _ATLAS_DEFAULT_PATHS = {
                 'analytics_psychometrics','analytics_validity','analytics_extcomp','analytics_subgroup','analytics_publication',
                 'analytics_power','analytics_geospatial',
                 'clinical_sentinel','export_csv','export_citation','export_irb',
-                'research_ivm','premium_nlq'],
+                'research_ivm','research_exchange','research_directory','research_open_data','premium_nlq'],
 
   pi:          ['assess_mmas','assess_map','assess_peacs','assess_bulk',
                 'analytics_mmas','analytics_map','analytics_peacs',
                 'analytics_psychometrics','analytics_validity','analytics_extcomp','analytics_subgroup','analytics_publication',
                 'analytics_power','analytics_geospatial',
                 'clinical_sentinel','clinical_campaigns','export_csv','export_citation','export_irb',
-                'research_ivm','research_pi_panel','research_grants','research_amendments','premium_nlq'],
+                'research_ivm','research_pi_panel','research_grants','research_amendments',
+                'research_exchange','research_directory','research_open_data','research_tessera',
+                'premium_nlq'],
 
   institution: ['analytics_mmas','analytics_map','analytics_peacs',
                 'analytics_sdoh','analytics_psychometrics','analytics_validity','analytics_geospatial',
                 'research_cross_study','research_grants',
                 'clinical_sentinel','clinical_billing',
-                'assess_bulk','export_csv','export_irb'],
+                'assess_bulk','export_csv','export_irb',
+                'research_exchange','research_directory','research_open_data','research_inst_mgmt'],
 };
 
 // ── User paths (roles eligible for module assignment) ─────────────────────────
@@ -982,6 +1050,17 @@ const _SA_MOD_DISPLAY_GROUPS = [
       { ids:['export_csv'],      icon:'↓', label:'Data Export (CSV)',         sub:'Blinded Cohort Export',    desc:'MMAS / MAP / PEACS cohort CSV export' },
       { ids:['export_irb'],      icon:'◫', label:'IRB Protocol Template',    sub:'Submission Template',      desc:'Boilerplate IRB submission template download' },
       { ids:['export_citation'], icon:'◈', label:'Instrument Citation Tool', sub:'APA · Vancouver',          desc:'Citations for MMAS-8, MAP, PEACS' },
+    ],
+  },
+  {
+    cat:'community', catLabel:'Community & Network', catColor: null,
+    blocks: [
+      { ids:['research_exchange'],    icon:'◎', label:'Research Exchange',      sub:'Collaboration Board · Exchange',        desc:'Community board for collaboration requests, positions, grants, and publications' },
+      { ids:['research_directory'],   icon:'◉', label:'Researcher Directory',   sub:'Profile Cards · Network',               desc:'Browse verified ATLAS researcher profiles and request collaborations' },
+      { ids:['research_open_data'],   icon:'◫', label:'Open Data Portal',       sub:'Dataset Access Requests',               desc:'Browse and request access to ATLAS open anonymized datasets' },
+      { ids:['research_tessera'],     icon:'◈', label:'TESSERA GRC Full Suite', sub:'Funding Board · LMIC · Registry',       desc:'Full TESSERA Grant Resource Center access including funding board and LMIC network' },
+      { ids:['research_inst_mgmt'],   icon:'◪', label:'Institution Team Admin', sub:'Member Provisioning · Domain Config',   desc:'Self-service institution team management, key provisioning, and domain configuration' },
+      { ids:['research_poi'],         icon:'⬡', label:'POI Contributor',        sub:'Crowdsourced SDoH Infrastructure',      desc:'Submit and verify community SDoH infrastructure points of interest on the globe' },
     ],
   },
   {
@@ -1176,11 +1255,6 @@ function _saModGroupToggle(pathId, moduleIds) {
   moduleIds.forEach(id => { _saModPathConfig[pathId][id] = nowEnabled; });
   const body = document.getElementById('sa-plat-body');
   if (body) _saPlatModulePathsRender(body);
-}
-
-// Legacy single-module toggle — kept for any external callers
-function _saModPathToggle(pathId, moduleId) {
-  _saModGroupToggle(pathId, [moduleId]);
 }
 
 async function _saModPathSave() {
@@ -1408,7 +1482,7 @@ async function _saPlatSystem(container) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div style="background:${_C.surface};border:1px solid ${_C.border};border-radius:10px;padding:18px;">
           <div style="font-size:0.72rem;letter-spacing:0.2em;text-transform:uppercase;color:${_C.amber};margin-bottom:14px;">Platform</div>
-          ${[['Version','ATLAS v8.9.3'],['Build','2026.06.08'],['Firebase Project','adherence-project-2026'],['Lambda (US)','us-east-1 · N. Virginia'],['Lambda (UAE)','me-central-1 · Abu Dhabi'],['CDN','Cloudflare Workers']].map(([k,v])=>`
+          ${[['Version','ATLAS v8.9.3'],['Build','2026.07.10'],['Firebase Project','adherence-project-2026'],['Lambda (US)','us-east-1 · N. Virginia'],['Lambda (EU)','eu-central-1 · Frankfurt'],['Lambda (UAE)','me-central-1 · Abu Dhabi'],['CDN','Cloudflare Workers']].map(([k,v])=>`
             <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid ${_C.border};">
               <span style="font-size:0.82rem;color:${_C.dim};">${k}</span>
               <span style="font-size:0.82rem;color:${_C.text};font-family:'IBM Plex Mono',monospace;">${v}</span>
@@ -1429,3 +1503,243 @@ async function _saPlatSystem(container) {
       </div>`;
   } catch(e) { container.innerHTML = `<div style="color:${_C.red};font-size:0.96rem;">Error: ${_saEsc(e.message)}</div>`; }
 }
+
+// ── TESSERA Sites ─────────────────────────────────────────────────────────────
+
+async function _saPlatSites(container) {
+  container.innerHTML = `<div style="color:${_C.muted};font-size:0.96rem;padding:20px 0;">Loading TESSERA Sites…</div>`;
+  try {
+    const snap = await database.ref('tessera_sites').once('value');
+    const sites = snap.val() || {};
+    _saPlatRenderSiteList(container, sites);
+  } catch(e) {
+    container.innerHTML = `<div style="color:${_C.red};font-size:0.96rem;">Error: ${_saEsc(e.message)}</div>`;
+  }
+}
+
+function _saPlatRenderSiteList(container, sites) {
+  const entries = Object.entries(sites);
+  const addBtn = `
+    <button onclick="_saPlatSiteNew()"
+      style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;
+      padding:8px 16px;border-radius:6px;cursor:pointer;background:${_C.amberFaint};border:1px solid ${_C.amberDim};
+      color:${_C.amber};">+ Add Site</button>`;
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:${_C.amber};margin-bottom:3px;">Consortium Network</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;font-weight:300;color:${_C.text};">TESSERA Pilot Sites</div>
+      </div>
+      ${addBtn}
+    </div>
+    <div style="font-size:0.80rem;color:${_C.dim};margin-bottom:18px;line-height:1.6;">
+      Data entered here populates the live Founding Hub section on the consortium website. Status
+      changes are reflected in real time.
+    </div>
+    <div id="sa-sites-list"></div>
+    <div id="sa-sites-form" style="display:none;"></div>`;
+
+  const list = document.getElementById('sa-sites-list');
+  if (entries.length === 0) {
+    list.innerHTML = `
+      <div style="background:${_C.surface};border:1px dashed ${_C.border};border-radius:10px;padding:28px;text-align:center;">
+        <div style="color:${_C.dim};font-size:0.88rem;margin-bottom:14px;">No TESSERA sites defined yet.</div>
+        <button onclick="_saPlatSiteNew()"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
+          padding:8px 18px;border-radius:6px;cursor:pointer;background:${_C.amberFaint};border:1px solid ${_C.amberDim};color:${_C.amber};">
+          Create Rome / Site 001 →</button>
+      </div>`;
+    return;
+  }
+
+  const statusColor = { planned:'#38bdf8', active:'#10b981', complete:'#d4a843' };
+  entries.forEach(([key, s]) => {
+    const sc = statusColor[s.status] || _C.muted;
+    const card = document.createElement('div');
+    card.style.cssText = `background:${_C.surface};border:1px solid ${_C.border};border-radius:10px;padding:20px;margin-bottom:14px;`;
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;
+              background:${_C.amberFaint};color:${_C.amber};border:1px solid ${_C.amberDim};border-radius:4px;padding:2px 7px;">${_saEsc(s.site_id || key)}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:${sc};">◉ ${_saEsc(s.status || 'planned')}</span>
+          </div>
+          <div style="font-size:1.1rem;color:${_C.text};font-family:'Cormorant Garamond',Georgia,serif;font-weight:300;margin-bottom:2px;">
+            ${_saEsc(s.flag || '')} ${_saEsc(s.country || '')} &middot; <em>${_saEsc(s.city || '')}</em>
+          </div>
+          <div style="font-size:0.80rem;color:${_C.dim};margin-bottom:10px;">${_saEsc(s.hub_label || '')}</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;">
+            ${[
+              ['Pharmacies', s.stat_pharmacies],
+              ['Patients',   s.stat_patients],
+              ['Duration',   s.stat_duration],
+              ['Diseases',   s.stat_disease_categories],
+            ].filter(([,v])=>v).map(([l,v])=>`
+              <div>
+                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;font-weight:300;color:${_C.pe};">${_saEsc(v)}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:${_C.dim};">${l}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <button onclick="_saPlatSiteEdit('${_saEsc(key)}')"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;letter-spacing:0.12em;text-transform:uppercase;
+          padding:7px 14px;border-radius:6px;cursor:pointer;background:${_C.navy};border:1px solid ${_C.border};
+          color:${_C.text};white-space:nowrap;">Edit →</button>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function _saPlatSiteNew() {
+  _saPlatSiteEdit(null, {
+    site_id:'Site 001', hub_label:'Founding TESSERA Hub',
+    country:'Italy', flag:'🇮🇹', city:'Roma', status:'planned',
+    stat_pharmacies:'20–30', stat_patients:'500', stat_duration:'6 mo', stat_disease_categories:'3',
+    description:'The Order of Pharmacists of Rome (FOFI) and the Istituto Superiore di Sanità are co-anchoring the first TESSERA pilot.'
+  });
+}
+
+function _saPlatSiteEdit(key, prefill) {
+  const formWrap = document.getElementById('sa-sites-form');
+  const list     = document.getElementById('sa-sites-list');
+  if (!formWrap || !list) return;
+
+  const loadData = key
+    ? database.ref('tessera_sites/' + key).once('value').then(s => s.val() || prefill || {})
+    : Promise.resolve(prefill || {});
+
+  loadData.then(s => {
+    list.style.display = 'none';
+    formWrap.style.display = 'block';
+    const inp = (label, id, val, ph, type='text') => `
+      <div style="margin-bottom:13px;">
+        <label style="display:block;font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">${label}</label>
+        <input id="${id}" type="${type}" value="${_saEsc(String(val||''))}" placeholder="${ph}"
+          style="width:100%;box-sizing:border-box;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;
+          padding:8px 10px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.90rem;outline:none;"/>
+      </div>`;
+    const sel = (label, id, val, opts) => `
+      <div style="margin-bottom:13px;">
+        <label style="display:block;font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">${label}</label>
+        <select id="${id}" style="background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;
+          padding:8px 10px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.90rem;outline:none;width:100%;">
+          ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o.charAt(0).toUpperCase()+o.slice(1)}</option>`).join('')}
+        </select>
+      </div>`;
+
+    formWrap.innerHTML = `
+      <div style="background:${_C.surface};border:1px solid ${_C.border};border-radius:10px;padding:24px;max-width:640px;">
+        <div style="font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:${_C.amber};margin-bottom:16px;">
+          ${key ? 'Edit' : 'New'} TESSERA Site ${key ? '· ' + _saEsc(key) : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+          ${inp('Site ID',  'ss-site-id',  s.site_id,  'e.g. Site 001')}
+          ${inp('Hub Label','ss-hub-lbl',  s.hub_label,'e.g. Founding TESSERA Hub')}
+          ${inp('Flag Emoji','ss-flag',    s.flag,     '🇮🇹')}
+          ${inp('Country',  'ss-country',  s.country,  'Italy')}
+          ${inp('City',     'ss-city',     s.city,     'Roma')}
+          ${sel('Status',   'ss-status',   s.status || 'planned', ['planned','active','complete'])}
+          ${inp('Pharmacies Stat', 'ss-pharmacies',    s.stat_pharmacies,        '20–30')}
+          ${inp('Patients Stat',   'ss-patients',      s.stat_patients,          '500')}
+          ${inp('Duration Stat',   'ss-duration',      s.stat_duration,          '6 mo')}
+          ${inp('Disease Categories Stat','ss-diseases',s.stat_disease_categories,'3')}
+        </div>
+        <div style="margin-bottom:13px;">
+          <label style="display:block;font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">Description</label>
+          <textarea id="ss-desc" rows="4" placeholder="Hub description shown on consortium website…"
+            style="width:100%;box-sizing:border-box;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;
+            padding:8px 10px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.88rem;outline:none;resize:vertical;">${_saEsc(s.description||'')}</textarea>
+        </div>
+        ${key ? '' : `<div style="margin-bottom:13px;">
+          <label style="display:block;font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">Firebase Key (slug)</label>
+          <input id="ss-key" type="text" value="site_001" placeholder="site_001"
+            style="width:100%;box-sizing:border-box;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;
+            padding:8px 10px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.90rem;outline:none;"/>
+        </div>`}
+        <div id="ss-msg" style="display:none;font-size:0.82rem;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:10px;">
+          <button id="ss-save-btn" onclick="_saPlatSiteSave('${_saEsc(key||'')}')"
+            style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;
+            padding:9px 20px;border-radius:6px;cursor:pointer;background:${_C.amberFaint};border:1px solid ${_C.amberDim};color:${_C.amber};">
+            Save →</button>
+          <button onclick="_saPlatSitesBack()"
+            style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;
+            padding:9px 16px;border-radius:6px;cursor:pointer;background:transparent;border:1px solid ${_C.border};color:${_C.muted};">
+            Cancel</button>
+          ${key ? `<button onclick="_saPlatSiteDelete('${_saEsc(key)}')"
+            style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;
+            padding:9px 16px;border-radius:6px;cursor:pointer;background:transparent;border:1px solid rgba(239,68,68,0.3);
+            color:rgba(239,68,68,0.7);margin-left:auto;">Delete</button>` : ''}
+        </div>
+      </div>`;
+  });
+}
+
+async function _saPlatSiteSave(existingKey) {
+  const btn  = document.getElementById('ss-save-btn');
+  const msg  = document.getElementById('ss-msg');
+  const key  = existingKey || (document.getElementById('ss-key')?.value || '').trim().replace(/\s+/g,'_').toLowerCase();
+  if (!key) { _saPlatSiteMsg('Firebase key is required.', false); return; }
+
+  const data = {
+    site_id:                (document.getElementById('ss-site-id')?.value   || '').trim(),
+    hub_label:              (document.getElementById('ss-hub-lbl')?.value   || '').trim(),
+    flag:                   (document.getElementById('ss-flag')?.value      || '').trim(),
+    country:                (document.getElementById('ss-country')?.value   || '').trim(),
+    city:                   (document.getElementById('ss-city')?.value      || '').trim(),
+    status:                 (document.getElementById('ss-status')?.value    || 'planned'),
+    stat_pharmacies:        (document.getElementById('ss-pharmacies')?.value || '').trim(),
+    stat_patients:          (document.getElementById('ss-patients')?.value  || '').trim(),
+    stat_duration:          (document.getElementById('ss-duration')?.value  || '').trim(),
+    stat_disease_categories:(document.getElementById('ss-diseases')?.value  || '').trim(),
+    description:            (document.getElementById('ss-desc')?.value      || '').trim(),
+    updated:                Date.now(),
+  };
+
+  if (!data.city || !data.country) { _saPlatSiteMsg('Country and City are required.', false); return; }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    await database.ref('tessera_sites/' + key).set(data);
+    if (typeof showToast === 'function') showToast('TESSERA site saved.', 2500);
+    const snap = await database.ref('tessera_sites').once('value');
+    _saPlatRenderSiteList(document.getElementById('sa-sites-list').parentElement, snap.val() || {});
+    _saPlatSitesBack();
+  } catch(e) {
+    _saPlatSiteMsg('Save failed: ' + e.message, false);
+    if (btn) { btn.disabled = false; btn.textContent = 'Save →'; }
+  }
+}
+
+function _saPlatSiteMsg(text, ok) {
+  const el = document.getElementById('ss-msg');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = ok ? _C.green : _C.red;
+  el.textContent = text;
+}
+
+async function _saPlatSiteDelete(key) {
+  if (!confirm('Delete TESSERA site "' + key + '"? This cannot be undone.')) return;
+  try {
+    await database.ref('tessera_sites/' + key).remove();
+    if (typeof showToast === 'function') showToast('Site deleted.', 2000);
+    const snap = await database.ref('tessera_sites').once('value');
+    _saPlatRenderSiteList(document.getElementById('sa-sites-form').parentElement, snap.val() || {});
+    _saPlatSitesBack();
+  } catch(e) { showToast('Delete failed: ' + e.message, 3000); }
+}
+
+function _saPlatSitesBack() {
+  const formWrap = document.getElementById('sa-sites-form');
+  const list     = document.getElementById('sa-sites-list');
+  if (formWrap) { formWrap.style.display = 'none'; formWrap.innerHTML = ''; }
+  if (list)     list.style.display = 'block';
+}
+window._saPlatSiteEdit   = _saPlatSiteEdit;
+window._saPlatSiteNew    = _saPlatSiteNew;
+window._saPlatSiteSave   = _saPlatSiteSave;
+window._saPlatSiteDelete = _saPlatSiteDelete;
+window._saPlatSitesBack  = _saPlatSitesBack;
