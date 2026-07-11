@@ -638,7 +638,7 @@ window._saCons_openAddMember = function() {
           <label class="sc-label">Instruments</label>
           <div style="display:flex;gap:16px;margin-top:4px;">
             ${['MAP','MMAS-8','PEACS'].map(inst => `
-              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:0.85rem;color:${_CC.text};">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:0.85rem;color:var(--mc-text,rgba(205,216,232,0.92));">
                 <input type="checkbox" id="sc-add-inst-${inst.replace(/[^a-z0-9]/gi,'').toLowerCase()}" value="${inst}"
                   style="width:14px;height:14px;cursor:pointer;accent-color:${_CC.amber};" />
                 ${inst}
@@ -796,7 +796,7 @@ window._saCons_openEditMember = function(key) {
           <label class="sc-label">Instruments</label>
           <div style="display:flex;gap:16px;margin-top:4px;">
             ${['MAP','MMAS-8','PEACS'].map(inst => `
-              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:0.85rem;color:${_CC.text};">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:0.85rem;color:var(--mc-text,rgba(205,216,232,0.92));">
                 <input type="checkbox" id="sc-edit-inst-${inst.replace(/[^a-z0-9]/gi,'').toLowerCase()}" value="${inst}"
                   ${(m.instruments || []).includes(inst) ? 'checked' : ''}
                   style="width:14px;height:14px;cursor:pointer;accent-color:${_CC.amber};" />
