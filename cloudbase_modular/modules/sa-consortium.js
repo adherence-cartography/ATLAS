@@ -2147,6 +2147,7 @@ function _saTessera_renderUI(container) {
       <div style="font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.dim};">${_saCons_esc(t.label)}</div>
     </div>`).join('');
 
+  const _tessIndividualTiers = new Set(['student', 'affiliate']);
   const rows = _saTessera_cache.length ? _saTessera_cache.map((tile, seq) => `
     <tr>
       <td style="text-align:center;color:${_CC.dim};font-size:0.78rem;">${seq + 1}</td>
@@ -2155,7 +2156,8 @@ function _saTessera_renderUI(container) {
           ${_saTessera_hexSwatch(tile.tier)}
           <div>
             <div style="font-weight:600;color:${_CC.text};">${_saCons_esc(tile.name || '—')}</div>
-            <div style="font-size:0.75rem;color:${_CC.dim};margin-top:1px;">${_saCons_esc(tile.institution || '')}</div>
+            ${tile.role ? `<div style="font-size:0.70rem;color:${_CC.amber};margin-top:1px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.06em;">${_saCons_esc(tile.role)}</div>` : ''}
+            ${(tile.affiliation || tile.institution) ? `<div style="font-size:0.75rem;color:${_CC.dim};margin-top:1px;">${_saCons_esc(tile.affiliation || tile.institution)}</div>` : ''}
           </div>
         </div>
       </td>
@@ -2206,7 +2208,7 @@ function _saTessera_renderUI(container) {
       <div style="font-size:0.70rem;letter-spacing:0.20em;text-transform:uppercase;color:${_CC.amber};margin-bottom:14px;">Add Partner Tile</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">
         <div>
-          <label class="sc-label" for="sc-tess-name">Institution / Name <span style="color:${_CC.red};">*</span></label>
+          <label class="sc-label" id="sc-tess-name-label" for="sc-tess-name">Institution / Name <span style="color:${_CC.red};">*</span></label>
           <input id="sc-tess-name" class="sc-input" type="text" placeholder="University of Porto" />
         </div>
         <div>
@@ -2215,7 +2217,7 @@ function _saTessera_renderUI(container) {
         </div>
         <div>
           <label class="sc-label" for="sc-tess-tier">Tier</label>
-          <select id="sc-tess-tier" class="sc-input" style="cursor:pointer;">${tierOpts}</select>
+          <select id="sc-tess-tier" class="sc-input" style="cursor:pointer;" onchange="_saTessera_onTierChange(this.value)">${tierOpts}</select>
         </div>
         <div>
           <label class="sc-label" for="sc-tess-flag">Flag Emoji</label>
@@ -2228,6 +2230,17 @@ function _saTessera_renderUI(container) {
           onmouseover="this.style.background='rgba(212,168,67,0.18)'" onmouseout="this.style.background='${_CC.amberFaint}'">
           + Add Tile
         </button>
+      </div>
+      <!-- Individual fields — shown when tier is student or affiliate -->
+      <div id="sc-tess-individual-fields" style="display:none;margin-top:10px;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label class="sc-label" for="sc-tess-role">Role / Title</label>
+          <input id="sc-tess-role" class="sc-input" type="text" placeholder="PhD Candidate" />
+        </div>
+        <div>
+          <label class="sc-label" for="sc-tess-affiliation">Affiliation</label>
+          <input id="sc-tess-affiliation" class="sc-input" type="text" placeholder="University of Porto" />
+        </div>
       </div>
       <div id="sc-tess-err" style="display:none;margin-top:10px;font-size:0.80rem;color:${_CC.red};"></div>
     </div>
@@ -2262,16 +2275,33 @@ window._saTessera_updateFlag = function(country) {
   el.value = flag;
 };
 
+const _TESSERA_INDIVIDUAL_TIERS = new Set(['student', 'affiliate']);
+
+window._saTessera_onTierChange = function(tier) {
+  const fieldsEl = document.getElementById('sc-tess-individual-fields');
+  const labelEl  = document.getElementById('sc-tess-name-label');
+  const nameEl   = document.getElementById('sc-tess-name');
+  const isIndividual = _TESSERA_INDIVIDUAL_TIERS.has(tier);
+
+  if (fieldsEl) fieldsEl.style.display = isIndividual ? 'grid' : 'none';
+  if (labelEl)  labelEl.innerHTML = isIndividual
+    ? `Full Name <span style="color:#ef4444;">*</span>`
+    : `Institution / Name <span style="color:#ef4444;">*</span>`;
+  if (nameEl)   nameEl.placeholder = isIndividual ? 'Dr. Jane Smith' : 'University of Porto';
+};
+
 window._saTessera_add = async function() {
-  const name    = (document.getElementById('sc-tess-name')?.value || '').trim();
-  const country = document.getElementById('sc-tess-country')?.value || '';
-  const tier    = document.getElementById('sc-tess-tier')?.value    || 'institutional';
-  const flag    = (document.getElementById('sc-tess-flag')?.value  || '').trim();
-  const errEl   = document.getElementById('sc-tess-err');
-  const btn     = document.getElementById('sc-tess-add-btn');
+  const name        = (document.getElementById('sc-tess-name')?.value        || '').trim();
+  const country     = document.getElementById('sc-tess-country')?.value      || '';
+  const tier        = document.getElementById('sc-tess-tier')?.value         || 'institutional';
+  const flag        = (document.getElementById('sc-tess-flag')?.value        || '').trim();
+  const role        = (document.getElementById('sc-tess-role')?.value        || '').trim();
+  const affiliation = (document.getElementById('sc-tess-affiliation')?.value || '').trim();
+  const errEl       = document.getElementById('sc-tess-err');
+  const btn         = document.getElementById('sc-tess-add-btn');
 
   if (!name) {
-    errEl.textContent = 'Institution / name is required.';
+    errEl.textContent = _TESSERA_INDIVIDUAL_TIERS.has(tier) ? 'Full name is required.' : 'Institution / name is required.';
     errEl.style.display = 'block';
     document.getElementById('sc-tess-name')?.focus();
     return;
@@ -2280,16 +2310,16 @@ window._saTessera_add = async function() {
   btn.textContent = 'Adding…';
   btn.disabled = true;
 
+  const record = { name, country, countryFlag: flag, tier, joinedAt: Date.now() };
+  if (role)        record.role        = role;
+  if (affiliation) record.affiliation = affiliation;
+
   try {
-    await firebase.database().ref('tessera_tiles').push({
-      name,
-      country,
-      countryFlag: flag,
-      tier,
-      joinedAt: Date.now(),
-    });
+    await firebase.database().ref('tessera_tiles').push(record);
     if (typeof showToast === 'function') showToast(`✓ "${name}" added to the Tessera mosaic.`, 2500);
     document.getElementById('sc-tess-name').value = '';
+    if (document.getElementById('sc-tess-role'))        document.getElementById('sc-tess-role').value = '';
+    if (document.getElementById('sc-tess-affiliation')) document.getElementById('sc-tess-affiliation').value = '';
     await _saTessera_load();
     _saTessera_renderUI(document.getElementById('sc-tab-content'));
   } catch (e) {
