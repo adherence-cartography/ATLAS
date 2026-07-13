@@ -2172,7 +2172,12 @@ function _saTessera_renderUI(container) {
       <td style="font-size:0.90rem;">${_saCons_esc(tile.countryFlag || '')} <span style="color:${_CC.muted};font-size:0.82rem;">${_saCons_esc(tile.country || '—')}</span></td>
       <td>${_saTessera_tierBadge(tile.tier)}</td>
       <td style="color:${_CC.dim};font-size:0.78rem;white-space:nowrap;">${tile.joinedAt ? new Date(tile.joinedAt).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—'}</td>
-      <td>
+      <td onclick="event.stopPropagation();" style="white-space:nowrap;">
+        <button class="sc-action-btn"
+          onclick="_saTessera_edit('${_saCons_esc(tile._key)}')"
+          style="margin-right:6px;">
+          Edit
+        </button>
         <button class="sc-action-btn sc-action-btn-danger"
           onclick="_saTessera_remove('${_saCons_esc(tile._key)}','${_saCons_esc(tile.name || '')}')">
           Remove
@@ -2350,6 +2355,116 @@ window._saTessera_add = async function() {
     errEl.textContent = 'Save failed: ' + e.message;
     errEl.style.display = 'block';
     btn.textContent = '+ Add Tile';
+    btn.disabled = false;
+  }
+};
+
+window._saTessera_edit = function(key) {
+  const tile = _saTessera_cache.find(t => t._key === key);
+  if (!tile) return;
+
+  const isIndividual = _TESSERA_INDIVIDUAL_TIERS.has(tile.tier);
+  const tierOpts = Object.entries(_TESSERA_TIERS).map(([k, t]) =>
+    `<option value="${k}" ${tile.tier === k ? 'selected' : ''}>${t.label}</option>`).join('');
+  const countryOpts = _CONS_COUNTRIES.map(c =>
+    `<option value="${_saCons_esc(c)}" ${tile.country === c ? 'selected' : ''}>${_saCons_esc(c)}</option>`).join('');
+
+  const inp = (id, label, val, ph) => `
+    <div>
+      <label style="display:block;font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:${_CC.dim};margin-bottom:4px;">${label}</label>
+      <input id="ste-${id}" class="sc-input" type="text" value="${_saCons_esc(val || '')}" placeholder="${ph}" style="width:100%;box-sizing:border-box;" />
+    </div>`;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sc-tess-edit-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `
+    <div style="background:${_CC.bg2};border:1px solid ${_CC.borderB};border-radius:12px;padding:26px 28px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;">
+      <div style="font-size:0.70rem;letter-spacing:0.20em;text-transform:uppercase;color:${_CC.amber};margin-bottom:18px;">Edit Tile · ${_saCons_esc(tile.name || '')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        ${inp('name', 'Name', tile.name, 'Philip Morisky')}
+        <div>
+          <label style="display:block;font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:${_CC.dim};margin-bottom:4px;">Tier</label>
+          <select id="ste-tier" class="sc-input" style="width:100%;box-sizing:border-box;cursor:pointer;" onchange="_saTessera_editTierChange(this.value)">${tierOpts}</select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:${_CC.dim};margin-bottom:4px;">Country</label>
+          <select id="ste-country" class="sc-input" style="width:100%;box-sizing:border-box;cursor:pointer;" onchange="_saTessera_editUpdateFlag(this.value)">${countryOpts}</select>
+        </div>
+        ${inp('flag', 'Flag Emoji', tile.countryFlag, '🇺🇸')}
+      </div>
+      <div id="ste-individual-fields" style="display:${isIndividual ? 'grid' : 'none'};grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        ${inp('role', 'Role / Title', tile.role, 'Founder, Creator of MAP & ATLAS')}
+        ${inp('affiliation', 'Affiliation', tile.affiliation, 'Adherence Cartography')}
+        ${inp('orcid', 'ORCID', tile.orcid, '0000-0000-0000-0000')}
+        ${inp('linkedin', 'LinkedIn URL', tile.linkedin, 'https://linkedin.com/in/…')}
+      </div>
+      <div id="ste-err" style="display:none;font-size:0.80rem;color:${_CC.red};margin-bottom:10px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid ${_CC.border};padding-top:16px;margin-top:4px;">
+        <button onclick="document.getElementById('sc-tess-edit-overlay').remove()"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
+                 padding:8px 16px;border-radius:6px;cursor:pointer;background:transparent;border:1px solid ${_CC.border};color:${_CC.muted};">
+          Cancel
+        </button>
+        <button id="ste-save-btn" onclick="_saTessera_saveEdit('${_saCons_esc(key)}')"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
+                 padding:8px 20px;border-radius:6px;cursor:pointer;background:${_CC.amberFaint};border:1px solid ${_CC.amberDim};color:${_CC.amber};">
+          Save Changes →
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+};
+
+window._saTessera_editTierChange = function(tier) {
+  const el = document.getElementById('ste-individual-fields');
+  if (el) el.style.display = _TESSERA_INDIVIDUAL_TIERS.has(tier) ? 'grid' : 'none';
+};
+
+window._saTessera_editUpdateFlag = function(country) {
+  const el = document.getElementById('ste-flag');
+  if (el) el.value = _CONS_FLAGS[country] || '';
+};
+
+window._saTessera_saveEdit = async function(key) {
+  const name    = (document.getElementById('ste-name')?.value        || '').trim();
+  const tier    =  document.getElementById('ste-tier')?.value        || 'institutional';
+  const country =  document.getElementById('ste-country')?.value     || '';
+  const flag    = (document.getElementById('ste-flag')?.value        || '').trim();
+  const role    = (document.getElementById('ste-role')?.value        || '').trim();
+  const aff     = (document.getElementById('ste-affiliation')?.value || '').trim();
+  const orcid   = (document.getElementById('ste-orcid')?.value       || '').trim();
+  const linkedin= (document.getElementById('ste-linkedin')?.value    || '').trim();
+  const errEl   = document.getElementById('ste-err');
+  const btn     = document.getElementById('ste-save-btn');
+
+  if (!name) {
+    errEl.textContent = 'Name is required.';
+    errEl.style.display = 'block';
+    document.getElementById('ste-name')?.focus();
+    return;
+  }
+  errEl.style.display = 'none';
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+
+  const data = { name, tier, country, countryFlag: flag };
+  if (role)     data.role        = role;     else data.role        = null;
+  if (aff)      data.affiliation = aff;      else data.affiliation = null;
+  if (orcid)    data.orcid       = orcid;    else data.orcid       = null;
+  if (linkedin) data.linkedin    = linkedin; else data.linkedin    = null;
+
+  try {
+    await firebase.database().ref('tessera_tiles/' + key).update(data);
+    document.getElementById('sc-tess-edit-overlay')?.remove();
+    if (typeof showToast === 'function') showToast('Tile updated.', 2000);
+    await _saTessera_load();
+    _saTessera_renderUI(document.getElementById('sc-tab-content'));
+  } catch (e) {
+    errEl.textContent = 'Save failed: ' + e.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Save Changes →';
     btn.disabled = false;
   }
 };
