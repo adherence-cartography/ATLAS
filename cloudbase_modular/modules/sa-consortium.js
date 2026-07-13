@@ -2090,11 +2090,12 @@ window._saCons_rejectApp = async function(key) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 const _TESSERA_TIERS = {
-  institutional: { label: 'Institutional Partner', color: '#d4a843', border: 'rgba(212,168,67,0.4)', bg: 'rgba(212,168,67,0.08)' },
-  validation:    { label: 'Validation Partner',    color: '#06b6d4', border: 'rgba(6,182,212,0.4)',  bg: 'rgba(6,182,212,0.08)'  },
-  affiliate:     { label: 'Affiliate Partner',     color: '#10b981', border: 'rgba(16,185,129,0.4)', bg: 'rgba(16,185,129,0.08)' },
-  student:       { label: 'Student Affiliate',     color: '#8b6ff5', border: 'rgba(139,111,245,0.4)',bg: 'rgba(139,111,245,0.08)'},
-  industry:      { label: 'Industry Partner',      color: '#f59e0b', border: 'rgba(245,158,11,0.4)', bg: 'rgba(245,158,11,0.08)' },
+  founder:       { label: 'Founder',               color: '#f5f0e0', border: 'rgba(240,232,210,0.6)', bg: 'rgba(240,232,210,0.08)' },
+  institutional: { label: 'Institutional Partner', color: '#d4a843', border: 'rgba(212,168,67,0.4)',  bg: 'rgba(212,168,67,0.08)'  },
+  validation:    { label: 'Validation Partner',    color: '#06b6d4', border: 'rgba(6,182,212,0.4)',   bg: 'rgba(6,182,212,0.08)'   },
+  affiliate:     { label: 'Affiliate Partner',     color: '#10b981', border: 'rgba(16,185,129,0.4)',  bg: 'rgba(16,185,129,0.08)'  },
+  student:       { label: 'Student Affiliate',     color: '#8b6ff5', border: 'rgba(139,111,245,0.4)', bg: 'rgba(139,111,245,0.08)' },
+  industry:      { label: 'Industry Partner',      color: '#f59e0b', border: 'rgba(245,158,11,0.4)',  bg: 'rgba(245,158,11,0.08)'  },
 };
 
 let _saTessera_cache = [];
@@ -2275,7 +2276,7 @@ window._saTessera_updateFlag = function(country) {
   el.value = flag;
 };
 
-const _TESSERA_INDIVIDUAL_TIERS = new Set(['student', 'affiliate']);
+const _TESSERA_INDIVIDUAL_TIERS = new Set(['student', 'affiliate', 'founder']);
 
 window._saTessera_onTierChange = function(tier) {
   const fieldsEl = document.getElementById('sc-tess-individual-fields');
@@ -2284,10 +2285,12 @@ window._saTessera_onTierChange = function(tier) {
   const isIndividual = _TESSERA_INDIVIDUAL_TIERS.has(tier);
 
   if (fieldsEl) fieldsEl.style.display = isIndividual ? 'grid' : 'none';
-  if (labelEl)  labelEl.innerHTML = isIndividual
-    ? `Full Name <span style="color:#ef4444;">*</span>`
-    : `Institution / Name <span style="color:#ef4444;">*</span>`;
-  if (nameEl)   nameEl.placeholder = isIndividual ? 'Dr. Jane Smith' : 'University of Porto';
+  if (labelEl)  labelEl.innerHTML = tier === 'founder'
+    ? `Founder Name <span style="color:#ef4444;">*</span>`
+    : isIndividual
+      ? `Full Name <span style="color:#ef4444;">*</span>`
+      : `Institution / Name <span style="color:#ef4444;">*</span>`;
+  if (nameEl)   nameEl.placeholder = tier === 'founder' ? 'Dr. Philip Morisky' : isIndividual ? 'Dr. Jane Smith' : 'University of Porto';
 };
 
 window._saTessera_add = async function() {
