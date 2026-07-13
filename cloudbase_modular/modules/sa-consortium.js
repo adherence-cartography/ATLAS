@@ -34,6 +34,7 @@ let _saCons_fitFilter     = 'all';
 
 // ── Tier definitions ─────────────────────────────────────────────────────────
 const _CONS_TIERS = {
+  0: { label: 'Founder',               color: '#f5f0e0',   border: 'rgba(240,232,210,0.6)',  bg: 'rgba(240,232,210,0.08)'  },
   1: { label: 'Institutional Partner', color: _CC.amber,   border: 'rgba(212,168,67,0.4)',   bg: 'rgba(212,168,67,0.08)'   },
   2: { label: 'Validation Partner',    color: _CC.cyan,    border: 'rgba(56,189,248,0.4)',   bg: 'rgba(56,189,248,0.08)'   },
   3: { label: 'Research Affiliate',    color: _CC.green,   border: 'rgba(46,201,138,0.4)',   bg: 'rgba(46,201,138,0.08)'   },
@@ -41,8 +42,11 @@ const _CONS_TIERS = {
   5: { label: 'Industry Partner',      color: '#f59e0b',   border: 'rgba(245,158,11,0.4)',   bg: 'rgba(245,158,11,0.08)'   },
 };
 
-// Maps numeric consortium_members tier (1–5) → tessera_tiles tier string
-const _CONS_TIER_TO_TESSERA = { 1:'institutional', 2:'validation', 3:'affiliate', 4:'student', 5:'industry' };
+// Maps numeric consortium_members tier (0–5) → tessera_tiles tier string
+const _CONS_TIER_TO_TESSERA = { 0:'founder', 1:'institutional', 2:'validation', 3:'affiliate', 4:'student', 5:'industry' };
+
+// Reverse map: tessera_tiles tier string → numeric
+const _TESSERA_TIER_TO_CONS = { founder:0, institutional:1, validation:2, affiliate:3, student:4, industry:5 };
 
 // ── Country list ─────────────────────────────────────────────────────────────
 const _CONS_COUNTRIES = [
@@ -475,7 +479,7 @@ async function _saCons_loadMembers() {
 }
 
 function _saCons_renderMembersUI(container) {
-  const tierCounts = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+  const tierCounts = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0 };
   _saCons_membersCache.forEach(m => { if (tierCounts[m.tier] !== undefined) tierCounts[m.tier]++; });
 
   const filtered = _saCons_tierFilter === 'all'
@@ -2535,6 +2539,9 @@ function _saTessera_renderUI(container) {
           style="margin-right:6px;">
           Edit
         </button>
+        ${tile.member_key
+          ? `<button class="sc-action-btn" style="opacity:0.4;cursor:default;margin-right:6px;" disabled title="Linked to member record">Registry ✓</button>`
+          : `<button class="sc-action-btn sc-action-btn-amber" onclick="_saTessera_registerMember('${_saCons_esc(tile._key)}')" style="margin-right:6px;">Register +</button>`}
         <button class="sc-action-btn sc-action-btn-danger"
           onclick="_saTessera_remove('${_saCons_esc(tile._key)}','${_saCons_esc(tile.name || '')}')">
           Remove
@@ -2835,5 +2842,125 @@ window._saTessera_remove = async function(key, name) {
     _saTessera_renderUI(document.getElementById('sc-tab-content'));
   } catch (e) {
     if (typeof showToast === 'function') showToast('Remove failed: ' + e.message, 3000);
+  }
+};
+
+// ── Register mosaic tile → consortium_members ──────────────────────────────
+window._saTessera_registerMember = function(key) {
+  const tile = _saTessera_cache.find(t => t._key === key);
+  if (!tile) return;
+  _saCons_injectStyles();
+
+  const consTier = _TESSERA_TIER_TO_CONS[tile.tier] ?? 1;
+  const tierDef  = _CONS_TIERS[consTier];
+  const isIndiv  = new Set(['founder','affiliate','student']).has(tile.tier);
+  const instVal  = isIndiv ? (tile.affiliation || '') : (tile.institution || tile.name || '');
+  const nameVal  = isIndiv ? (tile.name || '') : '';
+
+  const countryOpts = _CONS_COUNTRIES.map(c =>
+    `<option value="${_saCons_esc(c)}" ${tile.country === c ? 'selected' : ''}>${_saCons_esc(c)}</option>`
+  ).join('');
+  const tierOpts = Object.entries(_CONS_TIERS).map(([id, t]) =>
+    `<option value="${id}" ${id == consTier ? 'selected' : ''}>${t.label}</option>`
+  ).join('');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sc-reg-member-overlay';
+  overlay.className = 'sc-modal-overlay';
+  overlay.innerHTML = `
+    <div class="sc-modal" role="dialog" aria-modal="true" aria-label="Register as Member">
+      <button onclick="document.getElementById('sc-reg-member-overlay').remove()"
+        style="position:absolute;top:16px;right:18px;background:none;border:none;color:${_CC.dim};font-size:1.3rem;cursor:pointer;line-height:1;"
+        aria-label="Close">×</button>
+
+      <div style="font-size:0.70rem;letter-spacing:0.20em;text-transform:uppercase;color:${_CC.amber};margin-bottom:6px;">Add to Member Registry</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;font-weight:300;color:${_CC.text};margin-bottom:4px;">${_saCons_esc(tile.name || tile.institution || '—')}</div>
+      <div style="font-size:0.72rem;color:${_CC.dim};margin-bottom:20px;">Links the existing mosaic tile to a new consortium_members record.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label class="sc-label">Full Name</label>
+          <input id="sc-rm-name" class="sc-input" value="${_saCons_esc(nameVal)}" placeholder="Full name">
+        </div>
+        <div>
+          <label class="sc-label">Email <span style="color:${_CC.red};">*</span></label>
+          <input id="sc-rm-email" class="sc-input" type="email" placeholder="contact@institution.edu">
+        </div>
+        <div>
+          <label class="sc-label">Institution / Affiliation</label>
+          <input id="sc-rm-inst" class="sc-input" value="${_saCons_esc(instVal)}" placeholder="Institution">
+        </div>
+        <div>
+          <label class="sc-label">Country</label>
+          <select id="sc-rm-country" class="sc-input"><option value="">— select —</option>${countryOpts}</select>
+        </div>
+        <div>
+          <label class="sc-label">Tier</label>
+          <select id="sc-rm-tier" class="sc-input">${tierOpts}</select>
+        </div>
+      </div>
+
+      <div id="sc-rm-err" style="color:${_CC.red};font-size:0.78rem;margin-top:12px;display:none;"></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;border-top:1px solid ${_CC.border};padding-top:18px;">
+        <button onclick="document.getElementById('sc-reg-member-overlay').remove()"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.10em;text-transform:uppercase;
+                 padding:8px 18px;border-radius:6px;cursor:pointer;border:1px solid ${_CC.border};
+                 background:transparent;color:${_CC.muted};transition:all 0.15s;">
+          Cancel
+        </button>
+        <button id="sc-rm-submit" onclick="_saTessera_submitRegisterMember('${_saCons_esc(key)}')"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
+                 padding:8px 22px;border-radius:6px;cursor:pointer;
+                 background:${_CC.amberFaint};border:1px solid ${_CC.amberDim};color:${_CC.amber};transition:all 0.15s;"
+          onmouseover="this.style.background='rgba(212,168,67,0.18)'" onmouseout="this.style.background='${_CC.amberFaint}'">
+          Add to Registry →
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+};
+
+window._saTessera_submitRegisterMember = async function(tileKey) {
+  const btn    = document.getElementById('sc-rm-submit');
+  const errEl  = document.getElementById('sc-rm-err');
+  const name   = (document.getElementById('sc-rm-name')?.value   || '').trim();
+  const email  = (document.getElementById('sc-rm-email')?.value  || '').trim();
+  const inst   = (document.getElementById('sc-rm-inst')?.value   || '').trim();
+  const country= document.getElementById('sc-rm-country')?.value || '';
+  const tier   = parseInt(document.getElementById('sc-rm-tier')?.value || '1', 10);
+
+  errEl.style.display = 'none';
+  if (!email) { errEl.textContent = 'Email is required.'; errEl.style.display = 'block'; return; }
+
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  try {
+    const db = firebase.database();
+    const memberRef = await db.ref('consortium_members').push({
+      name:               name || null,
+      email,
+      contact_email:      email,
+      institution:        inst || null,
+      country,
+      tier,
+      instruments:        ['MAP'],
+      status:             'active',
+      joined_at:          Date.now(),
+      contribution_count: 0,
+      tessera_tile_key:   tileKey,
+      source:             'tile-import',
+    });
+    // Cross-link tile → member
+    await db.ref('tessera_tiles/' + tileKey + '/member_key').set(memberRef.key);
+    document.getElementById('sc-reg-member-overlay')?.remove();
+    if (typeof showToast === 'function') showToast(`✓ "${name || email}" added to the member registry and linked to tile.`, 3500);
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('consortium_member_registered_from_tile', { tileKey, memberKey: memberRef.key });
+    await _saTessera_load();
+    _saTessera_renderUI(document.getElementById('sc-tab-content'));
+  } catch (e) {
+    errEl.textContent = 'Save failed: ' + e.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Add to Registry →';
+    btn.disabled = false;
   }
 };
