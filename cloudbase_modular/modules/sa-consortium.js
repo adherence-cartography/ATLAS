@@ -2110,7 +2110,10 @@ async function _saTessera_load() {
 
 function _saTessera_tierBadge(tier) {
   const t = _TESSERA_TIERS[tier] || _TESSERA_TIERS.institutional;
-  return `<span style="display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;padding:2px 8px;border-radius:3px;border:1px solid ${t.border};background:${t.bg};color:${t.color};white-space:nowrap;">${_saCons_esc(t.label)}</span>`;
+  const textColor   = tier === 'founder' ? '#7a6235' : t.color;
+  const bgColor     = tier === 'founder' ? 'rgba(210,188,140,0.18)' : t.bg;
+  const borderColor = tier === 'founder' ? 'rgba(180,150,90,0.55)' : t.border;
+  return `<span style="display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;padding:2px 8px;border-radius:3px;border:1px solid ${borderColor};background:${bgColor};color:${textColor};white-space:nowrap;">${_saCons_esc(t.label)}</span>`;
 }
 
 function _saTessera_hexSwatch(tier) {
@@ -2159,6 +2162,10 @@ function _saTessera_renderUI(container) {
             <div style="font-weight:600;color:${_CC.text};">${_saCons_esc(tile.name || '—')}</div>
             ${tile.role ? `<div style="font-size:0.70rem;color:${_CC.amber};margin-top:1px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.06em;">${_saCons_esc(tile.role)}</div>` : ''}
             ${(tile.affiliation || tile.institution) ? `<div style="font-size:0.75rem;color:${_CC.dim};margin-top:1px;">${_saCons_esc(tile.affiliation || tile.institution)}</div>` : ''}
+            <div style="display:flex;gap:10px;margin-top:2px;flex-wrap:wrap;">
+              ${tile.orcid ? `<a href="https://orcid.org/${_saCons_esc(tile.orcid)}" target="_blank" rel="noopener" style="font-size:0.66rem;font-family:'IBM Plex Mono',monospace;color:#a6ce39;text-decoration:none;letter-spacing:0.04em;">ORCID ↗</a>` : ''}
+              ${tile.linkedin ? `<a href="${_saCons_esc(tile.linkedin)}" target="_blank" rel="noopener" style="font-size:0.66rem;font-family:'IBM Plex Mono',monospace;color:#0a66c2;text-decoration:none;letter-spacing:0.04em;">LinkedIn ↗</a>` : ''}
+            </div>
           </div>
         </div>
       </td>
@@ -2232,8 +2239,8 @@ function _saTessera_renderUI(container) {
           + Add Tile
         </button>
       </div>
-      <!-- Individual fields — shown when tier is student or affiliate -->
-      <div id="sc-tess-individual-fields" style="display:none;margin-top:10px;grid-template-columns:1fr 1fr;gap:10px;">
+      <!-- Individual fields — shown when tier is student, affiliate, or founder -->
+      <div id="sc-tess-individual-fields" style="display:none;margin-top:10px;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
         <div>
           <label class="sc-label" for="sc-tess-role">Role / Title</label>
           <input id="sc-tess-role" class="sc-input" type="text" placeholder="PhD Candidate" />
@@ -2241,6 +2248,14 @@ function _saTessera_renderUI(container) {
         <div>
           <label class="sc-label" for="sc-tess-affiliation">Affiliation</label>
           <input id="sc-tess-affiliation" class="sc-input" type="text" placeholder="University of Porto" />
+        </div>
+        <div>
+          <label class="sc-label" for="sc-tess-orcid">ORCID</label>
+          <input id="sc-tess-orcid" class="sc-input" type="text" placeholder="0000-0000-0000-0000" />
+        </div>
+        <div>
+          <label class="sc-label" for="sc-tess-linkedin">LinkedIn URL</label>
+          <input id="sc-tess-linkedin" class="sc-input" type="text" placeholder="https://linkedin.com/in/…" />
         </div>
       </div>
       <div id="sc-tess-err" style="display:none;margin-top:10px;font-size:0.80rem;color:${_CC.red};"></div>
@@ -2300,6 +2315,8 @@ window._saTessera_add = async function() {
   const flag        = (document.getElementById('sc-tess-flag')?.value        || '').trim();
   const role        = (document.getElementById('sc-tess-role')?.value        || '').trim();
   const affiliation = (document.getElementById('sc-tess-affiliation')?.value || '').trim();
+  const orcid       = (document.getElementById('sc-tess-orcid')?.value       || '').trim();
+  const linkedin    = (document.getElementById('sc-tess-linkedin')?.value    || '').trim();
   const errEl       = document.getElementById('sc-tess-err');
   const btn         = document.getElementById('sc-tess-add-btn');
 
@@ -2316,6 +2333,8 @@ window._saTessera_add = async function() {
   const record = { name, country, countryFlag: flag, tier, joinedAt: Date.now() };
   if (role)        record.role        = role;
   if (affiliation) record.affiliation = affiliation;
+  if (orcid)       record.orcid       = orcid;
+  if (linkedin)    record.linkedin    = linkedin;
 
   try {
     await firebase.database().ref('tessera_tiles').push(record);
@@ -2323,6 +2342,8 @@ window._saTessera_add = async function() {
     document.getElementById('sc-tess-name').value = '';
     if (document.getElementById('sc-tess-role'))        document.getElementById('sc-tess-role').value = '';
     if (document.getElementById('sc-tess-affiliation')) document.getElementById('sc-tess-affiliation').value = '';
+    if (document.getElementById('sc-tess-orcid'))       document.getElementById('sc-tess-orcid').value = '';
+    if (document.getElementById('sc-tess-linkedin'))    document.getElementById('sc-tess-linkedin').value = '';
     await _saTessera_load();
     _saTessera_renderUI(document.getElementById('sc-tab-content'));
   } catch (e) {
