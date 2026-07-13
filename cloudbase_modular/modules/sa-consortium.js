@@ -2312,7 +2312,7 @@ function _saCons_renderApplicationsUI(container) {
         <div style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:${_CC.dim};">No applications yet</div>
         <div style="font-size:0.78rem;color:${_CC.dim};margin-top:8px;max-width:360px;margin-left:auto;margin-right:auto;line-height:1.55;">
           Applications submitted via the TESSERA GRC signup page appear here automatically.
-          Share the signup link at tessera.adherence.cc to start receiving applications.
+          Share the signup link at <a href="https://scalacartafoundation.org/#tessera" target="_blank" rel="noopener" style="color:${_CC.amber};text-decoration:none;">scalacartafoundation.org/#tessera</a> to start receiving applications.
         </div>
       </div>`;
     return;
