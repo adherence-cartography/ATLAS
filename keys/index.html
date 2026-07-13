@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://js.stripe.com/v3/"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -858,34 +860,42 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
     <div style="display:grid;grid-template-columns:1fr auto;gap:32px;align-items:start;">
       <div>
         <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.20em;text-transform:uppercase;color:rgba(212,168,67,0.65);margin-bottom:10px;">Scala Carta Foundation &middot; TESSERA GRC</div>
-        <div style="font-family:var(--font-d);font-size:1.55rem;font-weight:300;color:var(--bright);line-height:1.2;margin-bottom:12px;">Researching long-term?<br/>TESSERA includes more than a workspace key.</div>
-        <p style="font-size:0.84rem;color:var(--muted);line-height:1.78;margin:0 0 20px;">A standalone workspace key gives you immediate ATLAS access and a Letter of Permission. <strong style="color:var(--bright);font-weight:500;">TESSERA membership</strong> includes your workspace and adds professional standing: a credential that appears on your publications and grant applications, access to the Research Exchange and Researcher Directory, co-authorship pathways, and formal affiliation with the Scala Carta Foundation (501c3). Dues are tax-deductible.</p>
+        <div style="font-family:var(--font-d);font-size:1.55rem;font-weight:300;color:var(--bright);line-height:1.2;margin-bottom:12px;">Building a research career?<br/>TESSERA is your scientific identity, not just a key.</div>
+        <p style="font-size:0.84rem;color:var(--muted);line-height:1.78;margin:0 0 8px;">A standalone workspace key gives you immediate ATLAS access and a Letter of Permission. <strong style="color:var(--bright);font-weight:500;">TESSERA membership</strong> includes your workspace and adds your scientific profile: a credential that appears on publications and grant applications, your tile on the global mosaic, access to the Research Exchange and Researcher Directory, co-authorship pathways, and formal affiliation with the Scala Carta Foundation (501c3). Dues are tax-deductible.</p>
+        <p style="font-size:0.80rem;color:rgba(212,168,67,0.75);line-height:1.65;margin:0 0 18px;"><strong style="color:rgba(212,168,67,0.9);">Already have a workspace key?</strong> Add TESSERA consortium membership as an annual add-on — your existing workspace carries over, no new key issued. Apply from your payment confirmation screen or below.</p>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:0.76rem;">
           <div style="background:rgba(139,111,245,0.07);border:1px solid rgba(139,111,245,0.2);border-radius:8px;padding:12px 14px;">
             <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(139,111,245,0.7);margin-bottom:6px;">Student Affiliate</div>
-            <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;color:var(--bright);">$99<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/yr</span></div>
-            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">1 seat &middot; credential &middot; LMIC free</div>
+            <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;color:var(--bright);">$199<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/yr</span></div>
+            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">Workspace included &middot; mosaic tile &middot; credential</div>
+            <div style="color:rgba(139,111,245,0.6);font-size:0.66rem;margin-top:5px;font-family:var(--font-m);">+$99/yr if key held</div>
           </div>
           <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:12px 14px;">
             <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.7);margin-bottom:6px;">Research Affiliate</div>
             <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;color:var(--bright);">$499<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/yr</span></div>
-            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">3 seats &middot; pub pathway &middot; exchange</div>
+            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">Workspace included &middot; 3 seats &middot; pub pathway</div>
+            <div style="color:rgba(16,185,129,0.6);font-size:0.66rem;margin-top:5px;font-family:var(--font-m);">+$299/yr if key held</div>
           </div>
           <div style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.18);border-radius:8px;padding:12px 14px;">
             <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(6,182,212,0.7);margin-bottom:6px;">Validation Partner</div>
             <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;color:var(--bright);">$1,999<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/yr</span></div>
-            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">10 seats &middot; co-authorship &middot; grant letters</div>
+            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">Workspace included &middot; 10 seats &middot; co-authorship</div>
           </div>
           <div style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.18);border-radius:8px;padding:12px 14px;">
             <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(212,168,67,0.7);margin-bottom:6px;">Institutional Partner</div>
             <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;color:var(--bright);">$5,999<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/yr</span></div>
-            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">Unlimited seats &middot; advisory &middot; summit</div>
+            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">Workspace included &middot; unlimited seats &middot; advisory</div>
           </div>
         </div>
       </div>
-      <div style="flex-shrink:0;display:flex;flex-direction:column;gap:10px;min-width:160px;">
-        <a href="https://scalacartafoundation.org/#membership" target="_blank" rel="noopener" style="display:block;text-align:center;font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.35);color:var(--gold);padding:12px 18px;border-radius:7px;text-decoration:none;transition:all 0.18s;" onmouseover="this.style.background='rgba(212,168,67,0.22)'" onmouseout="this.style.background='rgba(212,168,67,0.12)'">View TESSERA Tiers &rarr;</a>
-        <a href="https://scalacartafoundation.org/#apply" target="_blank" rel="noopener" style="display:block;text-align:center;font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted);padding:12px 18px;border-radius:7px;text-decoration:none;transition:all 0.18s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.22)';this.style.color='var(--bright)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--muted)'">Apply to Join</a>
+      <div style="flex-shrink:0;display:flex;flex-direction:column;gap:10px;min-width:180px;">
+        <a href="https://scalacartafoundation.org/#apply" target="_blank" rel="noopener"
+          style="display:block;text-align:center;font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.35);color:var(--gold);padding:12px 18px;border-radius:7px;text-decoration:none;transition:all 0.18s;"
+          onmouseover="this.style.background='rgba(212,168,67,0.22)'" onmouseout="this.style.background='rgba(212,168,67,0.12)'">Apply to TESSERA &rarr;</a>
+        <a href="https://scalacartafoundation.org/#membership" target="_blank" rel="noopener"
+          style="display:block;text-align:center;font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted);padding:12px 18px;border-radius:7px;text-decoration:none;transition:all 0.18s;"
+          onmouseover="this.style.borderColor='rgba(255,255,255,0.22)';this.style.color='var(--bright)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--muted)'">View All Tiers</a>
+        <div style="font-size:0.65rem;color:var(--muted);line-height:1.55;text-align:center;padding:0 4px;">Application reviewed in 3–5 business days. Workspace included or carries over if already held.</div>
       </div>
     </div>
   </div>
@@ -1114,11 +1124,47 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
   </div>
 </footer>
 <div class="result-screen" id="screen-success">
-  <div class="result-card">
-    <div class="result-icon">✓</div>
-    <div class="result-title">Payment confirmed</div>
-    <div class="result-body">Your workspace key is being generated now. <strong>Check your email</strong> — you will receive your key and an activation link within the next few minutes.<br><br>Once you click the activation link you will be logged directly into ATLAS with your tier active.</div>
-    <a href="https://atlas.adherence.cc" class="result-btn">Open ATLAS</a>
+  <div class="result-card" style="max-width:600px;text-align:left;">
+    <!-- Key confirmation -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <div class="result-icon" style="color:#2ec98a;">✓</div>
+      <div class="result-title">Payment confirmed</div>
+      <p class="result-body" style="margin-bottom:20px;">Your workspace key is being generated now. <strong>Check your email</strong> — you will receive your key and an activation link within the next few minutes.</p>
+      <a href="https://atlas.adherence.cc" class="result-btn">Open ATLAS &rarr;</a>
+    </div>
+
+    <!-- TESSERA upsell -->
+    <div style="border-top:1px solid rgba(212,168,67,0.18);padding-top:28px;margin-top:28px;" id="tessera-upsell">
+      <div style="font-family:var(--font-m);font-size:0.52rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:8px;">Scala Carta Foundation &middot; TESSERA GRC</div>
+      <div style="font-family:var(--font-d);font-size:1.35rem;font-weight:300;color:var(--bright);line-height:1.25;margin-bottom:10px;">Want more than a key?<br/>Join the consortium your research belongs in.</div>
+      <p style="font-size:0.80rem;color:var(--muted);line-height:1.72;margin-bottom:18px;">TESSERA membership adds your scientific identity to the global adherence network: a mosaic tile on the live world map, a letter of support for grant applications, consortium affiliation on your publications, and access to the Research Exchange. Your workspace carries over — no second payment today.</p>
+
+      <!-- Tier info populated by JS -->
+      <div id="tessera-tier-chip" style="margin-bottom:20px;"></div>
+
+      <!-- Apply state -->
+      <div id="tessera-apply-wrap">
+        <button id="tessera-apply-btn" onclick="_applyToTessera()"
+          style="width:100%;font-family:var(--font-m);font-size:0.70rem;letter-spacing:0.14em;text-transform:uppercase;
+                 padding:14px 24px;border-radius:9px;cursor:pointer;border:none;
+                 background:rgba(212,168,67,0.14);border:1px solid rgba(212,168,67,0.40);color:var(--gold);
+                 transition:all 0.18s;margin-bottom:10px;"
+          onmouseover="this.style.background='rgba(212,168,67,0.24)'" onmouseout="this.style.background='rgba(212,168,67,0.14)'">
+          Apply to TESSERA &rarr;
+        </button>
+        <p style="font-size:0.70rem;color:var(--muted);text-align:center;margin:0;line-height:1.6;">No payment due today &middot; Application reviewed in 3–5 business days &middot; Membership terms discussed after approval</p>
+      </div>
+
+      <!-- Post-submit confirmation -->
+      <div id="tessera-applied-msg" style="display:none;background:rgba(46,201,138,0.06);border:1px solid rgba(46,201,138,0.25);border-radius:9px;padding:16px 18px;text-align:center;">
+        <div style="font-size:1.3rem;margin-bottom:6px;">✓</div>
+        <div style="font-family:var(--font-m);font-size:0.70rem;letter-spacing:0.12em;text-transform:uppercase;color:#2ec98a;margin-bottom:6px;">Application submitted</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin:0;line-height:1.6;">We will review your application and be in touch within 3 business days. Watch for an email from the Scala Carta Foundation.</p>
+      </div>
+
+      <!-- Error -->
+      <div id="tessera-apply-err" style="display:none;font-size:0.76rem;color:#ef4444;margin-top:10px;text-align:center;"></div>
+    </div>
   </div>
 </div>
 <div class="result-screen" id="screen-seat-success">
@@ -1513,6 +1559,31 @@ function setResearcherPath(role) { setClinicianPath(role); }
   if (params.get('status') === 'success') {
     document.getElementById('screen-success').classList.add('active');
     window.history.replaceState({}, '', window.location.pathname);
+    // Populate TESSERA tier chip from registration data saved before Stripe redirect
+    try {
+      const reg = JSON.parse(sessionStorage.getItem('_tessera_reg') || '{}');
+      const chipEl = document.getElementById('tessera-tier-chip');
+      if (chipEl && reg.tier) {
+        const TESSERA_MAP = {
+          student:    { label: 'Student Affiliate',    color: '#8b6ff5', border: 'rgba(139,111,245,0.35)', bg: 'rgba(139,111,245,0.07)', addOn: '$99/yr add-on',    benefits: 'Mosaic tile · letter of support · research exchange · consortium credential' },
+          researcher: { label: 'Research Affiliate',   color: '#2ec98a', border: 'rgba(46,201,138,0.35)',  bg: 'rgba(46,201,138,0.07)',  addOn: '$299/yr add-on',   benefits: 'Mosaic tile · letter of support · 3 seats · publication pathway · exchange' },
+          pi:         { label: 'Validation Partner',   color: '#06b6d4', border: 'rgba(6,182,212,0.35)',   bg: 'rgba(6,182,212,0.07)',   addOn: 'Contact us',       benefits: '10 seats · co-authorship · grant letters · advisory access · summit invitation' },
+        };
+        const t = TESSERA_MAP[reg.tier] || TESSERA_MAP.researcher;
+        chipEl.innerHTML = `
+          <div style="background:${t.bg};border:1px solid ${t.border};border-radius:9px;padding:14px 16px;display:flex;align-items:flex-start;gap:14px;">
+            <div style="flex:1;">
+              <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.16em;text-transform:uppercase;color:${t.color};margin-bottom:5px;">Your TESSERA tier</div>
+              <div style="font-family:var(--font-d);font-size:1.1rem;font-weight:300;color:var(--bright);margin-bottom:4px;">${t.label}</div>
+              <div style="font-size:0.74rem;color:var(--muted);line-height:1.55;">${t.benefits}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:${t.color};">${t.addOn}</div>
+              <div style="font-size:0.64rem;color:var(--muted);margin-top:3px;">billed after approval</div>
+            </div>
+          </div>`;
+      }
+    } catch(_) {}
   }
   if (params.get('status') === 'cancel') {
     document.getElementById('screen-cancel').classList.add('active');
@@ -1741,6 +1812,13 @@ async function submitRegistration() {
     document.getElementById('reg-modal').classList.remove('active');
 
     if (url) {
+      // Save registration data so the success screen can pre-fill the TESSERA application
+      try {
+        sessionStorage.setItem('_tessera_reg', JSON.stringify({
+          name, email, institution, study_title,
+          tier: _pendingTier, role: _pendingRole,
+        }));
+      } catch(_) {}
       window.location.href = url;
     } else {
       throw new Error('No checkout URL returned');
@@ -1752,6 +1830,83 @@ async function submitRegistration() {
       : 'Could not start checkout. Please try again or email info@adherence.cc');
     btn.disabled    = false;
     btn.textContent = 'Continue to Payment →';
+  }
+}
+
+// ── TESSERA Application from Success Screen ──────────────────────────────────
+
+let _keysDb = null;
+function _getKeysDb() {
+  if (_keysDb) return _keysDb;
+  try {
+    firebase.app('keys-page');
+    _keysDb = firebase.database(firebase.app('keys-page'));
+  } catch(_) {
+    _keysDb = firebase.database(firebase.initializeApp({
+      apiKey:            'AIzaSyBRUEGRPaIWHMlzn0lT9otbJQEYZs4Br1A',
+      authDomain:        'adherence-project-2026.firebaseapp.com',
+      databaseURL:       'https://adherence-project-2026-default-rtdb.firebaseio.com',
+      projectId:         'adherence-project-2026',
+      storageBucket:     'adherence-project-2026.firebasestorage.app',
+      messagingSenderId: '222566948658',
+      appId:             '1:222566948658:web:85528e19dd039c199a412b',
+    }, 'keys-page'));
+  }
+  return _keysDb;
+}
+
+// Tier number for consortium_applications (matches sa-consortium.js _CONS_TIERS)
+const _TESSERA_TIER_NUM = { student: 4, researcher: 3, pi: 2 };
+
+async function _applyToTessera() {
+  const btn    = document.getElementById('tessera-apply-btn');
+  const errEl  = document.getElementById('tessera-apply-err');
+  errEl.style.display = 'none';
+
+  let reg = {};
+  try { reg = JSON.parse(sessionStorage.getItem('_tessera_reg') || '{}'); } catch(_) {}
+
+  if (!reg.email) {
+    errEl.textContent = 'Registration data not found. Please email info@scalacartafoundation.org to apply manually.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  const tierNum = _TESSERA_TIER_NUM[reg.tier] || 3;
+  const ref = 'TES-' + Date.now().toString(36).toUpperCase();
+
+  const payload = {
+    name:            reg.name         || '',
+    first_name:      (reg.name || '').split(' ')[0] || '',
+    last_name:       (reg.name || '').split(' ').slice(1).join(' ') || '',
+    email:           reg.email        || '',
+    contact_email:   reg.email        || '',
+    institution:     reg.institution  || '',
+    study_title:     reg.study_title  || '',
+    tier:            tierNum,
+    role:            reg.role         || reg.tier || '',
+    status:          'pending',
+    applied_at:      Date.now(),
+    application_ref: ref,
+    tessera_id:      null,
+    source:          'keys-checkout-success',
+    atlas_key_tier:  reg.tier         || '',
+    atlas_key_role:  reg.role         || '',
+  };
+
+  try {
+    await _getKeysDb().ref('consortium_applications').push(payload);
+    sessionStorage.removeItem('_tessera_reg');
+    document.getElementById('tessera-apply-wrap').style.display = 'none';
+    document.getElementById('tessera-applied-msg').style.display = 'block';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Apply to TESSERA →';
+    errEl.textContent = 'Submission failed — please email info@scalacartafoundation.org to apply.';
+    errEl.style.display = 'block';
   }
 }
 

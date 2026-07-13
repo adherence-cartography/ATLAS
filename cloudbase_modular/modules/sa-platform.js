@@ -302,6 +302,38 @@ function _saPlatWsNew() {
           </div>
         </div>
 
+        <!-- TESSERA GRC -->
+        <div>
+          ${_sec('TESSERA GRC <span style="opacity:0.35;font-size:0.56rem;text-transform:none;letter-spacing:0;">— optional</span>')}
+          <div style="margin-top:6px;">
+            <label style="display:inline-flex;align-items:center;gap:8px;font-family:\'IBM Plex Mono\',monospace;font-size:0.82rem;color:${_C.muted};cursor:pointer;">
+              <input type="checkbox" id="sa-ws-new-tessera-toggle"
+                style="accent-color:#d4a843;width:14px;height:14px;"
+                onchange="document.getElementById(\'sa-ws-new-tessera-opts\').style.display=this.checked?\'grid\':\'none\'">
+              Add as TESSERA Member
+            </label>
+          </div>
+          <div id="sa-ws-new-tessera-opts" style="display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+            <div>
+              ${_lbl('TESSERA Tier','*')}
+              <select id="sa-ws-new-tessera-tier" style="${_inpSty}cursor:pointer;">
+                <option value="3" selected>Research Affiliate (Tier 3)</option>
+                <option value="1">Institutional Partner (Tier 1)</option>
+                <option value="2">Validation Partner (Tier 2)</option>
+                <option value="4">Student Affiliate (Tier 4)</option>
+                <option value="5">Industry Partner (Tier 5)</option>
+              </select>
+            </div>
+            <div>
+              ${_lbl('Country','(optional)')}
+              <select id="sa-ws-new-tessera-country" style="${_inpSty}cursor:pointer;">
+                <option value="">— select country —</option>
+                ${(typeof _CONS_COUNTRIES !== 'undefined' ? _CONS_COUNTRIES : ['United States','United Kingdom','Canada','Australia','Germany','France','Brazil','India','China','Japan','South Africa','Other']).map(c => `<option value="${c}">${c}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div id="sa-ws-new-err" style="font-size:0.84rem;color:${_C.red};min-height:18px;"></div>
       </div>`,
     confirmLabel: 'Create Workspace',
@@ -318,8 +350,11 @@ function _saPlatWsNew() {
       const study      = (document.getElementById('sa-ws-new-study')?.value||'').trim()||null;
       const campaign   = (document.getElementById('sa-ws-new-campaign')?.value||'').trim()||null;
       const expiry     = document.getElementById('sa-ws-new-expiry')?.value||null;
-      const note       = (document.getElementById('sa-ws-new-note')?.value||'').trim()||null;
-      const dims       = ['base','mvmt','strata'].filter(d => document.getElementById('sa-ws-new-dim-'+d)?.checked);
+      const note        = (document.getElementById('sa-ws-new-note')?.value||'').trim()||null;
+      const tesseraOn   = document.getElementById('sa-ws-new-tessera-toggle')?.checked || false;
+      const tesseraTier = tesseraOn ? parseInt(document.getElementById('sa-ws-new-tessera-tier')?.value || '3', 10) : null;
+      const tesseraCntry= tesseraOn ? (document.getElementById('sa-ws-new-tessera-country')?.value || '') : null;
+      const dims        = ['base','mvmt','strata'].filter(d => document.getElementById('sa-ws-new-dim-'+d)?.checked);
       const region     = document.getElementById('sa-ws-new-region')?.value || 'us';
       const _instTypeMap = { institution_academic:'academic', institution_health:'health', institution_amc:'amc' };
       // Firebase role — the actual role stored in the workspace profile
@@ -367,8 +402,18 @@ function _saPlatWsNew() {
         if (expiry)         wsData.expiry           = expiry;
         if (note)           wsData.sa_note          = note;
         if (region && region !== 'us') wsData.region = region;
+        if (tesseraOn && tesseraTier) { wsData.tessera_member = true; wsData.tessera_tier = tesseraTier; }
         await database.ref('workspaces/' + issuedKey).update(wsData);
-        showToast(`Workspace ${issuedKey} created for ${email}.`, 4000);
+        if (tesseraOn && tesseraTier) {
+          await database.ref('consortium_members').push({
+            name, email, institution: inst, study_title: study || null,
+            country: tesseraCntry || '', tier: tesseraTier, instruments: ['MAP'],
+            status: 'active', contact_email: email,
+            joined_at: Date.now(), contribution_count: 0,
+            workspace_key: issuedKey, source: 'mission_control',
+          });
+        }
+        showToast(`Workspace ${issuedKey} created for ${email}.${tesseraOn ? ' Added to TESSERA.' : ''}`, 4000);
         const container = document.getElementById('sa-plat-body');
         if (container) _saPlatWorkspaces(container);
         return true;

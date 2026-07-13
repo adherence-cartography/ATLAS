@@ -41,6 +41,9 @@ const _CONS_TIERS = {
   5: { label: 'Industry Partner',      color: '#f59e0b',   border: 'rgba(245,158,11,0.4)',   bg: 'rgba(245,158,11,0.08)'   },
 };
 
+// Maps numeric consortium_members tier (1–5) → tessera_tiles tier string
+const _CONS_TIER_TO_TESSERA = { 1:'institutional', 2:'validation', 3:'affiliate', 4:'student', 5:'industry' };
+
 // ── Country list ─────────────────────────────────────────────────────────────
 const _CONS_COUNTRIES = [
   'United States','United Kingdom','Canada','Australia','New Zealand',
@@ -508,8 +511,14 @@ function _saCons_renderMembersUI(container) {
         <td>${_saCons_statusBadge(m.status || 'active', '')}</td>
         <td style="color:${_CC.dim};font-size:0.80rem;white-space:nowrap;">${_saCons_fmtDate(m.joined_at)}</td>
         <td>
-          <div style="display:flex;gap:5px;flex-wrap:nowrap;">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
             <button class="sc-action-btn" onclick="_saCons_openEditMember('${_saCons_esc(m._key)}')">Edit</button>
+            ${m.tessera_tile_key
+              ? `<button class="sc-action-btn" style="opacity:0.4;cursor:default;" title="Already on mosaic" disabled>Mosaic ✦</button>`
+              : `<button class="sc-action-btn sc-action-btn-amber" onclick="_saCons_pushToMosaic('${_saCons_esc(m._key)}')">Mosaic ✦</button>`}
+            ${m.workspace_key
+              ? `<button class="sc-action-btn" style="opacity:0.4;cursor:default;font-size:0.66rem;" title="Workspace: ${_saCons_esc(m.workspace_key)}" disabled>WS ✓</button>`
+              : `<button class="sc-action-btn" style="color:#38bdf8;border-color:rgba(56,189,248,0.35);" onmouseover="this.style.background='rgba(56,189,248,0.09)'" onmouseout="this.style.background='transparent'" onclick="_saCons_provisionWorkspace('${_saCons_esc(m._key)}')">Workspace</button>`}
             <button class="sc-action-btn sc-action-btn-danger" onclick="_saCons_deactivateMember('${_saCons_esc(m._key)}','${_saCons_esc(m.name)}')">Deactivate</button>
           </div>
         </td>
@@ -937,6 +946,354 @@ window._saCons_deactivateMember = async function(key, name) {
     _saCons_renderMembersUI(document.getElementById('sc-tab-content'));
   } catch (e) {
     if (typeof showToast === 'function') showToast('Deactivate failed: ' + e.message, 3000);
+  }
+};
+
+// ── Push Member to Tessera Mosaic ─────────────────────────────────────────────
+window._saCons_pushToMosaic = function(key) {
+  const m = _saCons_membersCache.find(x => x._key === key);
+  if (!m) { if (typeof showToast === 'function') showToast('Member not found.'); return; }
+  if (m.tessera_tile_key) { if (typeof showToast === 'function') showToast('Already on mosaic.', 2000); return; }
+
+  _saCons_injectStyles();
+
+  const tierStr  = _CONS_TIER_TO_TESSERA[m.tier] || 'affiliate';
+  const isIndiv  = (m.tier === 3 || m.tier === 4);
+  const defName  = isIndiv ? (m.name || '') : (m.institution || m.name || '');
+  const flag     = _CONS_FLAGS[m.country] || '';
+
+  const countryOpts = _CONS_COUNTRIES.map(c =>
+    `<option value="${_saCons_esc(c)}" ${m.country === c ? 'selected' : ''}>${_saCons_esc(c)}</option>`
+  ).join('');
+  const tierOpts = Object.entries(_TESSERA_TIERS).map(([k, t]) =>
+    `<option value="${k}" ${k === tierStr ? 'selected' : ''}>${t.label}</option>`
+  ).join('');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sc-push-mosaic-overlay';
+  overlay.className = 'sc-modal-overlay';
+  overlay.innerHTML = `
+    <div class="sc-modal" role="dialog" aria-modal="true" aria-label="Add to Tessera Mosaic">
+      <button onclick="document.getElementById('sc-push-mosaic-overlay').remove()"
+        style="position:absolute;top:16px;right:18px;background:none;border:none;color:${_CC.dim};font-size:1.3rem;cursor:pointer;line-height:1;"
+        aria-label="Close">×</button>
+
+      <div style="font-size:0.70rem;letter-spacing:0.20em;text-transform:uppercase;color:${_CC.amber};margin-bottom:6px;">Add to Tessera Mosaic</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;font-weight:300;color:${_CC.text};margin-bottom:20px;">${_saCons_esc(m.name || m.institution || '—')}</div>
+
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label class="sc-label" for="sc-pm-name">${isIndiv ? 'Full Name' : 'Institution / Name'} <span style="color:${_CC.red};">*</span></label>
+          <input id="sc-pm-name" class="sc-input" type="text" value="${_saCons_esc(defName)}" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="sc-label" for="sc-pm-tier">Tier</label>
+            <select id="sc-pm-tier" class="sc-input" style="cursor:pointer;" onchange="_saCons_pmOnTierChange(this.value)">${tierOpts}</select>
+          </div>
+          <div>
+            <label class="sc-label" for="sc-pm-country">Country</label>
+            <select id="sc-pm-country" class="sc-input" style="cursor:pointer;"
+              onchange="document.getElementById('sc-pm-flag').value=(_CONS_FLAGS[this.value]||'')">
+              <option value="">— select —</option>${countryOpts}
+            </select>
+          </div>
+        </div>
+        <div id="sc-pm-individual-fields" style="display:${isIndiv?'grid':'none'};grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="sc-label" for="sc-pm-role">Role / Title</label>
+            <input id="sc-pm-role" class="sc-input" type="text" placeholder="e.g. Associate Professor" />
+          </div>
+          <div>
+            <label class="sc-label" for="sc-pm-affiliation">Affiliation</label>
+            <input id="sc-pm-affiliation" class="sc-input" type="text" value="${_saCons_esc(m.institution || '')}" />
+          </div>
+        </div>
+        <div id="sc-pm-links-fields" style="display:${isIndiv?'grid':'none'};grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="sc-label" for="sc-pm-orcid">ORCID</label>
+            <input id="sc-pm-orcid" class="sc-input" type="text" value="${_saCons_esc(m.orcid||'')}" placeholder="0000-0000-0000-0000" />
+          </div>
+          <div>
+            <label class="sc-label" for="sc-pm-linkedin">LinkedIn URL</label>
+            <input id="sc-pm-linkedin" class="sc-input" type="text" value="${_saCons_esc(m.linkedin||'')}" placeholder="https://linkedin.com/in/…" />
+          </div>
+        </div>
+        <input id="sc-pm-flag" type="hidden" value="${_saCons_esc(flag)}" />
+      </div>
+
+      <div id="sc-pm-err" style="display:none;margin-top:12px;font-size:0.82rem;color:${_CC.red};"></div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;border-top:1px solid ${_CC.border};padding-top:18px;">
+        <button onclick="document.getElementById('sc-push-mosaic-overlay').remove()"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.10em;text-transform:uppercase;
+                 padding:8px 18px;border-radius:6px;cursor:pointer;border:1px solid ${_CC.border};
+                 background:transparent;color:${_CC.muted};transition:all 0.15s;"
+          onmouseover="this.style.borderColor='${_CC.borderB}';this.style.color='${_CC.text}'"
+          onmouseout="this.style.borderColor='${_CC.border}';this.style.color='${_CC.muted}'">
+          Cancel
+        </button>
+        <button id="sc-pm-submit" onclick="_saCons_submitPushToMosaic('${_saCons_esc(key)}')"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
+                 padding:8px 22px;border-radius:6px;cursor:pointer;
+                 background:${_CC.amberFaint};border:1px solid ${_CC.amberDim};color:${_CC.amber};transition:all 0.15s;"
+          onmouseover="this.style.background='rgba(212,168,67,0.18)'" onmouseout="this.style.background='${_CC.amberFaint}'">
+          Add to Mosaic
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  setTimeout(() => { document.getElementById('sc-pm-name')?.focus(); }, 60);
+};
+
+window._saCons_pmOnTierChange = function(tier) {
+  const isIndiv = new Set(['student','affiliate','founder']).has(tier);
+  const f = document.getElementById('sc-pm-individual-fields');
+  const l = document.getElementById('sc-pm-links-fields');
+  if (f) f.style.display = isIndiv ? 'grid' : 'none';
+  if (l) l.style.display = isIndiv ? 'grid' : 'none';
+};
+
+window._saCons_submitPushToMosaic = async function(memberKey) {
+  const name        = (document.getElementById('sc-pm-name')?.value        || '').trim();
+  const tier        = document.getElementById('sc-pm-tier')?.value         || 'affiliate';
+  const country     = document.getElementById('sc-pm-country')?.value      || '';
+  const flag        = (document.getElementById('sc-pm-flag')?.value        || '') || (_CONS_FLAGS[country] || '');
+  const role        = (document.getElementById('sc-pm-role')?.value        || '').trim();
+  const affiliation = (document.getElementById('sc-pm-affiliation')?.value || '').trim();
+  const orcid       = (document.getElementById('sc-pm-orcid')?.value       || '').trim();
+  const linkedin    = (document.getElementById('sc-pm-linkedin')?.value    || '').trim();
+  const errEl       = document.getElementById('sc-pm-err');
+  const btn         = document.getElementById('sc-pm-submit');
+
+  if (!name) {
+    errEl.textContent = 'Name is required.';
+    errEl.style.display = 'block';
+    document.getElementById('sc-pm-name')?.focus();
+    return;
+  }
+  errEl.style.display = 'none';
+  btn.textContent = 'Adding…';
+  btn.disabled = true;
+
+  const record = { name, country, countryFlag: flag, tier, joinedAt: Date.now() };
+  if (role)        record.role        = role;
+  if (affiliation) record.affiliation = affiliation;
+  if (orcid)       record.orcid       = orcid;
+  if (linkedin)    record.linkedin    = linkedin;
+
+  try {
+    const db = firebase.database();
+    const tileRef = await db.ref('tessera_tiles').push(record);
+    await db.ref('consortium_members/' + memberKey + '/tessera_tile_key').set(tileRef.key);
+    document.getElementById('sc-push-mosaic-overlay')?.remove();
+    if (typeof showToast === 'function') showToast(`✓ "${name}" added to the Tessera mosaic.`, 3000);
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_tile_added', { memberKey, tileKey: tileRef.key, name });
+    await _saCons_loadMembers();
+    _saCons_renderMembersUI(document.getElementById('sc-tab-content'));
+  } catch (e) {
+    errEl.textContent = 'Failed: ' + e.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Add to Mosaic';
+    btn.disabled = false;
+  }
+};
+
+// ── Provision ATLAS Workspace for a TESSERA Member ───────────────────────────
+window._saCons_provisionWorkspace = function(key) {
+  const m = _saCons_membersCache.find(x => x._key === key);
+  if (!m) { if (typeof showToast === 'function') showToast('Member not found.'); return; }
+  if (m.workspace_key) { if (typeof showToast === 'function') showToast(`Workspace already provisioned: ${m.workspace_key}`, 2500); return; }
+
+  _saCons_injectStyles();
+
+  const tierToRole   = { 1:'pi', 2:'researcher', 3:'researcher', 4:'student', 5:'researcher' };
+  const defaultRole  = tierToRole[m.tier] || 'researcher';
+  const tierStr      = _CONS_TIER_TO_TESSERA[m.tier] || 'affiliate';
+  const nameParts    = (m.name || '').trim().split(' ');
+  const defaultFname = nameParts[0] || '';
+  const defaultLname = nameParts.slice(1).join(' ') || '';
+
+  const roleOpts = [
+    ['student','Student'],['researcher','Researcher'],['clinician','Clinician'],
+    ['pi','PI · Multi-Site'],['observer','Observer'],
+    ['institution_academic','Institution · Academic'],
+    ['institution_health','Institution · Health System'],
+    ['institution_amc','Institution · Academic Med Ctr'],
+  ].map(([v, l]) => `<option value="${v}" ${v === defaultRole ? 'selected' : ''}>${l}</option>`).join('');
+
+  const regionOpts = [
+    ['us','US — Virginia (default)'],['eu','EU — Frankfurt (GDPR)'],['uae','UAE — Abu Dhabi'],
+  ].map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sc-prov-ws-overlay';
+  overlay.className = 'sc-modal-overlay';
+  overlay.innerHTML = `
+    <div class="sc-modal sc-modal-wide" role="dialog" aria-modal="true" aria-label="Provision Workspace">
+      <button onclick="document.getElementById('sc-prov-ws-overlay').remove()"
+        style="position:absolute;top:16px;right:18px;background:none;border:none;color:${_CC.dim};font-size:1.3rem;cursor:pointer;line-height:1;"
+        aria-label="Close">×</button>
+
+      <div style="font-size:0.70rem;letter-spacing:0.20em;text-transform:uppercase;color:#38bdf8;margin-bottom:6px;">Provision ATLAS Workspace</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;font-weight:300;color:${_CC.text};margin-bottom:4px;">${_saCons_esc(m.name || '—')}</div>
+      <div style="font-size:0.78rem;color:${_CC.dim};margin-bottom:20px;">${_saCons_esc(m.institution || '')}${m.country ? ' · ' + _saCons_esc(m.country) : ''}</div>
+
+      <div style="display:grid;gap:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:12px;">
+          <div>
+            <label class="sc-label" for="sc-pw-fname">First Name</label>
+            <input id="sc-pw-fname" class="sc-input" type="text" value="${_saCons_esc(defaultFname)}" />
+          </div>
+          <div>
+            <label class="sc-label" for="sc-pw-lname">Last Name</label>
+            <input id="sc-pw-lname" class="sc-input" type="text" value="${_saCons_esc(defaultLname)}" />
+          </div>
+          <div>
+            <label class="sc-label" for="sc-pw-email">Email <span style="color:${_CC.red};">*</span></label>
+            <input id="sc-pw-email" class="sc-input" type="email" value="${_saCons_esc(m.contact_email || m.email || '')}" />
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="sc-label" for="sc-pw-role">Role <span style="color:${_CC.red};">*</span></label>
+            <select id="sc-pw-role" class="sc-input" style="cursor:pointer;">${roleOpts}</select>
+          </div>
+          <div>
+            <label class="sc-label" for="sc-pw-region">Data Region</label>
+            <select id="sc-pw-region" class="sc-input" style="cursor:pointer;">${regionOpts}</select>
+          </div>
+        </div>
+        <div>
+          <label class="sc-label" for="sc-pw-inst">Institution <span style="color:${_CC.red};">*</span></label>
+          <input id="sc-pw-inst" class="sc-input" type="text" value="${_saCons_esc(m.institution || '')}" />
+        </div>
+        <div>
+          <label class="sc-label" for="sc-pw-study">Study Title <span style="color:${_CC.dim};font-weight:400;">(optional)</span></label>
+          <input id="sc-pw-study" class="sc-input" type="text" value="${_saCons_esc(m.study_title || '')}" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="sc-label" for="sc-pw-expiry">Key Expiry <span style="color:${_CC.dim};font-weight:400;">(optional)</span></label>
+            <input id="sc-pw-expiry" class="sc-input" type="date" />
+          </div>
+          <div>
+            <label class="sc-label">PEACS Dimensions</label>
+            <div style="display:flex;gap:14px;margin-top:6px;">
+              ${['base','mvmt','strata'].map(d => `
+                <label style="display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:${_CC.muted};cursor:pointer;">
+                  <input type="checkbox" id="sc-pw-dim-${d}" checked style="accent-color:${_CC.amber};width:13px;height:13px;"> ${d.toUpperCase()}
+                </label>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div style="background:rgba(56,189,248,0.04);border:1px solid rgba(56,189,248,0.18);border-radius:8px;padding:11px 13px;font-size:0.76rem;color:${_CC.muted};line-height:1.5;">
+          TESSERA tier <strong style="color:#38bdf8;">${_saCons_esc(tierStr)}</strong> will be written to the workspace profile and this member record will be linked and set to Active.
+        </div>
+      </div>
+
+      <div id="sc-pw-err" style="min-height:18px;margin-top:10px;font-size:0.82rem;color:${_CC.red};"></div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;border-top:1px solid ${_CC.border};padding-top:18px;">
+        <button onclick="document.getElementById('sc-prov-ws-overlay').remove()"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.10em;text-transform:uppercase;
+                 padding:8px 18px;border-radius:6px;cursor:pointer;border:1px solid ${_CC.border};
+                 background:transparent;color:${_CC.muted};transition:all 0.15s;"
+          onmouseover="this.style.borderColor='${_CC.borderB}';this.style.color='${_CC.text}'"
+          onmouseout="this.style.borderColor='${_CC.border}';this.style.color='${_CC.muted}'">
+          Cancel
+        </button>
+        <button id="sc-pw-submit" onclick="_saCons_submitProvisionWs('${_saCons_esc(key)}')"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
+                 padding:8px 22px;border-radius:6px;cursor:pointer;
+                 background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.40);color:#38bdf8;transition:all 0.15s;"
+          onmouseover="this.style.background='rgba(56,189,248,0.16)'" onmouseout="this.style.background='rgba(56,189,248,0.08)'">
+          Create Workspace
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  setTimeout(() => { document.getElementById('sc-pw-email')?.focus(); }, 60);
+};
+
+window._saCons_submitProvisionWs = async function(memberKey) {
+  const m           = _saCons_membersCache.find(x => x._key === memberKey);
+  const fname       = (document.getElementById('sc-pw-fname')?.value || '').trim();
+  const lname       = (document.getElementById('sc-pw-lname')?.value || '').trim();
+  const email       = (document.getElementById('sc-pw-email')?.value || '').trim().toLowerCase();
+  const _roleRaw    = document.getElementById('sc-pw-role')?.value || 'researcher';
+  const inst        = (document.getElementById('sc-pw-inst')?.value || '').trim();
+  const study       = (document.getElementById('sc-pw-study')?.value || '').trim() || null;
+  const expiry      = document.getElementById('sc-pw-expiry')?.value || null;
+  const region      = document.getElementById('sc-pw-region')?.value || 'us';
+  const dims        = ['base','mvmt','strata'].filter(d => document.getElementById('sc-pw-dim-'+d)?.checked);
+  const errEl       = document.getElementById('sc-pw-err');
+  const btn         = document.getElementById('sc-pw-submit');
+
+  const _instTypeMap = { institution_academic:'academic', institution_health:'health', institution_amc:'amc' };
+  const role            = _instTypeMap[_roleRaw] ? 'institution' : _roleRaw;
+  const institution_type = _instTypeMap[_roleRaw] || null;
+  const name            = fname && lname ? `${fname} ${lname}` : fname || lname || email;
+  const tierNum         = m?.tier || 3;
+  const tierStr         = _CONS_TIER_TO_TESSERA[tierNum] || 'affiliate';
+
+  if (!email) { errEl.textContent = 'Email is required.'; return; }
+  if (!inst)  { errEl.textContent = 'Institution is required.'; return; }
+  if (!dims.length) { errEl.textContent = 'Select at least one PEACS dimension.'; return; }
+
+  errEl.textContent = 'Creating workspace…';
+  btn.textContent = 'Creating…';
+  btn.disabled = true;
+
+  try {
+    const rawResp = await fetch(LAMBDA_URL + '/issue-key', {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, email, institution: inst, role, peacs_dims: dims,
+        ...(institution_type ? { institution_type } : {}),
+        ...(study ? { study_title: study } : {}),
+      })
+    });
+    const res = await rawResp.json().catch(() => ({}));
+    if (!res.key) {
+      errEl.textContent = res.error || `Issue failed (HTTP ${rawResp.status})`;
+      btn.textContent = 'Create Workspace';
+      btn.disabled = false;
+      return;
+    }
+    const issuedKey = res.key;
+    await firebase.database().ref('atlas_deleted_keys/' + issuedKey).remove().catch(() => {});
+
+    const wsData = { role, created_at: Date.now(), name, peacs_dims: dims, tessera_member: true, tessera_tier: tierNum };
+    if (fname)            wsData.first_name       = fname;
+    if (lname)            wsData.last_name        = lname;
+    if (email)            wsData.email            = email;
+    if (inst)             wsData.institution      = inst;
+    if (institution_type) wsData.institution_type = institution_type;
+    if (study)            wsData.study_title      = study;
+    if (expiry)           wsData.expiry           = expiry;
+    if (region && region !== 'us') wsData.region  = region;
+    wsData.sa_note = `Provisioned from TESSERA member ${memberKey} · ${new Date().toISOString().slice(0,10)}`;
+
+    await firebase.database().ref('workspaces/' + issuedKey).update(wsData);
+    await firebase.database().ref('consortium_members/' + memberKey).update({ workspace_key: issuedKey, status: 'active' });
+
+    document.getElementById('sc-prov-ws-overlay')?.remove();
+    if (typeof showToast === 'function') showToast(`Workspace ${issuedKey} created. Member activated.`, 4500);
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_workspace_provisioned', { memberKey, issuedKey, email });
+    await _saCons_loadMembers();
+    _saCons_renderMembersUI(document.getElementById('sc-tab-content'));
+  } catch(e) {
+    errEl.textContent = e.message === 'Failed to fetch'
+      ? 'Network error — Lambda may be unreachable.'
+      : 'Error: ' + e.message;
+    btn.textContent = 'Create Workspace';
+    btn.disabled = false;
   }
 };
 
@@ -2060,7 +2417,7 @@ window._saCons_approveApp = async function(key) {
     // 2. Mark application as approved
     await db.ref('consortium_applications/' + key + '/status').set('approved');
     document.getElementById('sc-app-drawer')?.remove();
-    if (typeof showToast === 'function') showToast('✓ Application approved. Member record created — assign workspace and TESSERA ID in Members tab.', 4000);
+    if (typeof showToast === 'function') showToast('✓ Application approved. Use the Workspace and Mosaic buttons in the Members tab to complete onboarding.', 5000);
     await _saCons_loadApplications();
     _saCons_renderApplicationsUI(document.getElementById('sc-tab-content'));
   } catch (e) {
