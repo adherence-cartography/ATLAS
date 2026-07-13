@@ -370,7 +370,6 @@ function _saCons_renderSubNav(container) {
     { id: 'impact',       label: 'Impact'         },
     { id: 'registry',     label: 'Registry'       },
     { id: 'exchange',     label: '◎ Exchange'     },
-    { id: 'tessera',      label: '⬡ Tessera Mosaic' },
   ];
   return tabs.map(t => `
     <button class="sc-subtab ${t.id === _saCons_activeSubTab ? 'sc-subtab-active' : 'sc-subtab-inactive'}"
@@ -416,7 +415,6 @@ window._saCons_switchTab = function(tabId, contentEl) {
       }, 200);
     }
   }
-  if (tabId === 'tessera') _saCons_renderTessera(contentEl);
 };
 
 // ── Main shell ────────────────────────────────────────────────────────────────
@@ -433,7 +431,6 @@ function _saCons_renderShell(container) {
     { id: 'impact',       label: 'Impact'         },
     { id: 'registry',     label: 'Registry'       },
     { id: 'exchange',     label: '◎ Exchange'     },
-    { id: 'tessera',      label: '⬡ Tessera Mosaic' },
   ];
 
   container.innerHTML = `
@@ -463,7 +460,8 @@ function _saCons_renderShell(container) {
 
 function _saCons_renderMembers(container) {
   container.innerHTML = `<div style="color:${_CC.muted};font-size:0.90rem;padding:20px 0;">Loading members…</div>`;
-  _saCons_loadMembers().then(() => _saCons_renderMembersUI(container));
+  Promise.all([_saCons_loadMembers(), _saTessera_load()])
+    .then(() => _saCons_renderMembersUI(container));
 }
 
 async function _saCons_loadMembers() {
@@ -479,79 +477,126 @@ async function _saCons_loadMembers() {
 }
 
 function _saCons_renderMembersUI(container) {
+  // ── Merge both collections ────────────────────────────────────────────────
   const tierCounts = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0 };
   _saCons_membersCache.forEach(m => { if (tierCounts[m.tier] !== undefined) tierCounts[m.tier]++; });
+
+  const memberTileKeySet = new Set(_saCons_membersCache.filter(m => m.tessera_tile_key).map(m => m.tessera_tile_key));
+  const orphanTiles      = _saTessera_cache.filter(t => !t.member_key && !memberTileKeySet.has(t._key));
+  const onMosaicCount    = _saCons_membersCache.filter(m => m.tessera_tile_key).length;
+  const activeCount      = _saCons_membersCache.filter(m => m.status === 'active').length;
 
   const filtered = _saCons_tierFilter === 'all'
     ? _saCons_membersCache
     : _saCons_membersCache.filter(m => String(m.tier) === String(_saCons_tierFilter));
 
-  const activeCount = _saCons_membersCache.filter(m => m.status === 'active').length;
-
-  const statCards = Object.entries(tierCounts).map(([tier, count]) => {
+  // ── Stat cards ────────────────────────────────────────────────────────────
+  const tierStatCards = Object.entries(tierCounts).map(([tier, count]) => {
     const t = _CONS_TIERS[tier];
-    return `
-      <div class="sc-stat-card" style="border-color:${t.border};">
-        <div style="font-size:1.4rem;font-weight:700;color:${t.color};font-family:'IBM Plex Mono',monospace;">${count}</div>
-        <div style="font-size:0.68rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.dim};">${_saCons_esc(t.label)}</div>
-      </div>`;
+    return `<div class="sc-stat-card" style="border-color:${t.border};">
+      <div style="font-size:1.4rem;font-weight:700;color:${t.color};font-family:'IBM Plex Mono',monospace;">${count}</div>
+      <div style="font-size:0.68rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.dim};">${_saCons_esc(t.label)}</div>
+    </div>`;
   }).join('');
 
-  const rows = filtered.length ? filtered.map(m => {
-    const flag     = _CONS_FLAGS[m.country] || '🌐';
+  // ── Member rows ───────────────────────────────────────────────────────────
+  const memberRows = filtered.map(m => {
+    const flag      = _CONS_FLAGS[m.country] || '🌐';
     const lmicBadge = m.lmic_tier
-      ? `<span style="display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.10em;text-transform:uppercase;padding:1px 6px;border-radius:3px;border:1px solid rgba(249,115,22,0.35);background:rgba(249,115,22,0.07);color:#f97316;white-space:nowrap;margin-left:5px;">LMIC</span>`
-      : '';
-    return `
-      <tr>
-        <td>
-          <div style="font-weight:600;color:${_CC.text};">${_saCons_esc(m.name || '—')}${lmicBadge}</div>
-          <div style="font-size:0.76rem;color:${_CC.dim};margin-top:2px;">${_saCons_esc(m.contact_email || '')}</div>
-        </td>
-        <td style="color:${_CC.muted};">${_saCons_esc(m.institution || '—')}</td>
-        <td style="font-size:0.90rem;">${flag} <span style="color:${_CC.muted};font-size:0.82rem;">${_saCons_esc(m.country || '—')}</span></td>
-        <td>${_saCons_tierBadge(m.tier)}</td>
-        <td>${_saCons_instrumentChips(m.instruments)}</td>
-        <td>${_saCons_statusBadge(m.status || 'active', '')}</td>
-        <td style="color:${_CC.dim};font-size:0.80rem;white-space:nowrap;">${_saCons_fmtDate(m.joined_at)}</td>
-        <td>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;">
-            <button class="sc-action-btn" onclick="_saCons_openEditMember('${_saCons_esc(m._key)}')">Edit</button>
-            ${m.tessera_tile_key
-              ? `<button class="sc-action-btn" style="opacity:0.4;cursor:default;" title="Already on mosaic" disabled>Mosaic ✦</button>`
-              : `<button class="sc-action-btn sc-action-btn-amber" onclick="_saCons_pushToMosaic('${_saCons_esc(m._key)}')">Mosaic ✦</button>`}
-            ${m.workspace_key
-              ? `<button class="sc-action-btn" style="opacity:0.4;cursor:default;font-size:0.66rem;" title="Workspace: ${_saCons_esc(m.workspace_key)}" disabled>WS ✓</button>`
-              : `<button class="sc-action-btn" style="color:#38bdf8;border-color:rgba(56,189,248,0.35);" onmouseover="this.style.background='rgba(56,189,248,0.09)'" onmouseout="this.style.background='transparent'" onclick="_saCons_provisionWorkspace('${_saCons_esc(m._key)}')">Workspace</button>`}
-            <button class="sc-action-btn sc-action-btn-danger" onclick="_saCons_deactivateMember('${_saCons_esc(m._key)}','${_saCons_esc(m.name)}')">Deactivate</button>
-          </div>
-        </td>
-      </tr>`;
-  }).join('') : `<tr><td colspan="8" style="text-align:center;padding:40px;color:${_CC.dim};font-size:0.88rem;">No members found${_saCons_tierFilter !== 'all' ? ' for this tier' : '. Add your first consortium member.'}` + `</td></tr>`;
+      ? `<span style="display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.10em;text-transform:uppercase;padding:1px 6px;border-radius:3px;border:1px solid rgba(249,115,22,0.35);background:rgba(249,115,22,0.07);color:#f97316;white-space:nowrap;margin-left:5px;">LMIC</span>` : '';
+    const mosaicCell = m.tessera_tile_key
+      ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid rgba(212,168,67,0.35);background:rgba(212,168,67,0.07);color:${_CC.amber};cursor:pointer;white-space:nowrap;" onclick="_saTessera_edit('${_saCons_esc(m.tessera_tile_key)}')">⬡ On Mosaic</span>`
+      : `<span style="color:${_CC.dim};font-size:0.80rem;">—</span>`;
+    const mosaicBtn = m.tessera_tile_key
+      ? `<button class="sc-action-btn sc-action-btn-amber" onclick="_saTessera_edit('${_saCons_esc(m.tessera_tile_key)}')">Edit Tile</button>`
+      : `<button class="sc-action-btn sc-action-btn-amber" onclick="_saCons_pushToMosaic('${_saCons_esc(m._key)}')">Mosaic ✦</button>`;
+    return `<tr>
+      <td>
+        <div style="font-weight:600;color:${_CC.text};">${_saCons_esc(m.name || '—')}${lmicBadge}</div>
+        <div style="font-size:0.76rem;color:${_CC.dim};margin-top:2px;">${_saCons_esc(m.contact_email || '')}</div>
+      </td>
+      <td style="color:${_CC.muted};">${_saCons_esc(m.institution || '—')}</td>
+      <td style="font-size:0.90rem;">${flag} <span style="color:${_CC.muted};font-size:0.82rem;">${_saCons_esc(m.country || '—')}</span></td>
+      <td>${_saCons_tierBadge(m.tier)}</td>
+      <td>${_saCons_statusBadge(m.status || 'active', '')}</td>
+      <td>${mosaicCell}</td>
+      <td style="color:${_CC.dim};font-size:0.80rem;white-space:nowrap;">${_saCons_fmtDate(m.joined_at)}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="sc-action-btn" onclick="_saCons_openEditMember('${_saCons_esc(m._key)}')">Edit</button>
+          ${mosaicBtn}
+          ${m.workspace_key
+            ? `<button class="sc-action-btn" style="opacity:0.4;cursor:default;font-size:0.66rem;" title="Workspace: ${_saCons_esc(m.workspace_key)}" disabled>WS ✓</button>`
+            : `<button class="sc-action-btn" style="color:#38bdf8;border-color:rgba(56,189,248,0.35);" onmouseover="this.style.background='rgba(56,189,248,0.09)'" onmouseout="this.style.background='transparent'" onclick="_saCons_provisionWorkspace('${_saCons_esc(m._key)}')">Workspace</button>`}
+          <button class="sc-action-btn sc-action-btn-danger" onclick="_saCons_deactivateMember('${_saCons_esc(m._key)}','${_saCons_esc(m.name)}')">Deactivate</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // ── Orphan tile rows (on mosaic but no member record) ─────────────────────
+  const orphanRows = (_saCons_tierFilter === 'all' ? orphanTiles : []).map(tile => {
+    const flag     = _CONS_FLAGS[tile.country] || '🌐';
+    const isIndiv  = new Set(['founder','affiliate','student']).has(tile.tier);
+    const dispName = isIndiv ? (tile.name || '—') : (tile.institution || tile.name || '—');
+    const dispInst = isIndiv ? (tile.affiliation || '—') : '—';
+    const tierNum  = _TESSERA_TIER_TO_CONS[tile.tier] ?? 1;
+    return `<tr style="background:rgba(212,168,67,0.03);">
+      <td>
+        <div style="font-weight:600;color:${_CC.text};">${_saCons_esc(dispName)}</div>
+        <div style="font-size:0.68rem;color:${_CC.dim};margin-top:2px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.06em;">tile only · no member record</div>
+      </td>
+      <td style="color:${_CC.muted};">${_saCons_esc(dispInst)}</td>
+      <td style="font-size:0.90rem;">${flag} <span style="color:${_CC.muted};font-size:0.82rem;">${_saCons_esc(tile.country || '—')}</span></td>
+      <td>${_saCons_tierBadge(tierNum)}</td>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;padding:2px 6px;border-radius:3px;border:1px solid rgba(96,120,152,0.25);color:${_CC.dim};">Tile Only</span></td>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid rgba(212,168,67,0.35);background:rgba(212,168,67,0.07);color:${_CC.amber};white-space:nowrap;">⬡ On Mosaic</span></td>
+      <td style="color:${_CC.dim};font-size:0.80rem;white-space:nowrap;">${tile.joinedAt ? new Date(tile.joinedAt).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—'}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="sc-action-btn sc-action-btn-amber" onclick="_saTessera_edit('${_saCons_esc(tile._key)}')">Edit Tile</button>
+          <button class="sc-action-btn" style="color:#38bdf8;border-color:rgba(56,189,248,0.35);" onmouseover="this.style.background='rgba(56,189,248,0.09)'" onmouseout="this.style.background='transparent'" onclick="_saTessera_registerMember('${_saCons_esc(tile._key)}')">Register +</button>
+          <button class="sc-action-btn sc-action-btn-danger" onclick="_saTessera_remove('${_saCons_esc(tile._key)}','${_saCons_esc(dispName)}')">Remove</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const allRows = (memberRows + orphanRows) ||
+    `<tr><td colspan="8" style="text-align:center;padding:40px;color:${_CC.dim};font-size:0.88rem;">No members found${_saCons_tierFilter !== 'all' ? ' for this tier' : '. Add your first consortium member.'}</td></tr>`;
 
   const tierOptions = `<option value="all">All Tiers</option>` +
     Object.entries(_CONS_TIERS).map(([id, t]) => `<option value="${id}" ${_saCons_tierFilter === id ? 'selected' : ''}>${t.label}</option>`).join('');
 
-  // LMIC pending review banner — members awaiting approval who are LMIC-eligible
+  // ── LMIC pending banner ───────────────────────────────────────────────────
   const lmicPending = _saCons_membersCache.filter(m => m.status === 'pending' && m.lmic_eligible);
   const lmicPendingBanner = lmicPending.length ? `
     <div style="background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.30);border-radius:9px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px;">
       <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">🌍</div>
       <div style="flex:1;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;font-weight:600;color:#f97316;margin-bottom:4px;">
-          ${lmicPending.length} LMIC Application${lmicPending.length !== 1 ? 's' : ''} Awaiting Review
-        </div>
-        <div style="font-size:0.78rem;color:rgba(138,160,184,0.85);line-height:1.55;">
-          ${lmicPending.map(m => `<strong style="color:rgba(205,216,232,0.92);">${_saCons_esc(m.name || '—')}</strong> · ${_saCons_esc(m.institution || '—')} · ${_saCons_esc(m.country || '—')}`).join(' &nbsp;|&nbsp; ')}
-        </div>
-        <div style="font-size:0.72rem;color:rgba(249,115,22,0.7);margin-top:5px;">
-          Edit each member, set status to Active, and check "Grant LMIC Researcher Access Tier" to provision fee-waived researcher access.
-        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;font-weight:600;color:#f97316;margin-bottom:4px;">${lmicPending.length} LMIC Application${lmicPending.length !== 1 ? 's' : ''} Awaiting Review</div>
+        <div style="font-size:0.78rem;color:rgba(138,160,184,0.85);line-height:1.55;">${lmicPending.map(m => `<strong style="color:rgba(205,216,232,0.92);">${_saCons_esc(m.name || '—')}</strong> · ${_saCons_esc(m.institution || '—')} · ${_saCons_esc(m.country || '—')}`).join(' &nbsp;|&nbsp; ')}</div>
+        <div style="font-size:0.72rem;color:rgba(249,115,22,0.7);margin-top:5px;">Edit each member, set status to Active, and check "Grant LMIC Researcher Access Tier" to provision fee-waived researcher access.</div>
       </div>
     </div>` : '';
 
-  container.innerHTML = lmicPendingBanner + `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:22px;">
+  // ── Add tile form (for standalone tiles, e.g. founder) ────────────────────
+  const tileCountryOpts = _CONS_COUNTRIES.map(c => `<option value="${_saCons_esc(c)}">${_saCons_esc(c)}</option>`).join('');
+  const tileTierOpts    = Object.entries(_TESSERA_TIERS).map(([k, t]) => `<option value="${k}">${t.label}</option>`).join('');
+
+  // ── Live mosaic link ──────────────────────────────────────────────────────
+  const mosaicLink = `
+    <div style="background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.14);border-radius:9px;padding:10px 16px;display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <span style="font-size:0.78rem;color:${_CC.muted};">Live mosaic:</span>
+      <a href="https://scalacartafoundation.org/mosaic/" target="_blank" rel="noopener"
+        style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.06em;color:${_CC.amber};text-decoration:none;">
+        scalacartafoundation.org/mosaic/ ↗
+      </a>
+      <span style="font-size:0.76rem;color:${_CC.dim};">${onMosaicCount} of ${_saCons_membersCache.length} member${_saCons_membersCache.length !== 1 ? 's' : ''} on mosaic${orphanTiles.length ? ` · ${orphanTiles.length} tile-only` : ''}</span>
+    </div>`;
+
+  container.innerHTML = lmicPendingBanner + mosaicLink + `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:22px;">
       <div class="sc-stat-card">
         <div style="font-size:1.6rem;font-weight:700;color:${_CC.amber};font-family:'IBM Plex Mono',monospace;">${_saCons_membersCache.length}</div>
         <div style="font-size:0.68rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.dim};">Total Members</div>
@@ -560,7 +605,11 @@ function _saCons_renderMembersUI(container) {
         <div style="font-size:1.6rem;font-weight:700;color:${_CC.green};font-family:'IBM Plex Mono',monospace;">${activeCount}</div>
         <div style="font-size:0.68rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.dim};">Active</div>
       </div>
-      ${statCards}
+      <div class="sc-stat-card" style="border-color:rgba(212,168,67,0.3);">
+        <div style="font-size:1.6rem;font-weight:700;color:${_CC.amber};font-family:'IBM Plex Mono',monospace;">${onMosaicCount}</div>
+        <div style="font-size:0.68rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.dim};">On Mosaic</div>
+      </div>
+      ${tierStatCards}
     </div>
 
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
@@ -570,7 +619,7 @@ function _saCons_renderMembersUI(container) {
           onchange="_saCons_tierFilter=this.value;_saCons_renderMembersUI(document.getElementById('sc-tab-content'));">
           ${tierOptions}
         </select>
-        <span style="font-size:0.80rem;color:${_CC.dim};">${filtered.length} result${filtered.length !== 1 ? 's' : ''}</span>
+        <span style="font-size:0.80rem;color:${_CC.dim};">${filtered.length} member${filtered.length !== 1 ? 's' : ''}${_saCons_tierFilter === 'all' && orphanTiles.length ? ` + ${orphanTiles.length} tile-only` : ''}</span>
       </div>
       <button onclick="_saCons_openAddMember()"
         style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
@@ -581,7 +630,7 @@ function _saCons_renderMembersUI(container) {
       </button>
     </div>
 
-    <div style="overflow-x:auto;border:1px solid ${_CC.border};border-radius:10px;">
+    <div style="overflow-x:auto;border:1px solid ${_CC.border};border-radius:10px;margin-bottom:28px;">
       <table class="sc-table">
         <thead>
           <tr>
@@ -589,15 +638,60 @@ function _saCons_renderMembersUI(container) {
             <th>Institution</th>
             <th>Country</th>
             <th>Tier</th>
-            <th>Instruments</th>
             <th>Status</th>
+            <th>Mosaic</th>
             <th>Joined</th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
+        <tbody>${allRows}</tbody>
       </table>
-    </div>`;
+    </div>
+
+    <!-- Standalone tile quick-add (for founder tiles and edge cases) -->
+    <details style="margin-bottom:12px;">
+      <summary style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:${_CC.dim};cursor:pointer;padding:10px 14px;background:${_CC.surface};border:1px solid ${_CC.border};border-radius:8px;list-style:none;display:flex;align-items:center;gap:8px;">
+        <span style="color:${_CC.amber};">⬡</span> Add Standalone Tile (no member record required)
+      </summary>
+      <div style="background:${_CC.surface};border:1px solid ${_CC.border};border-top:none;border-radius:0 0 8px 8px;padding:18px 20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">
+          <div>
+            <label class="sc-label" id="sc-tess-name-label" for="sc-tess-name">Institution / Name <span style="color:${_CC.red};">*</span></label>
+            <input id="sc-tess-name" class="sc-input" type="text" placeholder="University of Porto" />
+          </div>
+          <div>
+            <label class="sc-label" for="sc-tess-country">Country</label>
+            <select id="sc-tess-country" class="sc-input" style="cursor:pointer;" onchange="_saTessera_updateFlag(this.value)">${tileCountryOpts}</select>
+          </div>
+          <div>
+            <label class="sc-label" for="sc-tess-tier">Tier</label>
+            <select id="sc-tess-tier" class="sc-input" style="cursor:pointer;" onchange="_saTessera_onTierChange(this.value)">${tileTierOpts}</select>
+          </div>
+          <div>
+            <label class="sc-label" for="sc-tess-flag">Flag</label>
+            <input id="sc-tess-flag" class="sc-input" type="text" placeholder="🇵🇹" maxlength="4" style="font-size:1.1rem;" />
+          </div>
+          <button id="sc-tess-add-btn" onclick="_saTessera_add()"
+            style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
+                   padding:9px 20px;border-radius:7px;cursor:pointer;white-space:nowrap;
+                   background:${_CC.amberFaint};border:1px solid ${_CC.amberDim};color:${_CC.amber};transition:all 0.15s;"
+            onmouseover="this.style.background='rgba(212,168,67,0.18)'" onmouseout="this.style.background='${_CC.amberFaint}'">
+            + Add Tile
+          </button>
+        </div>
+        <div id="sc-tess-individual-fields" style="display:none;margin-top:10px;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+          <div><label class="sc-label" for="sc-tess-role">Role / Title</label><input id="sc-tess-role" class="sc-input" type="text" placeholder="PhD Candidate" /></div>
+          <div><label class="sc-label" for="sc-tess-affiliation">Affiliation</label><input id="sc-tess-affiliation" class="sc-input" type="text" placeholder="University of Porto" /></div>
+          <div><label class="sc-label" for="sc-tess-orcid">ORCID</label><input id="sc-tess-orcid" class="sc-input" type="text" placeholder="0000-0000-0000-0000" /></div>
+          <div><label class="sc-label" for="sc-tess-linkedin">LinkedIn URL</label><input id="sc-tess-linkedin" class="sc-input" type="text" placeholder="https://linkedin.com/in/…" /></div>
+        </div>
+        <div id="sc-tess-err" style="display:none;margin-top:10px;font-size:0.80rem;color:${_CC.red};"></div>
+      </div>
+    </details>`;
+
+  // Pre-fill flag for default country selection
+  const defaultCountry = document.getElementById('sc-tess-country')?.value;
+  if (defaultCountry) _saTessera_updateFlag(defaultCountry);
 }
 
 // ── Add Member Modal ──────────────────────────────────────────────────────────
