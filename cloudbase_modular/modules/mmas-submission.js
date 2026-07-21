@@ -94,11 +94,16 @@ function listenMmasLive() {
   });
 }
 
+function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
 function buildMmasPopupHTML(records, idx) {
   const a   = records[idx];
   const cat = getAdherenceCategory(a.score);
   const total = records.length;
-  const inaItems = (a.q1!==undefined) ? ['q1','q2','q3','q4','q5','q6','q7','q8'].filter(k=>a[k]===0).map(k=>'Q'+(parseInt(k.replace('q','')))) : [];
+  const inaItems = (a.q1!==undefined) ? [
+    ...['q1','q2','q3','q4','q6','q7','q8'].filter(k=>a[k]===0),
+    ...(a.q5===1 ? ['q5'] : [])
+  ].map(k=>'Q'+(parseInt(k.replace('q','')))).sort((x,y)=>parseInt(x.slice(1))-parseInt(y.slice(1))) : [];
   const {intentional=0,unintentional=0} = (a.q1!==undefined) ? classifyPattern(a) : {};
   const pattern = (a.q1!==undefined) ? (intentional>unintentional?'INA':unintentional>intentional?'UNA':a.score>=8?'High Adherence':'Mixed') : '—';
   const patColors = {'INA':'#ef4444','UNA':'#f59e0b','High Adherence':'#10b981','Mixed':'#8b6ff5'};
@@ -108,21 +113,21 @@ function buildMmasPopupHTML(records, idx) {
   return `<div style="font-family:'IBM Plex Sans',sans-serif;background:rgba(8,14,26,0.97);border-radius:12px;min-width:240px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.06);">
     <div style="padding:14px 16px 12px;">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#4a5f78;margin-bottom:6px;">MMAS-8 · ${total} submission${total>1?'s':''}</div>
-      <div style="font-size:14px;font-weight:600;color:#e8f0f8;margin-bottom:3px;">${(a.city&&a.city!=='Unknown')?a.city:'—'}, ${(a.country&&a.country!=='Unknown')?a.country:'—'}</div>
-      ${patientId?`<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b8099;margin-bottom:6px;">${patientId}</div>`:''}
-      <div style="font-size:26px;font-weight:300;color:${cat.color};font-family:'Cormorant Garamond',Georgia,serif;line-height:1;margin-bottom:4px;">${a.score.toFixed(2)} <span style="font-size:13px;color:#6b8099;">/ 8</span></div>
+      <div style="font-size:14px;font-weight:600;color:#e8f0f8;margin-bottom:3px;">${(a.city&&a.city!=='Unknown')?_esc(a.city):'—'}, ${(a.country&&a.country!=='Unknown')?_esc(a.country):'—'}</div>
+      ${patientId?`<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b8099;margin-bottom:6px;">${_esc(patientId)}</div>`:''}
+      <div style="font-size:26px;font-weight:300;color:${cat.color};font-family:'Cormorant Garamond',Georgia,serif;line-height:1;margin-bottom:4px;">${(a.score != null ? parseFloat(a.score).toFixed(2) : '—')} <span style="font-size:13px;color:#6b8099;">/ 8</span></div>
       <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.1em;color:${cat.color};text-transform:uppercase;margin-bottom:8px;">${cat.label}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid ${patCol}33;color:${patCol};">${pattern}</span>
         ${inaItems.length?`<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid rgba(239,68,68,0.25);color:#ef4444;">Flags: ${inaItems.join(', ')}</span>`:''}
       </div>
-      ${a.condition?`<div style="font-size:11px;color:#6b8099;font-family:'IBM Plex Mono',monospace;margin-bottom:4px;">${a.condition}</div>`:''}
+      ${a.condition?`<div style="font-size:11px;color:#6b8099;font-family:'IBM Plex Mono',monospace;margin-bottom:4px;">${_esc(a.condition)}</div>`:''}
       ${a.study_title?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06);">
         <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#4a5f78;margin-bottom:3px;">Study</div>
-        <div style="font-size:11px;color:#c8d8ea;font-style:italic;margin-bottom:2px;">${a.study_title}</div>
-        ${a.pi_name?`<div style="font-size:10px;color:#6b8099;font-family:'IBM Plex Mono',monospace;">${a.pi_name}${a.study_institution?' · '+a.study_institution:''}</div>`:''}
-        ${a.irb_number?`<div style="font-size:10px;color:#4a5f78;font-family:'IBM Plex Mono',monospace;">IRB ${a.irb_number}</div>`:''}
-        ${a.clinicaltrials_id?`<div style="font-size:10px;color:#4a5f78;font-family:'IBM Plex Mono',monospace;">${a.clinicaltrials_id}</div>`:''}
+        <div style="font-size:11px;color:#c8d8ea;font-style:italic;margin-bottom:2px;">${_esc(a.study_title)}</div>
+        ${a.pi_name?`<div style="font-size:10px;color:#6b8099;font-family:'IBM Plex Mono',monospace;">${_esc(a.pi_name)}${a.study_institution?' · '+_esc(a.study_institution):''}</div>`:''}
+        ${a.irb_number?`<div style="font-size:10px;color:#4a5f78;font-family:'IBM Plex Mono',monospace;">IRB ${_esc(a.irb_number)}</div>`:''}
+        ${a.clinicaltrials_id?`<div style="font-size:10px;color:#4a5f78;font-family:'IBM Plex Mono',monospace;">${_esc(a.clinicaltrials_id)}</div>`:''}
       </div>`:''}
       ${dateStr?`<div style="font-size:10px;color:#4a5f78;font-family:'IBM Plex Mono',monospace;margin-top:4px;">${dateStr}</div>`:''}
     </div>
@@ -180,6 +185,10 @@ const _NORM_COUNTRY = {
   'Czechia':'Czech Republic','Russian Federation':'Russia',
   'Great Britain':'United Kingdom','Britain':'United Kingdom',
   'Korea':'South Korea',
+  'Türkiye':'Turkey','Turkiye':'Turkey',
+  'Iran (Islamic Republic Of)':'Iran','Viet Nam':'Vietnam',
+  'Republic Of Korea':'South Korea','Democratic Republic Of The Congo':'Democratic Republic of the Congo',
+  'Syrian Arab Republic':'Syria','Lao People\'S Democratic Republic':'Laos',
 };
 
 function _normalizeCountry(raw) {
@@ -196,7 +205,7 @@ function addMmasMarker(a) {
     mmasCountries.add(_ck);
     if (!mmasCountryData[_ck]) mmasCountryData[_ck]={ count:0, totalScore:0 };
     mmasCountryData[_ck].count++;
-    mmasCountryData[_ck].totalScore += a.score;
+    mmasCountryData[_ck].totalScore += (a.score || 0);
   }
   updateMmasMapStats();
 
@@ -333,10 +342,14 @@ function updateMmasMapStats() {
   const avg = document.getElementById('map-avg-score');
   if (tot) tot.textContent = mmasTotal.toLocaleString();
   if (cnt) cnt.textContent = mmasCountries.size;
-  if (avg && mmasTotal>0) {
-    let ts=0,tc=0; Object.values(mmasCountryData).forEach(d=>{ts+=d.totalScore;tc+=d.count;});
-    const mapAvg = tc > 0 ? ts / tc : NaN;
-    avg.textContent = (tc > 0 && !isNaN(mapAvg)) ? mapAvg.toFixed(2) : '—';
+  if (avg) {
+    if (mmasTotal > 0) {
+      let ts=0,tc=0; Object.values(mmasCountryData).forEach(d=>{ts+=d.totalScore;tc+=d.count;});
+      const mapAvg = tc > 0 ? ts / tc : NaN;
+      avg.textContent = (tc > 0 && !isNaN(mapAvg)) ? mapAvg.toFixed(2) : '—';
+    } else {
+      avg.textContent = '—';
+    }
   }
 }
 
@@ -726,15 +739,6 @@ function renderPeacsSpectatorCluster(key, cl) {
   cl.marker = new mapboxgl.Marker({element:el, anchor:'center'}).setLngLat([cl.lng,cl.lat]).addTo(peacsSpectatorMap);
 }
 
-function addPeacsSpectatorMarker(a, peZoneColorsArg, getZoneArg) {
-  // Legacy call signature compatibility — just ingest and re-render
-  ingestPeacsSpectatorRecord(a);
-  if (a.latitude && a.longitude) {
-    const key = (a.city&&a.city!=='Unknown'&&a.country&&a.country!=='Unknown') ? (a.city+'||'+a.country).toLowerCase() : parseFloat(a.latitude).toFixed(2)+','+parseFloat(a.longitude).toFixed(2);
-    if (peacsSpectatorClusters[key]) renderPeacsSpectatorCluster(key, peacsSpectatorClusters[key]);
-  }
-}
-
 function listenPeacsSpectatorLive(peZoneColors, getZone) {
   if (window._peacsSpectatorListening) return;
   window._peacsSpectatorListening = true;
@@ -742,7 +746,11 @@ function listenPeacsSpectatorLive(peZoneColors, getZone) {
   window._peacsSpecListener = database.ref('peacs_assessments').on('child_added', snap => {
     const a = snap.val();
     if (a.timestamp > since) {
-      addPeacsSpectatorMarker(a, peZoneColors, getZone);
+      ingestPeacsSpectatorRecord(a);
+      if (a.latitude && a.longitude) {
+        const key = (a.city&&a.city!=='Unknown'&&a.country&&a.country!=='Unknown') ? (a.city+'||'+a.country).toLowerCase() : parseFloat(a.latitude).toFixed(2)+','+parseFloat(a.longitude).toFixed(2);
+        if (peacsSpectatorClusters[key]) renderPeacsSpectatorCluster(key, peacsSpectatorClusters[key]);
+      }
       updatePeacsSpectatorStats();
       addToPeacsFeed(a, peZoneColors, getZone);
       if (a.latitude && a.longitude && peacsSpectatorMap) {
@@ -1322,7 +1330,7 @@ function addToLiveFeed(a) {
   if (campBadge) locSpan.insertAdjacentHTML('beforeend', campBadge);
   const scoreSpan = document.createElement('span');
   scoreSpan.style.cssText = `font-size:0.82rem;font-weight:700;color:${cat.color};`;
-  scoreSpan.textContent = a.score.toFixed(2);
+  scoreSpan.textContent = a.score != null ? parseFloat(a.score).toFixed(2) : '—';
   item.appendChild(dot); item.appendChild(locSpan); item.appendChild(scoreSpan);
   feed.insertBefore(item, feed.firstChild);
   while (feed.children.length > 12) feed.removeChild(feed.lastChild);
@@ -1333,7 +1341,8 @@ let tickerAnimId = null;
 // ── Submission rate counter (per-minute / per-hour) ──
 // Updates every 10s; fades in once the first submission arrives
 (function startRateCounter() {
-  setInterval(() => {
+  if (window._rateCounterInterval) return;
+  window._rateCounterInterval = setInterval(() => {
     const ts = window._subTimestamps;
     if (!ts || !ts.length) return;
     const now = Date.now();

@@ -148,7 +148,7 @@ function _saPlatWsRows(keys) {
         onmouseover="this.style.background='${_C.navy}'" onmouseout="this.style.background='transparent'">
       <td style="padding:9px 10px;font-size:0.86rem;color:${_C.amber};letter-spacing:0.06em;">${_saEsc(k.key||'')}</td>
       <td style="padding:9px 10px;font-size:0.88rem;color:${_C.text};max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_saEsc(k.name||'')}">${_saEsc(k.name||'—')}</td>
-      <td style="padding:9px 10px;"><span style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:${rc}18;border:1px solid ${rc}44;color:${rc};">${_saEsc(k.role||'?')}</span></td>
+      <td style="padding:9px 10px;"><button onclick="_saPlatWsSetRole('${_saEsc(k.key||'')}','${_saEsc(k.role||'')}')" title="Click to change role" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:4px;cursor:pointer;background:${rc}18;border:1px solid ${rc}44;color:${rc};transition:all 0.15s;" onmouseover="this.style.background='${rc}30'" onmouseout="this.style.background='${rc}18'">${_saEsc(k.role||'?')}</button></td>
       <td style="padding:9px 10px;font-size:0.84rem;color:${_C.muted};max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_saEsc(k.institution||'—')}</td>
       <td style="padding:9px 10px;font-size:0.88rem;color:${_C.text};text-align:right;">${k.mmas||0}</td>
       <td style="padding:9px 10px;font-size:0.88rem;color:${_C.text};text-align:right;">${k.map||0}</td>
@@ -493,6 +493,56 @@ function _saPlatWsSetRegion(key, currentRegion) {
   });
 }
 window._saPlatWsSetRegion = _saPlatWsSetRegion;
+
+// ── Change Workspace Role ─────────────────────────────────────────────────────
+function _saPlatWsSetRole(key, currentRole) {
+  const roles = [
+    { value: 'student',              label: 'Student',               color: _C.green,  desc: 'Thesis/dissertation workspace. Up to 100 records/mo. LMIC and TESSERA affiliate pathway.' },
+    { value: 'researcher',           label: 'Researcher',            color: _C.cyan,   desc: 'Standard research workspace. Full assessment suite, MAP, export, and psychometrics.' },
+    { value: 'pi',                   label: 'PI · Multi-Site',       color: _C.blue,   desc: 'Principal Investigator workspace. Sub-workspace provisioning, validation pipeline, multi-site oversight.' },
+    { value: 'institution_academic', label: 'Institution · Academic',color: _C.purple, desc: 'Academic institution workspace. Population-level command center and multi-PI dashboard.' },
+    { value: 'institution_health',   label: 'Institution · Health',  color: _C.purple, desc: 'Health system workspace. Clinical triage, Sentinel alerting, population health.' },
+    { value: 'clinician',            label: 'Clinician',             color: _C.green,  desc: 'Data entry and patient-facing. Data flows upward to PI and institution workspaces.' },
+    { value: 'observer',             label: 'Observer',              color: _C.dim,    desc: 'Read-only access. No assessment submission or data export.' },
+  ];
+  const optHtml = roles.map(r => `
+    <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid ${r.value===currentRole?r.color+'66':_C.border};background:${r.value===currentRole?r.color+'12':'transparent'};cursor:pointer;margin-bottom:6px;transition:all 0.15s;"
+      onmouseover="this.style.background='${r.color}10'" onmouseout="this.style.background='${r.value===currentRole?r.color+'12':'transparent'}'">
+      <input type="radio" name="sa-role-pick" value="${r.value}" ${r.value===currentRole?'checked':''} style="margin-top:2px;accent-color:${r.color};">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.1em;color:${r.color};margin-bottom:2px;">${r.label}</div>
+        <div style="font-size:0.78rem;color:${_C.dim};line-height:1.5;">${r.desc}</div>
+      </div>
+    </label>`).join('');
+  _saShowModal({
+    title: `Change Role — ${key}`,
+    width: '500px',
+    body: `
+      <div style="font-size:0.80rem;color:${_C.muted};margin-bottom:14px;line-height:1.6;">
+        Role change takes effect on the user's next login. TESSERA GRC tier is managed separately in the Consortium panel.
+      </div>
+      ${optHtml}
+      <div id="sa-role-err" style="font-size:0.82rem;color:${_C.red};min-height:16px;margin-top:6px;"></div>`,
+    confirmLabel: 'Save Role',
+    onConfirm: async () => {
+      const picked = document.querySelector('input[name="sa-role-pick"]:checked')?.value;
+      if (!picked) { document.getElementById('sa-role-err').textContent = 'Select a role.'; return false; }
+      if (picked === currentRole) { document.getElementById('sa-role-err').textContent = 'No change — same role selected.'; return false; }
+      try {
+        await database.ref('workspaces/' + key + '/role').set(picked);
+        if (typeof atlasAuditLog === 'function') atlasAuditLog('workspace_role_changed', { key, from: currentRole, to: picked });
+        if (typeof showToast === 'function') showToast(`Role for ${key} changed to ${picked}.`, 3000);
+        const container = document.getElementById('sa-plat-body');
+        if (container) _saPlatWorkspaces(container);
+        return true;
+      } catch(e) {
+        document.getElementById('sa-role-err').textContent = 'Save failed: ' + e.message;
+        return false;
+      }
+    }
+  });
+}
+window._saPlatWsSetRole = _saPlatWsSetRole;
 
 // ── Campaigns ─────────────────────────────────────────────────────────────────
 

@@ -19,7 +19,7 @@
         "q5": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
         "q6": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
         "q7": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
-        "q8": { ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 0 && newData.val() <= 4.0)" }
+        "q8": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 0.25 || newData.val() === 0.5 || newData.val() === 0.75 || newData.val() === 1))" }
       }
     },
     "mapData": {
@@ -258,7 +258,7 @@
         ".write": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)"
       }
     },
-    "airc_study_registry": {
+    "tessera_study_registry": {
       ".read": "auth != null && auth.token.role === 'superadmin'",
       ".write": "auth != null && auth.token.role !== 'observer'",
       "$record": {
@@ -307,10 +307,21 @@
 
     "pharmacy_assessments": {
       ".read": "auth != null && auth.token.role !== 'observer'",
-      ".write": "auth != null",
+      ".write": "auth != null && auth.token.workspace !== null && auth.token.role !== 'observer'",
       ".indexOn": ["workspace_key", "site_code", "ts"],
       "$record": {
-        ".validate": "newData.hasChildren(['pe_score','ts','assessment_mode']) && newData.child('pe_score').isNumber() && newData.child('pe_score').val() >= 0 && newData.child('pe_score').val() <= 1 && newData.child('ts').isNumber() && newData.child('ts').val() <= now + 300000 && newData.child('ts').val() >= now - 86400000 && newData.child('assessment_mode').isString() && newData.child('assessment_mode').val() === 'pharmacy'"
+        ".validate": "newData.hasChildren(['pe_score','ts','assessment_mode']) && newData.child('pe_score').isNumber() && newData.child('pe_score').val() >= 0 && newData.child('pe_score').val() <= 1 && newData.child('ts').isNumber() && newData.child('ts').val() <= now + 300000 && newData.child('ts').val() >= now - 86400000 && newData.child('assessment_mode').isString() && newData.child('assessment_mode').val() === 'pharmacy' && (!newData.hasChild('workspace_key') || newData.child('workspace_key').val() === auth.token.workspace)"
+      }
+    },
+
+    "prescriber_alerts": {
+      "$workspace": {
+        ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
+        ".write": "auth != null && auth.token.workspace !== null && auth.token.role !== 'observer'",
+        ".indexOn": ["ts", "read"],
+        "$record": {
+          ".validate": "newData.hasChildren(['ts','type','from_site']) && newData.child('ts').isNumber() && newData.child('ts').val() <= now + 300000 && newData.child('type').isString() && newData.child('from_site').isString() && newData.child('from_site').val().length <= 64"
+        }
       }
     },
 
@@ -343,6 +354,14 @@
     "open_data_notifications": {
       ".read": "auth != null && auth.token.role === 'superadmin'",
       ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+
+    "infrastructure_poi": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.role !== 'observer'",
+      "$poi": {
+        ".validate": "newData.hasChildren(['type','latitude','longitude','submitted_by','submitted_at']) && newData.child('latitude').isNumber() && newData.child('longitude').isNumber() && newData.child('submitted_at').isNumber() && newData.child('type').isString()"
+      }
     },
 
     "users": {

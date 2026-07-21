@@ -69,16 +69,10 @@ function _showBulkAcknowledgement(file) {
 function openBulkUpload() {
   // Open the new drag-and-drop upload modal
   const modal = document.getElementById('dnd-bulk-modal');
-  if (modal) {
-    modal.style.display = 'flex';
-    modal.scrollTop = 0;
-    // Re-initialise Lucide icons inside the modal
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-  } else {
-    // Fallback to legacy hidden-input click if modal not found
-    document.getElementById('bulk-file-input').value = '';
-    document.getElementById('bulk-file-input').click();
-  }
+  modal.style.display = 'flex';
+  modal.scrollTop = 0;
+  // Re-initialise Lucide icons inside the modal
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 
@@ -118,6 +112,10 @@ async function processBulkUpload(file) {
 
       const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header:1 });
 
+      // Detect TESSERA Normative Contribution template (no Patient ID column).
+      // Identified by sentinel string in title row (row 0, cell 0).
+      const isNormative = String(rows[0]?.[0] || '').toUpperCase().includes('NORMATIVE');
+
       // ── Extract study metadata from header rows (v2 template) ──────────────
       const studyMeta = {
         study_title:       String(rows[1]?.[1] || '').trim(),
@@ -143,23 +141,29 @@ async function processBulkUpload(file) {
         return;
       }
 
-      // Dynamically locate the column-header row (contains 'Country' in col 0)
-      // so we tolerate SheetJS skipping the empty separator row in the template.
+      // Dynamically locate the column-header row.
+      // New template (v2): col 0 = "Date", col 1 = "Country"  → hasDateCol = true
+      // Old template (v1): col 0 = "Country"                   → hasDateCol = false
       let headerRowIdx = 8; // safe fallback (template spec)
+      let hasDateCol   = false;
       for (let _i = 0; _i < Math.min(rows.length, 15); _i++) {
-        if (String(rows[_i]?.[0] || '').trim().toLowerCase().startsWith('country')) {
-          headerRowIdx = _i;
-          break;
+        const col0 = String(rows[_i]?.[0] || '').trim().toLowerCase();
+        if (col0.startsWith('date')) {
+          headerRowIdx = _i; hasDateCol = true; break;
+        }
+        if (col0.startsWith('country')) {
+          headerRowIdx = _i; hasDateCol = false; break;
         }
       }
+      const _dc = hasDateCol ? 1 : 0; // column offset applied to all positional lookups
 
-      // EXAMPLE detection: check col 0 (old template) OR col 2 / patient ID (new template)
+      // EXAMPLE detection: patient ID is at col 2 (v1) or col 3 (v2 date-first)
       const _isExampleRow = row =>
-        String(row[0]||'').toUpperCase().includes('EXAMPLE') ||
-        String(row[2]||'').toUpperCase().includes('EXAMPLE');
+        String(row[_dc + 0]||'').toUpperCase().includes('EXAMPLE') ||
+        String(row[_dc + 2]||'').toUpperCase().includes('EXAMPLE');
       const candidateRows = rows.slice(headerRowIdx + 1).filter(row =>
         row && row.length >= 10 &&
-        row[0] &&
+        row[_dc] &&             // country (col 0 v1, col 1 v2) must be present
         !_isExampleRow(row)
       );
 
@@ -181,11 +185,13 @@ async function processBulkUpload(file) {
       const rowErrors = [];
       const validRows = [];
 
+      // Q-columns shift left by 1 in normative template (no Patient ID column).
+      const _qOff = isNormative ? 10 : 11;
       candidateRows.forEach((row, idx) => {
         const rowNum = idx + headerRowIdx + 2; // 1-indexed, offset by detected header position
         const errors = [];
-        const country = row[0]; const city = row[1];
-        const _q1=row[11],_q2=row[12],_q3=row[13],_q4=row[14],_q5=row[15],_q6=row[16],_q7=row[17],_q8=row[18];
+        const country = row[_dc+0]; const city = row[_dc+1];
+        const _q1=row[_dc+_qOff],_q2=row[_dc+_qOff+1],_q3=row[_dc+_qOff+2],_q4=row[_dc+_qOff+3],_q5=row[_dc+_qOff+4],_q6=row[_dc+_qOff+5],_q7=row[_dc+_qOff+6],_q8=row[_dc+_qOff+7];
 
         if (!country || String(country).trim() === '') errors.push('missing Country');
 
@@ -275,11 +281,19 @@ async function processBulkUpload(file) {
       msgEl.textContent   = _t.upload_geocoding || 'Geocoding locations and writing to the live map.';
 
       let uploaded = 0, skipped = 0;
+      const uploadedSubmissions = [];   // collects each success for longitudinal synthesis
 
       for (const row of rowsToUpload) {
+        // Date-first template (v2): col 0 = assessment date; all others shift right by 1.
+        // Old template (v1): no date column; _dc offset = 0.
+        const assessmentDate = hasDateCol ? (row[0] || null) : null;
+        // Normative template has no Patient ID column — splice an empty string at position 2
+        // so the rest of the destructuring stays identical for both template types.
+        const _rowSlice = row.slice(_dc);
+        if (isNormative) _rowSlice.splice(2, 0, '');
         const [country, city, patientNum, condition, drugType, drugName,
                drugStrength, route, gender, ageRange, education,
-               _q1, _q2, _q3, _q4, _q5, _q6, _q7, _q8freq] = row;
+               _q1, _q2, _q3, _q4, _q5, _q6, _q7, _q8freq] = _rowSlice;
 
         function yesno(v, reversed) {
           if (typeof v === 'number') return v;
@@ -308,26 +322,63 @@ async function processBulkUpload(file) {
         const total_score = q1+q2+q3+q4+q5+q6+q7+q8;
         const cat = getAdherenceCategory(total_score);
 
+        // MAP triadic PE scoring — Architecture × Execution × Context-Guard geometric mean
+        // Domain assignments: A=mean(Q2,Q3,Q6)  E=mean(Q1,Q5,Q8)  Cg=0.5+0.5×mean(Q4,Q7)
+        const _arch = (q2 + q3 + q6) / 3;
+        const _exec = (q1 + q5 + q8) / 3;
+        const _ctx  = Math.max(0.5, 0.5 + 0.5 * (q4 + q7) / 2);
+        const _pe   = parseFloat(Math.pow(Math.max(0, _arch * _exec * _ctx), 1/3).toFixed(4));
+        const _dom  = [['Architecture',_arch],['Execution',_exec],['Context-Guard',_ctx]]
+                        .sort((a,b) => a[1]-b[1])[0][0];
+
         // Nominatim usage policy: max 1 req/sec. Enforce a 1100ms floor between geocode calls.
         let lat=0, lng=0;
-        try {
-          const geo = await fetch(
-            'https://nominatim.openstreetmap.org/search?city='+encodeURIComponent(city||'')+
-            '&country='+encodeURIComponent(country)+'&format=json&limit=1',
+        const _nomFetch = async (q) => {
+          const r = await fetch(
+            'https://nominatim.openstreetmap.org/search?' + q + '&format=json&limit=1',
             { headers: { 'User-Agent': 'ATLAS-AdherenceProject/2026' } }
           );
-          const gd = await geo.json();
-          if (gd.length > 0) { lat=parseFloat(gd[0].lat); lng=parseFloat(gd[0].lon); }
-          // Enforce Nominatim rate limit (1 req/sec min) regardless of row delay setting
-          await new Promise(r => setTimeout(r, 1100));
-        } catch(ge) {}
+          if (!r.ok) throw new Error('Nominatim ' + r.status);
+          return r.json();
+        };
+        try {
+          const hasCity = city && city.trim() && city.trim().toLowerCase() !== 'unknown';
+          if (hasCity) {
+            // Pass 1: structured query (city + country)
+            let gd = await _nomFetch('city='+encodeURIComponent(city.trim())+'&country='+encodeURIComponent(country));
+            await new Promise(r => setTimeout(r, 1100));
+
+            // Pass 2: free-text fallback — catches ambiguous US city names without state
+            if (!gd.length) {
+              gd = await _nomFetch('q='+encodeURIComponent(city.trim()+', '+country));
+              await new Promise(r => setTimeout(r, 1100));
+            }
+
+            if (gd.length) { lat=parseFloat(gd[0].lat); lng=parseFloat(gd[0].lon); }
+            else { console.warn('atlas: no geocode result for city', city, country); }
+          } else {
+            // Country-only query
+            const gd = await _nomFetch('q='+encodeURIComponent(country)+'&featuretype=country');
+            if (gd.length) { lat=parseFloat(gd[0].lat); lng=parseFloat(gd[0].lon); }
+            await new Promise(r => setTimeout(r, 1100));
+          }
+        } catch(ge) { console.warn('atlas: geocoding failed for', city, country, ge); }
+
+        // Centroid fallback — if Nominatim returned no result or 0,0 null-island,
+        // place the dot at the country centre so it appears on the cinematic map.
+        if (!lat && !lng) {
+          const _CENTROIDS = {'Afghanistan':[33.93,67.71],'Algeria':[28.03,1.66],'Angola':[-11.20,17.87],'Argentina':[-38.42,-63.62],'Australia':[-25.27,133.78],'Austria':[47.52,14.55],'Azerbaijan':[40.14,47.58],'Bangladesh':[23.68,90.36],'Bolivia':[-16.29,-63.59],'Brazil':[-14.24,-51.93],'Cambodia':[12.57,104.99],'Cameroon':[7.37,12.35],'Canada':[56.13,-106.35],'Chile':[-35.68,-71.54],'China':[35.86,104.20],'Colombia':[4.57,-74.30],'Croatia':[45.10,15.20],'Cuba':[21.52,-77.78],'Czechia':[49.82,15.47],'Denmark':[56.26,9.50],'Ecuador':[-1.83,-78.18],'Egypt':[26.82,30.80],'Ethiopia':[9.15,40.49],'Finland':[61.92,25.75],'France':[46.23,2.21],'Germany':[51.17,10.45],'Ghana':[7.95,-1.02],'Greece':[39.07,21.82],'Guatemala':[15.78,-90.23],'Honduras':[15.20,-86.24],'Hungary':[47.16,19.50],'India':[20.59,78.96],'Indonesia':[-0.79,113.92],'Iran':[32.43,53.69],'Iraq':[33.22,43.68],'Ireland':[53.41,-8.24],'Israel':[31.05,34.85],'Italy':[41.87,12.57],'Japan':[36.20,138.25],'Jordan':[30.59,36.24],'Kazakhstan':[48.02,66.92],'Kenya':[0.02,37.91],'Kuwait':[29.31,47.48],'Kyrgyzstan':[41.20,74.77],'Lebanon':[33.85,35.86],'Libya':[26.34,17.23],'Malaysia':[4.21,101.98],'Mexico':[23.63,-102.55],'Moldova':[47.41,28.37],'Morocco':[31.79,-7.09],'Mozambique':[-18.67,35.53],'Myanmar':[16.87,96.08],'Nepal':[28.39,84.12],'Netherlands':[52.13,5.29],'New Zealand':[-40.90,174.89],'Nicaragua':[12.87,-85.21],'Nigeria':[9.08,8.68],'Norway':[60.47,8.47],'Oman':[21.51,55.92],'Pakistan':[30.38,69.35],'Panama':[8.54,-80.78],'Paraguay':[-23.44,-58.44],'Peru':[-9.19,-75.02],'Philippines':[12.88,121.77],'Poland':[51.92,19.15],'Portugal':[39.40,-8.22],'Qatar':[25.35,51.18],'Romania':[45.94,24.97],'Russia':[61.52,105.32],'Saudi Arabia':[23.89,45.08],'Senegal':[14.50,-14.45],'Serbia':[44.02,21.01],'Singapore':[1.35,103.82],'Somalia':[5.15,46.20],'South Africa':[-30.56,22.94],'South Korea':[35.91,127.77],'Spain':[40.46,-3.75],'Sri Lanka':[7.87,80.77],'Sweden':[60.13,18.64],'Switzerland':[46.82,8.23],'Syria':[34.80,38.99],'Taiwan':[23.70,120.96],'Tajikistan':[38.86,71.28],'Tanzania':[-6.37,34.89],'Thailand':[15.87,100.99],'Tunisia':[33.89,9.54],'Turkey':[38.96,35.24],'Uganda':[1.37,32.29],'Ukraine':[48.38,31.17],'United Arab Emirates':[23.42,53.85],'United Kingdom':[55.38,-3.44],'United States':[37.09,-95.71],'Uruguay':[-32.52,-55.77],'Uzbekistan':[41.38,64.59],'Venezuela':[6.42,-66.59],'Vietnam':[14.06,108.28],'Yemen':[15.55,48.52],'Zambia':[-13.13,27.85],'Zimbabwe':[-19.02,29.15]};
+          const nc = (typeof _normalizeCountry==='function'?_normalizeCountry(String(country||'')):normalizeCountry(String(country||'')));
+          const ctr = _CENTROIDS[nc];
+          if (ctr) { lat = ctr[0]; lng = ctr[1]; }
+        }
 
         const submission = {
           user_id:         getUserId(),
           timestamp:       Date.now(),
           score:           total_score,
           adherence_level: cat.label,
-          country:         normalizeCountry(String(country||'')),
+          country:         (typeof _normalizeCountry==='function'?_normalizeCountry(String(country||'')):normalizeCountry(String(country||''))),
           city:            String(city||''),
           latitude:        lat, longitude: lng,
           patient_number:  String(patientNum||''),
@@ -341,7 +392,17 @@ async function processBulkUpload(file) {
           education_level: String(education||''),
           role:            'researcher',
           data_tier:       'clinical',
+          assessment_date: assessmentDate ? String(assessmentDate) : null,
           q1,q2,q3,q4,q5,q6,q7,q8,
+          // MAP PE composite — stored with map_ prefix so globe instrument filter detects MAP records
+          map_q1:q1, map_q2:q2, map_q3:q3, map_q4:q4,
+          map_q5:q5, map_q6:q6, map_q7:q7, map_q8:q8,
+          arch_score:      parseFloat(_arch.toFixed(4)),
+          exec_score:      parseFloat(_exec.toFixed(4)),
+          ctx_score:       parseFloat(_ctx.toFixed(4)),
+          pe_score:        _pe,
+          dominant_domain: _dom,
+          instrument_type: 'map',
           // Study provenance
           study_title:       studyMeta.study_title,
           pi_name:           studyMeta.pi_name,
@@ -349,7 +410,8 @@ async function processBulkUpload(file) {
           irb_number:        studyMeta.irb_number   || null,
           clinicaltrials_id: studyMeta.clinicaltrials_id || null,
           study_phase:       studyMeta.study_phase  || null,
-          upload_source:     'bulk',
+          upload_source:     isNormative ? 'tessera_contribution' : 'bulk',
+          ...(isNormative && { tessera_contribution: true }),
         };
         if (currentWorkspace) {
           submission.institution_code = currentWorkspace;
@@ -380,7 +442,7 @@ async function processBulkUpload(file) {
             adherence_level: cat.label,
             latitude:  bulkHasCoords ? lat : null,
             longitude: bulkHasCoords ? lng : null,
-            country: normalizeCountry(String(country||'')),
+            country: (typeof _normalizeCountry==='function'?_normalizeCountry(String(country||'')):normalizeCountry(String(country||''))),
             city:    String(city||''),
             timestamp: submission.timestamp,
             campaign_id: _bulkCamp ? _bulkCamp.id : null,
@@ -391,7 +453,8 @@ async function processBulkUpload(file) {
             irb_number:        studyMeta.irb_number   || null,
             clinicaltrials_id: studyMeta.clinicaltrials_id || null,
           });
-          updatePublicStats(total_score, normalizeCountry(String(country||'')));
+          updatePublicStats(total_score, (typeof _normalizeCountry==='function'?_normalizeCountry(String(country||'')):normalizeCountry(String(country||''))));
+          uploadedSubmissions.push(submission);
           uploaded++;
         } catch(fe) {
           skipped++;
@@ -402,6 +465,15 @@ async function processBulkUpload(file) {
         progLabel.textContent = (uploaded+skipped) + ' / ' + total + ' records';
 
         if (uploaded+skipped < total) await new Promise(r=>setTimeout(r, delay));
+      }
+
+      // ── Post-upload: synthesize longitudinal sessions for repeat patients ──
+      if (uploadedSubmissions.length > 1) {
+        try {
+          await _bulkSynthesizeLongitudinal(uploadedSubmissions, currentWorkspace);
+        } catch(le) {
+          console.warn('[bulk] longitudinal synthesis failed:', le);
+        }
       }
 
       // Done
@@ -454,6 +526,84 @@ async function processBulkUpload(file) {
   } // end runBulkUploads
 
 } // end processBulkUpload
+
+// ── Longitudinal session synthesis from bulk-uploaded records ────────────────
+// Groups uploaded submissions by patient_number. For any patient with 2 or more
+// records, sorts by assessment_date (then timestamp), and writes a map_sessions
+// entry so the longitudinal-map.js trajectory dashboard can render their PE arc.
+async function _bulkSynthesizeLongitudinal(submissions, workspaceKey) {
+  // Group by patient_number — skip anonymous rows
+  const byPatient = {};
+  submissions.forEach(function(s) {
+    const pid = (s.patient_number || '').trim();
+    if (!pid || pid === '') return;
+    if (!byPatient[pid]) byPatient[pid] = [];
+    byPatient[pid].push(s);
+  });
+
+  for (const pid of Object.keys(byPatient)) {
+    const recs = byPatient[pid];
+    if (recs.length < 2) continue;  // single visit — no trajectory to build
+
+    // Sort by assessment_date string (YYYY-MM-DD sorts lexicographically), then timestamp
+    recs.sort(function(a, b) {
+      const da = a.assessment_date || '';
+      const db = b.assessment_date || '';
+      if (da && db && da !== db) return da < db ? -1 : 1;
+      return (a.timestamp || 0) - (b.timestamp || 0);
+    });
+
+    const first   = recs[0];
+    const last    = recs[recs.length - 1];
+    const startTs = first.timestamp || Date.now();
+    const endTs   = last.timestamp  || Date.now();
+    const durationDays = Math.round((endTs - startTs) / 86400000);
+
+    const peArr   = recs.map(function(r) { return r.pe_score   != null ? r.pe_score   : null; });
+    const archArr = recs.map(function(r) { return r.arch_score != null ? r.arch_score : null; });
+    const execArr = recs.map(function(r) { return r.exec_score != null ? r.exec_score : null; });
+    const ctxArr  = recs.map(function(r) { return r.ctx_score  != null ? r.ctx_score  : null; });
+
+    const validPe = peArr.filter(function(v) { return v != null; });
+    const trend   = validPe.length >= 2
+      ? (validPe[validPe.length - 1] > validPe[0] ? 'improving'
+         : validPe[validPe.length - 1] < validPe[0] ? 'declining' : 'stable')
+      : 'stable';
+
+    const sessionId = 'bulk_' + pid.replace(/[^a-zA-Z0-9]/g,'_') + '_' + startTs;
+
+    const session = {
+      session_id:       sessionId,
+      patient_number:   pid,
+      workspace_key:    workspaceKey || null,
+      condition:        first.condition || null,
+      started_at:       startTs,
+      last_updated:     endTs,
+      assessment_count: recs.length,
+      baseline_pe:      peArr[0],
+      latest_pe:        peArr[peArr.length - 1],
+      arch_trajectory:  JSON.stringify(archArr),
+      exec_trajectory:  JSON.stringify(execArr),
+      ctx_trajectory:   JSON.stringify(ctxArr),
+      pe_trajectory:    JSON.stringify(peArr),
+      duration_days:    durationDays,
+      trend:            trend,
+      dominant_domain:  last.dominant_domain || null,
+      dropout_risk:     null,
+      upload_source:    'bulk',
+      // Date labels for x-axis (ISO strings from assessment_date or timestamps)
+      date_labels: JSON.stringify(recs.map(function(r) {
+        return r.assessment_date || new Date(r.timestamp || 0).toISOString().slice(0,10);
+      })),
+    };
+
+    try {
+      await atlasDB('map_sessions/' + sessionId).set(session);
+    } catch(e) {
+      console.warn('[bulk longitudinal] failed to write session for patient ' + pid, e);
+    }
+  }
+}
 
 // ── Drag-and-Drop Bulk Upload ─────────────────────────
 
@@ -662,7 +812,7 @@ function dndValidateRows(rawRows) {
         const score = (mq.reduce((a,b)=>a+b,0) + mq8).toFixed(2);
         const arch = ((mq[1]+mq[2]+mq[5])/3);
         const exec = ((mq[0]+mq[4]+mq8)/3);                        // Execution: Q1, Q5, Q8
-        const ctx  = 0.5 + 0.5*((mq[3]+mq[6])/2);                // Context-Guard: 0.5+0.5×mean(Q4,Q7)
+        const ctx  = Math.max(0.5, 0.5 + 0.5*((mq[3]+mq[6])/2)); // Context-Guard: 0.5+0.5×mean(Q4,Q7)
         const pe   = Math.pow(Math.max(0,arch*exec*ctx),1/3).toFixed(4);
         _dndParsedRows.push({tool:'map',patient_number:patNum||`ROW-${idx+2}`,country,condition,
           map_q1:q1,map_q2:q2,map_q3:q3,map_q4:q4,map_q5:q5,map_q6:q6,map_q7:q7,map_q8:q8,
@@ -711,6 +861,54 @@ function dndComputeScore(q1,q2,q3,q4,q5,q6,q7,q8) {
   return (boolScore(q1)+boolScore(q2)+boolScore(q3)+boolScore(q4)+boolScoreR(q5)+boolScore(q6)+boolScore(q7)+(q8map[String(q8).toLowerCase()]??0)).toFixed(2);
 }
 
+// Static country centroids — used to geocode bulk-uploaded records so they appear on the global map.
+// Each entry: canonical country name → [latitude, longitude].
+const _DND_CENTROIDS = {
+  'Afghanistan':          [33.9391,  67.7100], 'Argentina':         [-38.4161, -63.6167],
+  'Australia':            [-25.2744, 133.7751], 'Azerbaijan':        [ 40.1431,  47.5769],
+  'Belgium':              [ 50.5039,   4.4699], 'Brazil':            [-14.2350, -51.9253],
+  'Cameroon':             [  7.3697,  12.3547], 'China':             [ 35.8617, 104.1954],
+  'Cyprus':               [ 35.1264,  33.4299], 'Ecuador':           [ -1.8312, -78.1834],
+  'Egypt':                [ 26.8206,  30.8025], 'Ethiopia':          [  9.1450,  40.4897],
+  'France':               [ 46.2276,   2.2137], 'Germany':           [ 51.1657,  10.4515],
+  'Ghana':                [  7.9465,  -1.0232], 'Greece':            [ 39.0742,  21.8243],
+  'Honduras':             [ 15.2000, -86.2419], 'India':             [ 20.5937,  78.9629],
+  'Indonesia':            [ -0.7893, 113.9213], 'Iraq':              [ 33.2232,  43.6793],
+  'Italy':                [ 41.8719,  12.5674], 'Jordan':            [ 30.5852,  36.2384],
+  'Kenya':                [ -0.0236,  37.9062], 'Malaysia':          [  4.2105, 101.9758],
+  'Mexico':               [ 23.6345, -102.5528], 'Morocco':           [ 31.7917,  -7.0926],
+  'Nepal':                [ 28.3949,  84.1240], 'New Zealand':       [-40.9006, 174.8860],
+  'Nigeria':              [  9.0820,   8.6753], 'Pakistan':          [ 30.3753,  69.3451],
+  'Peru':                 [ -9.1900, -75.0152], 'Philippines':       [ 12.8797, 121.7740],
+  'Portugal':             [ 39.3999,  -8.2245], 'Qatar':             [ 25.3548,  51.1839],
+  'Saudi Arabia':         [ 23.8859,  45.0792], 'South Africa':      [-30.5595,  22.9375],
+  'Spain':                [ 40.4637,  -3.7492], 'Sudan':             [ 12.8628,  30.2176],
+  'Thailand':             [ 15.8700, 100.9925], 'Turkey':            [ 38.9637,  35.2433],
+  'Uganda':               [  1.3733,  32.2903], 'United Arab Emirates': [23.4241, 53.8478],
+  'United Kingdom':       [ 55.3781,  -3.4360], 'United States':     [ 37.0902, -95.7129],
+  'Uruguay':              [-32.5228, -55.7658], 'Vietnam':           [ 14.0583, 108.2772],
+};
+
+// Common raw-value aliases → canonical country name (keys are lowercase).
+const _DND_COUNTRY_ALIAS = {
+  'us': 'United States', 'usa': 'United States', 'u.s.': 'United States', 'u.s.a.': 'United States',
+  'uae': 'United Arab Emirates', 'u.a.e.': 'United Arab Emirates',
+  'uk': 'United Kingdom', 'u.k.': 'United Kingdom', 'great britain': 'United Kingdom',
+  'türkiye': 'Turkey', 'turkiye': 'Turkey',
+  'south korea': 'South Korea', 'republic of korea': 'South Korea',
+  'ksa': 'Saudi Arabia', 'kingdom of saudi arabia': 'Saudi Arabia',
+};
+
+function _dndGeoLookup(rawCountry) {
+  if (!rawCountry || rawCountry === 'Unknown') return null;
+  const lower = String(rawCountry).trim().toLowerCase();
+  const canonical = _DND_COUNTRY_ALIAS[lower]
+    || rawCountry.trim().replace(/\b\w/g, c => c.toUpperCase());
+  const coords = _DND_CENTROIDS[canonical];
+  if (!coords) return null;
+  return { lat: coords[0], lng: coords[1], canonical };
+}
+
 async function dndSubmitUpload() {
   if (_dndParsedRows.length === 0) return;
   const btn = document.getElementById('dnd-submit-btn');
@@ -734,10 +932,17 @@ async function dndSubmitUpload() {
     try {
       // Convert raw YES/NO strings to numeric scores — patient card expects 0/1, not strings
       const _yn  = (v, rev) => { const s=String(v||'').trim().toLowerCase(); return rev?(s==='yes'||s==='1'?1:0):(s==='no'||s==='0'?1:0); };
-      const _q8n = v => { if (typeof v==='number') { const _i={0:1,1:0.75,2:0.5,3:0.25,4:0}; return _i[v]!==undefined?_i[v]:0; } const s=String(v||'').trim().toLowerCase(); const _m={'never':1,'rarely':0.75,'once in a while':0.75,'sometimes':0.5,'often':0.25,'usually':0.25,'always':0,'all the time':0,'all of the time':0}; return (_m[s] !== undefined ? _m[s] : (parseFloat(v) || 0)); };
+      const _q8n = v => { if (typeof v==='number') { const _i={0:1,1:0.75,2:0.5,3:0.25,4:0}; return _i[v]!==undefined?_i[v]:0; } const s=String(v||'').trim().toLowerCase(); const _m={'never/rarely':1,'never / rarely':1,'never':1,'rarely':0.75,'once in a while':0.75,'sometimes':0.5,'often':0.25,'usually':0.25,'always':0,'all the time':0,'all of the time':0}; return (_m[s] !== undefined ? _m[s] : (parseFloat(v) || 0)); };
       const submission = {
         ...row,
         score:            parseFloat(row.score) || 0,   // rule: isNumber() — toFixed() returns string
+        // MAP domain scores — stored as toFixed() strings in _dndParsedRows; must be numeric in Firebase
+        ...(row.tool === 'map' ? {
+          pe_score:   parseFloat(row.pe_score)   || 0,
+          arch_score: parseFloat(row.arch_score) || 0,
+          exec_score: parseFloat(row.exec_score) || 0,
+          ctx_score:  parseFloat(row.ctx_score)  || 0,
+        } : {}),
         // q1–q7 stored as numeric scores (0/1); q8 as decimal — patient card truthy-checks these
         ...(row.tool !== 'map' ? {
           q1: _yn(row.q1, false), q2: _yn(row.q2, false), q3: _yn(row.q3, false),
@@ -758,9 +963,29 @@ async function dndSubmitUpload() {
       if (workspaceProfile && workspaceProfile.parent_pi) {
         submission.parent_pi = workspaceProfile.parent_pi;
       }
+      // Normalize country name and write centroid lat/lng so records appear on the global map
+      const _geo = _dndGeoLookup(submission.country);
+      if (_geo) {
+        submission.country   = _geo.canonical;
+        submission.latitude  = _geo.lat;
+        submission.longitude = _geo.lng;
+      }
       if (db) {
         await db.ref('assessments').push(submission);
         updatePublicStats(submission.score, submission.country);
+        // Mirror a de-identified pin to /mapData so bulk records appear on the global map
+        if (submission.latitude && submission.longitude) {
+          try {
+            await db.ref('mapData').push({
+              score:     submission.score,
+              latitude:  submission.latitude,
+              longitude: submission.longitude,
+              country:   submission.country  || 'Unknown',
+              city:      submission.city     || 'Unknown',
+              timestamp: submission.timestamp,
+            });
+          } catch(mapErr) { console.error('mapData write failed for row', submission.patient_number, mapErr); }
+        }
       }
       uploaded++;
     } catch(e) { console.error('Upload error row', row.patient_number, e); }
@@ -928,8 +1153,8 @@ let EVENT_NAME  = 'Adherence Project 2026';
       if (cfg.name)  EVENT_NAME = cfg.name;
       // Re-render countdown with updated config
       initCountdown();
-    }).catch(() => {}); // Firebase unavailable — keep fallback values
-  } catch(e) {}
+    }).catch(e => { console.warn('atlas: failed to load event config from Firebase', e); }); // Firebase unavailable — keep fallback values
+  } catch(e) { console.warn('atlas: loadEventConfig error', e); }
 })();
 
 /**
@@ -1316,9 +1541,10 @@ function initEntryLiveCounter() {
         // so the count is consistent across all views.
         database.ref('mapData').once('value', mdSnap => {
           const mdVal = mdSnap.val();
+          const _nc = s => { if(!s)return''; const t=s.trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()); return (typeof normalizeCountry==='function'?normalizeCountry(t):t); };
           const countries = mdVal
-            ? new Set(Object.values(mdVal).map(d=>(d.country||'').trim()).filter(c=>c&&c.toLowerCase()!=='unknown'&&c!=='')).size
-            : new Set(aData.map(r=>r.country).filter(c=>c&&c!=='Unknown')).size;
+            ? new Set(Object.values(mdVal).map(d=>_nc(d.country)).filter(c=>c&&c.toLowerCase()!=='unknown'&&c!=='')).size
+            : new Set(aData.map(r=>_nc(r.country)).filter(c=>c&&c!=='Unknown')).size;
           // Cache for Explorer dashboard — single source of truth
           window._atlasLiveGlobal = {
             mmasTotal: mTotal, countries, avgScore, peacsTotal: pTotal,
@@ -1359,6 +1585,8 @@ function renderCorrelationChart() {
   // Observers and roles without psychometrics module do not see the correlation panel
   if (typeof isObserverMode === 'function' && isObserverMode()) return;
   if (typeof hasModule === 'function' && !hasModule('analytics_psychometrics')) return;
+  // Students use stu-mod-patterns in the Analysis rail tab — skip the researcher corr-panel
+  if (typeof workspaceProfile !== 'undefined' && workspaceProfile && workspaceProfile.role === 'student') return;
 
   if (!document.getElementById('corr-panel')) {
     const dashBody = document.querySelector('#screen-dashboard .dash-body');
@@ -1742,7 +1970,7 @@ Q8: ${questions[7]}
 SCORING:
 Q1-Q4, Q6, Q7: YES=0, NO=1
 Q5: YES=1, NO=0 (reversed — taking medicine yesterday is good)
-Q8: Never/Rarely=1, Once in a while=0.75, Sometimes=0.5, Usually=0.25, All the time=0
+Q8: Never=1, Rarely=0.75, Once in a while=0.75, Sometimes=0.5, Usually=0.25, All the time=0
 
 YOUR ROLE:
 - Listen to natural speech. Extract the clinical answer even from long, nuanced responses.
@@ -1787,7 +2015,7 @@ const _ZOE_QUESTIONS_EN = [
 // Session-active copies — set at zoeOpen() from current language, used throughout the session
 let _zoeSessionSystem    = null;
 let _zoeSessionQuestions = null;
-const ZOE_Q8_MAP = {never:1,rarely:1,'once in a while':0.75,sometimes:0.5,usually:0.25,'all the time':0};
+const ZOE_Q8_MAP = {never:1,rarely:0.75,'once in a while':0.75,sometimes:0.5,usually:0.25,'all the time':0};
 
 let zoeActive=false,zoeCurrQ=0,zoeScores=[],zoeHistory=[];
 let zoeRecognition=null,zoeSynth=window.speechSynthesis;
@@ -1904,6 +2132,7 @@ async function zoeHandleResponse(transcript){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:350,system:(_zoeSessionSystem||''),messages:zoeHistory})
     });
+    if (!resp.ok) throw new Error('ZOE endpoint returned ' + resp.status);
     const data=await resp.json();
     const raw=data.content?.[0]?.text||'{}';
     let p;
@@ -1920,7 +2149,7 @@ async function zoeHandleResponse(transcript){
       let sv=p.score_value;
       if(sv===null||sv===undefined||isNaN(sv)){
         if(zoeCurrQ===4) sv=p.extracted_answer==='yes'?1:0;
-        else if(zoeCurrQ===7) sv=ZOE_Q8_MAP[p.extracted_answer]??0;
+        else if(zoeCurrQ===7) sv=ZOE_Q8_MAP[p.extracted_answer]??0.5;
         else sv=p.extracted_answer==='no'?1:0;
       }
       zoeScores[zoeCurrQ]=sv;
@@ -3082,7 +3311,7 @@ function _instSelectGrant(grantId) {
       var last   = sorted[0];
       if (last.score != null && isFinite(last.score)) {
         scores.push(+last.score);
-        if (+last.score >= 6) highN++;
+        if (+last.score >= 8) highN++;
         if (last.intentional || last.adherence_pattern === 'INA') inaN++;
       }
     }
@@ -3159,7 +3388,7 @@ function _instSelectGrant(grantId) {
     'ADHERENCE OUTCOMES',
     'Mean MMAS-8 score for this reporting period: ' + (meanScore ? meanScore.toFixed(2) : '\u2014') +
       ' \u00B1 ' + (sdScore ? sdScore.toFixed(2) : '\u2014') + ' (scale 0\u20138; higher = better adherence). ' +
-      highPct + '% of participants scored \u22656 (high adherence). ' +
+      highPct + '% of participants demonstrated high adherence (score\u2009=\u20098). ' +
       inaPct + '% met criteria for intentional non-adherence.',
     '',
     'Generated by ATLAS v8.6 \u2014 Adherence Cartography Platform'
@@ -3547,7 +3776,7 @@ function _syncStudyConfigToFirebase() {
   if (!currentWorkspace || currentWorkspace === 'INDEPENDENT') return;
   try {
     firebase.database().ref('workspaces/' + currentWorkspace + '/study_config').set(studyConfig);
-  } catch(e) {}
+  } catch(e) { console.warn('atlas: study config Firebase sync failed', e); }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -3756,21 +3985,45 @@ function showInstSettingsToast(msg) {
   toast._t = setTimeout(() => { toast.style.display = 'none'; }, 2800);
 }
 
-/**
- * Placeholder for institution audit log export — wire to your audit system.
- */
-function exportInstitutionAuditLog() {
+async function exportInstitutionAuditLog() {
   if (typeof atlasAuditLog === 'function') atlasAuditLog('inst_audit_log_exported', {});
-  showToast('Audit log export — connect to your audit trail system.', 3000);
+  try {
+    const db = window._atlasDb || (window.firebase && firebase.database ? firebase.database() : null);
+    if (!db) { showToast('No audit records found for this institution.', 3000); return; }
+    const institution = window._currentWorkspaceProfile && (window._currentWorkspaceProfile.parent_institution || window._currentWorkspaceProfile.institution_code)
+      || (window._currentWorkspaceKey || '').split('-')[1]
+      || sessionStorage.getItem('_wsInstitution');
+    if (!institution) { showToast('No audit records found for this institution.', 3000); return; }
+    const snap = await db.ref('audit_log').orderByChild('institution').equalTo(institution).limitToLast(500).once('value');
+    const raw = snap.val() || {};
+    const records = Object.values(raw).sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+    if (!records.length) { showToast('No audit records found for this institution.', 3000); return; }
+    const hdrs = ['Timestamp', 'Action', 'User', 'Patient', 'Institution', 'Detail'];
+    const rows = records.map(function(e) {
+      return [e.timestamp ? new Date(e.timestamp).toISOString() : '', e.action || '', e.user || e.workspace || '', e.patient_number || '', e.institution || '', e.detail || ''];
+    });
+    const esc = function(v) { var s = String(v || '').replace(/"/g, '""'); return /[,"\n]/.test(s) ? '"' + s + '"' : s; };
+    const csv = [hdrs].concat(rows).map(function(r) { return r.map(esc).join(','); }).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'atlas_audit_' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+  } catch(err) {
+    showToast('No audit records found for this institution.', 3000);
+  }
 }
 
-/**
- * Placeholder for generic document downloads — wire to your document storage.
- * @param {string} docType - 'data-security' | 'hipaa-baa' | 'informed-consent' | 'site-monitoring'
- */
 function downloadAtlasDocument(docType) {
-  showToast('Downloading ' + docType + ' document…', 2500);
   atlasAuditLog && atlasAuditLog('inst_document_download', { doc: docType });
+  var docs = (window.workspaceProfile && window.workspaceProfile.documents) || {};
+  var url = docs[docType];
+  if (url) {
+    window.open(url, '_blank');
+  } else {
+    showToast('No ' + docType.replace(/-/g, ' ') + ' document configured. Upload documents in Institution Settings.', 3500);
+  }
 }
 
 // ── CTO3: Institution Audit Log ───────────────────────────────────────────
@@ -3993,9 +4246,9 @@ async function generateInstQuarterlySummary() {
   var total = allRecords.length;
   var scores = allRecords.map(function(r){ return parseFloat(r.score||r.mmas_score||0); }).filter(function(s){ return s > 0; });
   var avg = scores.length ? (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(2) : 'N/A';
-  var high = scores.filter(function(s){ return s >= 6; }).length;
-  var med  = scores.filter(function(s){ return s >= 4 && s < 6; }).length;
-  var low  = scores.filter(function(s){ return s < 4; }).length;
+  var high = scores.filter(function(s){ return s >= 8; }).length;
+  var med  = scores.filter(function(s){ return s >= 6 && s < 8; }).length;
+  var low  = scores.filter(function(s){ return s < 6; }).length;
   var countries = [...new Set(allRecords.map(function(r){ return r.country; }).filter(Boolean))];
 
   // Get institution name and type
@@ -4018,9 +4271,9 @@ async function generateInstQuarterlySummary() {
     + 'Total assessments this period: ' + total + '\n'
     + 'Active research sites/workspaces: ' + sites.length + '\n'
     + 'Mean MMAS adherence score: ' + avg + '/8 (benchmark: 5.93, Morisky et al. 2008)\n'
-    + 'High adherence (≥6.0): ' + high + ' (' + (total ? Math.round(100*high/total) : 0) + '%)\n'
-    + 'Medium adherence (4.0–5.9): ' + med + ' (' + (total ? Math.round(100*med/total) : 0) + '%)\n'
-    + 'Low adherence (<4.0): ' + low + ' (' + (total ? Math.round(100*low/total) : 0) + '%)\n'
+    + 'High adherence (score = 8): ' + high + ' (' + (total ? Math.round(100*high/total) : 0) + '%)\n'
+    + 'Medium adherence (score ≥6 to <8): ' + med + ' (' + (total ? Math.round(100*med/total) : 0) + '%)\n'
+    + 'Low adherence (score <6): ' + low + ' (' + (total ? Math.round(100*low/total) : 0) + '%)\n'
     + 'Geographic reach: ' + (countries.length || 'not recorded') + ' countries\n'
     + 'PEACS behavioral assessments completed: ' + peacsAll.length + '\n\n'
     + 'Write a 3-paragraph executive summary suitable for a CMO, Dean, or Board committee. Paragraph 1: program overview and enrollment. Paragraph 2: key adherence findings benchmarked against published standards. Paragraph 3: strategic implications and recommended focus areas for next quarter. Use formal executive language. Do not fabricate statistics beyond what is provided.';
@@ -4035,6 +4288,7 @@ async function generateInstQuarterlySummary() {
         messages: [{ role: 'user', content: prompt }]
       })
     });
+    if (!resp.ok) throw new Error('ZOE endpoint returned ' + resp.status);
     var data = await resp.json();
     var text = (data.content && data.content[0] && data.content[0].text) || 'No summary generated.';
     out.innerHTML =

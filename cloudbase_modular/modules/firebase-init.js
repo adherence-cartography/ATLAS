@@ -60,9 +60,10 @@ function updatePublicStats(score, country) {
   const sr = database.ref('public_stats');
   sr.child('total').transaction(n => (n||0)+1);
   sr.child('score_sum').transaction(n => (n||0)+s);
-  if (s >= 6) sr.child('high_count').transaction(n => (n||0)+1);
-  const ck = sanitizeCountryKey(country);
-  if (ck && ck !== 'unknown') sr.child('countries/'+ck).set(true);
+  if (s >= 8) sr.child('high_count').transaction(n => (n||0)+1);
+  const _nc = (typeof _normalizeCountry === 'function') ? _normalizeCountry(country) : (country || 'Unknown');
+  const ck = sanitizeCountryKey(_nc);
+  if (ck && ck.toLowerCase() !== 'unknown') sr.child('countries/'+ck).set(true);
 }
 /**
  * Increments /peacs_public_stats counters (total, score_sum, high_count) for a new PEACS submission.
@@ -96,9 +97,10 @@ function seedPublicStatsIfMissing() {
       all.forEach(r => {
         const s = parseFloat(r.score);
         if (isNaN(s)||s<0) return;
-        total++; scoreSum+=s; if(s>=6) highCount++;
-        const ck = sanitizeCountryKey(r.country);
-        if (ck&&ck!=='unknown') countries[ck]=true;
+        total++; scoreSum+=s; if(s>=8) highCount++;
+        const _nc = (typeof _normalizeCountry === 'function') ? _normalizeCountry(r.country) : (r.country || 'Unknown');
+        const ck = sanitizeCountryKey(_nc);
+        if (ck&&ck.toLowerCase()!=='unknown') countries[ck]=true;
       });
       database.ref('public_stats').set({total,score_sum:scoreSum,high_count:highCount,countries});
     });
