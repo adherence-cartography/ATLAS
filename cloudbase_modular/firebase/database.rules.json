@@ -151,7 +151,7 @@
     },
     "consortium_applications": {
       ".read": "auth != null && auth.token.role === 'superadmin'",
-      ".write": "auth != null",
+      ".write": true,
       "$record": {
         ".validate": "newData.hasChildren(['name','email']) && newData.child('name').isString() && newData.child('name').val().length <= 200 && newData.child('email').isString() && newData.child('email').val().length <= 200"
       }
