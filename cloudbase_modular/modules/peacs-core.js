@@ -2688,7 +2688,7 @@ async function peacsInterpretResults(pe, archScore, execScore, ctxScore, pattern
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 250,
         system: 'You are ZOE, the ATLAS adherence guide. Interpret PEACS results in plain language for the patient. 2-3 sentences max. Be specific to their scores.',
         messages: [{ role: 'user', content: prompt }]

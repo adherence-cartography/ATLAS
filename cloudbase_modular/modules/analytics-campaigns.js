@@ -43,7 +43,7 @@ function exportCohortPDF() {
 
   // Score distribution (0–8)
   const dist = Array(9).fill(0);
-  valid.forEach(r => dist[Math.min(8,Math.max(0,Math.round(r.score||0)))]++);
+  valid.forEach(r => { const sc=r.score||0; dist[sc>=8?8:Math.min(7,Math.max(0,Math.floor(sc)))]++; });
   const distMax = Math.max(...dist, 1);
 
   // ── Build HTML ──────────────────────────────────
@@ -116,11 +116,11 @@ function exportCohortPDF() {
   <div class="section-label">PEACS v2.0 — Theory of Predictive Emergence · ${pValid.length} Profiles</div>
   <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:0;">
     <div class="kpi pe"><div class="kpi-val" style="color:#d4a843;">${avgPE}</div><div class="kpi-lbl">Mean PE Score</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:#4e9cf5;">${avgBase}</div><div class="kpi-lbl">Avg Architecture (A)</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:#8b6ff5;">${avgMvmt}</div><div class="kpi-lbl">Avg Execution (E)</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:#2ec98a;">${avgStr}</div><div class="kpi-lbl">Avg Context (C)</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#4e9cf5;">${avgBase}</div><div class="kpi-lbl">Avg BASE</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#8b6ff5;">${avgMvmt}</div><div class="kpi-lbl">Avg MVMT</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#2ec98a;">${avgStr}</div><div class="kpi-lbl">Avg STRATA</div></div>
   </div>
-  <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#8a9ab0;margin-top:10px;">PE = (A × E × C)^(1/3) · Theory of Predictive Emergence © Adherence Inc.</div>
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#8a9ab0;margin-top:10px;">PE = (BASE × MVMT × STRATA)^(1/3) · Theory of Predictive Emergence © Adherence Inc.</div>
   ` : ''}
 
   <div class="footer">
@@ -405,8 +405,8 @@ function zoeFinalize(){
 function _zoeScheduleFollowUp(scores, soap) {
   if (!currentWorkspace || window._wsMode === 'explorer') return;
   const totalScore = scores.reduce((a,b) => a + (b||0), 0);
-  const inaItems   = [1,2,5,6].filter(i => (scores[i]||0) < 1);
-  const unaItems   = [0,3,7].filter(i => (scores[i]||0) < 1);
+  const inaItems   = [2,5].filter(i => (scores[i]||0) < 1);
+  const unaItems   = [0,1,3,7].filter(i => (scores[i]||0) < 1);
   const isINA      = inaItems.length > unaItems.length;
   const hasClinFlag= soap && soap.clinical_flags && soap.clinical_flags.length > 0;
   const pid        = window._zoeSdohSnapshot?.patientNum || null;
@@ -555,9 +555,9 @@ function renderPatientPortal(patientId, records) {
   const q1=parseFloat(latest.q1||0),q2=parseFloat(latest.q2||0),q3=parseFloat(latest.q3||0);
   const q4=parseFloat(latest.q4||0),q5=parseFloat(latest.q5||0),q6=parseFloat(latest.q6||0);
   const q7=parseFloat(latest.q7||0),q8=parseFloat(latest.q8||0);
-  const arch = ((q3+q6)/2).toFixed(2);
-  const exec = ((q1+q2+q4)/3).toFixed(2);
-  const ctx  = ((q5+q7+q8)/3).toFixed(2);
+  const arch = ((q2+q3+q6)/3).toFixed(2);
+  const exec = ((q1+q5+q8)/3).toFixed(2);
+  const ctx  = (0.5+0.5*(q4+q7)/2).toFixed(2);
 
   // Friendly tips based on lowest domain
   const domains = [{name:'Architecture',val:parseFloat(arch)},{name:'Execution',val:parseFloat(exec)},{name:'Context',val:parseFloat(ctx)}];
@@ -593,7 +593,7 @@ function renderPatientPortal(patientId, records) {
   }).join('');
 
   const greetEl = document.getElementById('pp-patient-greeting');
-  if (greetEl) greetEl.textContent = score >= 7 ? 'Great work \u2014 keep it up!' : score >= 5 ? 'You\'re making progress' : 'Let\'s work on this together';
+  if (greetEl) greetEl.textContent = score >= 8 ? 'Great work \u2014 keep it up!' : score >= 6 ? 'You\'re making progress' : 'Let\'s work on this together';
 
   const accentColor = scoreClass==='high'?'#10b981':scoreClass==='medium'?'#f59e0b':'#ef4444';
   body.innerHTML =
@@ -717,9 +717,9 @@ async function generateZoeSOAP(){
   const totalScore=zoeScores.reduce((a,b)=>a+(b||0),0);
   const cat=getAdherenceCategory(totalScore);
   const inaItems=[],unaItems=[];
-  [0,3,7].forEach(i=>{if((zoeScores[i]||0)<1)unaItems.push('Q'+(i+1));});
-  [1,2,5,6].forEach(i=>{if((zoeScores[i]||0)<1)inaItems.push('Q'+(i+1));});
-  // Q5 (index 4) is neutral — excluded from INA/UNA classification
+  [0,1,3,7].forEach(i=>{if((zoeScores[i]||0)<1)unaItems.push('Q'+(i+1));});
+  [2,5].forEach(i=>{if((zoeScores[i]||0)<1)inaItems.push('Q'+(i+1));});
+  // Q5 (index 4) and Q7 (index 6) are neutral — excluded from INA/UNA classification
   const pattern=inaItems.length>unaItems.length?'Intentional Non-Adherence (INA)':unaItems.length>inaItems.length?'Unintentional Non-Adherence (UNA)':totalScore>=8?'High Adherence':'Mixed Pattern';
 
   const prompt=`You are a clinical documentation specialist generating a SOAP note from a ZOE AI voice assessment using the MMAS-8 medication adherence scale.
@@ -742,7 +742,7 @@ Respond ONLY with valid JSON, no preamble:
   const resp=await fetch('/lambda-proxy/zoe',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:prompt}]})
   });
   const data=await resp.json();
   const raw=data.content?.[0]?.text||'{}';
@@ -776,7 +776,7 @@ function initZoeButtons(){
       // Q5 (index 4) is reversed: Yes=1 (took last dose) is the non-penalizing default when skipped
       const isQ5 = zoeCurrQ === 4;
       const isQ8 = zoeCurrQ === 7;
-      zoeScores[zoeCurrQ] = isQ5 ? 1 : 0;
+      zoeScores[zoeCurrQ] = (isQ5 || isQ8) ? 1 : 0;
       if (isQ5) {
         mmasAnswers['q5'] = 'yes';
       } else if (isQ8) {
@@ -824,7 +824,7 @@ function _renderPatientRecord(r){
   }
 
   const displayScore = isMap ? (mapPE !== null ? mapPE : parseFloat(r.score) || 0) : (parseFloat(r.score) || 0);
-  const cat = getAdherenceCategory(isMap ? (mapPE !== null ? mapPE * 2 : r.score) : r.score); // MAP PE ~0-4, scale for category
+  const cat = getAdherenceCategory(isMap ? (mapPE !== null ? mapPE * 8 : r.score) : r.score); // MAP PE 0-1 → scale to MMAS-8 0-8 for category lookup
   let pat = '—';
   if (!isMap) {
     if (r.score === 8) pat = 'High Adherence';
@@ -867,7 +867,7 @@ function _renderPatientRecord(r){
   if (isMap) {
     // MAP: show PE as primary score, domain breakdown replaces adherence category
     scoreEl.textContent = mapPE !== null ? mapPE.toFixed(3) + ' PE' : '—';
-    scoreEl.style.color = mapPE !== null ? (mapPE >= 3.5 ? '#059669' : mapPE >= 2.5 ? '#d97706' : '#dc2626') : '#94a3b8';
+    scoreEl.style.color = mapPE !== null ? (mapPE >= 1.0 ? '#059669' : mapPE >= 0.75 ? '#d97706' : '#dc2626') : '#94a3b8';
     const archStr = mapArch !== null ? mapArch.toFixed(2) : '—';
     const execStr = mapExec !== null ? mapExec.toFixed(2) : '—';
     const ctxStr  = mapCtx  !== null ? mapCtx.toFixed(2)  : '—';
@@ -2464,7 +2464,7 @@ Supported ops: <, <=, >, >=, ==, !=, contains_ci (case-insensitive string contai
   try {
     const resp = await fetch('/lambda-proxy/zoe', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:600, messages:[{role:'user',content:prompt}] })
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:600, messages:[{role:'user',content:prompt}] })
     });
     const data = await resp.json();
     const raw = data.content?.[0]?.text || '{}';
@@ -2752,7 +2752,7 @@ difficulty: 1=easy, 2=moderate, 3=advanced. color: use #4e9cf5 (blue), #8b6ff5 (
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1200,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -3518,7 +3518,7 @@ function _renderInstMapSection(allMmas, childMmas) {
   let mapINA=0;
   mapRecs.forEach(r => {
     if ((r.score||0)>=8) return;
-    if (typeof classifyPattern==='function') { try { const cp=classifyPattern(r); if(cp.intentional>cp.unintentional) mapINA++; } catch(e){} }
+    if (typeof classifyPattern==='function') { try { const cp=classifyPattern(r); if(cp.intentional>cp.unintentional) mapINA++; } catch(e){ console.warn('atlas: classifyPattern error', e); } }
   });
 
   if (el('inst-kpi-map-add'))        el('inst-kpi-map-add').textContent        = avgAdd.toFixed(2);
@@ -3871,8 +3871,8 @@ function renderInstitutionDashboard() {
     const flags = [];
     const inaRate = total > 0 ? ina/total : 0;
     if (inaRate > 0.3) flags.push({col:'var(--poor)', msg:`High INA rate across cohort: ${Math.round(inaRate*100)}% intentional non-adherence`});
-    const lowScoreWS = Object.entries(byWS).filter(([,d]) => d.mmas.length >= 3 && (d.mmas.reduce((s,r)=>s+(r.score||0),0)/d.mmas.length) < 5);
-    if (lowScoreWS.length) flags.push({col:'var(--moderate)', msg:`${lowScoreWS.length} workspace${lowScoreWS.length>1?'s':''} with mean score < 5.0: ${lowScoreWS.map(([w])=>_esc(w)).join(', ')}`});
+    const lowScoreWS = Object.entries(byWS).filter(([,d]) => d.mmas.length >= 3 && (d.mmas.reduce((s,r)=>s+(r.score||0),0)/d.mmas.length) < 6);
+    if (lowScoreWS.length) flags.push({col:'var(--moderate)', msg:`${lowScoreWS.length} workspace${lowScoreWS.length>1?'s':''} with mean score < 6.0 (low adherence): ${lowScoreWS.map(([w])=>_esc(w)).join(', ')}`});
     const noData = Object.keys(byWS).filter(w => byWS[w].mmas.length === 0);
     if (noData.length) flags.push({col:'var(--dim)', msg:`${noData.length} workspace${noData.length>1?'s':''} with PEACS but no MMAS data`});
     if (avgMapPe > 0 && avgMapPe < 0.55) flags.push({col:'var(--poor)', msg:`Collective PE mean below threshold: ${avgMapPe.toFixed(3)} (target ≥ 0.70)`});
@@ -4056,7 +4056,7 @@ function renderBenchmarking(cohortRecords) {
   // Cohort distribution in integer score buckets 0–8
   const cohortDist = Array(9).fill(0);
   cohortRecords.forEach(r => {
-    const bucket = Math.min(8, Math.max(0, Math.round(r.score||0)));
+    const sc = r.score||0; const bucket = sc>=8?8:Math.min(7,Math.max(0,Math.floor(sc)));
     cohortDist[bucket]++;
   });
   const cohortTotal = cohortRecords.length || 1;
@@ -4066,7 +4066,7 @@ function renderBenchmarking(cohortRecords) {
     const allData = snap.val() ? Object.values(snap.val()) : [];
     const globalDist = Array(9).fill(0);
     allData.forEach(r => {
-      const bucket = Math.min(8, Math.max(0, Math.round(r.score||0)));
+      const sc2 = r.score||0; const bucket = sc2>=8?8:Math.min(7,Math.max(0,Math.floor(sc2)));
       globalDist[bucket]++;
     });
     const globalTotal = allData.length || 1;
@@ -4511,5 +4511,8 @@ function atlasCheckinRespond(response) {
     .catch(() => showToast('Check-in recorded locally.', 2000));
 }
 
+// Expose inst strat functions to global scope for inline onchange handlers
+window.renderInstStrat  = renderInstStrat;
+window.toggleInstStrat  = toggleInstStrat;
 // ─────────────────────────────────────────────
 

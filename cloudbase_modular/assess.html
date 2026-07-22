@@ -9480,7 +9480,7 @@ async function zoeHandleResponse(transcript){
     const resp=await fetch('https://krbqzf0ozg.execute-api.me-central-1.amazonaws.com/zoe',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:350,system:_activeSys,messages:zoeHistory})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:350,system:_activeSys,messages:zoeHistory})
     });
     const data=await resp.json();
     const raw=data.content?.[0]?.text||'{}';

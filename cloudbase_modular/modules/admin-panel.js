@@ -2130,7 +2130,7 @@ async function zoeHandleResponse(transcript){
     const resp=await fetch('/lambda-proxy/zoe',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:350,system:(_zoeSessionSystem||''),messages:zoeHistory})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:350,system:(_zoeSessionSystem||''),messages:zoeHistory})
     });
     if (!resp.ok) throw new Error('ZOE endpoint returned ' + resp.status);
     const data=await resp.json();
@@ -2826,7 +2826,8 @@ function switchInstDashTab(tab) {
   var studyPanel      = document.getElementById('inst-tab-panel-study');
   var auditPanel      = document.getElementById('inst-tab-panel-audit');
   var labPanel        = document.getElementById('inst-tab-panel-lab');
-  var extcompPanel    = document.getElementById('inst-tab-panel-extcomp');
+  var extcompPanel      = document.getElementById('inst-tab-panel-extcomp');
+  var siteMonitorPanel  = document.getElementById('inst-tab-panel-sitemonitor');
   // Legacy standalone panels (kept for compat — hidden unless accessed via Reporting)
   var billingPanel    = document.getElementById('inst-tab-panel-billing');
   var hubPanel        = document.getElementById('inst-tab-panel-hub');
@@ -2840,7 +2841,8 @@ function switchInstDashTab(tab) {
   if (studyPanel)     studyPanel.style.display     = tab === 'study'      ? '' : 'none';
   if (auditPanel)     auditPanel.style.display     = tab === 'audit'      ? '' : 'none';
   if (labPanel)       labPanel.style.display       = tab === 'lab'        ? '' : 'none';
-  if (extcompPanel)   extcompPanel.style.display   = tab === 'extcomp'    ? '' : 'none';
+  if (extcompPanel)     extcompPanel.style.display     = tab === 'extcomp'      ? '' : 'none';
+  if (siteMonitorPanel) siteMonitorPanel.style.display = tab === 'sitemonitor'  ? '' : 'none';
   if (billingPanel)   billingPanel.style.display   = 'none';
   if (hubPanel)       hubPanel.style.display       = 'none';
   if (grantsPanel)    grantsPanel.style.display    = 'none';
@@ -2861,6 +2863,13 @@ function switchInstDashTab(tab) {
       if (typeof _rlInjectStyles === 'function') _rlInjectStyles();
       _saRenderLab(labPanel);
     }
+  }
+  if (tab === 'sitemonitor') {
+    if (typeof smDestroy === 'function' && window._smActive) smDestroy();
+    if (typeof smInit === 'function') { window._smActive = true; smInit(); }
+  } else if (window._smActive) {
+    if (typeof smDestroy === 'function') smDestroy();
+    window._smActive = false;
   }
   if (tab === 'extcomp' && !window._instExtCompLoaded) {
     window._instExtCompLoaded = true;
@@ -4283,7 +4292,7 @@ async function generateInstQuarterlySummary() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 900,
         messages: [{ role: 'user', content: prompt }]
       })

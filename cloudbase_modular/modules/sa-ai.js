@@ -105,7 +105,7 @@ function _saAiRenderBrief(body) {
   const mapTrend   = (mapRecent!==null&&mapPriorM!==null) ? mapRecent-mapPriorM : null;
 
   // ── Critical records (all instruments) ───────────────────────────────────────
-  const mmasCrit  = mmasOnly.filter(r=>(r.score||0)/8 < 0.55).length;
+  const mmasCrit  = mmasOnly.filter(r=>(r.score||0)/8 < 0.75).length;
   const mapCrit   = mapRecs.filter(r=>mapPE(r) < 0.55).length;
   const peacsCrit = peacs.filter(r=>r.pe!=null&&+r.pe<0.55).length;
   const totalCrit = mmasCrit + mapCrit + peacsCrit;
@@ -150,7 +150,7 @@ function _saAiRenderBrief(body) {
   if (mapTrend!==null&&mapTrend>0.02)
     alerts.push({ level:'ok',   text:`MAP PE mean improved <strong>+${(mapTrend*100).toFixed(1)}%</strong> vs prior 30 days.` });
   if (totalN>0&&totalCrit/totalN>0.15)
-    alerts.push({ level:'crit', text:`<strong>${critPct}%</strong> of records across all instruments fall below the critical threshold (< 0.55) — intervention may be warranted across multiple sites.` });
+    alerts.push({ level:'crit', text:`<strong>${critPct}%</strong> of records across all instruments fall below the low-adherence threshold (normalized < 0.75) — intervention may be warranted across multiple sites.` });
   const alertCol = { crit:_C.red, warn:'#f97316', ok:_C.green, info:_C.cyan };
 
   // ── KPI row — platform-wide ──────────────────────────────────────────────────
@@ -257,7 +257,7 @@ function _saAiGenerateBrief(mmasOnly, mapRecs, peacs, wsStats, mmasMean, mmasRec
   }
   if (totalCrit > 0 && totalN > 0) {
     const pct = (totalCrit/totalN*100).toFixed(1);
-    lines.push(`<strong style="color:${_C.red};">${totalCrit.toLocaleString()} records (${pct}%)</strong> fall below the critical adherence threshold of 0.55 across all instruments — intervention warranted.`);
+    lines.push(`<strong style="color:${_C.red};">${totalCrit.toLocaleString()} records (${pct}%)</strong> fall below the low-adherence threshold (normalized &lt; 0.75; MMAS-8 raw score &lt; 6) across all instruments — intervention warranted.`);
   }
   if (wsStats.length > 1) {
     const sorted = [...wsStats].sort((a,b)=>b.mean-a.mean);
@@ -292,8 +292,8 @@ async function _saAiBriefWithClaude() {
   const globalMean = _briefGai.mmasNorm || 0;
   const r30mmas    = r30.filter(r => r.tool !== 'map' && r.map_q1 === undefined);
   const mean30     = r30mmas.length ? r30mmas.reduce((s,r)=>s+(r.score||0),0)/r30mmas.length/8 : null;
-  const critN      = bMmasOnly.filter(r => (r.score||0)/8 < 0.55).length;
-  const highN      = bMmasOnly.filter(r => (r.score||0)/8 >= 0.85).length;
+  const critN      = bMmasOnly.filter(r => (r.score||0)/8 < 0.75).length;
+  const highN      = bMmasOnly.filter(r => (r.score||0) >= 8).length;
 
   const wsMeans = Object.keys(ws).map(code => {
     const recs = bMmasOnly.filter(r => (r.institution_code||r.workspace) === code);
@@ -639,12 +639,12 @@ function _saAiRenderPredict(body) {
             const factors = [];
             if (w.trend<-0.1) factors.push(`<span style="color:${_C.red};">Sharp decline</span>`);
             else if (w.trend<-0.05) factors.push(`<span style="color:#f97316;">Declining trend</span>`);
-            if (w.curMean<0.55) factors.push(`<span style="color:${_C.red};">Critical adherence</span>`);
-            else if (w.curMean<0.6) factors.push(`<span style="color:#f97316;">Below threshold</span>`);
+            if (w.curMean<0.625) factors.push(`<span style="color:${_C.red};">Critical adherence</span>`);
+            else if (w.curMean<0.75) factors.push(`<span style="color:#f97316;">Below threshold</span>`);
             return `<tr style="border-bottom:1px solid ${_C.border};" onmouseover="this.style.background='${_C.navy}'" onmouseout="this.style.background='transparent'">
               <td style="padding:8px 14px;font-size:0.88rem;color:${_C.text};">${_saEsc(w.code)}</td>
               <td style="padding:8px 14px;font-size:0.84rem;color:${_C.muted};">${w.n}</td>
-              <td style="padding:8px 14px;font-size:0.90rem;font-weight:700;color:${w.curMean<0.55?_C.red:w.curMean<0.7?'#f97316':_C.amber};">${w.curMean.toFixed(3)}</td>
+              <td style="padding:8px 14px;font-size:0.90rem;font-weight:700;color:${w.curMean<0.75?_C.red:w.curMean<1.0?'#f97316':_C.green};">${w.curMean.toFixed(3)}</td>
               <td style="padding:8px 14px;font-size:0.90rem;color:${w.trend<0?_C.red:_C.green};">${w.trend>=0?'+':''}${(w.trend*100).toFixed(1)}%</td>
               <td style="padding:8px 14px;font-size:0.82rem;">${factors.join(' · ')||'—'}</td>
             </tr>`;
@@ -805,8 +805,8 @@ function _saAiRuleAnswer(q) {
   const mapGlobalMean = mapQaRecs.length ? mapQaRecs.reduce((s,r)=>s+_mapQaPE(r),0)/mapQaRecs.length : null;
   const last30 = mmasQaOnly.filter(r=>(r.timestamp||0)>=now-30*86400000);
   const mean30 = last30.length ? last30.reduce((s,r)=>s+(r.score||0)/8,0)/last30.length : null;
-  const critN  = mmasQaOnly.filter(r=>(r.score||0)/8<0.55).length;
-  const highN  = mmasQaOnly.filter(r=>(r.score||0)/8>=0.85).length;
+  const critN  = mmasQaOnly.filter(r=>(r.score||0)/8<0.75).length;
+  const highN  = mmasQaOnly.filter(r=>(r.score||0)>=8).length;
 
   const wsMeans = Object.keys(ws).map(code=>{
     const recs=mmasQaOnly.filter(r=>(r.institution_code||r.workspace)===code);
@@ -827,9 +827,9 @@ function _saAiRuleAnswer(q) {
     if (qL.includes('mean')||qL.includes('average')||qL.includes('global'))
       return `MMAS-8 global mean is <strong>${globalMean.toFixed(3)}</strong> (N=${mmasQaOnly.length.toLocaleString()}). MAP mean PE: <strong>${mapGlobalMean!==null?mapGlobalMean.toFixed(3):'—'}</strong> (N=${mapQaRecs.length.toLocaleString()}).`;
     if (qL.includes('critical')||qL.includes('low adherence')||qL.includes('below threshold'))
-      return `<strong>${critN.toLocaleString()} MMAS records (${mmasQaOnly.length?(critN/mmasQaOnly.length*100).toFixed(1):0}%)</strong> fall below the critical adherence threshold of 0.55.`;
+      return `<strong>${critN.toLocaleString()} MMAS records (${mmasQaOnly.length?(critN/mmasQaOnly.length*100).toFixed(1):0}%)</strong> fall below the low-adherence threshold (score &lt; 6, normalized &lt; 0.75).`;
     if (qL.includes('high adherence'))
-      return `<strong>${highN.toLocaleString()} records (${mmasQaOnly.length?(highN/mmasQaOnly.length*100).toFixed(1):0}%)</strong> meet the MMAS-8 high-adherence threshold (≥ 0.85).`;
+      return `<strong>${highN.toLocaleString()} records (${mmasQaOnly.length?(highN/mmasQaOnly.length*100).toFixed(1):0}%)</strong> have achieved high adherence (MMAS-8 score = 8).`;
     if (qL.includes('highest')||qL.includes('top workspace')||qL.includes('best workspace')) {
       const top=[...wsMeans].sort((a,b)=>b.mean-a.mean)[0];
       return top?`Top workspace: <strong>${_saEsc(top.code)}</strong> — MMAS mean ${top.mean.toFixed(3)} (N=${top.n}).`:'No workspace data.';
@@ -902,9 +902,11 @@ async function _saAiCallClaude(query, apiKey) {
   const wsDataCodes = new Set(mmasOnly.map(r=>r.institution_code||r.workspace).filter(Boolean));
 
   // Helper: build {n, mean, low_n, high_n} rollups keyed by a string field
-  // low = score < 0.55 (MMAS low adherence threshold); high = score >= 0.85
+  // MMAS: low < 0.75 (validated raw < 6), high >= 1.0 (validated raw = 8)
+  // MAP/PEACS: low < 0.75, high >= 0.85 (platform-defined; no published cutoffs)
   const _tallyFull = (recs, scoreKey, field, topN=40, isMap=false) => {
     const map = {};
+    const highT = isMap ? 0.85 : 1.0;
     for (const r of recs) {
       const v = _trunc((r[field]||'').trim());
       if (!v || v === 'Unknown') continue;
@@ -912,8 +914,8 @@ async function _saAiCallClaude(query, apiKey) {
       if (!map[v]) map[v] = { n:0, sum:0, low:0, high:0 };
       map[v].n++;
       map[v].sum += s;
-      if (s < 0.55) map[v].low++;
-      if (s >= 0.85) map[v].high++;
+      if (s < 0.75) map[v].low++;
+      if (s >= highT) map[v].high++;
     }
     return Object.entries(map).sort((a,b)=>b[1].n-a[1].n).slice(0,topN)
       .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high }; return obj; }, {});
@@ -929,7 +931,7 @@ async function _saAiCallClaude(query, apiKey) {
       const k = city+', '+ctry; const s = (r.score||0)/8;
       if (!map[k]) map[k]={ n:0,sum:0,low:0,high:0,country:ctry };
       map[k].n++; map[k].sum+=s;
-      if(s<0.55) map[k].low++; if(s>=0.85) map[k].high++;
+      if(s<0.75) map[k].low++; if(s>=1.0) map[k].high++;
     }
     return Object.entries(map).filter(([,v])=>v.n>=2).sort((a,b)=>b[1].n-a[1].n).slice(0,60)
       .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high, country:v.country }; return obj; }, {});
@@ -939,8 +941,8 @@ async function _saAiCallClaude(query, apiKey) {
     const recs = mmasOnly.filter(r=>(r.institution_code||r.workspace)===code);
     const mean = recs.reduce((s,r)=>s+(r.score||0)/8,0)/recs.length;
     return { code, n:recs.length, mean:+mean.toFixed(3),
-      low_n: recs.filter(r=>(r.score||0)/8<0.55).length,
-      high_n: recs.filter(r=>(r.score||0)/8>=0.85).length };
+      low_n: recs.filter(r=>(r.score||0)/8<0.75).length,
+      high_n: recs.filter(r=>(r.score||0)>=8).length };
   }).sort((a,b)=>b.n-a.n).slice(0,15)
     .reduce((obj,w)=>{ obj[w.code]={n:w.n,mean:w.mean,low_n:w.low_n,high_n:w.high_n}; return obj; }, {});
 
@@ -975,7 +977,7 @@ async function _saAiCallClaude(query, apiKey) {
       const k = city+', '+ctry; const s = _mapPE(r);
       if (!map[k]) map[k]={ n:0,sum:0,low:0,high:0,country:ctry };
       map[k].n++; map[k].sum+=s;
-      if(s<0.55) map[k].low++; if(s>=0.85) map[k].high++;
+      if(s<0.75) map[k].low++; if(s>=0.85) map[k].high++;
     }
     return Object.entries(map).filter(([,v])=>v.n>=2).sort((a,b)=>b[1].n-a[1].n).slice(0,40)
       .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high, country:v.country }; return obj; }, {});
@@ -993,7 +995,7 @@ async function _saAiCallClaude(query, apiKey) {
       const s = _peScore(r);
       if (!map[v]) map[v]={ n:0,sum:0,low:0,high:0 };
       map[v].n++; map[v].sum+=s;
-      if(s<0.55) map[v].low++; if(s>=0.85) map[v].high++;
+      if(s<0.75) map[v].low++; if(s>=0.85) map[v].high++;
     }
     return Object.entries(map).sort((a,b)=>b[1].n-a[1].n).slice(0,30)
       .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high }; return obj; }, {});
@@ -1006,7 +1008,7 @@ async function _saAiCallClaude(query, apiKey) {
       const k = city+', '+ctry; const s = _peScore(r);
       if (!map[k]) map[k]={ n:0,sum:0,low:0,high:0,country:ctry };
       map[k].n++; map[k].sum+=s;
-      if(s<0.55) map[k].low++; if(s>=0.85) map[k].high++;
+      if(s<0.75) map[k].low++; if(s>=0.85) map[k].high++;
     }
     return Object.entries(map).filter(([,v])=>v.n>=2).sort((a,b)=>b[1].n-a[1].n).slice(0,30)
       .reduce((obj,[k,v])=>{ obj[k]={ n:v.n, mean:+(v.sum/v.n).toFixed(3), low_n:v.low, high_n:v.high, country:v.country }; return obj; }, {});
@@ -1082,7 +1084,7 @@ async function _saAiCallClaude(query, apiKey) {
     body:JSON.stringify({model, max_tokens:500,
       system:`You are ATLAS AI, an adherence science intelligence assistant in ATLAS Mission Control. Answer questions using ONLY the real platform data provided in the JSON context. Never say you lack data if it is present in the context.
 
-All numeric adherence values are on a 0–1 scale (e.g. 0.716 = 71.6%). low_n = patients below 0.55 (low adherence); high_n = patients at or above 0.85 (high adherence).
+All numeric adherence values are on a 0–1 scale (e.g. 0.716 = 71.6%). For MMAS-8: low_n = patients with normalized score below 0.75 (raw score below 6, low adherence); high_n = patients with score = 1.00 (raw score = 8, high adherence). For MAP/PEACS: low_n below 0.75; high_n at or above 0.85.
 
 Data fields:
 MMAS-8: mmas_by_country, mmas_by_city — {n, mean, low_n, high_n} per location
@@ -1141,7 +1143,9 @@ function _saAiRenderConfig(body) {
                    font-family:'IBM Plex Mono',monospace;font-size:0.90rem;padding:8px 10px;border-radius:6px;outline:none;">
             <option value="claude-haiku-4-5-20251001" ${savedModel==='claude-haiku-4-5-20251001'?'selected':''}>Claude Haiku 4.5 — fast · low cost</option>
             <option value="claude-sonnet-4-6" ${savedModel==='claude-sonnet-4-6'?'selected':''}>Claude Sonnet 4.6 — balanced</option>
-            <option value="claude-opus-4-6" ${savedModel==='claude-opus-4-6'?'selected':''}>Claude Opus 4.6 — most capable</option>
+            <option value="claude-opus-4-6" ${savedModel==='claude-opus-4-6'?'selected':''}>Claude Opus 4.6 — capable</option>
+            <option value="claude-opus-4-7" ${savedModel==='claude-opus-4-7'?'selected':''}>Claude Opus 4.7 — advanced</option>
+            <option value="claude-opus-4-8" ${savedModel==='claude-opus-4-8'?'selected':''}>Claude Opus 4.8 — most capable</option>
           </select>
         </div>
         <div style="display:flex;gap:10px;">

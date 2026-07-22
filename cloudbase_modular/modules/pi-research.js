@@ -74,7 +74,7 @@ async function exportBlindedMmasCSV() {
         _piBlindId(a.patient_number || a._fbKey || ''),
         _piBlindId(a.institution_code || '').slice(0, 6),
         new Date(a.timestamp).toISOString(),
-        (a.score || 0).toFixed(2), a.adherence_level || 'N/A', pat,
+        (a.score || 0).toFixed(2), (a.score||0) >= 8 ? 'High' : (a.score||0) >= 6 ? 'Medium' : 'Low', pat,
         a.q1 ?? '', a.q2 ?? '', a.q3 ?? '', a.q4 ?? '',
         a.q5 ?? '', a.q6 ?? '', a.q7 ?? '', a.q8 ?? '',
         a.condition || '', a.num_medications || '', a.drug_name || '',
@@ -169,6 +169,9 @@ async function initPiResearchPanel() {
       window._piAllRecords = records;
       if (typeof renderPiSiteMatrix === 'function') renderPiSiteMatrix(window._piSiteMatrixData || [], records);
       if (typeof renderPiActivityFeed === 'function') renderPiActivityFeed(records, window._piAmendmentsCache || []);
+
+      // Refresh the Overview tab command center with live cohort data
+      if (typeof window._piRefreshOverview === 'function') window._piRefreshOverview(records, savedTarget);
     });
   });
 
@@ -622,8 +625,11 @@ function loadPiSnapshots() {
       </div>`;
     }
     el.innerHTML = html;
-  }).catch(() => {
-    el.innerHTML = '<div style="color:rgba(239,68,68,0.7);font-size:0.76rem;">Could not load snapshots.</div>';
+  }).catch(function(err) {
+    var _isPerm = err && (err.code === 'PERMISSION_DENIED' || (err.message && err.message.indexOf('permission_denied') !== -1));
+    el.innerHTML = '<div style="color:rgba(239,68,68,0.6);font-size:0.76rem;padding:8px 0;">'
+      + (_isPerm ? 'Snapshot access restricted \u2014 contact your administrator.' : 'Could not load snapshots.')
+      + '</div>';
   });
 }
 
@@ -685,8 +691,8 @@ function loadPiAuditLog() {
     }
     html += '</tbody></table>';
     el.innerHTML = html;
-  }).catch(() => {
-    el.innerHTML = '<div style="color:rgba(239,68,68,0.7);font-size:0.76rem;">Could not load audit log.</div>';
+  }).catch(function(err) {
+    if (el) el.innerHTML = '<div style="color:rgba(239,68,68,0.6);font-size:0.76rem;padding:8px 0;">Could not load audit log' + (err && err.code === 'PERMISSION_DENIED' ? ' \u2014 insufficient permissions.' : '.') + '</div>';
   });
 }
 
@@ -799,9 +805,6 @@ function closeProvisionModal() {
   const modal = document.getElementById('pi-provision-modal');
   if (modal) modal.style.display = 'none';
 }
-
-// Legacy stub — kept so any old references don't throw
-async function submitProvisionSite() { closeProvisionModal(); }
 
 function loadPiSites() {
   if (!isPIMode() || !currentWorkspace) return;
@@ -965,7 +968,7 @@ async function generateStudyPackage() {
   <h2>PE Domain Distribution by Site</h2>
   <table><thead><tr><th>Site</th><th>n</th><th>Architecture</th><th>Execution</th><th>Context</th></tr></thead>
   <tbody>${siteRows}</tbody></table>
-  <div style="font-size:10px;color:#8899aa;margin-top:-10px;margin-bottom:20px;">PE = (A × E × C)<sup>1/3</sup> · Architecture: mean(Q2,Q3,Q6) · Execution: mean(Q1,Q4,Q5,Q8) · Context: Q7</div>
+  <div style="font-size:10px;color:#8899aa;margin-top:-10px;margin-bottom:20px;">PE = (A × E × C)<sup>1/3</sup> · Architecture: mean(Q2,Q3,Q6) · Execution: mean(Q1,Q5,Q8) · Context-Guard: 0.5 + 0.5×mean(Q4,Q7)</div>
 
   <h2>Instruments &amp; Measures</h2>
   <table><thead><tr><th>Instrument</th><th>Version</th><th>Citation</th></tr></thead><tbody>
@@ -1823,9 +1826,9 @@ async function generateIrbProgressReport() {
   const total = records.length;
   const scores = records.map(r => parseFloat(r.score||r.mmas_score||0)).filter(s => s > 0);
   const avgScore = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2) : 'N/A';
-  const highAdh = scores.filter(s => s >= 6).length;
-  const medAdh  = scores.filter(s => s >= 4 && s < 6).length;
-  const lowAdh  = scores.filter(s => s < 4).length;
+  const highAdh = scores.filter(s => s >= 8).length;
+  const medAdh  = scores.filter(s => s >= 6 && s < 8).length;
+  const lowAdh  = scores.filter(s => s < 6).length;
   const countries = [...new Set(records.map(r => r.country).filter(Boolean))];
   const studyTitle = (window._atlasActiveStudy && window._atlasActiveStudy.title) || localStorage.getItem('atlas_active_study_title') || 'current study';
   const targetN = (window.workspaceProfile && window.workspaceProfile.enrollmentTarget) || '(target not set)';
@@ -1838,7 +1841,7 @@ Principal Investigator: ${piName}
 Total enrolled participants: ${total} (target: ${targetN})
 Countries represented: ${countries.length > 0 ? countries.slice(0,8).join(', ') : 'not recorded'}
 Mean MMAS adherence score: ${avgScore}/8
-Adherence distribution: High (≥6): ${highAdh} (${total ? Math.round(100*highAdh/total) : 0}%) | Medium (4-5): ${medAdh} (${total ? Math.round(100*medAdh/total) : 0}%) | Low (<4): ${lowAdh} (${total ? Math.round(100*lowAdh/total) : 0}%)
+Adherence distribution (validated MMAS-8 cutoffs): High (score = 8): ${highAdh} (${total ? Math.round(100*highAdh/total) : 0}%) | Medium (score ≥6 to <8): ${medAdh} (${total ? Math.round(100*medAdh/total) : 0}%) | Low (score <6): ${lowAdh} (${total ? Math.round(100*lowAdh/total) : 0}%)
 PEACS assessments completed: ${peacsRec.length}
 
 Write a professional IRB progress report narrative section (3-4 paragraphs). Include: enrollment status and trajectory, summary of adherence findings to date, any notable patterns, and a brief statement on data integrity and study conduct. Use formal academic language appropriate for an IRB committee. Do not fabricate specific dates or names beyond what is provided.`;
@@ -1849,7 +1852,7 @@ Write a professional IRB progress report narrative section (3-4 paragraphs). Inc
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 800,
         system: 'You are a professional research documentation specialist generating IRB progress report narratives for clinical adherence research studies. Write in formal academic style.',
         messages: [{ role: 'user', content: prompt }]
@@ -2037,7 +2040,7 @@ function togglePiSiteDetail(wsKey, idx) {
   const enrolled = records.filter(r => r.mmas_score !== undefined).length;
   const scores = records.map(r => r.mmas_score).filter(v => v != null);
   const meanScore = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2) : '—';
-  const highAdh = scores.length ? Math.round(scores.filter(s => s >= 6).length / scores.length * 100) : '—';
+  const highAdh = scores.length ? Math.round(scores.filter(s => s >= 8).length / scores.length * 100) : '—';
 
   // Recent records for mini log
   const recent = records
@@ -2291,7 +2294,7 @@ function _piPsyPearsonR(a,b) {
   for(var i=0;i<n;i++){num+=(a[i]-ma)*(b[i]-mb);da+=(a[i]-ma)*(a[i]-ma);db+=(b[i]-mb)*(b[i]-mb);}
   return (da>0&&db>0)?num/Math.sqrt(da*db):NaN;
 }
-function _piPsyCohenD(m1,s1,m2,s2){var p=Math.sqrt((s1*s1+s2*s2)/2);return p>0?(m1-m2)/p:NaN;}
+function _piPsyCohenD(m1,s1,m2,s2){return s1>0?(m1-m2)/s1:NaN;} // single-sample d: divide by sample SD only
 function _piPsyEffLabel(d){var a=Math.abs(d||0);return a>=0.80?'large':a>=0.50?'medium':a>=0.20?'small':'negligible';}
 function _piPsyFmt(v,dec){return isFinite(v)?v.toFixed(dec!=null?dec:3):'—';}
 
@@ -2459,14 +2462,14 @@ function _piPsyDistributions(body) {
     var peVals = mapRows.map(function(r){
       var a=parseFloat(r.arch_score)||((+(r.map_q2||r.q2)||0)+(+(r.map_q3||r.q3)||0)+(+(r.map_q6||r.q6)||0))/3;
       var e=parseFloat(r.exec_score)||((+(r.map_q1||r.q1)||0)+(+(r.map_q5||r.q5)||0)+(+(r.map_q8||r.q8)||0))/3;
-      var c=parseFloat(r.ctx_score)||(+(r.map_q7||r.q7)||0);
-      return Math.pow(Math.max(0,a*e*(0.5+0.5*c)),1/3);
+      var c=parseFloat(r.ctx_score)||(0.5+0.5*((+(r.map_q4||r.q4)||0)+(+(r.map_q7||r.q7)||0))/2);
+      return Math.pow(Math.max(0,a*e*c),1/3);
     });
     var m=_piPsyMean(peVals), sd=_piPsySD(peVals);
     // Domain means
     var archMean=_piPsyMean(mapRows.map(function(r){return parseFloat(r.arch_score)||((+(r.map_q2||r.q2)||0)+(+(r.map_q3||r.q3)||0)+(+(r.map_q6||r.q6)||0))/3;}));
     var execMean=_piPsyMean(mapRows.map(function(r){return parseFloat(r.exec_score)||((+(r.map_q1||r.q1)||0)+(+(r.map_q5||r.q5)||0)+(+(r.map_q8||r.q8)||0))/3;}));
-    var ctxMean =_piPsyMean(mapRows.map(function(r){return parseFloat(r.ctx_score)||(+(r.map_q7||r.q7)||0);}));
+    var ctxMean =_piPsyMean(mapRows.map(function(r){return parseFloat(r.ctx_score)||(0.5+0.5*((+(r.map_q4||r.q4)||0)+(+(r.map_q7||r.q7)||0))/2);}));
     html += _piPsyCard(
       'MAP · PE Distribution + Domain Profile',
       'N\u2009=\u2009'+mapRows.length+' · Mean PE\u2009=\u2009'+_piPsyFmt(m,3)+' · SD\u2009=\u2009'+_piPsyFmt(sd,3),
@@ -2612,13 +2615,13 @@ function _piPsyClassification(body) {
     html += _piPsyCard('MMAS-8 · Adherence Classification','N\u2009=\u2009'+mmasRows.length, _piPsyEmpty('Need \u2265 6 MMAS-8 records.'));
   }
 
-  // MAP: Predicted High PE = PE ≥ 0.72 (baseline μ), Actual High PE = PE ≥ 0.60 (clinical threshold)
+  // MAP: Predicted High PE = PE ≥ 0.72 (provisional illustrative threshold), Actual High PE = PE ≥ 0.60 (clinical threshold)
   if (mapRows.length >= 6) {
     var peVals  = mapRows.map(function(r){
       var a=parseFloat(r.arch_score)||((+(r.map_q2||r.q2)||0)+(+(r.map_q3||r.q3)||0)+(+(r.map_q6||r.q6)||0))/3;
       var e=parseFloat(r.exec_score)||((+(r.map_q1||r.q1)||0)+(+(r.map_q5||r.q5)||0)+(+(r.map_q8||r.q8)||0))/3;
-      var c=parseFloat(r.ctx_score)||(+(r.map_q7||r.q7)||0);
-      return Math.pow(Math.max(0,a*e*(0.5+0.5*c)),1/3);
+      var c=parseFloat(r.ctx_score)||(0.5+0.5*((+(r.map_q4||r.q4)||0)+(+(r.map_q7||r.q7)||0))/2);
+      return Math.pow(Math.max(0,a*e*c),1/3);
     });
     var archVals=mapRows.map(function(r){return parseFloat(r.arch_score)||((+(r.map_q2||r.q2)||0)+(+(r.map_q3||r.q3)||0)+(+(r.map_q6||r.q6)||0))/3;});
     var execVals=mapRows.map(function(r){return parseFloat(r.exec_score)||((+(r.map_q1||r.q1)||0)+(+(r.map_q5||r.q5)||0)+(+(r.map_q8||r.q8)||0))/3;});
@@ -2639,7 +2642,7 @@ function _piPsyClassification(body) {
       'MAP · PE Zone Classification',
       'N\u2009=\u2009'+n+' · Non-compensatory PE with context guard',
       _piPsyConfusionGrid(tp,fp,fn,tn,'High PE','Not High PE',
-        'Predicted: PE\u2009\u2265\u20090.72 (baseline \u03bc) \u2502 Actual: PE\u2009\u2265\u20090.60 (clinical threshold)') +
+        'Predicted: PE\u2009\u2265\u20090.72 (provisional threshold) \u2502 Actual: PE\u2009\u2265\u20090.60 (clinical threshold)') +
       '<div style="margin-top:10px;">' +
         _piPsyKpi('INA Pattern', nINA+' ('+Math.round(nINA/Math.max(1,nNonHigh)*100)+'%)', 'Architecture\u2009<\u2009Execution', undefined) +
         _piPsyKpi('UNA Pattern', nUNA+' ('+Math.round(nUNA/Math.max(1,nNonHigh)*100)+'%)', 'Execution\u2009<\u2009Architecture', undefined) +
@@ -2707,8 +2710,8 @@ function _piPsyCrossInstrument(body) {
   function _mapPE(r){
     var a=parseFloat(r.arch_score)||((+(r.map_q2||r.q2)||0)+(+(r.map_q3||r.q3)||0)+(+(r.map_q6||r.q6)||0))/3;
     var e=parseFloat(r.exec_score)||((+(r.map_q1||r.q1)||0)+(+(r.map_q5||r.q5)||0)+(+(r.map_q8||r.q8)||0))/3;
-    var c=parseFloat(r.ctx_score)||(+(r.map_q7||r.q7)||0);
-    return Math.pow(Math.max(0,a*e*(0.5+0.5*c)),1/3);
+    var c=parseFloat(r.ctx_score)||(0.5+0.5*((+(r.map_q4||r.q4)||0)+(+(r.map_q7||r.q7)||0))/2);
+    return Math.pow(Math.max(0,a*e*c),1/3);
   }
   // PEACS PE
   function _peacsPE(r){ return parseFloat(r.pe_score||r.pe)||0; }
@@ -2782,7 +2785,7 @@ function _piPsyCrossInstrument(body) {
 // ── METHODS ───────────────────────────────────────────────────────────────────
 function _piPsyPrintMethods() {
   var w = window.open('', '_blank', 'width=750,height=960,scrollbars=yes');
-  if (!w) { alert('Pop-up blocked — allow pop-ups then try again.'); return; }
+  if (!w) { showToast('Pop-up blocked — allow pop-ups then try again.', 4000); return; }
   var css = [
     'body{font-family:"IBM Plex Mono",monospace;max-width:660px;margin:36px auto;color:#1a1a1a;font-size:0.78rem;line-height:1.6;}',
     'h1{font-size:1.0rem;font-weight:700;margin:0 0 4px;letter-spacing:0.04em;}',
@@ -3073,12 +3076,10 @@ async function sendTestPulseDigest() {
     if (resp.ok) {
       showToast('Test digest sent to ' + email, 3500);
     } else {
-      // Endpoint not yet deployed — show stub success
-      showToast('Test digest sent to ' + email, 3500);
+      showToast('Digest endpoint returned ' + resp.status + '. Email delivery not yet configured — contact your administrator.', 4000);
     }
   } catch(e) {
-    // Lambda not yet deployed — stub success toast
-    showToast('Test digest sent to ' + email, 3500);
+    showToast('Pulse digest endpoint not reachable. Email delivery is not yet configured for this deployment.', 4000);
   }
 }
 

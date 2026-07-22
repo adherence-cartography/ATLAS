@@ -287,7 +287,7 @@ function downloadPubLicense() {
       <div class="plc-subtitle">Instrument Use Authorization for Academic Publication</div>
 
       <table class="plc-table">
-        <tr><td>Principal Investigator</td><td>${d.pi_name}</td></tr>
+        <tr><td>Principal Investigator</td><td>${d.pi || d.pi_name || ''}</td></tr>
         <tr><td>Institution</td><td>${d.institution}</td></tr>
         <tr><td>Study Title</td><td><em>${d.study_title}</em></td></tr>
         <tr><td>Patient Population</td><td>${d.population}</td></tr>
@@ -308,7 +308,7 @@ function downloadPubLicense() {
       </div>
 
       <div class="plc-statement">
-        This letter confirms that <strong>${d.pi_name}</strong> of <strong>${d.institution}</strong>
+        This letter confirms that <strong>${d.pi || d.pi_name || ''}</strong> of <strong>${d.institution}</strong>
         is hereby granted a non-exclusive, non-transferable license to use the Morisky Medication
         Adherence Scale (MMAS-8)® instrument, as administered and validated via the ATLAS adherence
         platform, in the publication of the research study titled <em>"${d.study_title}"</em>.
@@ -495,12 +495,12 @@ async function guestPubLicUpload(file) {
 
   setStatus('Validating ' + dataRows.length + ' rows (' + (tool === 'map' ? 'MAP' : 'MMAS-8') + ')…');
 
-  const writes = [];
+  // Phase 1 — parse and validate all rows, collect pending records (no writes yet)
+  const _pendingRecords = [];
 
   for (const row of dataRows) {
-    // Col layout identical in both templates:
-    // 0=Country 1=City 2=PatientNum 3=Condition 4=DrugType 5=DrugName
-    // 6=DrugStrength 7=Route 8=Gender 9=AgeRange 10=Education 11–18=Q1–Q8 (or MAP_Q1–MAP_Q8)
+    // Col layout: 0=Country 1=City 2=PatientNum 3=Condition 4=DrugType 5=DrugName
+    // 6=DrugStrength 7=Route 8=Gender 9=AgeRange 10=Education 11–18=Q1–Q8
     const [country_raw, city_raw, patientNum, condition, drugType, drugName,
            drugStrength, route, gender, ageRange, education,
            _q1, _q2, _q3, _q4, _q5, _q6, _q7, _q8] = row;
@@ -509,12 +509,10 @@ async function guestPubLicUpload(file) {
     if (qVals.some(v => v === undefined || v === null || v === '') ||
         _q8 === undefined || _q8 === null || _q8 === '') { skipped++; continue; }
 
-    // dndComputeScore handles Q1-Q7 Yes/No and Q8 frequency strings — same function
-    // used by the subscription DnD bulk upload path.
     const rawScore = parseFloat(dndComputeScore(_q1,_q2,_q3,_q4,_q5,_q6,_q7,_q8));
     const q1=_yn(_q1,false), q2=_yn(_q2,false), q3=_yn(_q3,false), q4=_yn(_q4,false),
           q5=_yn(_q5,true),  q6=_yn(_q6,false), q7=_yn(_q7,false);
-    const q8 = rawScore - (q1+q2+q3+q4+q5+q6+q7); // derived — avoids duplicating q8map
+    const q8 = rawScore - (q1+q2+q3+q4+q5+q6+q7);
     if (isNaN(rawScore) || rawScore < 0 || rawScore > 8) { skipped++; continue; }
 
     const country = typeof normalizeCountry === 'function'
@@ -527,63 +525,8 @@ async function guestPubLicUpload(file) {
 
     if (country) countries.add(country);
     validated++;
-
-    if (typeof database !== 'undefined') {
-      const submission = {
-        user_id:          typeof getUserId === 'function' ? getUserId() : 'pub_license',
-        timestamp:        ts,
-        tool:             tool,   // 'mmas' or 'map' — keeps instruments separate in analytics
-        score:            rawScore,
-        adherence_level:  cat.label,
-        country:          country || 'Unknown',
-        city:             city,
-        latitude:         null, longitude: null,
-        patient_number:   String(patientNum   || ''),
-        condition:        String(condition    || ''),
-        drug_type:        String(drugType     || ''),
-        drug_name:        String(drugName     || ''),
-        drug_strength:    String(drugStrength || ''),
-        route_of_administration: String(route || ''),
-        gender:           String(gender    || ''),
-        age_range:        String(ageRange   || ''),
-        education_level:  String(education  || ''),
-        role:             'pub_license',
-        data_tier:        'publication',
-        q1, q2, q3, q4, q5, q6, q7, q8,
-        institution_code: null,
-        source:           'pub_license',
-        upload_source:    'pub_license',
-        ...studyMeta,
-      };
-
-      // Compute PE domain scores for the selected instrument
-      if (tool !== 'map' && typeof computeMMASPE === 'function') {
-        const pe = computeMMASPE(submission);
-        if (pe) { submission.mmas_pe=pe.pe; submission.mmas_a=pe.a; submission.mmas_e=pe.e; submission.mmas_c=pe.c; }
-      }
-      if (tool === 'map' && typeof computeMapPE === 'function') {
-        const pe = computeMapPE(submission);
-        if (pe) { submission.map_pe=pe.pe; submission.map_a=pe.a; submission.map_e=pe.e; submission.map_c=pe.c; }
-      }
-
-      writes.push(
-        atlasDB('assessments').push(submission).then(() => {
-          // Geo record for the global map and live ticker
-          return database.ref('mapData').push({
-            score:            rawScore,
-            adherence_level:  cat.label,
-            tool:             tool,
-            country:          country || 'Unknown',
-            city:             city,
-            latitude:         null, longitude: null,
-            timestamp:        ts,
-            institution_code: null,
-            source:           'pub_license',
-            ...studyMeta,
-          });
-        }).catch(() => {})
-      );
-    }
+    _pendingRecords.push({ country, city, cat, rawScore, q1,q2,q3,q4,q5,q6,q7,q8,
+      patientNum, condition, drugType, drugName, drugStrength, route, gender, ageRange, education });
   }
 
   if (validated < 10) {
@@ -591,7 +534,87 @@ async function guestPubLicUpload(file) {
     return;
   }
 
+  // Phase 2 — geocode unique city+country pairs (Nominatim with centroid fallback)
+  setStatus('Geocoding locations… (this takes a moment)');
+  const _PUB_CENTROIDS = {'Afghanistan':[33.93,67.71],'Algeria':[28.03,1.66],'Angola':[-11.20,17.87],'Argentina':[-38.42,-63.62],'Australia':[-25.27,133.78],'Austria':[47.52,14.55],'Azerbaijan':[40.14,47.58],'Bangladesh':[23.68,90.36],'Bolivia':[-16.29,-63.59],'Brazil':[-14.24,-51.93],'Cambodia':[12.57,104.99],'Cameroon':[7.37,12.35],'Canada':[56.13,-106.35],'Chile':[-35.68,-71.54],'China':[35.86,104.20],'Colombia':[4.57,-74.30],'Croatia':[45.10,15.20],'Cuba':[21.52,-77.78],'Czechia':[49.82,15.47],'Czech Republic':[49.82,15.47],'Denmark':[56.26,9.50],'Ecuador':[-1.83,-78.18],'Egypt':[26.82,30.80],'Ethiopia':[9.15,40.49],'Finland':[61.92,25.75],'France':[46.23,2.21],'Germany':[51.17,10.45],'Ghana':[7.95,-1.02],'Greece':[39.07,21.82],'Guatemala':[15.78,-90.23],'Honduras':[15.20,-86.24],'Hungary':[47.16,19.50],'India':[20.59,78.96],'Indonesia':[-0.79,113.92],'Iran':[32.43,53.69],'Iraq':[33.22,43.68],'Ireland':[53.41,-8.24],'Israel':[31.05,34.85],'Italy':[41.87,12.57],'Japan':[36.20,138.25],'Jordan':[30.59,36.24],'Kazakhstan':[48.02,66.92],'Kenya':[0.02,37.91],'Kuwait':[29.31,47.48],'Malaysia':[4.21,101.98],'Mexico':[23.63,-102.55],'Morocco':[31.79,-7.09],'Mozambique':[-18.67,35.53],'Myanmar':[16.87,96.08],'Nepal':[28.39,84.12],'Netherlands':[52.13,5.29],'New Zealand':[-40.90,174.89],'Nicaragua':[12.87,-85.21],'Nigeria':[9.08,8.68],'Norway':[60.47,8.47],'Oman':[21.51,55.92],'Pakistan':[30.38,69.35],'Panama':[8.54,-80.78],'Peru':[-9.19,-75.02],'Philippines':[12.88,121.77],'Poland':[51.92,19.15],'Portugal':[39.40,-8.22],'Qatar':[25.35,51.18],'Romania':[45.94,24.97],'Russia':[61.52,105.32],'Saudi Arabia':[23.89,45.08],'Senegal':[14.50,-14.45],'Serbia':[44.02,21.01],'Singapore':[1.35,103.82],'Somalia':[5.15,46.20],'South Africa':[-30.56,22.94],'South Korea':[35.91,127.77],'Spain':[40.46,-3.75],'Sri Lanka':[7.87,80.77],'Sweden':[60.13,18.64],'Switzerland':[46.82,8.23],'Tanzania':[-6.37,34.89],'Thailand':[15.87,100.99],'Tunisia':[33.89,9.54],'Turkey':[38.96,35.24],'Uganda':[1.37,32.29],'Ukraine':[48.38,31.17],'United Arab Emirates':[23.42,53.85],'United Kingdom':[55.38,-3.44],'United States':[37.09,-95.71],'Uruguay':[-32.52,-55.77],'Uzbekistan':[41.38,64.59],'Venezuela':[6.42,-66.59],'Vietnam':[14.06,108.28],'Yemen':[15.55,48.52],'Zambia':[-13.13,27.85],'Zimbabwe':[-19.02,29.15]};
+  const _geoCache = {};
+
+  // Collect unique city+country pairs and geocode each once
+  const uniquePairs = [...new Set(_pendingRecords.map(r => r.country + '|' + r.city))];
+  for (const pair of uniquePairs) {
+    const sepIdx = pair.indexOf('|');
+    const c = pair.slice(0, sepIdx), ci = pair.slice(sepIdx + 1);
+    const cacheKey = pair.toLowerCase();
+    if (_geoCache[cacheKey] !== undefined) continue;
+    let lat = 0, lng = 0;
+    try {
+      const geoQ = ci && ci.toLowerCase() !== 'unknown'
+        ? 'city=' + encodeURIComponent(ci) + '&country=' + encodeURIComponent(c)
+        : 'q=' + encodeURIComponent(c) + '&featuretype=country';
+      const geo = await fetch(
+        'https://nominatim.openstreetmap.org/search?' + geoQ + '&format=json&limit=1',
+        { signal: AbortSignal.timeout(6000), headers: { 'User-Agent': 'ATLAS-AdherenceProject/2026' } }
+      );
+      const gd = await geo.json();
+      if (gd.length > 0) { lat = parseFloat(gd[0].lat); lng = parseFloat(gd[0].lon); }
+      await new Promise(r => setTimeout(r, 1100)); // Nominatim 1 req/sec
+    } catch (_ge) { /* use centroid fallback */ }
+    if (!lat && !lng) { const ctr = _PUB_CENTROIDS[c]; if (ctr) { lat=ctr[0]; lng=ctr[1]; } }
+    _geoCache[cacheKey] = { lat: lat || null, lng: lng || null };
+  }
+
+  // Phase 3 — write all records with resolved coordinates
   setStatus('Saving ' + validated + ' records…');
+  const writes = [];
+  for (const rec of _pendingRecords) {
+    if (typeof database === 'undefined') continue;
+    const coords = _geoCache[(rec.country + '|' + rec.city).toLowerCase()] || { lat: null, lng: null };
+    const submission = {
+      user_id:          typeof getUserId === 'function' ? getUserId() : 'pub_license',
+      timestamp:        ts,
+      tool,
+      score:            rec.rawScore,
+      adherence_level:  rec.cat.label,
+      country:          rec.country || 'Unknown',
+      city:             rec.city,
+      latitude:         coords.lat, longitude: coords.lng,
+      patient_number:   String(rec.patientNum   || ''),
+      condition:        String(rec.condition    || ''),
+      drug_type:        String(rec.drugType     || ''),
+      drug_name:        String(rec.drugName     || ''),
+      drug_strength:    String(rec.drugStrength || ''),
+      route_of_administration: String(rec.route || ''),
+      gender:           String(rec.gender    || ''),
+      age_range:        String(rec.ageRange   || ''),
+      education_level:  String(rec.education  || ''),
+      role:             'pub_license',
+      data_tier:        'publication',
+      q1:rec.q1, q2:rec.q2, q3:rec.q3, q4:rec.q4, q5:rec.q5, q6:rec.q6, q7:rec.q7, q8:rec.q8,
+      institution_code: null,
+      source:           'pub_license',
+      upload_source:    'pub_license',
+      ...studyMeta,
+    };
+    if (tool !== 'map' && typeof computeMMASPE === 'function') {
+      const pe = computeMMASPE(submission);
+      if (pe) { submission.mmas_pe=pe.pe; submission.mmas_a=pe.a; submission.mmas_e=pe.e; submission.mmas_c=pe.c; }
+    }
+    if (tool === 'map' && typeof computeMapPE === 'function') {
+      const pe = computeMapPE(submission);
+      if (pe) { submission.map_pe=pe.pe; submission.map_a=pe.a; submission.map_e=pe.e; submission.map_c=pe.c; }
+    }
+    writes.push(
+      atlasDB('assessments').push(submission).then(() =>
+        database.ref('mapData').push({
+          score: rec.rawScore, adherence_level: rec.cat.label, tool,
+          country: rec.country || 'Unknown', city: rec.city,
+          latitude: coords.lat, longitude: coords.lng,
+          timestamp: ts, institution_code: null, source: 'pub_license', ...studyMeta,
+        })
+      ).catch(() => {})
+    );
+  }
+
   try { await Promise.allSettled(writes); } catch(e) {}
 
   const countriesArr = Array.from(countries).filter(Boolean);
@@ -803,7 +826,7 @@ var _STU_CITATIONS = {
 // ── Methods paragraphs ─────────────────────────────────────────────────────
 
 var _STU_METHODS = {
-  map: 'The Multidimensional Adherence Parameter (MAP) instrument was administered via ATLAS v8 (Adherence Cartography, 2026; https://atlas.adherence.cc). MAP is an 8-item instrument measuring medication adherence across three behavioral domains: Architecture (intentional structural adherence; items 2, 3, 6), Execution (behavioral compliance; items 1, 4, 5, 8), and Context (perceived burden; item 7). Domain scores (0\u20131) are combined into a Predictive Emergence (PE) composite using a geometric mean model grounded in the Theory of Predictive Emergence (Morisky, 2026). Higher PE scores indicate greater adherence stability. All sessions were self-administered via secure digital interface following electronic informed consent. Participants were assigned de-identified numeric identifiers prior to assessment.',
+  map: 'The Multidimensional Adherence Parameter (MAP) instrument was administered via ATLAS v8 (Adherence Cartography, 2026; https://atlas.adherence.cc). MAP is an 8-item instrument measuring medication adherence across three behavioral domains: Architecture (intentional structural adherence; items 2, 3, 6), Execution (behavioral compliance; items 1, 5, 8), and Context-Guard (contextual barriers; items 4, 7; scored as 0.5 + 0.5 \u00d7 mean(Q4, Q7)). Domain scores (0\u20131) are combined into a Predictive Emergence (PE) composite using a geometric mean model grounded in the Theory of Predictive Emergence (Morisky, 2026). Higher PE scores indicate greater adherence stability. All sessions were self-administered via secure digital interface following electronic informed consent. Participants were assigned de-identified numeric identifiers prior to assessment.',
 
   mmas: 'Medication adherence was assessed using the 8-item Morisky Medication Adherence Scale (MMAS-8; Morisky et al., 2008; Krousel-Wood et al., 2009), administered via ATLAS v8 (Adherence Cartography, 2026). The MMAS-8 is a validated, self-report instrument with established categories of high adherence (score\u2009=\u20098), medium adherence (6\u2009\u2264\u2009score\u2009<\u20098), and low adherence (score\u2009<\u20096). Item-response patterns were further classified as intentional non-adherence (INA; deliberate dose modification) or unintentional non-adherence (UNA; forgetting or practical barriers) using the ATLAS classification algorithm. All sessions were self-administered following electronic informed consent. Participants were assigned de-identified numeric identifiers prior to assessment.',
 
@@ -880,7 +903,7 @@ function stuCopyBlock(id, btn) {
 // ── Compute Bonett (2002) approximate 95% CI for Cronbach alpha ────────────
 function _stuAlphaCI(alpha, n, k) {
   if (!isFinite(alpha) || n < 2 || k < 2) return { low: NaN, high: NaN };
-  var se = Math.sqrt(2 * k * Math.pow(1 - alpha, 2) / (n * (k - 1)));
+  var se = Math.sqrt(2 * k * Math.pow(1 - alpha, 2) / ((n - 1) * (k - 1)));
   var low  = Math.max(0, alpha - 1.96 * se);
   var high = Math.min(1, alpha + 1.96 * se);
   return { low: low, high: high };
@@ -895,8 +918,8 @@ function _stuBuildMapResults(mapRows) {
   var sumA = 0, sumE = 0, sumC = 0;
   mapRows.forEach(function(r) {
     var a = parseFloat(r.arch_score) || ((parseFloat(r.q2||0)+parseFloat(r.q3||0)+parseFloat(r.q6||0))/3);
-    var e = parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q4||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/4);
-    var c = parseFloat(r.ctx_score)  ||  parseFloat(r.q7||0);
+    var e = parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/3);
+    var c = parseFloat(r.ctx_score) || Math.max(0.5, 0.5 + 0.5 * ((parseFloat(r.q4||0) + parseFloat(r.q7||0)) / 2));
     sumA += a; sumE += e; sumC += c;
   });
   var avgA = sumA/n, avgE = sumE/n, avgC = sumC/n;
@@ -906,8 +929,8 @@ function _stuBuildMapResults(mapRows) {
   var sdA = 0, sdE = 0, sdC = 0;
   mapRows.forEach(function(r) {
     var a = parseFloat(r.arch_score) || ((parseFloat(r.q2||0)+parseFloat(r.q3||0)+parseFloat(r.q6||0))/3);
-    var e = parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q4||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/4);
-    var c = parseFloat(r.ctx_score)  ||  parseFloat(r.q7||0);
+    var e = parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/3);
+    var c = parseFloat(r.ctx_score) || Math.max(0.5, 0.5 + 0.5 * ((parseFloat(r.q4||0) + parseFloat(r.q7||0)) / 2));
     sdA += Math.pow(a - avgA, 2); sdE += Math.pow(e - avgE, 2); sdC += Math.pow(c - avgC, 2);
   });
   var denom = n > 1 ? n - 1 : 1;
@@ -948,18 +971,17 @@ function _stuBuildMapResults(mapRows) {
   var fmt = function(v) { return isFinite(v) ? v.toFixed(3) : '\u2014'; };
   var fmt2 = function(v) { return isFinite(v) ? v.toFixed(2) : '\u2014'; };
 
-  // Cohen's d vs ATLAS cross-cohort PE baseline (global estimate ≈ 0.72, SD ≈ 0.16)
+  // Cohen's d vs provisional PE norm (illustrative ≈ 0.72, SD ≈ 0.16 — not yet validated cross-cohort)
   var peSD = 0;
   var peVals = mapRows.map(function(r) {
     var a = parseFloat(r.arch_score) || ((parseFloat(r.q2||0)+parseFloat(r.q3||0)+parseFloat(r.q6||0))/3);
-    var e = parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q4||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/4);
-    var c = parseFloat(r.ctx_score)  ||  parseFloat(r.q7||0);
+    var e = parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/3);
+    var c = parseFloat(r.ctx_score) || Math.max(0.5, 0.5 + 0.5 * ((parseFloat(r.q4||0) + parseFloat(r.q7||0)) / 2));
     return Math.pow(Math.max(0, a*e*c), 1/3);
   });
   peSD = Math.sqrt(peVals.reduce(function(s,x){return s+Math.pow(x-pe,2);},0)/(peVals.length>1?peVals.length-1:1));
-  var globalPE = 0.72, globalPE_SD = 0.16;
-  var pePooledSD = Math.sqrt((peSD*peSD + globalPE_SD*globalPE_SD)/2);
-  var cohensD_pe = pePooledSD > 0 ? (pe - globalPE) / pePooledSD : NaN;
+  var globalPE = 0.72; // provisional illustrative norm — not yet validated cross-cohort
+  var cohensD_pe = peSD > 0 ? (pe - globalPE) / peSD : NaN;
   var _effLabel = function(d) { var a=Math.abs(d); return a>=0.80?'large':a>=0.50?'medium':a>=0.20?'small':'negligible'; };
 
   var lines = [
@@ -970,7 +992,7 @@ function _stuBuildMapResults(mapRows) {
   ];
   if (n >= 5 && isFinite(cohensD_pe)) {
     var dDir = cohensD_pe > 0 ? 'above' : 'below';
-    lines.push('Effect size relative to the ATLAS cross-cohort PE baseline (\u03bc\u2009=\u2009' + globalPE.toFixed(2) + '): d\u2009=\u2009' + cohensD_pe.toFixed(2) + ' (' + _effLabel(cohensD_pe) + ' effect, cohort is ' + dDir + ' the global norm).');
+    lines.push('Effect size vs provisional PE norm (\u03bc\u2009=\u2009' + globalPE.toFixed(2) + ', illustrative): d\u2009=\u2009' + cohensD_pe.toFixed(2) + ' (' + _effLabel(cohensD_pe) + ' effect, cohort is ' + dDir + ' provisional reference).');
   }
   return lines.join(' ');
 }
@@ -1311,6 +1333,8 @@ function stuRunPowerAdvisor(target) {
   // N_req >= 2k(1-alpha)^2 * 1.96^2 / ((k-1) * (alpha-target)^2)
   var nRequired = Math.ceil(2 * k * Math.pow(1 - alpha, 2) * 3.8416 / ((k - 1) * Math.pow(alpha - target, 2)));
   var nMore = Math.max(0, nRequired - n);
+  // Expose target for enrollment gauge
+  if (window._stuPowerState) window._stuPowerState.nRequired = nRequired;
 
   resultEl.style.background  = nMore === 0 ? '#f0fdf4' : '#fff7ed';
   resultEl.style.borderColor = nMore === 0 ? 'rgba(5,150,105,0.25)' : 'rgba(245,158,11,0.25)';
@@ -1749,6 +1773,136 @@ function resMapFilter(filter) {
 }
 // ── End Researcher Cohort Map ────────────────────────────────────────────────
 
+// ── Stability / Fragility Classifier ─────────────────────────────────────────
+function _tssfClass(r) {
+  var pe = r.pe != null ? +r.pe : null;
+  var a  = r.a  != null ? +r.a  : null;
+  var e  = r.e  != null ? +r.e  : null;
+  var c  = r.c  != null ? +r.c  : null;
+  var sc = r.score != null ? +r.score : null;
+  if (pe === null) return 'unknown';
+  if (a !== null && e !== null && c !== null && a < 0.55 && e < 0.55 && c < 0.55) return 'fragile';
+  if (sc !== null && sc >= 6 && pe < 0.65) return 'hidden';
+  if ((a !== null && a < 0.35) || (e !== null && e < 0.35) || (c !== null && c < 0.35)) return 'domain';
+  if (pe >= 0.65 && (a == null || a >= 0.55) && (e == null || e >= 0.55) && (c == null || c >= 0.55)) return 'stable';
+  return 'conditional';
+}
+
+// ── Stability/Fragility Glossary Card helper ──────────────────────────────────
+function _sfGlossCard(title, color, text) {
+  return '<div style="background:var(--bg);border:1px solid var(--border);border-left:3px solid '+color+';border-radius:8px;padding:12px 14px;">'
+    +'<div style="font-family:var(--font-mono);font-size:0.64rem;font-weight:600;color:'+color+';margin-bottom:5px;">'+title+'</div>'
+    +'<div style="font-size:0.78rem;color:var(--muted);line-height:1.55;">'+text+'</div>'
+    +'</div>';
+}
+
+// ── Fragility Watchlist renderer (records tab) ────────────────────────────────
+function _tsRenderFragilityWatchlist(container) {
+  var recs = (window._piAllRecords || []).filter(function(r){ return r.pe != null; });
+  if (!recs.length) {
+    container.innerHTML = '<div style="padding:20px;font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);">No MAP assessment data available for fragility analysis.</div>';
+    return;
+  }
+  var flagged = recs.filter(function(r){
+    var cl = _tssfClass(r);
+    return cl==='fragile'||cl==='hidden'||cl==='domain';
+  });
+  flagged.sort(function(a,b){ return (+a.pe||0)-(+b.pe||0); });
+
+  var classLabel = { fragile:'Compoundly Fragile', hidden:'Hidden Binding', domain:'Domain-Fragile', stable:'Stable', conditional:'Conditional', unknown:'Unknown' };
+  var classColor = { fragile:'#ef4444', hidden:'#f97316', domain:'#f59e0b', stable:'#10b981', conditional:'#3b82f6', unknown:'var(--dim)' };
+
+  function domainFlag(r) {
+    var flags = [];
+    if (r.a != null && +r.a < 0.35) flags.push('Arch');
+    if (r.e != null && +r.e < 0.35) flags.push('Exec');
+    if (r.c != null && +r.c < 0.35) flags.push('Ctx');
+    if (!flags.length && r.a != null && r.e != null && r.c != null) {
+      var arr = [{l:'Arch',v:+r.a},{l:'Exec',v:+r.e},{l:'Ctx',v:+r.c}];
+      arr.sort(function(a,b){return a.v-b.v;});
+      flags.push(arr[0].l + ' (' + arr[0].v.toFixed(2) + ')');
+    }
+    return flags.join(', ') || '—';
+  }
+
+  if (!flagged.length) {
+    container.innerHTML = '<div style="padding:20px 0;display:flex;align-items:center;gap:8px;">'
+      +'<span style="color:#10b981;font-size:1.2rem;">✓</span>'
+      +'<span style="font-family:var(--font-mono);font-size:0.78rem;color:#10b981;">No fragile patients identified in this cohort.</span>'
+      +'</div>';
+    return;
+  }
+
+  var rows = flagged.map(function(r) {
+    var cl = _tssfClass(r);
+    var pid = r.patient_number || r.id || r.patientId || '—';
+    return '<tr style="border-top:1px solid var(--border);">'
+      +'<td style="padding:5px 10px;font-family:var(--font-mono);font-size:0.72rem;color:var(--text);">'+(pid)+'</td>'
+      +'<td style="padding:5px 10px;"><span style="font-family:var(--font-mono);font-size:0.66rem;color:'+classColor[cl]+';background:'+classColor[cl]+'18;padding:1px 6px;border-radius:3px;">'+classLabel[cl]+'</span></td>'
+      +'<td style="padding:5px 10px;font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);text-align:right;">'+(r.pe!=null?(+r.pe).toFixed(3):'—')+'</td>'
+      +'<td style="padding:5px 10px;font-family:var(--font-mono);font-size:0.70rem;color:#f59e0b;">'+domainFlag(r)+'</td>'
+      +'</tr>';
+  }).join('');
+
+  container.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">'
+    +'Fragility Watchlist · '+flagged.length+' of '+recs.length+' patients flagged'
+    +'</div>'
+    +'<table style="width:100%;border-collapse:collapse;">'
+    +'<thead><tr style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);">'
+    +'<th style="padding:4px 10px;text-align:left;">Patient</th>'
+    +'<th style="padding:4px 10px;text-align:left;">Classification</th>'
+    +'<th style="padding:4px 10px;text-align:right;">PE</th>'
+    +'<th style="padding:4px 10px;text-align:left;">Failing Domain</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+// ── Domain Fragility Analysis renderer (analytics tab) ───────────────────────
+function _tsRenderDomainFragility(container) {
+  var recs = (window._piAllRecords || []).filter(function(r){ return r.a!=null && r.e!=null && r.c!=null; });
+  if (!recs.length) {
+    container.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);padding:16px 0;">No MAP domain data available.</div>';
+    return;
+  }
+
+  function domainStats(key) {
+    var vals = recs.map(function(r){ return +r[key]; });
+    var below35 = vals.filter(function(v){ return v<0.35; }).length;
+    var below55 = vals.filter(function(v){ return v<0.55; }).length;
+    var mean = vals.reduce(function(s,v){ return s+v; },0)/vals.length;
+    return { mean:mean, below35:below35, below55:below55, n:recs.length,
+      pct35:Math.round(below35/recs.length*100), pct55:Math.round(below55/recs.length*100) };
+  }
+
+  var A = domainStats('a'), E = domainStats('e'), C = domainStats('c');
+  var primaryDriver = A.pct35 >= E.pct35 && A.pct35 >= C.pct35 ? 'Architecture'
+    : E.pct35 >= C.pct35 ? 'Execution' : 'Context-Guard';
+  var primaryPct = Math.max(A.pct35, E.pct35, C.pct35);
+
+  function domRow(label, key, st) {
+    var barW = Math.round(st.pct55);
+    var c35 = st.pct35>=30?'#ef4444':st.pct35>=15?'#f59e0b':'#10b981';
+    return '<div style="margin-bottom:12px;">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+      +'<span style="font-family:var(--font-mono);font-size:0.70rem;color:var(--text);">'+label+'</span>'
+      +'<span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);">mean '+st.mean.toFixed(3)+' · <span style="color:'+c35+';">'+st.pct35+'% critical</span></span>'
+      +'</div>'
+      +'<div style="background:var(--border);border-radius:3px;height:6px;overflow:hidden;">'
+      +'<div style="background:linear-gradient(90deg,#ef4444,#f59e0b);height:100%;width:'+barW+'%;border-radius:3px;transition:width 0.5s;"></div>'
+      +'</div>'
+      +'<div style="font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);margin-top:3px;">'+st.below55+' patients below threshold (0.55) · '+st.pct55+'% of cohort</div>'
+      +'</div>';
+  }
+
+  container.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">MAP Domain Fragility Analysis</div>'
+    +'<div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-family:var(--font-mono);font-size:0.74rem;color:var(--text);">'
+    +'Primary fragility driver: <strong style="color:#ef4444;">'+primaryDriver+'</strong> — '+primaryPct+'% of cohort below critical threshold (0.35)'
+    +'</div>'
+    +domRow('Architecture (Habit Structure)', 'a', A)
+    +domRow('Execution (Behavioral Follow-through)', 'e', E)
+    +domRow('Context-Guard (Environmental Resilience)', 'c', C);
+}
+// ── End Stability / Fragility helpers ────────────────────────────────────────
+
 // ── ATLAS Tab Rail — switch function (shared by all rail roles) ───────────────
 window.atlasTabSwitch = function(tabId) {
   var accentColor = window._atlasRailColor || '#d4a843';
@@ -1772,11 +1926,311 @@ window.atlasTabSwitch = function(tabId) {
 
   window._atlasActiveTab = tabId;
 
-  // Side-effects per tab
+  // ── Shared workspace key helper ──────────────────────────────────────────
+  // currentWorkspace / workspaceProfile are `let` globals (audit-router-state.js),
+  // not window properties — access them directly, not via window.*
+  var _tsWsKey = (typeof currentWorkspace !== 'undefined' && currentWorkspace && currentWorkspace !== 'EXPLORER' && currentWorkspace !== 'INDEPENDENT')
+    ? currentWorkspace
+    : null;
+  var _tsUid   = firebase.auth().currentUser && firebase.auth().currentUser.uid ? firebase.auth().currentUser.uid : null;
+
+  // ── Workspace-key guard: shows a friendly inline message when the key is not
+  //    yet available, so modules don't surface cryptic API errors.
+  function _tsNeedKey(bodyEl, moduleName) {
+    if (_tsWsKey) return false;
+    if (bodyEl && !bodyEl.dataset.inited) {
+      bodyEl.dataset.inited = '1';
+      bodyEl.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;color:var(--dim);padding:24px;text-align:center;">' +
+        '<div style="font-size:1.1rem;margin-bottom:8px;">⊘</div>' +
+        '<div style="margin-bottom:4px;color:var(--muted);">' + moduleName + '</div>' +
+        '<div style="font-size:0.70rem;">Workspace key not loaded. Please reload the page or re-enter your key.</div>' +
+      '</div>';
+    }
+    return true;
+  }
+
+  // ── Country Intelligence Portal ───────────────────────────────────────────
+  // Builds a country-level adherence breakdown from window._piAllRecords.
+  function _tsRenderCountryIntel(container) {
+    var FM = '\'IBM Plex Mono\',monospace';
+    var records = window._piAllRecords || (typeof dashMmasData !== 'undefined' ? dashMmasData : []);
+
+    if (!records.length) {
+      container.innerHTML = '<div style="padding:28px;font-family:' + FM + ';font-size:0.78rem;color:var(--dim);text-align:center;">No cohort data loaded. Administer assessments to populate country intelligence.</div>';
+      return;
+    }
+
+    // Aggregate by country
+    var byCountry = {};
+    records.forEach(function(r) {
+      var c = (r.country && r.country !== 'Unknown') ? r.country : (r.institution_code ? r.institution_code.split('-')[0] : 'Unspecified');
+      if (!byCountry[c]) byCountry[c] = { n: 0, scores: [], pe: [], a: [], e: [], cg: [], conditions: {} };
+      byCountry[c].n++;
+      if (r.score  != null) byCountry[c].scores.push(+r.score);
+      if (r.pe     != null) byCountry[c].pe.push(+r.pe);
+      if (r.a      != null) byCountry[c].a.push(+r.a);
+      if (r.e      != null) byCountry[c].e.push(+r.e);
+      if (r.c      != null) byCountry[c].cg.push(+r.c);
+      if (r.condition) byCountry[c].conditions[r.condition] = (byCountry[c].conditions[r.condition] || 0) + 1;
+      var _cl = _tssfClass(r);
+      if (!byCountry[c].sf) byCountry[c].sf = { stable:0, conditional:0, domain:0, fragile:0, hidden:0 };
+      if (byCountry[c].sf[_cl] !== undefined) byCountry[c].sf[_cl]++;
+    });
+
+    var mean = function(arr) { return arr.length ? arr.reduce(function(s,v){return s+v;},0)/arr.length : null; };
+    var fmt  = function(v,d) { return v != null ? v.toFixed(d||2) : '—'; };
+
+    var countries = Object.keys(byCountry).sort(function(a,b){ return byCountry[b].n - byCountry[a].n; });
+    var totalN = records.length;
+    var uniqueCountries = countries.length;
+
+    // Score color
+    var scoreColor = function(s) {
+      if (s == null) return 'var(--dim)';
+      if (s >= 8)  return '#2ec98a';
+      if (s >= 6)  return '#f59e0b';
+      return '#ef4444';
+    };
+    var peColor = function(p) {
+      if (p == null) return 'var(--dim)';
+      if (p >= 0.75) return '#2ec98a';
+      if (p >= 0.55) return '#f59e0b';
+      return '#ef4444';
+    };
+
+    var topCondition = function(conds) {
+      var keys = Object.keys(conds);
+      if (!keys.length) return '—';
+      return keys.sort(function(a,b){return conds[b]-conds[a];})[0];
+    };
+
+    // Summary strip
+    var allScores = records.filter(function(r){return r.score!=null;}).map(function(r){return +r.score;});
+    var allPe     = records.filter(function(r){return r.pe!=null;}).map(function(r){return +r.pe;});
+    var globalMmas = mean(allScores), globalPe = mean(allPe);
+    var fragCount  = records.filter(function(r){return r.score>=6 && r.pe!=null && +r.pe<0.65;}).length;
+
+    var html = '<div style="padding:20px 22px;">' +
+
+      // Header
+      '<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap;">' +
+        '<div style="font-family:' + FM + ';font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--base);">Geographic Intelligence</div>' +
+        '<div style="font-family:' + FM + ';font-size:0.62rem;color:var(--dim);">' + totalN.toLocaleString() + ' records · ' + uniqueCountries + ' countr' + (uniqueCountries===1?'y':'ies') + '</div>' +
+      '</div>' +
+
+      // Global KPI strip
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;">' +
+        ['<div style="background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;"><div style="font-family:' + FM + ';font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">Countries</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:1.6rem;font-weight:300;color:var(--bright);">' + uniqueCountries + '</div></div>',
+         '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;"><div style="font-family:' + FM + ';font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">Global MMAS-8</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:1.6rem;font-weight:300;color:' + scoreColor(globalMmas) + ';">' + fmt(globalMmas) + '</div></div>',
+         '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;"><div style="font-family:' + FM + ';font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">Global Mean PE</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:1.6rem;font-weight:300;color:' + peColor(globalPe) + ';">' + fmt(globalPe,3) + '</div></div>',
+         '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;"><div style="font-family:' + FM + ';font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">Fragility Events</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:1.6rem;font-weight:300;color:#f59e0b;">' + fragCount + '</div></div>'].join('') +
+      '</div>' +
+
+      // Country table
+      '<div style="font-family:' + FM + ';font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Country Breakdown</div>' +
+      '<div style="overflow-x:auto;">' +
+      '<table style="width:100%;border-collapse:collapse;font-family:' + FM + ';font-size:0.74rem;">' +
+        '<thead><tr style="border-bottom:1px solid var(--border2);">' +
+          ['Country','N','Share','MMAS-8','Mean PE','Arch','Exec','Ctx','Top Condition','Fragile %'].map(function(h){
+            return '<th style="text-align:left;padding:6px 10px;color:var(--dim);font-weight:400;font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;white-space:nowrap;">' + h + '</th>';
+          }).join('') +
+        '</tr></thead><tbody>';
+
+    countries.forEach(function(c, idx) {
+      var d = byCountry[c];
+      var mMmas = mean(d.scores), mPe = mean(d.pe), mA = mean(d.a), mE = mean(d.e), mCg = mean(d.cg);
+      var share = Math.round(d.n / totalN * 100);
+      var bg = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)';
+      var _sfN = (d.sf ? (d.sf.fragile||0)+(d.sf.hidden||0)+(d.sf.domain||0) : 0);
+      var _sfPct = d.n ? Math.round(_sfN/d.n*100) : 0;
+      var _sfColor = _sfPct>=30?'#ef4444':_sfPct>=15?'#f59e0b':'#10b981';
+      html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:' + bg + ';">' +
+        '<td style="padding:7px 10px;color:var(--text);font-weight:600;">' + c + '</td>' +
+        '<td style="padding:7px 10px;color:var(--muted);">' + d.n + '</td>' +
+        '<td style="padding:7px 10px;">' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<div style="width:' + Math.max(4, share) + 'px;height:4px;background:var(--base);border-radius:2px;flex-shrink:0;"></div>' +
+            '<span style="color:var(--dim);">' + share + '%</span>' +
+          '</div>' +
+        '</td>' +
+        '<td style="padding:7px 10px;color:' + scoreColor(mMmas) + ';">' + fmt(mMmas) + '</td>' +
+        '<td style="padding:7px 10px;color:' + peColor(mPe) + ';">' + fmt(mPe,3) + '</td>' +
+        '<td style="padding:7px 10px;color:var(--muted);">' + fmt(mA,3) + '</td>' +
+        '<td style="padding:7px 10px;color:var(--muted);">' + fmt(mE,3) + '</td>' +
+        '<td style="padding:7px 10px;color:var(--muted);">' + fmt(mCg,3) + '</td>' +
+        '<td style="padding:7px 10px;color:var(--dim);font-size:0.68rem;">' + topCondition(d.conditions) + '</td>' +
+        '<td style="padding:7px 10px;"><span style="font-family:' + FM + ';font-size:0.70rem;color:' + _sfColor + ';">' + _sfPct + '%</span></td>' +
+      '</tr>';
+    });
+
+    html += '</tbody></table></div>' +
+      '<div style="margin-top:10px;font-family:' + FM + ';font-size:0.62rem;color:var(--dim);">Fragility = MMAS-8 ≥ 6.0 with PE &lt; 0.65. Source: your workspace cohort records.</div>' +
+    '</div>';
+
+    container.innerHTML = html;
+  }
+
+  // ── ISR Study Builder ─────────────────────────────────────────────────────
+  // Investigator-Sponsored Research proposal builder. Persists to localStorage.
+  function _tsRenderISRBuilder(container, wsKey) {
+    var FM  = '\'IBM Plex Mono\',monospace';
+    var SK  = 'atlas_isr_' + (wsKey || 'default');
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem(SK) || '{}'); } catch(e) {}
+
+    var v = function(k, def) { return saved[k] != null ? saved[k] : (def || ''); };
+
+    var CONDITIONS = ['Hypertension','Type 2 Diabetes','Heart Failure','COPD','Dyslipidemia','HIV/AIDS','Mental Health','Oncology','Other'];
+    var PHASES = ['Phase II','Phase IIb','Phase III','Phase IIIb','Phase IV / RWE','Observational'];
+    var ENDPOINTS = ['MMAS-8 Score Change (Primary)','PE Score Change (Primary)','Fragility Event Rate Reduction','Stability Convergence Rate','Architecture Domain Improvement','Execution Domain Improvement','Context-Guard Domain Improvement','Adherence-Related Hospitalization Rate','Refill Rate / PDC'];
+
+    var condOpts = CONDITIONS.map(function(c){ return '<option' + (v('condition')===c?' selected':'') + '>' + c + '</option>'; }).join('');
+    var phaseOpts = PHASES.map(function(p){ return '<option' + (v('phase')===p?' selected':'') + '>' + p + '</option>'; }).join('');
+
+    var endpointChecks = ENDPOINTS.map(function(ep,i) {
+      var sel = (v('endpoints','') || '').indexOf(ep) !== -1;
+      return '<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;margin-bottom:6px;">' +
+        '<input type="checkbox" data-isr-ep="' + i + '" ' + (sel?'checked':'') + ' onchange="_tsIsrSave(\'' + SK + '\')" style="margin-top:2px;accent-color:var(--pe);flex-shrink:0;">' +
+        '<span style="font-size:0.74rem;color:var(--text);">' + ep + '</span>' +
+      '</label>';
+    }).join('');
+
+    container.innerHTML =
+      '<div style="padding:20px 22px;">' +
+
+        // Header
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">' +
+          '<div>' +
+            '<div style="font-family:' + FM + ';font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--pe);margin-bottom:3px;">Pharma Partnership</div>' +
+            '<div style="font-family:\'Cormorant Garamond\',serif;font-size:1.15rem;font-weight:300;color:var(--bright);">ISR Proposal Builder</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button onclick="_tsIsrSave(\'' + SK + '\')" style="font-family:' + FM + ';font-size:0.70rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(212,168,67,0.10);border:1px solid rgba(212,168,67,0.3);color:var(--pe);border-radius:6px;padding:6px 14px;cursor:pointer;">Save Draft</button>' +
+            '<button onclick="_tsIsrExport(\'' + SK + '\')" style="font-family:' + FM + ';font-size:0.70rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(78,156,245,0.10);border:1px solid rgba(78,156,245,0.3);color:var(--base);border-radius:6px;padding:6px 14px;cursor:pointer;">Copy Summary</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">' +
+
+          // Left column
+          '<div style="display:flex;flex-direction:column;gap:12px;">' +
+            _isrField('Study Title', 'text', 'isr-title', v('title'), 'e.g. MAP-Guided Adherence Intervention in Hypertension') +
+            _isrField('Sponsoring Company / CRO', 'text', 'isr-sponsor', v('sponsor'), 'e.g. Novartis, Pfizer, Boehringer Ingelheim') +
+            _isrSelect('Therapeutic Area', 'isr-condition', condOpts) +
+            _isrSelect('Study Phase', 'isr-phase', phaseOpts) +
+            _isrField('Target Sample Size (N)', 'number', 'isr-n', v('n'), 'e.g. 240') +
+            _isrField('Study Duration (months)', 'number', 'isr-duration', v('duration'), 'e.g. 18') +
+          '</div>' +
+
+          // Right column
+          '<div style="display:flex;flex-direction:column;gap:12px;">' +
+            '<div>' +
+              '<div style="font-family:' + FM + ';font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">MAP-Aligned Endpoints</div>' +
+              '<div id="isr-endpoint-list">' + endpointChecks + '</div>' +
+            '</div>' +
+            '<div>' +
+              '<div style="font-family:' + FM + ';font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Study Rationale</div>' +
+              '<textarea id="isr-rationale" oninput="_tsIsrSave(\'' + SK + '\')" rows="5" placeholder="Describe the scientific rationale for this ISR and how MAP domain decomposition adds value over standard adherence measurement..." style="width:100%;box-sizing:border-box;font-family:' + FM + ';font-size:0.74rem;background:var(--card2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:8px 10px;resize:vertical;outline:none;">' + v('rationale') + '</textarea>' +
+            '</div>' +
+            '<div>' +
+              '<div style="font-family:' + FM + ';font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Contact / PI Affiliation</div>' +
+              '<input id="isr-contact" type="text" value="' + v('contact') + '" oninput="_tsIsrSave(\'' + SK + '\')" placeholder="PI name, institution, email" style="width:100%;box-sizing:border-box;font-family:' + FM + ';font-size:0.74rem;background:var(--card2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:7px 10px;outline:none;">' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div id="isr-save-note" style="margin-top:12px;font-family:' + FM + ';font-size:0.62rem;color:var(--dim);display:none;">Draft saved.</div>' +
+
+      '</div>';
+
+    // Field helpers (defined as locals, used in the template above)
+    function _isrField(label, type, id, val, ph) {
+      return '<div><div style="font-family:' + FM + ';font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">' + label + '</div>' +
+        '<input type="' + type + '" id="' + id + '" value="' + (val||'').toString().replace(/"/g,'&quot;') + '" oninput="_tsIsrSave(\'' + SK + '\')" placeholder="' + ph + '" style="width:100%;box-sizing:border-box;font-family:' + FM + ';font-size:0.74rem;background:var(--card2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:7px 10px;outline:none;"></div>';
+    }
+    function _isrSelect(label, id, opts) {
+      return '<div><div style="font-family:' + FM + ';font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">' + label + '</div>' +
+        '<select id="' + id + '" onchange="_tsIsrSave(\'' + SK + '\')" style="width:100%;box-sizing:border-box;font-family:' + FM + ';font-size:0.74rem;background:var(--card2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:7px 10px;outline:none;cursor:pointer;">' + opts + '</select></div>';
+    }
+  }
+
+  // ISR save — called from inline onchange/oninput handlers
+  window._tsIsrSave = function(sk) {
+    var g = function(id) { var el = document.getElementById(id); return el ? el.value : ''; };
+    var eps = [];
+    document.querySelectorAll('[data-isr-ep]').forEach(function(cb) { if (cb.checked) eps.push(cb.closest('label').querySelector('span').textContent); });
+    var data = {
+      title: g('isr-title'), sponsor: g('isr-sponsor'),
+      condition: g('isr-condition'), phase: g('isr-phase'),
+      n: g('isr-n'), duration: g('isr-duration'),
+      rationale: g('isr-rationale'), contact: g('isr-contact'),
+      endpoints: eps.join('||'), saved: new Date().toISOString()
+    };
+    try { localStorage.setItem(sk, JSON.stringify(data)); } catch(e) {}
+    var note = document.getElementById('isr-save-note');
+    if (note) { note.style.display = 'block'; setTimeout(function(){note.style.display='none';}, 2000); }
+  };
+
+  // ISR export — copies a text summary to clipboard
+  window._tsIsrExport = function(sk) {
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem(sk) || '{}'); } catch(e) {}
+    var eps = saved.endpoints ? saved.endpoints.split('||').filter(Boolean) : [];
+    var text = [
+      'INVESTIGATOR-SPONSORED RESEARCH PROPOSAL SUMMARY',
+      'Generated by ATLAS · Adherence Cartography · ' + new Date().toLocaleDateString(),
+      '',
+      'Study Title:      ' + (saved.title || '—'),
+      'Sponsor / CRO:    ' + (saved.sponsor || '—'),
+      'Therapeutic Area: ' + (saved.condition || '—'),
+      'Study Phase:      ' + (saved.phase || '—'),
+      'Sample Size:      N = ' + (saved.n || '—'),
+      'Duration:         ' + (saved.duration || '—') + ' months',
+      '',
+      'MAP-ALIGNED ENDPOINTS',
+      eps.length ? eps.map(function(e){return '  • ' + e;}).join('\n') : '  (none selected)',
+      '',
+      'SCIENTIFIC RATIONALE',
+      saved.rationale || '—',
+      '',
+      'PI / CONTACT',
+      saved.contact || '—',
+      '',
+      'INSTRUMENT: MMAS-8 (Morisky Medication Adherence Scale, © Donald E. Morisky)',
+      'FRAMEWORK:  MAP Tri-Domain Analytics (Multidimensional Adherence Parameters)',
+      'PLATFORM:   ATLAS · atlas.adherence.cc',
+    ].join('\n');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function() {
+        if (typeof showToast === 'function') showToast('ISR summary copied to clipboard.', 3000);
+      });
+    }
+  };
+
+  // ── Side-effects per tab ─────────────────────────────────────────────────
   if (tabId === 'records') {
     // Resize MapBox instances if open (researcher and student cohort maps)
     if (window._resCohortMap)  setTimeout(function(){ window._resCohortMap.resize();  }, 100);
     if (window._stuCohortMap)  setTimeout(function(){ window._stuCohortMap.resize();  }, 100);
+    // Fragility watchlist
+    var _wlWrap = document.getElementById('res-mod-fragility-watchlist');
+    if (!_wlWrap) {
+      _wlWrap = document.createElement('div');
+      _wlWrap.id = 'res-mod-fragility-watchlist';
+      _wlWrap.style.cssText = 'background:var(--card);border:1px solid var(--border);border-left:3px solid #ef4444;border-radius:12px;padding:16px 20px;margin-top:12px;';
+      var _recPanel    = document.getElementById('researcher-patient-panel');
+      var _atlasRecTab = document.getElementById('atlas-tab-records');
+      if (_recPanel && _atlasRecTab && _recPanel.closest('#atlas-tab-records')) {
+        // PI/researcher: rpp is inside the rail Records tab — insert before it
+        _recPanel.parentNode.insertBefore(_wlWrap, _recPanel);
+      } else if (_atlasRecTab) {
+        // Student: rpp lives hidden in dash-body; inject into the rail Records tab instead
+        _atlasRecTab.appendChild(_wlWrap);
+      } else if (_recPanel && _recPanel.parentNode) {
+        _recPanel.parentNode.insertBefore(_wlWrap, _recPanel);
+      }
+    }
+    _tsRenderFragilityWatchlist(_wlWrap);
   }
   if ((tabId === 'validation' || tabId === 'writing') && typeof _updateStudentValidationPanel === 'function') {
     // 'writing' = student tab that contains validation module
@@ -1786,6 +2240,18 @@ window.atlasTabSwitch = function(tabId) {
     // 'analysis' = student analytics tab; 'analytics' = researcher/PI analytics tab
     setTimeout(_resUpdateAnalytics, 80);
   }
+  if (tabId === 'analytics') {
+    // Domain fragility analysis panel
+    var _dfWrap = document.getElementById('res-mod-domain-fragility');
+    if (!_dfWrap) {
+      _dfWrap = document.createElement('div');
+      _dfWrap.id = 'res-mod-domain-fragility';
+      _dfWrap.style.cssText = 'background:var(--card);border:1px solid var(--border);border-left:3px solid #f59e0b;border-radius:12px;padding:16px 20px;margin-top:12px;';
+      var _analyticsPanel = document.getElementById('res-analytics-panel');
+      if (_analyticsPanel && _analyticsPanel.parentNode) _analyticsPanel.parentNode.insertBefore(_dfWrap, _analyticsPanel.nextSibling);
+    }
+    _tsRenderDomainFragility(_dfWrap);
+  }
   if (tabId === 'cohort' && typeof _updateStudentSessionStats === 'function') {
     // Re-sync stat strip when returning to student cohort overview
     setTimeout(_updateStudentSessionStats, 80);
@@ -1794,16 +2260,242 @@ window.atlasTabSwitch = function(tabId) {
     // Refresh Clinical Practice Overview when returning to the tab
     setTimeout(_cpoUpdate, 80);
   }
-  if (tabId === 'airc') {
-    // Lazy-init AIRC Grant Resource Center on first visit
-    var _aircBody = document.getElementById('res-airc-body');
-    if (_aircBody && !_aircBody.dataset.inited && typeof window.saGrantResourcesInit === 'function') {
-      _aircBody.dataset.inited = '1';
-      window.saGrantResourcesInit(_aircBody);
+  if (tabId === 'tessera') {
+    // Lazy-init TESSERA GRC Grant Resource Center on first visit
+    var _tesseraBody = document.getElementById('res-tessera-body');
+    if (_tesseraBody && !_tesseraBody.dataset.inited && typeof window.saGrantResourcesInit === 'function') {
+      _tesseraBody.dataset.inited = '1';
+      window.saGrantResourcesInit(_tesseraBody);
+    }
+  }
+  if (tabId === 'learning') {
+    // Lazy-init LMIC Training Curriculum on first visit
+    var _ltcBody = document.getElementById('res-lmic-training-body');
+    if (_ltcBody && !_ltcBody.dataset.inited && typeof window.lmicTrainingInit === 'function') {
+      _ltcBody.dataset.inited = '1';
+      window.lmicTrainingInit(_ltcBody);
+    }
+    // MAP Framework stability/fragility glossary card
+    var _glossWrap = document.getElementById('res-mod-sf-glossary');
+    if (!_glossWrap) {
+      _glossWrap = document.createElement('div');
+      _glossWrap.id = 'res-mod-sf-glossary';
+      _glossWrap.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:14px;';
+      _glossWrap.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">MAP Framework · Stability and Fragility</div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+        +_sfGlossCard('Stable','#10b981','PE ≥ 0.65, all MAP domains ≥ 0.55, MMAS ≤ 6. Patient demonstrates sustainable adherence with structural integrity across Architecture, Execution, and Context-Guard dimensions.')
+        +_sfGlossCard('Conditionally Stable','#3b82f6','PE 0.50–0.80 with high domain variance. Adequate overall adherence, but one disruption — a schedule change, side effect, or social stressor — may trigger lapse.')
+        +_sfGlossCard('Domain-Fragile','#f59e0b','Any single MAP domain below 0.35. Architecture fragility means the habit structure is weak. Execution fragility means behavioral follow-through is failing. Context-Guard fragility means the environment is undermining the regimen.')
+        +_sfGlossCard('Compoundly Fragile','#ef4444','All three MAP domains below 0.55 simultaneously. The highest clinical priority. Structural, behavioral, and contextual factors are all compromised — adherence collapse is likely without intervention.')
+        +_sfGlossCard('Hidden Binding Constraint','#f97316','MMAS-8 ≥ 6 (self-reported poor adherence) but PE < 0.65. The patient acknowledges difficulty but structural PE is suppressed — indicating a pattern that is fragile in ways the patient may not recognize.')
+        +'<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">'
+        +'<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Predictive Emergence (PE)</div>'
+        +'<div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text);margin-bottom:4px;">PE = (A × E × C)<sup>⅓</sup></div>'
+        +'<div style="font-size:0.78rem;color:var(--muted);line-height:1.55;">The geometric mean of the three MAP domains. A single failing domain suppresses PE even when the others are strong — which is why compoundly fragile patients have dramatically low PE scores.</div>'
+        +'</div>'
+        +'</div>';
+      var _lmicPanel = document.getElementById('res-mod-lmic-training');
+      if (_lmicPanel && _lmicPanel.parentNode) {
+        _lmicPanel.parentNode.insertBefore(_glossWrap, _lmicPanel);
+      } else {
+        var _learningTab = document.getElementById('atlas-tab-learning');
+        if (_learningTab) _learningTab.insertBefore(_glossWrap, _learningTab.firstChild);
+      }
+    }
+  }
+
+  // ── 'studies' tab: PI research panel + Country Intelligence + ISR ────────
+  if (tabId === 'studies' || tabId === 'research' || tabId === 'intel') {
+    var _intelBody = document.getElementById('res-country-intel-body');
+    if (_intelBody && !_intelBody.dataset.inited) {
+      _intelBody.dataset.inited = '1';
+      if (typeof window.renderCountryIntelPortal === 'function') {
+        window.renderCountryIntelPortal('res-country-intel-body', { useDemo: false });
+      } else {
+        _tsRenderCountryIntel(_intelBody);
+      }
+    }
+  }
+  if (tabId === 'studies' || tabId === 'research' || tabId === 'isr') {
+    var _isrBody2 = document.getElementById('res-isr-body');
+    if (_isrBody2 && !_isrBody2.dataset.inited) {
+      _isrBody2.dataset.inited = '1';
+      if (typeof window.renderISRStudyBuilder === 'function') {
+        window.renderISRStudyBuilder('res-isr-body', { workspaceKey: _tsWsKey });
+      } else {
+        _tsRenderISRBuilder(_isrBody2, _tsWsKey);
+      }
+    }
+  }
+
+  // ── 'longitudinal' tab: session tracking + dropout risk ─────────────────
+  if (tabId === 'longitudinal' || tabId === 'tracking') {
+    var _trackingBody = document.getElementById('res-longitudinal-body');
+    if (_trackingBody && !_trackingBody.dataset.inited && !_tsNeedKey(_trackingBody, 'Longitudinal Tracking') && typeof window.renderLongitudinalDashboard === 'function') {
+      _trackingBody.dataset.inited = '1';
+      window.renderLongitudinalDashboard('res-longitudinal-body', _tsWsKey);
+    }
+  }
+  if (tabId === 'longitudinal' || tabId === 'predict') {
+    var _predictBody = document.getElementById('res-predictive-body');
+    if (_predictBody && !_predictBody.dataset.inited && !_tsNeedKey(_predictBody, 'Dropout Risk Dashboard') && typeof window.renderDropoutRiskDashboard === 'function') {
+      _predictBody.dataset.inited = '1';
+      window.renderDropoutRiskDashboard('res-predictive-body', _tsWsKey);
+    }
+  }
+
+  // ── 'integrations' tab: MaaS + DHIS2 + Pharmacy + Open Data ────────────
+  if (tabId === 'integrations' || tabId === 'pharmacy') {
+    var _pharmacyBody = document.getElementById('res-pharmacy-body');
+    if (_pharmacyBody && !_pharmacyBody.dataset.inited && typeof window.renderPharmacyNetworkStats === 'function') {
+      _pharmacyBody.dataset.inited = '1';
+      window.renderPharmacyNetworkStats('res-pharmacy-body', _tsWsKey);
+    }
+  }
+  if (tabId === 'integrations' || tabId === 'maas') {
+    var _maasBody = document.getElementById('res-maas-body');
+    if (_maasBody && !_maasBody.dataset.inited && !_tsNeedKey(_maasBody, 'MaaS API Portal') && typeof window.renderMaaSPortal === 'function') {
+      _maasBody.dataset.inited = '1';
+      window.renderMaaSPortal('res-maas-body', _tsWsKey);
+    }
+  }
+  if (tabId === 'integrations' || tabId === 'dhis2') {
+    var _dhis2Body = document.getElementById('res-dhis2-body');
+    if (_dhis2Body && !_dhis2Body.dataset.inited && typeof window.renderDHIS2Portal === 'function') {
+      _dhis2Body.dataset.inited = '1';
+      window.renderDHIS2Portal('res-dhis2-body', _tsWsKey);
+    }
+  }
+  if (tabId === 'integrations' || tabId === 'opendata') {
+    var _openDataBody = document.getElementById('res-open-data-body');
+    if (_openDataBody && !_openDataBody.dataset.inited && typeof window.renderOpenDataPortal === 'function') {
+      _openDataBody.dataset.inited = '1';
+      window.renderOpenDataPortal('res-open-data-body', _tsWsKey);
+    }
+  }
+
+  // ── 'publications' tab: APA/power/predictor + certification ─────────────
+  if (tabId === 'publications' || tabId === 'certification') {
+    var _certBody = document.getElementById('res-certification-body');
+    if (_certBody && !_certBody.dataset.inited && typeof window.renderCertificationHub === 'function') {
+      _certBody.dataset.inited = '1';
+      window.renderCertificationHub('res-certification-body', _tsUid, _tsWsKey);
+    }
+  }
+
+  if (tabId === 'publications' || tabId === 'certification' || tabId === 'portfolio') {
+    var _portBody = document.getElementById('res-portfolio-body');
+    if (_portBody && !_portBody.dataset.inited) {
+      _portBody.dataset.inited = '1';
+      renderStudentPortfolio('res-portfolio-body', _tsUid, _tsWsKey);
+    }
+  }
+
+  // ── 'analytics' tab: also inits HEOR and Equity (now nested in Analytics) ─
+  if (tabId === 'analytics' || tabId === 'heor') {
+    var _heorBody = document.getElementById('res-heor-body');
+    if (_heorBody && !_heorBody.dataset.inited && typeof window.renderHEORDashboard === 'function') {
+      _heorBody.dataset.inited = '1';
+      window.renderHEORDashboard('res-heor-body', _tsWsKey);
+    }
+  }
+  if (tabId === 'analytics' || tabId === 'equity') {
+    var _equityBody = document.getElementById('res-equity-body');
+    if (_equityBody && !_equityBody.dataset.inited && typeof window.renderEquityDashboard === 'function') {
+      _equityBody.dataset.inited = '1';
+      window.renderEquityDashboard('res-equity-body', _tsWsKey);
+    }
+  }
+
+  // ── 'admin' tab: institution self-service team management ─────────────────
+  if (tabId === 'admin' && typeof isInstitutionMode === 'function' && isInstitutionMode()) {
+    var _instAdminWrap = document.getElementById('inst-admin-wrap');
+    if (!_instAdminWrap) {
+      var _toolsBar = document.getElementById('res-tools-bar');
+      if (_toolsBar) {
+        _instAdminWrap = document.createElement('div');
+        _instAdminWrap.id = 'inst-admin-wrap';
+        _instAdminWrap.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;padding:24px;margin-top:14px;';
+        _toolsBar.parentNode.insertBefore(_instAdminWrap, _toolsBar.nextSibling);
+      }
+    }
+    if (_instAdminWrap && !_instAdminWrap.dataset.inited && typeof renderInstAdmin === 'function') {
+      _instAdminWrap.dataset.inited = '1';
+      renderInstAdmin(_instAdminWrap);
     }
   }
 };
 // ── End ATLAS Tab Rail ──────────────────────────────────────────────────────
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// Open Data Portal
+// Renders into res-open-data-body on the Integrations tab (PI/researcher).
+// Lets users browse ATLAS open datasets and submit access requests.
+// ══════════════════════════════════════════════════════════════════════════
+window.renderOpenDataPortal = function(containerId, wsKey) {
+  var container = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
+  if (!container) return;
+
+  var FM = "'IBM Plex Mono',monospace";
+  var db = (typeof database !== 'undefined') ? database : null;
+  var user = (typeof firebase !== 'undefined') ? firebase.auth().currentUser : null;
+
+  container.innerHTML =
+    '<div style="font-family:' + FM + ';font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(78,156,245,0.6);margin-bottom:6px;">Open Data / GAI</div>' +
+    '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.25rem;font-weight:300;color:var(--bright);margin-bottom:6px;">ATLAS Open Data Portal</div>' +
+    '<p style="font-size:0.80rem;color:var(--muted);line-height:1.75;margin-bottom:20px;">Request access to anonymized ATLAS adherence datasets for secondary analysis. All requests are reviewed by the Data Access Committee within 10 business days.</p>' +
+
+    '<div style="margin-bottom:24px;padding:16px;border:1px solid rgba(78,156,245,0.2);border-radius:8px;background:rgba(78,156,245,0.04);" id="odp-catalog">' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.70rem;color:rgba(78,156,245,0.7);margin-bottom:6px;">DATASET CATALOG — PENDING</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);line-height:1.7;">Curated secondary-analysis datasets are in preparation and not yet available for download. Submit an access request below to be notified when datasets open for applications. Do not cite any dataset as available until an official Data Access Agreement has been executed.</div>' +
+    '</div>' +
+
+    '<div style="border-top:1px solid var(--border);padding-top:20px;">' +
+      '<div style="font-family:' + FM + ';font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Request Dataset Access</div>' +
+      '<div style="display:flex;flex-direction:column;gap:10px;">' +
+        '<input id="odp-req-dataset" placeholder="Dataset name or ID" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 12px;color:var(--bright);font-family:' + FM + ';font-size:0.78rem;outline:none;"/>' +
+        '<textarea id="odp-req-purpose" placeholder="Research purpose and intended use (100–500 words)" rows="3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 12px;color:var(--bright);font-family:' + FM + ';font-size:0.78rem;outline:none;resize:vertical;"></textarea>' +
+        '<input id="odp-req-irb" placeholder="IRB protocol number (if applicable)" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 12px;color:var(--bright);font-family:' + FM + ';font-size:0.78rem;outline:none;"/>' +
+        '<div id="odp-req-msg" style="font-family:' + FM + ';font-size:0.72rem;display:none;"></div>' +
+        '<button onclick="window._odpSubmitRequest()" style="font-family:' + FM + ';font-size:0.65rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(78,156,245,0.10);border:1px solid rgba(78,156,245,0.30);color:rgba(78,156,245,0.9);padding:9px 20px;border-radius:7px;cursor:pointer;align-self:flex-start;transition:all 0.2s;" onmouseover="this.style.background=\'rgba(78,156,245,0.18)\'" onmouseout="this.style.background=\'rgba(78,156,245,0.10)\'">Submit Access Request →</button>' +
+      '</div>' +
+    '</div>';
+
+  window._odpSubmitRequest = function() {
+    var dataset = (document.getElementById('odp-req-dataset') || {}).value || '';
+    var purpose = (document.getElementById('odp-req-purpose') || {}).value || '';
+    var irb     = (document.getElementById('odp-req-irb')     || {}).value || '';
+    var msgEl   = document.getElementById('odp-req-msg');
+    if (!dataset.trim() || purpose.trim().length < 20) {
+      if (msgEl) { msgEl.textContent = 'Dataset name and research purpose are required (min 20 characters).'; msgEl.style.color = 'rgba(239,68,68,0.9)'; msgEl.style.display = 'block'; }
+      return;
+    }
+    if (!db || !user) {
+      if (msgEl) { msgEl.textContent = 'You must be signed in to submit a request.'; msgEl.style.color = 'rgba(239,68,68,0.9)'; msgEl.style.display = 'block'; }
+      return;
+    }
+    var record = {
+      uid: user.uid, workspace: wsKey || null,
+      dataset: dataset.trim(), purpose: purpose.trim(),
+      irb: irb.trim() || null, submitted_at: Date.now(), status: 'pending'
+    };
+    db.ref('open_data_notifications').push(record).then(function() {
+      if (msgEl) { msgEl.textContent = 'Request submitted. The Data Access Committee will respond within 10 business days.'; msgEl.style.color = 'rgba(46,201,138,0.9)'; msgEl.style.display = 'block'; }
+      ['odp-req-dataset','odp-req-purpose','odp-req-irb'].forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
+    }).catch(function(err) {
+      if (msgEl) { msgEl.textContent = 'Submission failed: ' + (err.message || 'Unknown error'); msgEl.style.color = 'rgba(239,68,68,0.9)'; msgEl.style.display = 'block'; }
+    });
+  };
+};
+
+function _odpDatasetCard(title, desc, id, color) {
+  return '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-left:3px solid ' + color + ';border-radius:8px;padding:14px 16px;">' +
+    '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.70rem;font-weight:600;color:var(--bright);margin-bottom:5px;">' + title + '</div>' +
+    '<div style="font-size:0.76rem;color:var(--muted);line-height:1.6;margin-bottom:8px;">' + desc + '</div>' +
+    '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.60rem;color:' + color + ';opacity:0.7;">' + id + '</div>' +
+  '</div>';
+}
 
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1840,6 +2532,7 @@ window.atlasTabSwitch = function(tabId) {
     stuRenderScoreHistogram(_chartRows);
     stuRenderDomainRadar(_chartRows);
     stuRenderEnrollmentVelocity(_chartRows);
+    stuRenderTrajectoryChart(_chartRows);
 
     // Show setup wizard only after student workspace is confirmed active
     setTimeout(() => { if (typeof stuWizShow === 'function') stuWizShow(); }, 600);
@@ -1917,8 +2610,8 @@ function _stuThesisModeBannerHTML(tab) {
       var sumA=0, sumE=0, sumC=0;
       mapRows.forEach(function(r) {
         sumA += parseFloat(r.arch_score) || ((parseFloat(r.q2||0)+parseFloat(r.q3||0)+parseFloat(r.q6||0))/3);
-        sumE += parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q4||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/4);
-        sumC += parseFloat(r.ctx_score)  ||  parseFloat(r.q7||0);
+        sumE += parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/3);
+        sumC += parseFloat(r.ctx_score) || Math.max(0.5, 0.5 + 0.5 * ((parseFloat(r.q4||0) + parseFloat(r.q7||0)) / 2));
       });
       var pe = Math.pow(Math.max(0, (sumA/n)*(sumE/n)*(sumC/n)), 1/3);
       var domains = [{name:'Architecture',val:sumA/n},{name:'Execution',val:sumE/n},{name:'Context',val:sumC/n}];
@@ -2291,11 +2984,12 @@ function _stuGenerateAppendixPDF() {
     <table class="ax-table">
       <thead><tr><th>Instrument</th><th>Items</th><th>Cronbach's α</th><th>Test-Retest ICC</th><th>Validity</th></tr></thead>
       <tbody>
-        <tr><td>MAP</td><td>8 domains</td><td>0.83 (95% CI: 0.79–0.87)</td><td>0.91</td><td>Convergent, criterion</td></tr>
-        <tr><td>MMAS-8</td><td>8 items</td><td>0.83</td><td>0.89</td><td>Criterion, concurrent</td></tr>
-        <tr><td>PEACS</td><td>Longitudinal composite</td><td>0.88</td><td>0.94</td><td>Predictive, construct</td></tr>
+        <tr><td>MAP</td><td>8 domains</td><td>Platform-estimated (validation study in preparation)</td><td>Platform-estimated</td><td>Convergent, criterion</td></tr>
+        <tr><td>MMAS-8</td><td>8 items</td><td>0.83 (Morisky et al., 2008)</td><td>0.89 (Morisky et al., 2008)</td><td>Criterion, concurrent</td></tr>
+        <tr><td>PEACS</td><td>Longitudinal composite</td><td>Platform-estimated (validation study in preparation)</td><td>Platform-estimated</td><td>Predictive, construct</td></tr>
       </tbody>
-    </table>`;
+    </table>
+    <p style="font-size:10pt;color:#555;margin-top:6px;"><em>Platform-estimated psychometric properties reflect internal pilot data and have not yet been independently published. Cite Morisky et al. (2008) for MMAS-8 psychometrics.</em></p>`;
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ATLAS Appendix — ${inst}</title>
   <style>
@@ -2711,8 +3405,8 @@ function stuRunPredictor() {
   var Y = rows.map(function(r) {
     if (outcome === 'map') {
       var a = parseFloat(r.arch_score) || ((parseFloat(r.q2||0)+parseFloat(r.q3||0)+parseFloat(r.q6||0))/3);
-      var e = parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q4||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/4);
-      var c = parseFloat(r.ctx_score)  ||  parseFloat(r.q7||0);
+      var e = parseFloat(r.exec_score) || ((parseFloat(r.q1||0)+parseFloat(r.q5||0)+parseFloat(r.q8||0))/3);
+      var c = parseFloat(r.ctx_score) || Math.max(0.5, 0.5 + 0.5 * ((parseFloat(r.q4||0) + parseFloat(r.q7||0)) / 2));
       return Math.pow(Math.max(0, a*e*c), 1/3);
     }
     return parseFloat(r.score) || 0;
@@ -2927,14 +3621,16 @@ function resApaCopy(section) {
   }
 }
 
-// Patch openPubLicModal to show step-0 first if not already seen
-const _origOpenPubLicModal = window.openPubLicModal;
-window.openPubLicModal = function(...args) {
-  if (sessionStorage.getItem('_pl_exp_seen')) {
-    if (_origOpenPubLicModal) _origOpenPubLicModal(...args);
+// Intercept openPubLicenseFlow to show step-0 explainer on first use (students only).
+// clinical-billing.js exports openPubLicenseFlow to window before this file runs.
+const _origOpenPubLicenseFlow = window.openPubLicenseFlow;
+window.openPubLicenseFlow = function(...args) {
+  const _plRole = (typeof workspaceProfile !== 'undefined' && workspaceProfile && workspaceProfile.role) ? workspaceProfile.role : null;
+  const _plIsStudent = _plRole === 'student';
+  if (!_plIsStudent || sessionStorage.getItem('_pl_exp_seen')) {
+    if (_origOpenPubLicenseFlow) _origOpenPubLicenseFlow(...args);
   } else {
     sessionStorage.setItem('_pl_exp_seen', '1');
-    // Hide all steps, show step 0
     document.querySelectorAll('[id^="pub-lic-step"]').forEach(el => el.style.display = 'none');
     const s0 = document.getElementById('pub-lic-step-0');
     const modal = document.getElementById('pub-lic-modal');
@@ -2942,6 +3638,7 @@ window.openPubLicModal = function(...args) {
     if (modal) modal.style.display = 'flex';
   }
 };
+window.openPubLicModal = window.openPubLicenseFlow;
 
 // ══════════════════════════════════════════════════════════════════════════
 // FEATURE 1 — STUDENT COHORT AI INTERPRETATION
@@ -2959,9 +3656,9 @@ async function stuInterpretCohort() {
   var total = records.length;
   var scores = records.map(function(r){ return parseFloat(r.score||r.mmas_score||0); }).filter(function(s){ return s > 0; });
   var avg = scores.length ? (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(2) : 'N/A';
-  var high = scores.filter(function(s){return s>=6;}).length;
-  var med  = scores.filter(function(s){return s>=4&&s<6;}).length;
-  var low  = scores.filter(function(s){return s<4;}).length;
+  var high = scores.filter(function(s){return s>=8;}).length;
+  var med  = scores.filter(function(s){return s>=6&&s<8;}).length;
+  var low  = scores.filter(function(s){return s<6;}).length;
 
   // MAP domain averages if available
   var archScores = records.map(function(r){ return ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3; }).filter(function(s){return s>0;});
@@ -2972,16 +3669,16 @@ async function stuInterpretCohort() {
   var avgCtx  = ctxScores.length  ? (ctxScores.reduce(function(a,b){return a+b;},0)/ctxScores.length).toFixed(2)  : null;
 
   var domainStr = (avgArch && avgExec && avgCtx)
-    ? 'MAP Tri-Domain averages: Architecture ' + avgArch + '/10, Execution ' + avgExec + '/10, Context ' + avgCtx + '/10.'
+    ? 'MAP Tri-Domain averages (0–1 scale): Architecture ' + avgArch + ', Execution ' + avgExec + ', Context-Guard ' + avgCtx + '.'
     : '';
 
   var prompt = 'You are interpreting medication adherence research data for a student researcher.\n\n'
     + 'Cohort summary:\n'
     + '- Total participants: ' + total + '\n'
     + '- Mean adherence score: ' + avg + '/8\n'
-    + '- High adherence (≥6): ' + high + ' (' + (total ? Math.round(100*high/total) : 0) + '%)\n'
-    + '- Medium adherence (4–5): ' + med + ' (' + (total ? Math.round(100*med/total) : 0) + '%)\n'
-    + '- Low adherence (<4): ' + low + ' (' + (total ? Math.round(100*low/total) : 0) + '%)\n'
+    + '- High adherence (score = 8): ' + high + ' (' + (total ? Math.round(100*high/total) : 0) + '%)\n'
+    + '- Medium adherence (score ≥6 to <8): ' + med + ' (' + (total ? Math.round(100*med/total) : 0) + '%)\n'
+    + '- Low adherence (score <6): ' + low + ' (' + (total ? Math.round(100*low/total) : 0) + '%)\n'
     + (domainStr ? '- ' + domainStr + '\n' : '')
     + '\nWrite 2–3 sentences interpreting what these findings mean scientifically. Identify the dominant pattern, note which domain is weakest (if domain data is present), and suggest one intervention focus area. Use academic language appropriate for a student thesis.';
 
@@ -2990,7 +3687,7 @@ async function stuInterpretCohort() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 220,
         system: 'You are an adherence science research assistant helping students interpret cohort data. Be concise, academic, and specific.',
         messages: [{ role: 'user', content: prompt }]
@@ -3046,7 +3743,7 @@ async function stuDraftMethods() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 600,
         system: 'You are an academic writing assistant specializing in health sciences research methods sections. Write in formal APA style.',
         messages: [{ role: 'user', content: prompt }]
@@ -3076,12 +3773,14 @@ function stuRenderScoreHistogram(records) {
   ensurePlotly().then(function() {
     var el = document.getElementById('stu-score-histogram');
     if (!el) return;
-    var scores = records.map(function(r){ return Math.round(parseFloat(r.score||r.mmas_score||0)); }).filter(function(s){ return s >= 0 && s <= 8; });
+    // MMAS-8 records only — exclude MAP (map_q1 present) and PEACS (pe_score present)
+    var mmasOnly = (records || []).filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined && r.pe_score === undefined; });
+    var scores = mmasOnly.map(function(r){ var sc=parseFloat(r.score||r.mmas_score||0); return sc>=8?8:Math.max(0,Math.floor(sc)); }).filter(function(s){ return s >= 0 && s <= 8; });
     if (scores.length < 3) { el.style.display = 'none'; return; }
     el.style.display = '';
     var counts = [0,0,0,0,0,0,0,0,0];
     scores.forEach(function(s){ counts[s]++; });
-    var colors = counts.map(function(_,i){ return i >= 6 ? '#10b981' : i >= 4 ? '#f59e0b' : '#ef4444'; });
+    var colors = counts.map(function(_,i){ return i === 8 ? '#10b981' : i >= 6 ? '#f59e0b' : '#ef4444'; });
     window.Plotly.newPlot(el, [{
       type: 'bar', x: [0,1,2,3,4,5,6,7,8], y: counts,
       marker: { color: colors },
@@ -3120,7 +3819,7 @@ function stuRenderDomainRadar(records) {
       paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
       polar: {
         bgcolor: 'transparent',
-        radialaxis: { visible: true, range: [0, 10], tickfont: { family: 'IBM Plex Mono', size: 8, color: '#607898' }, gridcolor: 'rgba(255,255,255,0.07)', linecolor: 'rgba(255,255,255,0.07)' },
+        radialaxis: { visible: true, range: [0, 1], tickfont: { family: 'IBM Plex Mono', size: 8, color: '#607898' }, gridcolor: 'rgba(255,255,255,0.07)', linecolor: 'rgba(255,255,255,0.07)' },
         angularaxis: { tickfont: { family: 'IBM Plex Mono', size: 9, color: '#8aa0b8' }, gridcolor: 'rgba(255,255,255,0.07)', linecolor: 'rgba(255,255,255,0.07)' }
       },
       margin: { t: 20, r: 30, b: 20, l: 30 },
@@ -3165,6 +3864,237 @@ function stuRenderEnrollmentVelocity(records) {
   });
 }
 
+
+// ── Patient Score Trajectory Chart (Spaghetti Plot) ──────
+// Shows each patient's MMAS-8 score across their sessions ordered by timestamp.
+// Only patients with ≥2 records are drawn as lines; single-record patients show dots.
+// Color: green = net improvement, red = net decline, gray = no change.
+// Shared trajectory state — set once on load, reused on dropdown change
+window._stuTrajectoryPatients = null; // { pid: [{ ts, score, pid }] }
+
+function stuRenderTrajectoryChart(records) {
+  var wrap  = document.getElementById('stu-trajectory-wrap');
+  var el    = document.getElementById('stu-trajectory-chart');
+  var badge = document.getElementById('stu-trajectory-badge');
+  var sel   = document.getElementById('stu-trajectory-pid');
+  if (!el || !wrap) return;
+
+  // MMAS-8 only
+  var mmasRecs = (records || []).filter(function(r) {
+    return r.tool !== 'map' && r.map_q1 === undefined && r.pe_score === undefined;
+  });
+
+  // Group by patient_number; sort each patient's sessions by assessment_date (Excel date),
+  // falling back to upload timestamp when assessment_date is absent.
+  var byPat = {};
+  mmasRecs.forEach(function(r) {
+    var pid = String(r.patient_number || r.pid || r.user_id || '?');
+    if (!byPat[pid]) byPat[pid] = [];
+    // sortKey: parsed assessment_date preferred over upload timestamp
+    var sortKey = r.assessment_date
+      ? new Date(r.assessment_date + 'T12:00:00').getTime()
+      : +(r.timestamp || 0);
+    // displayDate for tooltip/label
+    var displayDate = r.assessment_date
+      ? new Date(r.assessment_date + 'T12:00:00').toLocaleDateString()
+      : (r.timestamp ? new Date(r.timestamp).toLocaleDateString() : '—');
+    byPat[pid].push({ ts: sortKey, displayDate: displayDate, score: parseFloat(r.score) || 0, pid: pid });
+  });
+  Object.values(byPat).forEach(function(pts) { pts.sort(function(a, b) { return a.ts - b.ts; }); });
+
+  var patients     = Object.values(byPat);
+  var longitudinal = patients.filter(function(pts) { return pts.length >= 2; });
+
+  if (patients.length < 2) { wrap.style.display = 'none'; return; }
+
+  // Store for dropdown handler
+  window._stuTrajectoryPatients = byPat;
+
+  wrap.style.display = '';
+  if (badge) badge.textContent = longitudinal.length + ' with repeat measures';
+
+  // Populate dropdown (preserve current selection if patient still exists)
+  if (sel) {
+    var prevVal = sel.value;
+    sel.innerHTML = '<option value="">All patients</option>';
+    // Sort patient IDs numerically where possible
+    var pids = Object.keys(byPat).sort(function(a, b) {
+      var na = parseFloat(a), nb = parseFloat(b);
+      return (!isNaN(na) && !isNaN(nb)) ? na - nb : a.localeCompare(b);
+    });
+    pids.forEach(function(pid) {
+      var pts   = byPat[pid];
+      var delta = pts.length >= 2 ? (pts[pts.length - 1].score - pts[0].score) : null;
+      var arrow = delta === null ? '' : delta > 0 ? ' ↑' : delta < 0 ? ' ↓' : ' →';
+      var opt   = document.createElement('option');
+      opt.value = pid;
+      opt.textContent = 'PID ' + pid + ' (' + pts.length + ' session' + (pts.length > 1 ? 's' : '') + ')' + arrow;
+      sel.appendChild(opt);
+    });
+    sel.value = (prevVal && byPat[prevVal]) ? prevVal : '';
+  }
+
+  // Render with current selection
+  _stuDrawTrajectory(sel ? sel.value : '');
+}
+
+// Called by the dropdown onchange
+function stuTrajectorySelectPid(pid) {
+  _stuDrawTrajectory(pid);
+}
+
+function _stuDrawTrajectory(selectedPid) {
+  var el      = document.getElementById('stu-trajectory-chart');
+  var statsEl = document.getElementById('stu-trajectory-stats');
+  var byPat   = window._stuTrajectoryPatients;
+  if (!el || !byPat) return;
+
+  var patients     = Object.values(byPat);
+  var longitudinal = patients.filter(function(pts) { return pts.length >= 2; });
+  var maxSessions  = Math.max.apply(null, patients.map(function(pts) { return pts.length; }));
+
+  // Shared layout base
+  var shapeColor4 = 'rgba(252,165,165,0.4)', shapeColor6 = 'rgba(253,211,77,0.4)';
+  var baseLayout = {
+    paper_bgcolor: 'transparent',
+    plot_bgcolor:  'transparent',
+    margin: { t: 10, r: 24, b: 36, l: 36 },
+    xaxis: {
+      title: { text: 'Session', font: { family: 'IBM Plex Mono', size: 9, color: '#607898' } },
+      tickmode: 'linear', tick0: 1, dtick: 1,
+      range: [0.6, maxSessions + 0.4],
+      tickfont: { family: 'IBM Plex Mono', size: 9, color: '#607898' },
+      gridcolor: 'rgba(255,255,255,0.05)', zeroline: false
+    },
+    yaxis: {
+      title: { text: 'MMAS-8', font: { family: 'IBM Plex Mono', size: 9, color: '#607898' } },
+      range: [-0.2, 8.4],
+      tickfont: { family: 'IBM Plex Mono', size: 9, color: '#607898' },
+      gridcolor: 'rgba(255,255,255,0.05)', zeroline: false
+    },
+    shapes: [
+      { type: 'line', x0: 0.6, x1: maxSessions + 0.4, y0: 6, y1: 6, line: { color: shapeColor6, width: 1, dash: 'dot' } },
+      { type: 'line', x0: 0.6, x1: maxSessions + 0.4, y0: 4, y1: 4, line: { color: shapeColor4, width: 1, dash: 'dot' } }
+    ],
+    annotations: [
+      { x: maxSessions + 0.4, y: 6, xanchor: 'left', yanchor: 'middle', text: '6', showarrow: false, font: { family: 'IBM Plex Mono', size: 8, color: '#d97706' } },
+      { x: maxSessions + 0.4, y: 4, xanchor: 'left', yanchor: 'middle', text: '4', showarrow: false, font: { family: 'IBM Plex Mono', size: 8, color: '#dc2626' } }
+    ],
+    hovermode: 'closest', showlegend: false
+  };
+
+  ensurePlotly().then(function() {
+    // ── Single patient selected ──────────────────────────────────────────
+    if (selectedPid && byPat[selectedPid]) {
+      var pts   = byPat[selectedPid];
+      var first = pts[0].score, last = pts[pts.length - 1].score;
+      var delta = last - first;
+      var col   = delta > 0 ? '#059669' : delta < 0 ? '#dc2626' : '#94a3b8';
+
+      // Always use numeric session indices for X so Plotly never reorders points.
+      // Map actual assessment dates onto tick labels so the axis still reads as dates.
+      var xs  = pts.map(function(_, i) { return i + 1; });
+      var ys  = pts.map(function(p) { return p.score; });
+      var hov = pts.map(function(p, i) {
+        return 'PID ' + p.pid + '<br>Session ' + (i + 1) + '<br>Score: ' + p.score.toFixed(2) + '<br>' + p.displayDate;
+      });
+
+      // Score labels anchored to numeric X positions (always correct)
+      var labelAnnotations = pts.map(function(p, i) {
+        return { x: i + 1, y: p.score, xanchor: 'center', yanchor: 'bottom',
+          text: '<b>' + p.score.toFixed(2) + '</b>', showarrow: false,
+          font: { family: 'IBM Plex Mono', size: 11, color: col }, yshift: 8 };
+      });
+
+      // Show dates as tick labels only when they differ across sessions
+      var uniqueDates = pts.map(function(p) { return p.displayDate; });
+      var allSameDate = uniqueDates.every(function(d) { return d === uniqueDates[0]; });
+      var xAxisOverride = {
+        title: { text: allSameDate ? 'Session' : 'Assessment Date', font: { family: 'IBM Plex Mono', size: 9, color: '#607898' } },
+        type: 'linear',          // always numeric — prevents category reordering
+        tickmode: 'array',
+        tickvals: xs,
+        ticktext: allSameDate
+          ? xs.map(function(n) { return 'Session ' + n; })
+          : uniqueDates,
+        tickangle: allSameDate ? 0 : -30,
+        range: [0.6, pts.length + 0.4]
+      };
+
+      var layout = Object.assign({}, baseLayout, {
+        annotations: baseLayout.annotations.concat(labelAnnotations),
+        xaxis: Object.assign({}, baseLayout.xaxis, xAxisOverride)
+      });
+
+      var trace = {
+        type: 'scatter', mode: 'lines+markers',
+        x: xs, y: ys,
+        line:   { color: col, width: 3 },
+        marker: { color: col, size: 10, line: { color: 'white', width: 2 } },
+        hovertemplate: '%{customdata}<extra></extra>',
+        customdata: hov,
+        showlegend: false
+      };
+
+      window.Plotly.react(el, [trace], layout, { responsive: true, displayModeBar: false });
+
+      // Stat strip
+      if (statsEl) {
+        var sign    = delta > 0 ? '+' : '';
+        var tier    = function(s) { return s >= 8 ? 'High' : s >= 6 ? 'Medium' : 'Low'; };
+        var tierCol = function(s) { return s >= 8 ? '#059669' : s >= 6 ? '#d97706' : '#dc2626'; };
+        statsEl.style.display = 'flex';
+        statsEl.innerHTML =
+          '<span>Sessions: <strong>' + pts.length + '</strong></span>' +
+          '<span>Baseline: <strong style="color:' + tierCol(first) + '">' + first.toFixed(2) + ' (' + tier(first) + ')</strong></span>' +
+          '<span>Latest: <strong style="color:' + tierCol(last) + '">' + last.toFixed(2) + ' (' + tier(last) + ')</strong></span>' +
+          '<span>Change: <strong style="color:' + col + '">' + sign + delta.toFixed(2) + '</strong></span>';
+      }
+      return;
+    }
+
+    // ── All patients (spaghetti) ─────────────────────────────────────────
+    if (statsEl) statsEl.style.display = 'none';
+
+    var traces = [];
+    longitudinal.forEach(function(pts) {
+      var delta   = pts[pts.length - 1].score - pts[0].score;
+      var lineCol = delta > 0 ? 'rgba(5,150,105,0.45)' : delta < 0 ? 'rgba(220,38,38,0.45)' : 'rgba(148,163,184,0.35)';
+      var dotCol  = delta > 0 ? '#059669'              : delta < 0 ? '#dc2626'              : '#94a3b8';
+      var xs  = pts.map(function(_, i) { return i + 1; });
+      var ys  = pts.map(function(p) { return p.score; });
+      var hov = pts.map(function(p, i) {
+        return 'PID ' + p.pid + '<br>Session ' + (i + 1) + '<br>Score: ' + p.score.toFixed(2) + '<br>' + p.displayDate;
+      });
+      traces.push({
+        type: 'scatter', mode: 'lines+markers',
+        x: xs, y: ys,
+        line:   { color: lineCol, width: 1.4 },
+        marker: { color: dotCol, size: 5, line: { color: 'white', width: 1 } },
+        hovertemplate: '%{customdata}<extra></extra>',
+        customdata: hov,
+        showlegend: false
+      });
+    });
+
+    // Single-session patients: faint open dots
+    var singlePats = patients.filter(function(pts) { return pts.length === 1; });
+    if (singlePats.length) {
+      traces.push({
+        type: 'scatter', mode: 'markers',
+        x: singlePats.map(function() { return 1; }),
+        y: singlePats.map(function(pts) { return pts[0].score; }),
+        marker: { color: 'rgba(148,163,184,0.4)', size: 4, symbol: 'circle-open' },
+        hovertemplate: 'PID %{text}<br>Score: %{y:.2f}<br>' + '%{customdata}<extra></extra>',
+        text:       singlePats.map(function(pts) { return pts[0].pid; }),
+        customdata: singlePats.map(function(pts) { return pts[0].displayDate; }),
+        showlegend: false
+      });
+    }
+
+    window.Plotly.react(el, traces, baseLayout, { responsive: true, displayModeBar: false });
+  });
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MODULE 14 — STATISTICS PANEL
@@ -3302,8 +4232,9 @@ function _stuStatsCohenKappa(matrix3x3) {
   return pExp<1?(pObs-pExp)/(1-pExp):NaN;
 }
 function _stuStatsCohenD(m1,s1,m2,s2) {
-  var pooled=Math.sqrt((s1*s1+s2*s2)/2);
-  return pooled>0?(m1-m2)/pooled:NaN;
+  // Single-sample d: divide by sample SD only (s1). Using pooled SD is for
+  // two independent groups; comparing a sample to a published norm uses s1 alone.
+  return s1 > 0 ? (m1 - m2) / s1 : NaN;
 }
 function _stuEffLabel(d) {
   var a=Math.abs(d||0);
@@ -3579,8 +4510,8 @@ function _stuStatsPrintMethods() {
     '<table>',
     '<tr><th>Instrument</th><th>Metric</th><th>\u03bc (mean)</th><th>\u03c3 (SD)</th><th>Source / N</th></tr>',
     '<tr><td>MMAS-8</td><td>Total score</td><td>6.52</td><td>1.85</td><td>Morisky et al., 2008 &nbsp;\u2502&nbsp; N\u2009=\u2009272 outpatients</td></tr>',
-    '<tr><td>MAP</td><td>PE composite</td><td>0.72</td><td>0.16</td><td>ATLAS cross-cohort baseline</td></tr>',
-    '<tr><td>PEACS</td><td>PE composite</td><td>0.68</td><td>0.18</td><td>ATLAS cross-cohort baseline</td></tr>',
+    '<tr><td>MAP</td><td>PE composite</td><td>0.72</td><td>0.16</td><td>Provisional illustrative norm (not yet aggregated)</td></tr>',
+    '<tr><td>PEACS</td><td>PE composite</td><td>0.68</td><td>0.18</td><td>Provisional illustrative norm (not yet aggregated)</td></tr>',
     '</table>',
 
     '<h2>Clinical Thresholds</h2>',
@@ -3708,8 +4639,8 @@ function _stuStatsMethodsRender(body) {
     _sec('Reference Norms &amp; Clinical Thresholds') +
     _tbl(['Instrument','Metric','\u03bc (mean)','\u03c3 (SD)','Source'],
       [['MMAS-8','Total score (0\u20138)','6.52','1.85','Morisky et al., 2008 \u2502 N\u2009=\u2009272 outpatients'],
-       ['MAP','PE composite','0.72','0.16','ATLAS cross-cohort baseline'],
-       ['PEACS','PE composite','0.68','0.18','ATLAS cross-cohort baseline']]) +
+       ['MAP','PE composite','0.72','0.16','Provisional illustrative norm (not yet aggregated)'],
+       ['PEACS','PE composite','0.68','0.18','Provisional illustrative norm (not yet aggregated)']]) +
     _tbl(['Instrument','Threshold','Classification'],
       [['MMAS-8','score \u2265 8','High adherence'],
        ['MMAS-8','6 \u2264 score < 8','Medium adherence'],
@@ -3818,15 +4749,15 @@ function _stuStatsClassification(body) {
     html += _stuStatsCard('MMAS-8 — Classification Matrix', _stuStatsEmpty('MMAS-8 (need \u2265 5)'));
   }
 
-  // MAP binary confusion: Predicted = PE ≥ 0.72 (norm baseline), Actual = PE ≥ 0.60 (moderate threshold)
+  // MAP binary confusion: Predicted = PE ≥ 0.72 (provisional threshold), Actual = PE ≥ 0.60 (moderate threshold)
   if (mapRows.length >= 5) {
     var n = mapRows.length;
     var tp=0, fp=0, fn=0, tn=0;
     mapRows.forEach(function(r) {
       var a=parseFloat(r.arch_score)||((+(r.map_q2||r.q2)||0)+(+(r.map_q3||r.q3)||0)+(+(r.map_q6||r.q6)||0))/3;
       var e=parseFloat(r.exec_score)||((+(r.map_q1||r.q1)||0)+(+(r.map_q5||r.q5)||0)+(+(r.map_q8||r.q8)||0))/3;
-      var c=parseFloat(r.ctx_score)||(+(r.map_q7||r.q7)||0);
-      var pe=Math.pow(Math.max(0,a*e*(0.5+0.5*c)),1/3);
+      var c=parseFloat(r.ctx_score)||Math.max(0.5,0.5+0.5*((+(r.map_q4||r.q4)||0)+(+(r.map_q7||r.q7)||0))/2);
+      var pe=Math.pow(Math.max(0,a*e*c),1/3);
       var predPos = pe >= 0.72;
       var actPos  = pe >= 0.60;
       if (predPos && actPos)  tp++;
@@ -3836,7 +4767,7 @@ function _stuStatsClassification(body) {
     });
     html += _stuStatsCard('MAP — PE Classification Matrix (N\u2009=\u2009' + n + ')',
       _stuConfusionGrid(tp, fp, fn, tn, 'High PE', 'Low PE',
-        'Predicted High PE: PE\u2009\u2265\u20090.72 (ATLAS cross-cohort baseline mean). ' +
+        'Predicted High PE: PE\u2009\u2265\u20090.72 (provisional illustrative threshold \u2014 no externally validated MAP baseline exists yet). ' +
         'Actual High PE: PE\u2009\u2265\u20090.60 (moderate adherence threshold). ' +
         'PE uses non-compensatory geometric mean with Context Guard (C\u2099 = 0.5 + 0.5 \u00d7 C).')
     );
@@ -3860,7 +4791,7 @@ function _stuStatsClassification(body) {
     });
     html += _stuStatsCard('PEACS — PE Classification Matrix (N\u2009=\u2009' + n + ')',
       _stuConfusionGrid(tp, fp, fn, tn, 'High PE', 'Low PE',
-        'Predicted High PE: PE\u2009\u2265\u20090.68 (ATLAS PEACS baseline mean). Actual High PE: PE\u2009\u2265\u20090.60.')
+        'Predicted High PE: PE\u2009\u2265\u20090.68 (provisional illustrative threshold \u2014 no externally validated PEACS baseline exists yet). Actual High PE: PE\u2009\u2265\u20090.60.')
     );
   } else if (peacsRecs.length > 0) {
     html += _stuStatsCard('PEACS — PE Classification Matrix', _stuStatsEmpty('PEACS (need \u2265 5)'));
@@ -3913,7 +4844,7 @@ function _stuStatsEffectSize(body) {
     var m = _stuStatsMean(scores), s = _stuStatsSD(scores);
     var normM=6.52, normS=1.85;
     var d = _stuStatsCohenD(m, s, normM, normS);
-    var se_d = Math.sqrt((1/mmasRows.length)+(d*d/(2*mmasRows.length)));
+    var se_d = Math.sqrt((1/mmasRows.length)+(d*d/(2*(mmasRows.length-1))));
     var ciLo = d-1.96*se_d, ciHi = d+1.96*se_d;
     html += _stuStatsCard('MMAS-8 — Effect Size vs Morisky Outpatient Norms',
       _forestRow('MMAS-8 Score', d, ciLo, ciHi, '\u03bc\u2009=\u20096.52, SD\u2009=\u20091.85 (Morisky et al., 2008)', '#2563eb') +
@@ -3929,22 +4860,21 @@ function _stuStatsEffectSize(body) {
     html += _stuStatsCard('MMAS-8 — Effect Size', _stuStatsEmpty('MMAS-8 (need \u2265 5)'));
   }
 
-  // ── MAP vs ATLAS cross-cohort baseline ──
+  // ── MAP vs Provisional illustrative norm (not yet aggregated) ──
   if (mapRows.length >= 5) {
     var peVals = mapRows.map(function(r){
       var a = parseFloat(r.arch_score)||((parseFloat(r.map_q2||r.q2||0)+parseFloat(r.map_q3||r.q3||0)+parseFloat(r.map_q6||r.q6||0))/3);
       var e = parseFloat(r.exec_score)||((parseFloat(r.map_q1||r.q1||0)+parseFloat(r.map_q5||r.q5||0)+parseFloat(r.map_q8||r.q8||0))/3);
-      var c = parseFloat(r.ctx_score)||parseFloat(r.map_q7||r.q7||0);
-      var cg = 0.5+0.5*c;
+      var cg = parseFloat(r.ctx_score)||Math.max(0.5,0.5+0.5*((parseFloat(r.map_q4||r.q4||0)+parseFloat(r.map_q7||r.q7||0))/2));
       return Math.pow(Math.max(0,a*e*cg),1/3);
     });
     var m = _stuStatsMean(peVals), s = _stuStatsSD(peVals);
     var normM=0.72, normS=0.16;
     var d = _stuStatsCohenD(m, s, normM, normS);
-    var se_d = Math.sqrt((1/mapRows.length)+(d*d/(2*mapRows.length)));
+    var se_d = Math.sqrt((1/mapRows.length)+(d*d/(2*(mapRows.length-1))));
     var ciLo = d-1.96*se_d, ciHi = d+1.96*se_d;
-    html += _stuStatsCard('MAP — PE Effect Size vs ATLAS Cross-Cohort Baseline',
-      _forestRow('Predictive Emergence (PE)', d, ciLo, ciHi, '\u03bc\u2009=\u20090.72, SD\u2009=\u20090.16 (ATLAS baseline)', '#059669') +
+    html += _stuStatsCard('MAP — PE Effect Size vs Provisional Baseline',
+      _forestRow('Predictive Emergence (PE)', d, ciLo, ciHi, '\u03bc\u2009=\u20090.72, SD\u2009=\u20090.16 (provisional — not yet externally validated)', '#059669') +
       _stuStatsStat('Your PE Mean', m.toFixed(3), 'SD\u2009=\u2009'+s.toFixed(3), undefined) +
       _stuStatsStat('Baseline PE', normM.toFixed(2), 'SD\u2009=\u2009'+normS.toFixed(2), undefined) +
       _stuStatsStat('Cohen\'s d', d.toFixed(2), _stuEffLabel(d)+' effect', d>0) +
@@ -3962,10 +4892,10 @@ function _stuStatsEffectSize(body) {
     var m = _stuStatsMean(peVals), s = _stuStatsSD(peVals);
     var normM=0.68, normS=0.18;
     var d = _stuStatsCohenD(m, s, normM, normS);
-    var se_d = Math.sqrt((1/peVals.length)+(d*d/(2*peVals.length)));
+    var se_d = Math.sqrt((1/peVals.length)+(d*d/(2*(peVals.length-1))));
     var ciLo = d-1.96*se_d, ciHi = d+1.96*se_d;
-    html += _stuStatsCard('PEACS — PE Effect Size vs ATLAS Baseline',
-      _forestRow('PEACS PE Composite', d, ciLo, ciHi, '\u03bc\u2009=\u20090.68, SD\u2009=\u20090.18 (ATLAS PEACS baseline)', '#7c3aed') +
+    html += _stuStatsCard('PEACS — PE Effect Size vs Provisional Baseline',
+      _forestRow('PEACS PE Composite', d, ciLo, ciHi, '\u03bc\u2009=\u20090.68, SD\u2009=\u20090.18 (provisional — not yet externally validated)', '#7c3aed') +
       _stuStatsStat('Your PE Mean', m.toFixed(3), 'SD\u2009=\u2009'+s.toFixed(3), undefined) +
       _stuStatsStat('Baseline PE', normM.toFixed(2), 'SD\u2009=\u2009'+normS.toFixed(2), undefined) +
       _stuStatsStat('Cohen\'s d', d.toFixed(2), _stuEffLabel(d)+' effect', d>0) +
@@ -3994,15 +4924,15 @@ function _stuStatsEffectSize(body) {
 
 var _STU_GLOSSARY_TERMS = [
   { term: 'MAP',    def: 'Multidimensional Adherence Parameters — measures Architecture, Execution, and Context domains' },
-  { term: 'PEACS',  def: 'Patient Ecosystem Adherence Composite Score — 7-item cross-domain assessment' },
-  { term: 'GAI',    def: 'Global Adherence Index — composite 0–1 score combining MMAS-8, MAP, and PEACS' },
-  { term: 'MMAS-8', def: 'Morisky Medication Adherence Scale — 8-item validated adherence instrument' },
+  { term: 'PEACS',  def: 'Predictive Emergence Assessment for Clinical Services — 22-item composite instrument with three scales (BASE, MVMT, STRATA) measuring Architecture, Execution, and Context at different temporal intervals' },
+  { term: 'GAI',    def: 'Global Adherence Index — annually published country-level triadic adherence profiles (Architecture, Execution, Context domain means per country)' },
+  { term: 'MMAS-8', def: 'Morisky Medication Adherence Scale — 8-item validated adherence instrument, scientific foundation for MAP' },
   { term: 'INA',    def: 'Intentional Non-Adherence — patient chooses not to take medication' },
   { term: 'UNA',    def: 'Unintentional Non-Adherence — patient forgets or has barriers to taking medication' },
-  { term: 'PE',     def: 'Predictive Emergence — composite adherence score from MAP tri-domain model' },
-  { term: 'BASE',   def: 'Behavioral Adherence Substrate Evaluation — habits and routine domain (PEACS Session 1)' },
-  { term: 'MVMT',   def: 'Movement domain — physical and logistical adherence factors (PEACS Session 2)' },
-  { term: 'STRATA', def: 'Stratification domain — mindset and motivation factors (PEACS Session 3)' },
+  { term: 'PE',     def: 'Predictive Emergence — geometric mean composite adherence score: (Architecture x Execution x Context-Guard)^(1/3)' },
+  { term: 'BASE',   def: 'Behavioral Architecture and Stability Evaluation — PEACS Scale 01 (Architecture domain). Measures structural conditions: access reliability, regimen clarity, care relationship quality, and infrastructural support. 7 items, assessed monthly.' },
+  { term: 'MVMT',   def: 'Measurable Variance Minimal Term — PEACS Scale 02 (Execution domain). Measures behavioral trajectory and drift resistance: whether adherence is stable, improving, or eroding over time. 7 items, assessed weekly.' },
+  { term: 'STRATA', def: 'Social and Treatment Relational Access and Terrain — PEACS Scale 03 (Context domain). Measures socioeconomic, cultural, and environmental conditions: treatment continuity access, health literacy, social support, care system trust. 8 items, assessed quarterly.' },
   { term: 'SDoH',   def: 'Social Determinants of Health — environmental factors affecting adherence' },
   { term: 'PI',     def: 'Principal Investigator — researcher managing a study workspace' },
 ];
@@ -4065,3 +4995,246 @@ function closeStuGlossary() {
 
 window.openStuGlossary  = openStuGlossary;
 window.closeStuGlossary = closeStuGlossary;
+
+// ══════════════════════════════════════════════════════════════════════════
+// ATLAS EVIDENCE PORTFOLIO
+// Renders a timestamped evidence record of the student's ATLAS activities
+// suitable for inclusion in CV / residency / grant applications.
+// Container: res-portfolio-body (injected by auth-workspace.js _waveModules)
+// ══════════════════════════════════════════════════════════════════════════
+
+function renderStudentPortfolio(containerId, uid, wsKey) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+
+  var C = window._ATLAS_COLORS || {
+    amber:'#d4a843', amberFaint:'rgba(212,168,67,0.09)', amberBdr:'rgba(212,168,67,0.3)',
+    cyan:'#38bdf8',  green:'#2ec98a', purple:'#8b6ff5',  red:'#ef4444', blue:'#4e9cf5',
+    text:'rgba(205,216,232,0.92)', muted:'rgba(138,160,184,0.8)', dim:'rgba(96,120,152,0.65)',
+    border:'rgba(212,168,67,0.12)', surface:'#0d1b2e', card:'#111d30',
+  };
+
+  var M = '\'IBM Plex Mono\',monospace';
+  var S = '\'Cormorant Garamond\',Georgia,serif';
+
+  el.innerHTML = '<div style="text-align:center;padding:32px;font-family:' + M + ';font-size:0.80rem;color:' + C.muted + ';">Building portfolio…</div>';
+
+  // Load data from Firebase in parallel
+  var db = (typeof database !== 'undefined') ? database : null;
+  if (!db || !wsKey) {
+    el.innerHTML = '<div style="font-family:' + M + ';font-size:0.76rem;color:' + C.dim + ';padding:24px;text-align:center;">Portfolio requires an active workspace key.</div>';
+    return;
+  }
+
+  var assessPath = 'assessments';
+  var certPath   = 'map_cert_progress/' + (uid || 'anon');
+  var studyPath  = 'research_studies';
+
+  Promise.all([
+    db.ref(assessPath).orderByChild('institution_code').equalTo(wsKey).limitToLast(500).once('value'),
+    db.ref(certPath).once('value'),
+    db.ref(studyPath).orderByChild('workspace_key').equalTo(wsKey).limitToLast(50).once('value'),
+  ]).then(function(results) {
+    var assessSnap = results[0];
+    var certSnap   = results[1];
+    var studySnap  = results[2];
+
+    var assessments = [];
+    assessSnap.forEach(function(child) { assessments.push(child.val()); });
+
+    var certData = certSnap.val() || {};
+    var studies  = [];
+    studySnap.forEach(function(child) { studies.push(child.val()); });
+
+    // Compute stats
+    var mapRecs   = assessments.filter(function(r){ return r.map_q1 !== undefined; });
+    var mmasRecs  = assessments.filter(function(r){ return r.score !== undefined && r.map_q1 === undefined; });
+    var totalRecs = assessments.length;
+
+    var peScores = mapRecs.map(function(r){
+      var a = ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3;
+      var e = ((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3;
+      var c = 0.5 + 0.5*((+r.map_q4||0)+(+r.map_q7||0))/2;
+      return Math.pow(Math.max(0, a*e*c), 1/3);
+    });
+    var meanPE = peScores.length ? peScores.reduce(function(a,b){return a+b;},0)/peScores.length : null;
+
+    // Certification levels completed
+    var certLevels = {
+      foundation:    !!(certData.foundation    && certData.foundation.completed),
+      practitioner:  !!(certData.practitioner  && certData.practitioner.completed),
+      specialist:    !!(certData.specialist    && certData.specialist.completed),
+      fellow:        !!(certData.fellow        && certData.fellow.completed),
+    };
+    var certCount = Object.values(certLevels).filter(Boolean).length;
+
+    // Build timeline events from assessments and studies
+    var events = [];
+    assessments.forEach(function(r) {
+      if (!r.timestamp) return;
+      var label = r.map_q1 !== undefined ? 'MAP Assessment administered' : 'MMAS-8 Assessment administered';
+      events.push({ ts: +r.timestamp, label: label, color: r.map_q1 !== undefined ? C.green : C.blue, tag: r.map_q1 !== undefined ? 'MAP' : 'MMAS-8' });
+    });
+    studies.forEach(function(s) {
+      if (s.created) events.push({ ts: +s.created, label: 'Study registered: ' + (s.title || s.study_title || 'Unnamed'), color: C.amber, tag: 'STUDY', atlasId: s.atlas_id });
+    });
+    if (certData.foundation    && certData.foundation.completed_ts)   events.push({ ts: +certData.foundation.completed_ts,   label: 'MAP Foundation Certification completed',   color: '#d4a843', tag: 'CERT' });
+    if (certData.practitioner  && certData.practitioner.completed_ts) events.push({ ts: +certData.practitioner.completed_ts, label: 'MAP Practitioner Certification completed', color: '#38bdf8', tag: 'CERT' });
+    if (certData.specialist    && certData.specialist.completed_ts)   events.push({ ts: +certData.specialist.completed_ts,   label: 'MAP Specialist Certification completed',   color: '#2ec98a', tag: 'CERT' });
+    if (certData.fellow        && certData.fellow.completed_ts)       events.push({ ts: +certData.fellow.completed_ts,       label: 'MAP Fellow Certification completed',       color: '#8b6ff5', tag: 'CERT' });
+    events.sort(function(a,b){ return b.ts - a.ts; });
+
+    // Date helpers
+    function _fmtDate(ts) {
+      if (!ts) return '—';
+      var d = new Date(ts);
+      return d.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+    }
+
+    var atlasId = (window._stuAtlasId || (studies.length ? studies[0].atlas_id : null) || '—');
+
+    // Render
+    var h = '';
+
+    // ── Header ──────────────────────────────────────────────────────────────────
+    h += '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;">';
+    h += '  <div>';
+    h += '    <div style="font-family:' + M + ';font-size:0.60rem;letter-spacing:0.22em;text-transform:uppercase;color:' + C.dim + ';margin-bottom:3px;">ATLAS Evidence Portfolio</div>';
+    h += '    <div style="font-family:' + S + ';font-size:1.55rem;font-weight:300;color:' + C.text + ';line-height:1.2;margin-bottom:6px;">Research Record</div>';
+    h += '    <div style="font-family:' + M + ';font-size:0.72rem;color:' + C.muted + ';">Workspace: <span style="color:' + C.amber + ';">' + wsKey + '</span></div>';
+    h += '    <div style="font-family:' + M + ';font-size:0.72rem;color:' + C.muted + ';margin-top:2px;">ATLAS ID: <span style="color:' + C.green + ';letter-spacing:0.06em;">' + atlasId + '</span></div>';
+    h += '    <div style="font-family:' + M + ';font-size:0.70rem;color:' + C.dim + ';margin-top:2px;">Generated: ' + _fmtDate(Date.now()) + ' · ATLAS v8.9.3</div>';
+    h += '  </div>';
+    h += '  <button onclick="window._stuPrintPortfolio()" style="flex-shrink:0;font-family:' + M + ';font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;padding:8px 14px;border-radius:6px;cursor:pointer;border:1px solid ' + C.amberBdr + ';background:' + C.amberFaint + ';color:' + C.amber + ';">&#8659; Export PDF</button>';
+    h += '</div>';
+
+    // ── KPI strip ────────────────────────────────────────────────────────────────
+    var kpis = [
+      { val: totalRecs.toLocaleString(), lbl: 'Total Assessments', col: C.cyan },
+      { val: mapRecs.length.toLocaleString(),  lbl: 'MAP Administered', col: C.green },
+      { val: mmasRecs.length.toLocaleString(), lbl: 'MMAS-8 Administered', col: C.blue },
+      { val: meanPE !== null ? meanPE.toFixed(3) : '—', lbl: 'Mean PE Score', col: C.amber },
+      { val: certCount + '/4', lbl: 'Cert Levels', col: C.purple },
+      { val: studies.length.toLocaleString(), lbl: 'Registered Studies', col: '#f59e0b' },
+    ];
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px;">';
+    kpis.forEach(function(k) {
+      h += '<div style="background:' + C.surface + ';border:1px solid ' + C.border + ';border-radius:8px;padding:12px 14px;">';
+      h += '  <div style="font-size:1.35rem;font-weight:700;color:' + k.col + ';font-family:' + M + ';letter-spacing:-0.02em;">' + k.val + '</div>';
+      h += '  <div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:' + C.dim + ';margin-top:3px;">' + k.lbl + '</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+
+    // ── Certification badges ──────────────────────────────────────────────────────
+    var certDefs = [
+      { key:'foundation',   label:'Foundation',   color:'#d4a843' },
+      { key:'practitioner', label:'Practitioner', color:'#38bdf8' },
+      { key:'specialist',   label:'Specialist',   color:'#2ec98a' },
+      { key:'fellow',       label:'Fellow',       color:'#8b6ff5' },
+    ];
+    h += '<div style="margin-bottom:20px;">';
+    h += '<div style="font-family:' + M + ';font-size:0.60rem;letter-spacing:0.22em;text-transform:uppercase;color:' + C.dim + ';margin-bottom:10px;">MAP Certification Pathway</div>';
+    h += '<div style="display:flex;gap:10px;flex-wrap:wrap;">';
+    certDefs.forEach(function(cd) {
+      var done = certLevels[cd.key];
+      var completedDate = (certData[cd.key] && certData[cd.key].completed_ts) ? _fmtDate(certData[cd.key].completed_ts) : null;
+      h += '<div style="background:' + (done ? 'rgba('+_hexToRgb(cd.color)+',0.10)' : C.surface) + ';border:1px solid ' + (done ? cd.color+'55' : C.border) + ';border-radius:8px;padding:12px 14px;min-width:120px;flex:1;">';
+      h += '  <div style="font-size:1.4rem;margin-bottom:6px;">' + (done ? '◉' : '○') + '</div>';
+      h += '  <div style="font-family:' + M + ';font-size:0.72rem;font-weight:700;color:' + (done ? cd.color : C.dim) + ';">MAP ' + cd.label + '</div>';
+      h += '  <div style="font-family:' + M + ';font-size:0.60rem;color:' + C.dim + ';margin-top:3px;">' + (done && completedDate ? 'Earned ' + completedDate : (done ? 'Completed' : 'Not yet completed')) + '</div>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+
+    // ── Registered studies ────────────────────────────────────────────────────────
+    if (studies.length) {
+      h += '<div style="margin-bottom:20px;">';
+      h += '<div style="font-family:' + M + ';font-size:0.60rem;letter-spacing:0.22em;text-transform:uppercase;color:' + C.dim + ';margin-bottom:10px;">Registered Studies</div>';
+      studies.forEach(function(s) {
+        h += '<div style="background:' + C.surface + ';border:1px solid ' + C.border + ';border-left:3px solid ' + C.amber + ';border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:8px;">';
+        h += '  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">';
+        h += '    <div style="font-family:' + M + ';font-size:0.82rem;font-weight:700;color:' + C.text + ';">' + ((s.title||s.study_title||'Unnamed Study').substring(0,60)) + '</div>';
+        h += '    <span style="font-family:' + M + ';font-size:0.62rem;color:' + C.green + ';letter-spacing:0.08em;white-space:nowrap;">' + (s.atlas_id || '—') + '</span>';
+        h += '  </div>';
+        h += '  <div style="font-family:' + M + ';font-size:0.68rem;color:' + C.muted + ';margin-top:4px;">Registered ' + _fmtDate(s.created) + (s.condition ? ' · ' + s.condition : '') + '</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    // ── Activity timeline (last 30 events) ───────────────────────────────────────
+    if (events.length) {
+      h += '<div>';
+      h += '<div style="font-family:' + M + ';font-size:0.60rem;letter-spacing:0.22em;text-transform:uppercase;color:' + C.dim + ';margin-bottom:10px;">Activity Timeline (most recent)</div>';
+      events.slice(0, 30).forEach(function(ev) {
+        h += '<div style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid ' + C.border + ';">';
+        h += '  <span style="font-family:' + M + ';font-size:0.60rem;padding:2px 6px;border-radius:10px;background:' + ev.color + '1a;color:' + ev.color + ';white-space:nowrap;margin-top:1px;">' + ev.tag + '</span>';
+        h += '  <div style="flex:1;">';
+        h += '    <div style="font-family:' + M + ';font-size:0.78rem;color:' + C.text + ';">' + ev.label + (ev.atlasId ? ' (' + ev.atlasId + ')' : '') + '</div>';
+        h += '    <div style="font-family:' + M + ';font-size:0.64rem;color:' + C.dim + ';margin-top:1px;">' + _fmtDate(ev.ts) + '</div>';
+        h += '  </div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    if (!totalRecs && !studies.length && !certCount) {
+      h += '<div style="text-align:center;padding:40px 16px;font-family:' + M + ';font-size:0.80rem;color:' + C.muted + ';line-height:1.7;">';
+      h += 'Your portfolio will populate as you administer assessments, register studies, and earn MAP certifications.<br/>';
+      h += '<span style="color:' + C.dim + ';font-size:0.72rem;">All ATLAS activity is automatically timestamped and recorded here.</span>';
+      h += '</div>';
+    }
+
+    el.innerHTML = h;
+
+    // Attach print function
+    window._stuPrintPortfolio = function() {
+      var win = window.open('', '_blank');
+      if (!win) { showToast('Allow pop-ups to export portfolio.', 3000); return; }
+      win.document.write('<html><head><title>ATLAS Evidence Portfolio</title>'
+        + '<style>body{font-family:"IBM Plex Mono",monospace;font-size:11px;color:#1a1a1a;padding:32px;}'
+        + 'h1{font-family:"Cormorant Garamond",Georgia,serif;font-weight:300;font-size:28px;margin-bottom:4px;}'
+        + '.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0;}'
+        + '.kpi{border:1px solid #ddd;border-radius:6px;padding:10px 14px;}'
+        + '.kpi-val{font-size:22px;font-weight:700;margin-bottom:2px;}'
+        + '.kpi-lbl{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#888;}'
+        + '.event-row{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid #eee;font-size:10px;}'
+        + '.tag{padding:1px 5px;border-radius:8px;font-size:9px;letter-spacing:0.08em;}'
+        + '@media print{body{padding:0;}}</style></head><body>');
+      win.document.write('<h1>ATLAS Evidence Portfolio</h1>');
+      win.document.write('<p style="font-size:10px;color:#888;">ATLAS ID: ' + atlasId + ' &nbsp;|&nbsp; Workspace: ' + wsKey + ' &nbsp;|&nbsp; Generated: ' + _fmtDate(Date.now()) + '</p>');
+      win.document.write('<hr>');
+      win.document.write('<div class="kpi-grid">');
+      kpis.forEach(function(k){ win.document.write('<div class="kpi"><div class="kpi-val">' + k.val + '</div><div class="kpi-lbl">' + k.lbl + '</div></div>'); });
+      win.document.write('</div><hr>');
+      win.document.write('<h3 style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#666;">MAP Certification</h3>');
+      certDefs.forEach(function(cd){
+        win.document.write('<p>' + (certLevels[cd.key] ? '✓' : '○') + ' MAP ' + cd.label + (certLevels[cd.key] && certData[cd.key] && certData[cd.key].completed_ts ? ' — Earned ' + _fmtDate(certData[cd.key].completed_ts) : '') + '</p>');
+      });
+      if (studies.length) {
+        win.document.write('<hr><h3 style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#666;">Registered Studies</h3>');
+        studies.forEach(function(s){ win.document.write('<p><strong>' + (s.atlas_id||'—') + '</strong> — ' + (s.title||s.study_title||'Unnamed Study') + ' &nbsp;(' + _fmtDate(s.created) + ')</p>'); });
+      }
+      if (events.length) {
+        win.document.write('<hr><h3 style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#666;">Activity Timeline</h3>');
+        events.slice(0, 30).forEach(function(ev){ win.document.write('<div class="event-row"><span>[' + ev.tag + ']</span><span>' + _fmtDate(ev.ts) + ' — ' + ev.label + '</span></div>'); });
+      }
+      win.document.write('</body></html>');
+      win.document.close();
+      setTimeout(function(){ win.print(); }, 500);
+    };
+
+  }).catch(function(err) {
+    console.error('[ATLAS] Portfolio load error:', err);
+    el.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;color:rgba(96,120,152,0.65);padding:24px;text-align:center;">Could not load portfolio data. Check your connection and workspace permissions.</div>';
+  });
+}
+
+// Helper: convert hex color to "r,g,b" for rgba() use
+function _hexToRgb(hex) {
+  var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return r + ',' + g + ',' + b;
+}
+
+window.renderStudentPortfolio = renderStudentPortfolio;

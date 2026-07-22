@@ -885,7 +885,7 @@ function showResultModal(score, answers) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 120,
           system: 'You are a compassionate adherence health guide. Respond in 1-2 sentences only. Be warm and specific. Never mention MMAS or scoring scales by name.',
           messages: [{ role: 'user', content: _aiPrompt }]
