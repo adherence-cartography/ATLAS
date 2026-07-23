@@ -490,6 +490,9 @@ function setAppLanguage(lang) {
   // ── 9. getAdherenceCategory — patch to use translated labels ─────────────
   window._atlasLang = lang;
   window._consentLastLang = lang;
+
+  // ── 10. Sync PEACS question language if available ─────────────────────────
+  if (typeof setPeacsLang === 'function') setPeacsLang(lang);
 }
 
 // Convenience aliases — all route to setAppLanguage
@@ -541,14 +544,15 @@ const ATLAS_BENCHMARKS = {
     source: 'Morisky et al., J Clin Hypertension, 2008 (n=1,367)',
     year: 2008
   },
-  // ATLAS global average (live, fetched from Firebase; fallback to stored value)
+  // ATLAS platform mean — loaded from Firebase platform_stats/global_mmas8_mean at runtime.
+  // Update via SA panel or Firebase console: platform_stats/global_mmas8_mean (number).
   global: {
-    mmas8_mean: 6.21,       // updated periodically
+    mmas8_mean: 6.21,
     mmas8_high_pct: 34.2,
     mmas8_medium_pct: 41.8,
     mmas8_low_pct: 24.0,
-    source: 'ATLAS Global Dataset 2026 (N>50,000)',
-    year: 2026
+    source: 'ATLAS Platform cross-site aggregate (2025)',
+    year: 2025
   }
 };
 
@@ -559,7 +563,25 @@ function renderBenchmarkStrip(containerId, cohortMean, cohortN) {
   if (!container || !cohortMean || cohortMean === 0) return;
 
   const litMean = ATLAS_BENCHMARKS.literature.mmas8_mean;
-  const globalMean = ATLAS_BENCHMARKS.global.mmas8_mean;
+
+  // Load live global mean from Firebase; fall back to embedded value
+  var _db = (typeof database !== 'undefined') ? database : null;
+  if (_db) {
+    _db.ref('platform_stats/global_mmas8_mean').once('value').then(function(snap) {
+      if (snap.val() && typeof snap.val() === 'number') {
+        ATLAS_BENCHMARKS.global.mmas8_mean = snap.val();
+      }
+      _renderBenchmarkStripInner(container, cohortMean, cohortN, litMean, ATLAS_BENCHMARKS.global.mmas8_mean);
+    }).catch(function() {
+      _renderBenchmarkStripInner(container, cohortMean, cohortN, litMean, ATLAS_BENCHMARKS.global.mmas8_mean);
+    });
+    return;
+  }
+  _renderBenchmarkStripInner(container, cohortMean, cohortN, litMean, ATLAS_BENCHMARKS.global.mmas8_mean);
+}
+
+function _renderBenchmarkStripInner(container, cohortMean, cohortN, litMean, globalMean) {
+  if (!container) return;
   const maxScore = 8;
 
   const cohortPct   = Math.round((cohortMean / maxScore) * 100);
@@ -608,7 +630,7 @@ function renderBenchmarkStrip(containerId, cohortMean, cohortN) {
         </div>
       </div>
       <div class="benchmark-legend">
-        <div class="benchmark-legend-item"><div class="benchmark-legend-dot" style="background:#7c3aed;"></div>ATLAS Global 2026</div>
+        <div class="benchmark-legend-item"><div class="benchmark-legend-dot" style="background:#7c3aed;"></div>ATLAS Global ${ATLAS_BENCHMARKS.global.year}</div>
         <div class="benchmark-legend-item"><div class="benchmark-legend-dot" style="background:#ef4444;"></div>Morisky et al. 2008</div>
         <div class="benchmark-legend-item" style="font-size:0.65rem;color:#bbb;">Delta = Your cohort vs benchmark</div>
       </div>
@@ -618,18 +640,21 @@ function renderBenchmarkStrip(containerId, cohortMean, cohortN) {
 function _updateStudentSessionStats() {
   try {
     var allData = (typeof dashMmasData !== 'undefined' && Array.isArray(dashMmasData) ? dashMmasData : []);
-    // MMAS-8 column: exclude MAP records (tool:'map' or map_q1 present)
-    var rows  = allData.filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined; });
-    // MAP column: MAP records only
-    var mapR  = allData.filter(function(r) { return r.tool === 'map' || r.map_q1 !== undefined; });
+    // MAP records: tool:'map' or has map_q1 field
+    var mapR   = allData.filter(function(r) { return r.tool === 'map' || r.map_q1 !== undefined; });
+    // PEACS records: has pe_score field but is not MAP
+    var peacsR = allData.filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined && r.pe_score !== undefined; });
+    // MMAS-8 records only: not MAP, not PEACS
+    var rows   = allData.filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined && r.pe_score === undefined; });
     var count = rows.length;
     var avg   = count ? (rows.reduce(function(s, r) { return s + (parseFloat(r.score) || 0); }, 0) / count).toFixed(1) : '—';
     var low   = rows.filter(function(r) { return parseFloat(r.score) < 6; }).length;
     var sc = document.getElementById('stu-session-count'); if (sc) sc.textContent = count || '0';
     var sa = document.getElementById('stu-session-avg');   if (sa) sa.textContent = count ? avg : '—';
     var sl = document.getElementById('stu-session-low');   if (sl) sl.textContent = count ? low : '—';
-    // Update MAP count in cohort snapshot
-    var smn = document.getElementById('stu-val-map-n'); if (smn) smn.textContent = mapR.length || '—';
+    // Update MAP and PEACS counts in cohort snapshot
+    var smn = document.getElementById('stu-val-map-n');  if (smn) smn.textContent = mapR.length  || '—';
+    var spn = document.getElementById('stu-val-mmas-n'); if (spn) spn.textContent = peacsR.length || '—';
 
     // Compute INA / UNA / Mixed / High pattern counts
     var cHigh = 0, cINA = 0, cUNA = 0, cMixed = 0;
@@ -666,11 +691,389 @@ function _updateStudentSessionStats() {
     renderStudentPeDomain(allData);  // full dataset — MAP filter applied inside the function
     renderStudentSentinel(rows);
     _updateStudentValidationPanel();
+    _renderStuTrendLine(rows);
+    _renderStuDonut(cHigh, cUNA, cINA, cMixed, count);
+    _renderStuINAUNABar(cHigh, cINA, cUNA, cMixed, count);
+    _renderStuEnrollmentGauge(count);
+    _renderStuConditionBar(rows);
+    _renderStuCompletenessRate(rows);
     // Refresh thesis export, power advisor, PEACS tracker, and map badge
     if (typeof window._stuThesisRefreshFromStats === 'function') {
       try { window._stuThesisRefreshFromStats(); } catch(e) {}
     }
   } catch(e) {}
+}
+
+// ── Tier 2 Chart: INA vs UNA Comparison Bar ──────────────
+function _renderStuINAUNABar(cHigh, cINA, cUNA, cMixed, count) {
+  var el = document.getElementById('stu-ina-una-chart');
+  if (!el) return;
+  if (!count) { el.style.display = 'none'; return; }
+
+  var segments = [
+    { label: 'High',  n: cHigh,  color: '#059669', tip: 'Score = 8 · Full adherence' },
+    { label: 'INA',   n: cINA,   color: '#dc2626', tip: 'Intentional Non-Adherence · patient choice' },
+    { label: 'UNA',   n: cUNA,   color: '#d97706', tip: 'Unintentional Non-Adherence · barriers/forgetting' },
+    { label: 'Mixed', n: cMixed, color: '#7c3aed', tip: 'Both INA and UNA present' },
+  ];
+
+  var maxN  = Math.max.apply(null, segments.map(function(s) { return s.n; })) || 1;
+  var W     = 280, rowH = 28, padL = 44, padR = 36, gap = 6;
+  var H     = segments.length * rowH + 8;
+  var barW  = W - padL - padR;
+
+  var rows = segments.map(function(seg, i) {
+    var y       = 4 + i * rowH;
+    var fillW   = Math.max(seg.n > 0 ? 4 : 0, (seg.n / maxN) * barW);
+    var pct     = count > 0 ? Math.round(seg.n / count * 100) : 0;
+    var midY    = y + rowH / 2;
+
+    return (
+      // Row label
+      '<text x="' + (padL - 6) + '" y="' + (midY + 4) + '" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="9" fill="#64748b">' + seg.label + '</text>' +
+      // Background track
+      '<rect x="' + padL + '" y="' + (y + 6) + '" width="' + barW + '" height="' + (rowH - 12) + '" rx="3" fill="rgba(148,163,184,0.08)"/>' +
+      // Filled bar
+      (seg.n > 0 ? '<rect x="' + padL + '" y="' + (y + 6) + '" width="' + fillW + '" height="' + (rowH - 12) + '" rx="3" fill="' + seg.color + '" opacity="0.82"/>' : '') +
+      // Count + pct label
+      '<text x="' + (padL + barW + 5) + '" y="' + (midY + 4) + '" font-family="IBM Plex Mono,monospace" font-size="9" fill="' + seg.color + '" font-weight="600">' + seg.n + '</text>' +
+      '<text x="' + (padL + barW + 26) + '" y="' + (midY + 4) + '" font-family="IBM Plex Mono,monospace" font-size="8" fill="#94a3b8">' + pct + '%</text>'
+    );
+  }).join('');
+
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:' + H + 'px;overflow:visible;">' + rows + '</svg>';
+  el.style.display = 'block';
+}
+
+// ── Tier 2 Chart: Enrollment Progress Gauge ───────────────
+function _renderStuEnrollmentGauge(count) {
+  var el = document.getElementById('stu-enrollment-gauge');
+  if (!el) return;
+  if (!count) { el.style.display = 'none'; return; }
+
+  // Read target N from power advisor state if available; fall back to milestone ladder
+  var state = window._stuPowerState;
+  var target = (state && state.nRequired)
+    ? state.nRequired
+    : (count >= 150 ? 200 : count >= 100 ? 150 : count >= 50 ? 100 : count >= 30 ? 50 : 30);
+
+  var pct    = Math.min(100, Math.round(count / target * 100));
+  var met    = count >= target;
+  var barCol = met ? '#059669' : pct >= 60 ? '#d97706' : '#2563eb';
+  var label  = met ? 'Target met' : (target - count) + ' to go';
+
+  var W = 280, H = 38, barH = 10, barY = 14, padL = 0, padR = 0;
+  var fillW = (pct / 100) * W;
+
+  var svg =
+    // Background track
+    '<rect x="0" y="' + barY + '" width="' + W + '" height="' + barH + '" rx="5" fill="rgba(148,163,184,0.12)"/>' +
+    // Filled portion
+    '<rect x="0" y="' + barY + '" width="' + fillW + '" height="' + barH + '" rx="5" fill="' + barCol + '" opacity="0.88"/>' +
+    // Left label: current N
+    '<text x="0" y="11" font-family="IBM Plex Mono,monospace" font-size="9" fill="' + barCol + '" font-weight="700">N = ' + count + '</text>' +
+    // Right label: target N
+    '<text x="' + W + '" y="11" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="9" fill="#64748b">target ' + target + '</text>' +
+    // Center pct below bar
+    '<text x="' + (W / 2) + '" y="' + (barY + barH + 12) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="' + barCol + '">' + pct + '% · ' + label + '</text>';
+
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:' + H + 'px;overflow:visible;">' + svg + '</svg>';
+  el.style.display = 'block';
+}
+
+// ── Tier 3 Chart: Condition / Disease Breakdown ───────────
+function _renderStuConditionBar(rows) {
+  var el = document.getElementById('stu-condition-chart');
+  if (!el) return;
+
+  // Tally condition labels (skip blank / missing)
+  var counts = {};
+  rows.forEach(function(r) {
+    var c = (r.condition || '').toString().trim();
+    if (!c || c === '—') return;
+    counts[c] = (counts[c] || 0) + 1;
+  });
+
+  var entries = Object.keys(counts).map(function(k) { return { label: k, n: counts[k] }; });
+  entries.sort(function(a, b) { return b.n - a.n; });
+  entries = entries.slice(0, 10); // top 10
+
+  if (!entries.length) { el.style.display = 'none'; return; }
+
+  var maxN = entries[0].n;
+  var total = rows.length || 1;
+  var W = 280, rowH = 26, padL = 80, padR = 46, gap = 4;
+  var barW = W - padL - padR;
+  var H = entries.length * rowH + 6;
+
+  var palette = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#0891b2','#65a30d','#ea580c','#c026d3','#0d9488'];
+
+  var svgRows = entries.map(function(seg, i) {
+    var y      = 3 + i * rowH;
+    var midY   = y + rowH / 2;
+    var fillW  = Math.max(seg.n > 0 ? 3 : 0, (seg.n / maxN) * barW);
+    var pct    = Math.round(seg.n / total * 100);
+    var col    = palette[i % palette.length];
+    var lbl    = seg.label.length > 12 ? seg.label.slice(0, 11) + '…' : seg.label;
+    return (
+      '<text x="' + (padL - 5) + '" y="' + (midY + 4) + '" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#64748b">' + lbl + '</text>' +
+      '<rect x="' + padL + '" y="' + (y + 7) + '" width="' + barW + '" height="' + (rowH - 14) + '" rx="3" fill="rgba(148,163,184,0.08)"/>' +
+      (seg.n > 0 ? '<rect x="' + padL + '" y="' + (y + 7) + '" width="' + fillW + '" height="' + (rowH - 14) + '" rx="3" fill="' + col + '" opacity="0.80"/>' : '') +
+      '<text x="' + (padL + barW + 5) + '" y="' + (midY + 4) + '" font-family="IBM Plex Mono,monospace" font-size="9" fill="' + col + '" font-weight="600">' + seg.n + '</text>' +
+      '<text x="' + (padL + barW + 26) + '" y="' + (midY + 4) + '" font-family="IBM Plex Mono,monospace" font-size="8" fill="#94a3b8">' + pct + '%</text>'
+    );
+  }).join('');
+
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:' + H + 'px;overflow:visible;">' + svgRows + '</svg>';
+  el.style.display = 'block';
+}
+
+// ── Tier 3 Chart: Data Completeness Rate ─────────────────
+function _renderStuCompletenessRate(rows) {
+  var el = document.getElementById('stu-completeness-rate');
+  if (!el) return;
+  if (!rows.length) { el.style.display = 'none'; return; }
+
+  var complete = 0, incomplete = 0;
+  rows.forEach(function(r) {
+    var full = ['q1','q2','q3','q4','q5','q6','q7','q8'].every(function(k) { return r[k] !== undefined && r[k] !== null && r[k] !== ''; });
+    if (full) complete++; else incomplete++;
+  });
+
+  var pct    = Math.round(complete / rows.length * 100);
+  var barCol = pct >= 90 ? '#059669' : pct >= 70 ? '#d97706' : '#dc2626';
+  var label  = pct >= 90 ? 'Excellent' : pct >= 70 ? 'Acceptable' : 'Review needed';
+  var W = 280, H = 52, barH = 10, barY = 16;
+  var fillW = (pct / 100) * W;
+
+  var svg =
+    // Background track
+    '<rect x="0" y="' + barY + '" width="' + W + '" height="' + barH + '" rx="5" fill="rgba(148,163,184,0.12)"/>' +
+    // Filled bar
+    '<rect x="0" y="' + barY + '" width="' + fillW + '" height="' + barH + '" rx="5" fill="' + barCol + '" opacity="0.88"/>' +
+    // Top-left: complete count
+    '<text x="0" y="11" font-family="IBM Plex Mono,monospace" font-size="9" fill="' + barCol + '" font-weight="700">' + complete + ' complete</text>' +
+    // Top-right: incomplete count
+    '<text x="' + W + '" y="11" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="9" fill="#94a3b8">' + incomplete + ' partial</text>' +
+    // Bottom: pct + label
+    '<text x="' + (W / 2) + '" y="' + (barY + barH + 13) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="' + barCol + '">' + pct + '% item-complete · ' + label + '</text>' +
+    // Tooltip note
+    '<text x="' + (W / 2) + '" y="' + (barY + barH + 25) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#94a3b8">All 8 MMAS items present</text>';
+
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:' + H + 'px;overflow:visible;">' + svg + '</svg>';
+  el.style.display = 'block';
+}
+
+// ── Tier 3 Chart: MAP PE Cohort-to-Benchmark ─────────────
+function renderPeBenchmarkStrip(containerId, cohortPe, cohortN, avgA, avgE, avgC) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  if (!isFinite(cohortPe) || cohortPe <= 0) { container.innerHTML = ''; return; }
+
+  var baseline  = 0.72; // Provisional PE reference point (not yet validated cross-cohort)
+  var maxPe     = 1.0;
+  var cohortPct = Math.round((cohortPe / maxPe) * 100);
+  var basePct   = Math.round((baseline / maxPe) * 100);
+  var delta     = cohortPe - baseline;
+  var dClass    = delta > 0.02 ? 'positive' : delta < -0.02 ? 'negative' : 'neutral';
+  var dText     = (delta > 0 ? '+' : '') + delta.toFixed(3);
+  var bClass    = delta > 0.02 ? 'above' : delta < -0.02 ? 'below' : 'neutral';
+
+  // Per-domain deltas vs provisional reference (0.72 applied uniformly — actual domain baselines not yet published)
+  var domainRows = '';
+  if (isFinite(avgA) && isFinite(avgE) && isFinite(avgC)) {
+    var fmt = function(v) { return isNaN(v) || !isFinite(v) ? '—' : v.toFixed(3); };
+    domainRows = '<div style="display:flex;gap:6px;margin-top:6px;">' +
+      '<div style="flex:1;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:6px;padding:6px 8px;text-align:center;">' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.46rem;letter-spacing:0.1em;color:#b45309;margin-bottom:2px;">ARCH</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;font-weight:700;color:#b45309;">' + fmt(avgA) + '</div>' +
+      '</div>' +
+      '<div style="flex:1;background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.13);border-radius:6px;padding:6px 8px;text-align:center;">' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.46rem;letter-spacing:0.1em;color:#2563eb;margin-bottom:2px;">EXEC</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;font-weight:700;color:#2563eb;">' + fmt(avgE) + '</div>' +
+      '</div>' +
+      '<div style="flex:1;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.13);border-radius:6px;padding:6px 8px;text-align:center;">' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.46rem;letter-spacing:0.1em;color:#7c3aed;margin-bottom:2px;">CTX-G</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;font-weight:700;color:#7c3aed;">' + fmt(avgC) + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  container.innerHTML =
+    '<div class="benchmark-strip" style="margin-top:12px;">' +
+      '<div class="benchmark-strip-title">' +
+        '<span>MAP PE · Baseline Comparison</span>' +
+        '<span style="font-size:0.68rem;color:#9ca3af;font-weight:400;">n=' + (cohortN || '—') + '</span>' +
+      '</div>' +
+      '<div class="benchmark-rows">' +
+        '<div class="benchmark-row">' +
+          '<span class="benchmark-row-label">Your Cohort</span>' +
+          '<div class="benchmark-bar-track">' +
+            '<div class="benchmark-bar-cohort ' + bClass + '" style="width:' + cohortPct + '%;"></div>' +
+            '<div class="benchmark-bar-marker global" style="left:' + basePct + '%;"></div>' +
+          '</div>' +
+          '<span class="benchmark-score">' + cohortPe.toFixed(3) + '</span>' +
+          '<span class="benchmark-delta neutral">—</span>' +
+        '</div>' +
+        '<div class="benchmark-row">' +
+          '<span class="benchmark-row-label" style="color:#7c3aed;">ATLAS Baseline</span>' +
+          '<div class="benchmark-bar-track">' +
+            '<div class="benchmark-bar-cohort" style="width:' + basePct + '%;background:#7c3aed;"></div>' +
+          '</div>' +
+          '<span class="benchmark-score" style="color:#7c3aed;">' + baseline.toFixed(2) + '</span>' +
+          '<span class="benchmark-delta ' + dClass + '">' + dText + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="benchmark-legend">' +
+        '<div class="benchmark-legend-item"><div class="benchmark-legend-dot" style="background:#7c3aed;"></div>ATLAS MAP PE Baseline 2026</div>' +
+        '<div class="benchmark-legend-item" style="font-size:0.65rem;color:#bbb;">PE = (Architecture × Execution × Context-Guard)^⅓</div>' +
+      '</div>' +
+      domainRows +
+    '</div>';
+}
+
+// ── Tier 1 Chart: Longitudinal Score Trend Line ──────────
+function _renderStuTrendLine(rows) {
+  var chart  = document.getElementById('stu-score-trend');
+  var empty  = document.getElementById('stu-trend-empty');
+  if (!chart) return;
+
+  // Group by calendar day, compute daily mean score
+  var byDay = {};
+  rows.forEach(function(r) {
+    if (!r.timestamp) return;
+    var d = new Date(r.timestamp);
+    var key = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    if (!byDay[key]) byDay[key] = { sum: 0, n: 0, ts: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() };
+    byDay[key].sum += parseFloat(r.score) || 0;
+    byDay[key].n++;
+  });
+
+  var points = Object.values(byDay).sort(function(a, b) { return a.ts - b.ts; });
+
+  if (points.length < 2) {
+    chart.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  var W = 290, H = 130, padL = 26, padR = 18, padT = 10, padB = 22;
+  var plotW = W - padL - padR;
+  var plotH = H - padT - padB;
+
+  var minTs = points[0].ts;
+  var maxTs = points[points.length - 1].ts;
+  var tsRange = maxTs - minTs || 1;
+
+  function tX(ts) { return padL + ((ts - minTs) / tsRange) * plotW; }
+  function tY(v)  { return padT + plotH - (v / 8) * plotH; }
+
+  // Reference lines at adherence thresholds 4 and 6
+  var refs = [
+    { v: 4, col: '#fca5a5', label: '4' },
+    { v: 6, col: '#fcd34d', label: '6' },
+  ].map(function(r) {
+    var y = tY(r.v);
+    return '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y +
+           '" stroke="' + r.col + '" stroke-width="1" stroke-dasharray="4,3" opacity="0.7"/>' +
+           '<text x="' + (W - padR + 2) + '" y="' + (y + 3) + '" font-family="IBM Plex Mono,monospace" font-size="8" fill="#94a3b8">' + r.label + '</text>';
+  }).join('');
+
+  // Y-axis labels
+  var yLabels = [0, 4, 8].map(function(v) {
+    return '<text x="' + (padL - 4) + '" y="' + (tY(v) + 3) + '" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="8" fill="#94a3b8">' + v + '</text>';
+  }).join('');
+
+  // Polyline path
+  var coords = points.map(function(p) {
+    return tX(p.ts) + ',' + tY(p.sum / p.n);
+  }).join(' ');
+  var polyline = '<polyline points="' + coords + '" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>';
+
+  // Colored dots (color by tier)
+  var dots = points.map(function(p) {
+    var mean = p.sum / p.n;
+    var cx = tX(p.ts), cy = tY(mean);
+    var col = mean <= 4 ? '#dc2626' : mean <= 6 ? '#d97706' : '#059669';
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="3.5" fill="' + col + '" stroke="white" stroke-width="1.2"/>';
+  }).join('');
+
+  // X-axis date labels: first, last, and middle
+  var fmt = function(ts) {
+    var d = new Date(ts);
+    return (d.getMonth() + 1) + '/' + d.getDate();
+  };
+  var xLabels = '<text x="' + tX(points[0].ts) + '" y="' + (H - 3) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#94a3b8">' + fmt(points[0].ts) + '</text>' +
+    '<text x="' + tX(points[points.length - 1].ts) + '" y="' + (H - 3) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#94a3b8">' + fmt(points[points.length - 1].ts) + '</text>';
+  if (points.length > 2) {
+    var mid = Math.floor(points.length / 2);
+    xLabels += '<text x="' + tX(points[mid].ts) + '" y="' + (H - 3) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#94a3b8">' + fmt(points[mid].ts) + '</text>';
+  }
+
+  chart.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:100%;overflow:visible;">' +
+    refs + yLabels + polyline + dots + xLabels + '</svg>';
+  chart.style.display = 'block';
+}
+
+// ── Tier 1 Chart: Risk Tier Donut ────────────────────────
+function _renderStuDonut(cHigh, cUNA, cINA, cMixed, count) {
+  var el      = document.getElementById('stu-risk-donut');
+  var emptyEl = document.getElementById('stu-donut-empty');
+  if (!el) return;
+
+  if (!count) {
+    el.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  // Three tiers: High (score=8), Medium (Mixed/borderline), Low (INA+UNA)
+  var segments = [
+    { n: cHigh,         color: '#059669', label: 'High' },
+    { n: cMixed,        color: '#d97706', label: 'Med'  },
+    { n: cINA + cUNA,   color: '#dc2626', label: 'Low'  },
+  ];
+
+  var W = 144, H = 164;
+  var cx = 72, cy = 72, r = 48, sw = 18;
+  var circ = 2 * Math.PI * r;
+
+  // Background ring
+  var bg = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="#e2e8f0" stroke-width="' + sw + '"/>';
+
+  // Segments — stacked circles each showing only their slice
+  var cumFrac = 0;
+  var arcs = segments.map(function(seg) {
+    var frac    = seg.n / count;
+    var dashLen = frac * circ;
+    var gapLen  = circ - dashLen;
+    // stroke-dashoffset: circ/4 starts drawing at 12 o'clock; subtract cumulative
+    var offset  = circ / 4 - cumFrac * circ;
+    cumFrac += frac;
+    if (dashLen < 0.5) return ''; // skip invisible slices
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + seg.color +
+           '" stroke-width="' + sw + '" stroke-dasharray="' + dashLen + ' ' + gapLen +
+           '" stroke-dashoffset="' + offset + '" opacity="0.88"/>';
+  }).join('');
+
+  // Center labels
+  var center =
+    '<text x="' + cx + '" y="' + (cy - 4) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="20" font-weight="700" fill="var(--bright)">' + count + '</text>' +
+    '<text x="' + cx + '" y="' + (cy + 11) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#94a3b8">participants</text>';
+
+  // Legend rows below donut
+  var legY = 152;
+  var legend = segments.map(function(seg, i) {
+    var x = 8 + i * 46;
+    return '<rect x="' + x + '" y="' + legY + '" width="7" height="7" rx="1" fill="' + seg.color + '" opacity="0.88"/>' +
+           '<text x="' + (x + 10) + '" y="' + (legY + 7) + '" font-family="IBM Plex Mono,monospace" font-size="8" fill="#64748b">' + seg.label + ' ' + seg.n + '</text>';
+  }).join('');
+
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:100%;overflow:visible;">' +
+    bg + arcs + center + legend + '</svg>';
+  el.style.display = 'block';
 }
 
 // ── Track A · MAP PE Domain (student read-only) ──────────
@@ -709,6 +1112,7 @@ function renderStudentPeDomain(cohortData) {
   var cl = document.getElementById('stu-pe-constraint-label');
   if (cl && isFinite(primary.val))
     cl.textContent = (_t.sentinel_primary_constraint || 'Primary constraint') + ': ' + primary.name + ' · ' + mapRecs.length + ' ' + (_t.map_records_analyzed || 'MAP records analyzed');
+  renderPeBenchmarkStrip('stu-pe-benchmark-container', pe, mapRecs.length, avgA, avgE, avgC);
 }
 
 // ── MMAS-8 Sentinel Risk Queue (student) ─────────────────
@@ -717,9 +1121,9 @@ function renderStudentSentinel(cohortData) {
   var sentBody  = document.getElementById('stu-sentinel-body');
   var sentBadge = document.getElementById('stu-sentinel-count-badge');
   if (!sentBody) return;
-  // MMAS records only (not MAP), score ≤ 4
+  // MMAS-8 records only (not MAP, not PEACS), score ≤ 4
   var mmasRecs = (cohortData || []).filter(function(r) {
-    return r.tool !== 'map' && r.map_q1 === undefined;
+    return r.tool !== 'map' && r.map_q1 === undefined && r.pe_score === undefined;
   });
   var atRisk = mmasRecs.filter(function(r) { return (parseFloat(r.score)||0) <= 4; });
   // Sort by score ascending (most critical first)
@@ -966,7 +1370,10 @@ function _renderStudentReviewTable(resetPage) {
     html += '</tr></thead><tbody>';
 
     pageRows.forEach(function(r) {
-      var date = r.timestamp ? new Date(r.timestamp).toLocaleDateString() : '—';
+      // Prefer assessment_date (actual clinical date from Excel) over timestamp (upload time)
+      var date = r.assessment_date
+        ? new Date(r.assessment_date + 'T12:00:00').toLocaleDateString()
+        : (r.timestamp ? new Date(r.timestamp).toLocaleDateString() : '—');
       var pid = r.patient_number || r.pid || '—';
       var pattern = r.pattern || '—';
       var sex = r.gender || r.sex || '—';
@@ -1059,15 +1466,17 @@ function _updateStudentValidationPanel() {
     var panel = document.getElementById('stu-validation-panel');
     if (!panel) return;
     var allRows  = (typeof dashMmasData !== 'undefined' && Array.isArray(dashMmasData) ? dashMmasData : []);
-    // MAP records are stored with map_q1..map_q8 keys and tool:'map'
+    // MAP records: tool:'map' or has map_q1 field
     var mapRows  = allRows.filter(function(r) { return r.tool === 'map' || r.map_q1 !== undefined; });
-    // MMAS-8 records have q1..q8 keys and no map_q1
-    var mmasRows = allRows.filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined; });
+    // PEACS records: has pe_score but is not MAP
+    var peacsRows = allRows.filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined && r.pe_score !== undefined; });
+    // MMAS-8 records only: not MAP, not PEACS
+    var mmasRows = allRows.filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined && r.pe_score === undefined; });
 
     var setEl = function(id, v) { var el = document.getElementById(id); if (el) el.textContent = v !== undefined && v !== null ? v : '—'; };
 
-    setEl('stu-val-map-n',  mapRows.length  || '—');
-    setEl('stu-val-mmas-n', mmasRows.length || '—');
+    setEl('stu-val-map-n',  mapRows.length   || '—');
+    setEl('stu-val-mmas-n', peacsRows.length || '—');
 
     // Show placeholder if too few MAP records for meaningful stats
     if (mapRows.length < 10) {
