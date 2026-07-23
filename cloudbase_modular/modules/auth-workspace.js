@@ -415,10 +415,11 @@ async function submitWorkspaceCode() {
       database.ref('audit_log').push({
         cfr11:         true,
         action:        'LOGIN_FAILURE',
+        uid:           firebase.auth().currentUser.uid,
         actor_email:   code || 'unknown',
         error_code:    (window._lastWsError) ? 'key_invalid' : 'unknown',
+        timestamp:     Date.now(),
         timestamp_utc: new Date().toISOString(),
-        client_ts:     Date.now(),
         table:         'auth',
       }).catch(function(){});
     }
@@ -559,7 +560,6 @@ function _checkMagicLocalStorage() {
       const pendingUpper = (_magicPendingKey || '').toUpperCase();
       const dataKeyUpper = (data.key || '').toUpperCase();
       const keyMatch = !pendingUpper || dataKeyUpper === pendingUpper;
-      console.log('[ATLAS] localStorage magic_done found, key:', data.key, 'keyMatch:', keyMatch);
       if (data && keyMatch && data.ts && Date.now() - data.ts < 5 * 60 * 1000) {
         // BP-SEC-10: Nonce validation — reject if nonce doesn't match
         let nonceValid = true;
@@ -592,7 +592,6 @@ function _checkMagicLocalStorage() {
       if (val && val.completed && _magicPendingKey) {
         const age = Date.now() - (val.ts || 0);
         if (age < 5 * 60 * 1000) {
-          console.log('[ATLAS] RTDB poll hit, age:', age + 'ms — completing auth');
           _completeMagicAuth(_magicPendingKey, _magicPendingProfile, null);
         }
       }
@@ -607,7 +606,6 @@ function _startMagicLinkListener() {
   // against false-triggering on a pre-existing session (since we no longer sign out,
   // which was breaking RTDB auth).
   const _preWaitUid = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
-  console.log('[ATLAS] Magic link listener started, pendingKey:', _magicPendingKey, '| pre-wait uid:', _preWaitUid || '(none)');
 
   // ── Countdown timer ───────────────────────────────────────────────────────
   // Updates #ws-magic-timer every minute; at 0 shows the expired state with a
@@ -629,7 +627,6 @@ function _startMagicLinkListener() {
       _magicCountdownInterval = null;
       // Stop all listeners — expired link cannot complete auth
       _stopMagicLinkListener();
-      console.log('[ATLAS] Magic link countdown expired — listeners stopped');
     }
   }, 60000);
 
@@ -640,7 +637,6 @@ function _startMagicLinkListener() {
     const nonce = crypto.randomUUID();
     sessionStorage.setItem('_mlinkNonce', nonce);
     localStorage.setItem('_mlinkNonce', nonce);
-    console.log('[ATLAS] Magic link nonce generated and stored');
   } catch(e) {
     console.warn('[ATLAS] Could not generate magic link nonce:', e);
   }
@@ -660,11 +656,8 @@ function _startMagicLinkListener() {
       _magicRtdbRef.remove().catch(() => {});
       _magicRtdbRef.on('value', function(snap) {
         const val = snap.val();
-        // Log every value including null so we can see if the WebSocket connection is alive
-        console.log('[ATLAS] RTDB listener fired, val:', val ? 'completed=' + val.completed : 'null');
         if (val && val.completed && _magicPendingKey) {
           const age = Date.now() - (val.ts || 0);
-          console.log('[ATLAS] RTDB signal received, age:', age + 'ms');
           if (age < 5 * 60 * 1000) {
             _magicRtdbRef.remove().catch(() => {});
             _completeMagicAuth(_magicPendingKey, _magicPendingProfile, null);
@@ -673,7 +666,6 @@ function _startMagicLinkListener() {
       }, function(err) {
         console.error('[ATLAS] RTDB magic_signals permission denied:', err.code);
       });
-      console.log('[ATLAS] RTDB signal listener active on magic_signals/' + _safeKey);
     } catch(e) {
       console.warn('[ATLAS] RTDB signal listener setup failed:', e);
     }
@@ -685,7 +677,6 @@ function _startMagicLinkListener() {
   try {
     _magicBroadcastChannel = new BroadcastChannel('atlas_magic');
     _magicBroadcastChannel.onmessage = function(e) {
-      console.log('[ATLAS] BroadcastChannel message received:', e.data && e.data.type);
       if (e.data && e.data.type === 'magic_complete') {
         // BP-SEC-10: Nonce validation on BroadcastChannel
         try {
@@ -715,7 +706,6 @@ function _startMagicLinkListener() {
   // when a DIFFERENT (new) non-anonymous user signs in via the relay tab.
   _magicAuthUnsub = firebase.auth().onAuthStateChanged(function(user) {
     if (user && !user.isAnonymous && _magicPendingKey && user.uid !== _preWaitUid) {
-      console.log('[ATLAS] onAuthStateChanged: new workspace user detected, uid:', user.uid);
       _completeMagicAuth(_magicPendingKey, _magicPendingProfile, null);
     }
   });
@@ -761,7 +751,6 @@ function _cancelMagicLinkWait() {
   if (btn) { btn.disabled = false; btn.innerHTML = 'Verify Access →'; btn.style.background = ''; }
   const err = document.getElementById('ws-error');
   if (err) { err.classList.remove('show'); err.textContent = ''; }
-  console.log('[ATLAS] Magic link wait cancelled by user — returned to key entry');
 }
 
 let _magicAuthCompleting = false; // guard against double-trigger from multiple channels
@@ -770,7 +759,6 @@ function _completeMagicAuth(key, profile, firebaseToken) {
   if (_magicAuthCompleting) return; // already in progress — ignore duplicate triggers
   _magicAuthCompleting = true;
   const currentUser = firebase.auth().currentUser;
-  console.log('[ATLAS] _completeMagicAuth called, key:', key, 'currentUser:', currentUser && currentUser.uid, 'isAnonymous:', currentUser && currentUser.isAnonymous);
   _stopMagicLinkListener();
   try { localStorage.removeItem('atlas_magic_done'); } catch(e) {}
   // BP-SEC-10: Clear nonce after consuming the magic link (success or failure path)
@@ -785,7 +773,6 @@ function _completeMagicAuth(key, profile, firebaseToken) {
   if (needsSignIn && firebaseToken) {
     // Token was passed by BroadcastChannel or localStorage relay — use it directly
     // so we don't trigger another Lambda call (which would send a second magic link email).
-    console.log('[ATLAS] Using relay token for direct sign-in — skipping Lambda re-exchange');
     firebase.auth().signInWithCustomToken(firebaseToken)
       .then(() => { const u = firebase.auth().currentUser; return u ? u.getIdToken(true) : Promise.resolve(); })
       .then(() => { _grantWorkspaceAccess(key, resolvedProfile, { fromMagicLink: true }); setTimeout(() => { _magicAuthCompleting = false; }, 3000); })
@@ -793,7 +780,6 @@ function _completeMagicAuth(key, profile, firebaseToken) {
     return;
   }
   if (needsSignIn && key) {
-    console.log('[ATLAS] Anonymous user detected — re-exchanging key with Lambda for custom token');
     fetch(`${LAMBDA_URL}/validate-key`, {
       method: 'POST', mode: 'cors',
       headers: { 'Content-Type': 'application/json' },
@@ -814,7 +800,6 @@ function _completeMagicAuth(key, profile, firebaseToken) {
       return u ? u.getIdToken(true) : Promise.resolve();
     })
     .then(() => {
-      console.log('[ATLAS] Custom token sign-in complete — granting workspace access');
       _grantWorkspaceAccess(key, resolvedProfile, { fromMagicLink: true });
       setTimeout(() => { _magicAuthCompleting = false; }, 3000);
     })
@@ -828,7 +813,6 @@ function _completeMagicAuth(key, profile, firebaseToken) {
   }
 
   // Same-browser path — user already signed in via onAuthStateChanged → proceed directly
-  console.log('[ATLAS] Authenticated user — granting access, role:', resolvedProfile.role || '(empty profile)');
   _grantWorkspaceAccess(key, resolvedProfile, { fromMagicLink: true });
   setTimeout(() => { _magicAuthCompleting = false; }, 3000);
 }
@@ -855,11 +839,22 @@ function _grantWorkspaceAccess(code, profile, opts) {
 
   const _doEnter = () => {
     // Override Lambda SSM role with Firebase-stored role (fixes old keys issued as 'researcher')
-    // Firebase is authoritative — write happens at workspace creation time
-    const _applyRoleAndEnter = (fbRole) => {
+    // Firebase is authoritative for role, region, and feature overrides.
+    const _applyRoleAndEnter = (fbData) => {
+      const fbRole   = (fbData && typeof fbData === 'object') ? fbData.role   : fbData;
+      const fbRegion = (fbData && typeof fbData === 'object') ? fbData.region : null;
       if (fbRole && fbRole !== profile.role) {
         workspaceProfile.role = fbRole;
         profile.role = fbRole;
+      }
+      // Derive feature flags from Firebase region — takes effect on next login
+      // UAE → gcc_mode (GCC pharmacy: Encounters tab, no MTM billing, ADHICS/PDPL posture)
+      // EU  → eu_mode  (GDPR data residency, eu-central-1 routing)
+      const GCC_COUNTRIES = new Set(['uae','ae','sa','kw','bh','qa','om']);
+      if (fbRegion && GCC_COUNTRIES.has(fbRegion.toLowerCase())) {
+        workspaceProfile.features = Object.assign({}, workspaceProfile.features, { gcc_mode: true });
+      } else if (fbRegion === 'eu') {
+        workspaceProfile.features = Object.assign({}, workspaceProfile.features, { eu_mode: true });
       }
       const actualRole  = profile.role || 'researcher';
       const isInstRole  = actualRole === 'institution' || actualRole === 'superadmin' || actualRole === 'observer';
@@ -891,9 +886,9 @@ function _grantWorkspaceAccess(code, profile, opts) {
       showToast(welcomeMsg, 4000);
     };
 
-    // Attempt Firebase role lookup; fall back immediately on any error
+    // Read workspace node for role + region (used to derive gcc_mode / eu_mode features)
     if (typeof database !== 'undefined' && database && database.ref) {
-      database.ref('workspaces/' + code + '/role').once('value')
+      database.ref('workspaces/' + code).once('value')
         .then(snap => { _applyRoleAndEnter(snap && snap.val()); })
         .catch(() => { _applyRoleAndEnter(null); });
     } else {
@@ -1156,6 +1151,7 @@ function _showModuleLocked(panelEl, moduleId) {
 function _clearLockedCards() {}
 
 function enterResearcherDashboard() {
+  if (isSuperAdmin()) { openCommandCenter(); return; }
   atlasAuditLog('dashboard_access', { workspace: currentWorkspace, role: workspaceProfile && workspaceProfile.role });
   document.body.classList.add('researcher-mode');
   document.body.classList.remove('patient-mode');
@@ -1259,8 +1255,8 @@ function enterResearcherDashboard() {
     if (instDash)  instDash.style.display  = 'none';
     if (instrRow)  instrRow.style.display  = isStudentRole ? 'none' : '';
     if (specBtn)   specBtn.style.display   = (isStudentRole || isPIResearcher()) ? 'none' : '';
-    if (recPanel)  recPanel.style.display  = '';
-    if (pulseBar)  pulseBar.style.display  = '';
+    if (recPanel)  recPanel.style.display  = isStudentRole ? 'none' : '';
+    if (pulseBar)  pulseBar.style.display  = isStudentRole ? 'none' : '';
   }
 
   // ── MTM TAB: wire badge + suppress dash-body MTM panels for institution users ──
@@ -1299,15 +1295,16 @@ function enterResearcherDashboard() {
     if (_chip && _chip.parentNode) _chip.parentNode.insertBefore(_badge, _chip.nextSibling);
   }
 
-  // Show/hide researcher patient panel — any workspace user who isn't institution, superadmin, or observer
+  // Show/hide researcher patient panel — any workspace user who isn't institution, superadmin, observer, or student.
+  // Students have a rail workspace with purpose-built modules; researcher panels are not for student roles.
   const rpp = document.getElementById('researcher-patient-panel');
   const showRpp = !isInstitution && !isSuperAdmin() && !isObserverMode() && !!currentWorkspace
                   && currentWorkspace !== 'EXPLORER'
                   && window._wsMode !== 'explorer';
-  if (rpp) rpp.style.display = showRpp ? 'block' : 'none';
+  if (rpp) rpp.style.display = (showRpp && !isStudentRole) ? 'block' : 'none';
   // Research analytics panel mirrors researcher-patient-panel visibility
   const rapPanel = document.getElementById('res-analytics-panel');
-  if (rapPanel) rapPanel.style.display = showRpp ? 'block' : 'none';
+  if (rapPanel) rapPanel.style.display = (showRpp && !isStudentRole) ? 'block' : 'none';
   // Populate cohort name label
   const rapCohortName = document.getElementById('rap-cohort-name');
   if (rapCohortName && showRpp) {
@@ -1331,13 +1328,19 @@ function enterResearcherDashboard() {
   }
 
   // ── Student dashboard tabs ─────────────────────────────────────────────────
-  // Remove any stale student tab bar before re-injecting
-  const _prevStudTab = document.getElementById('student-dash-tabs');
-  if (_prevStudTab) _prevStudTab.remove();
-  const _prevStudPanel = document.getElementById('student-dash-panel');
-  if (_prevStudPanel) _prevStudPanel.remove();
+  // If the atlas rail is already installed the student workspace is fully rendered
+  // (onAuthStateChanged can fire twice — cached then server-verified). Skip the
+  // entire re-init to prevent a flat duplicate panel appearing below the rail.
+  const _railAlreadyUp = !!document.getElementById('atlas-rail-wrapper');
 
-  if (showRpp && workspaceProfile?.role === 'student') {
+  if (!_railAlreadyUp) {
+    const _prevStudTab = document.getElementById('student-dash-tabs');
+    if (_prevStudTab) _prevStudTab.remove();
+    const _prevStudPanel = document.getElementById('student-dash-panel');
+    if (_prevStudPanel) _prevStudPanel.remove();
+  }
+
+  if (!_railAlreadyUp && showRpp && workspaceProfile?.role === 'student') {
     const _db = document.querySelector('#screen-dashboard .dash-body');
     if (_db) {
       // Hide panels that the student surface replaces
@@ -1359,12 +1362,33 @@ function enterResearcherDashboard() {
       const _stuName   = (workspaceProfile && workspaceProfile.name) || '';
       const _stuByline = _stuName || 'Student Researcher';
 
-      // Helper: pre-select instrument radio then open session modal.
-      // Single source of truth — all session starts go through here.
+      // Helper: clicking a specific instrument button bypasses the instrument-
+      // selection modal and goes straight to informed consent with that instrument.
       window._stuStartSession = function(instrument) {
+        // Pre-select radio in case modal is opened separately later
         var r = document.querySelector("input[name='sess-instrument'][value='" + instrument + "']");
         if (r) r.checked = true;
-        openSessionModal();
+
+        // Build session data directly (mirrors startSession() in peacs-core.js)
+        var rand = Array.from(crypto.getRandomValues(new Uint8Array(2)),
+          function(b) { return b.toString(16).padStart(2, '0'); }).join('').toUpperCase();
+        var pid = 'PT-' + rand;
+        window._sessionPatientId = pid;
+        window._sessionData = { patientId: pid, instrument: instrument, startedAt: Date.now() };
+        if (typeof updateSessionSummaryBar === 'function') updateSessionSummaryBar();
+
+        // Close modal if it happened to be open
+        if (typeof closeSessionModal === 'function') closeSessionModal();
+
+        // Route to informed consent
+        window._postConsentInstrument = instrument;
+        window._postConsentTarget     = 'dashboard';
+        var cb  = document.getElementById('consent-checkbox');
+        var cpb = document.getElementById('consent-proceed-btn');
+        if (cb)  cb.checked  = false;
+        if (cpb) cpb.disabled = true;
+        if (typeof renderConsentForInstrument === 'function') renderConsentForInstrument(instrument);
+        if (typeof showScreen === 'function') showScreen('screen-consent');
       };
 
       stPanel.innerHTML = `
@@ -1470,9 +1494,35 @@ function enterResearcherDashboard() {
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--dim);margin-top:3px;">assessments</div>
               </div>
             </div>
-            <div id="stu-velocity-wrap" style="margin-top:12px;padding:0 20px 18px;">
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:4px;">Enrollment Velocity</div>
-              <div id="stu-velocity-chart" style="width:100%;height:140px;display:none;"></div>
+            <!-- ── Enrollment Progress Gauge ── -->
+            <div style="padding:10px 20px 6px;border-top:1px solid var(--border);">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:6px;">Enrollment Progress · MMAS-8</div>
+              <div id="stu-enrollment-gauge" style="width:100%;display:none;"></div>
+            </div>
+            <!-- ── Item Completeness Rate ── -->
+            <div style="padding:6px 20px 12px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:6px;">Item Completeness · MMAS-8</div>
+              <div id="stu-completeness-rate" style="width:100%;display:none;"></div>
+            </div>
+            <div id="stu-velocity-wrap" style="padding:14px 20px 18px;border-top:1px solid var(--border);">
+              <!-- Row 1: Score Trend (SVG) + Risk Donut -->
+              <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:14px;">
+                <div style="flex:1;min-width:0;">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:6px;">Score Trend · MMAS-8</div>
+                  <div id="stu-score-trend" style="width:100%;height:140px;display:none;"></div>
+                  <div id="stu-trend-empty" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--dim);padding:48px 0;text-align:center;">Collect ≥ 2 sessions across different days to see trend</div>
+                </div>
+                <div style="flex-shrink:0;width:144px;">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:6px;">Risk Tiers</div>
+                  <div id="stu-risk-donut" style="width:144px;height:160px;display:none;"></div>
+                  <div id="stu-donut-empty" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--dim);padding:48px 0;text-align:center;">—</div>
+                </div>
+              </div>
+              <!-- Row 2: Enrollment Velocity (Plotly) -->
+              <div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:4px;">Enrollment Velocity</div>
+                <div id="stu-velocity-chart" style="width:100%;height:140px;display:none;"></div>
+              </div>
             </div>
           </div>
 
@@ -1518,6 +1568,16 @@ function enterResearcherDashboard() {
                 <div id="stu-bar-mixed" style="height:100%;background:#7c3aed;width:0%;transition:width 0.6s ease;"></div>
               </div>
               <div id="stu-benchmark-container"></div>
+              <!-- ── INA vs UNA Comparison Bar ── -->
+              <div id="stu-ina-una-wrap" style="margin-top:14px;">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:6px;">Non-Adherence Pattern Breakdown</div>
+                <div id="stu-ina-una-chart" style="width:100%;display:none;"></div>
+              </div>
+              <!-- ── Condition / Disease Breakdown ── -->
+              <div id="stu-condition-wrap" style="margin-top:14px;">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:6px;">Condition / Disease Breakdown</div>
+                <div id="stu-condition-chart" style="width:100%;display:none;"></div>
+              </div>
               <div id="stu-score-histogram-wrap" style="margin-top:12px;">
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:4px;">Score Distribution</div>
                 <div id="stu-score-histogram" style="width:100%;height:180px;display:none;"></div>
@@ -1562,6 +1622,8 @@ function enterResearcherDashboard() {
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;margin-bottom:4px;">Domain Radar · MAP</div>
                 <div id="stu-domain-radar" style="width:100%;height:200px;display:none;"></div>
               </div>
+              <!-- ── MAP PE Baseline Comparison ── -->
+              <div id="stu-pe-benchmark-container"></div>
             </div>
           </div>
 
@@ -1599,6 +1661,33 @@ function enterResearcherDashboard() {
               <div class="stu-mod-toggle" style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:var(--dim);">▼</div>
             </button>
             <div id="stu-mod-records-body" style="padding:4px 20px 18px;border-top:1px solid var(--border);">
+              <!-- ── Patient Trajectory Chart ── -->
+              <div id="stu-trajectory-wrap" style="margin-top:14px;margin-bottom:16px;display:none;">
+                <!-- Header row: title + dropdown -->
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
+                  <div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#607898;">Patient Score Trajectories · MMAS-8</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;color:var(--dim);margin-top:2px;">
+                      <span style="color:#059669;">■</span> improved &nbsp;
+                      <span style="color:#dc2626;">■</span> declined &nbsp;
+                      <span style="color:#94a3b8;">■</span> stable
+                      &nbsp;·&nbsp; <span id="stu-trajectory-badge"></span>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                    <label style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:#607898;white-space:nowrap;">Patient ID</label>
+                    <select id="stu-trajectory-pid"
+                      onchange="stuTrajectorySelectPid(this.value)"
+                      style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card2);color:var(--text);cursor:pointer;min-width:130px;">
+                      <option value="">All patients</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- Chart -->
+                <div id="stu-trajectory-chart" style="width:100%;height:220px;"></div>
+                <!-- Single-patient stat strip (hidden when All) -->
+                <div id="stu-trajectory-stats" style="display:none;margin-top:8px;display:none;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:var(--muted);display:flex;gap:20px;flex-wrap:wrap;"></div>
+              </div>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:14px;margin-bottom:12px;">
                 <button id="stu-export-mmas-btn" onclick="_stuExportMMAS()" class="stu-export-btn-map">↓ MAP CSV</button>
                 <button id="stu-export-peacs-btn" onclick="_stuExportPEACS()" class="stu-export-btn-peacs">↓ PEACS CSV</button>
@@ -2411,12 +2500,49 @@ function enterResearcherDashboard() {
       // Pull live session stats from loaded records
       _updateStudentSessionStats();
 
+      // ── MODULE · TESSERA GRC — student workspace ────────────────────────
+      // Injected here (synchronously before the rail installs at 800ms) so
+      // the rail engine can move stu-mod-tessera into the TESSERA tab panel.
+      // Uses res-tessera-body as the inner container so atlasTabSwitch can
+      // lazily call saGrantResourcesInit() exactly as it does for PI/Researcher.
+      (function() {
+        if (document.getElementById('stu-mod-tessera')) return;
+        var _stPanel = document.getElementById('student-dash-panel');
+        if (!_stPanel) return;
+        var _tesseraMod = document.createElement('div');
+        _tesseraMod.id = 'stu-mod-tessera';
+        _tesseraMod.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;';
+        _tesseraMod.innerHTML =
+          '<div style="width:100%;padding:13px 20px 15px;border-bottom:1px solid var(--border);">' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">' +
+              '<div style="width:3px;height:14px;background:#d4a843;border-radius:2px;flex-shrink:0;"></div>' +
+              '<div style="flex:1;">' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">TESSERA GRC · Global Research Consortium</div>' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Research Exchange · Grants · Funding · Membership</div>' +
+              '</div>' +
+            '</div>' +
+            '<div style="font-size:0.80rem;color:rgba(138,160,184,0.75);line-height:1.62;padding-left:13px;">' +
+              '<strong style="color:rgba(205,216,232,0.88);">TESSERA GRC</strong> is the global adherence research consortium of the ' +
+              '<strong style="color:rgba(212,168,67,0.8);">Scala Carta Foundation</strong> — uniting universities, teaching hospitals, ' +
+              'and research institutions across six continents under shared scientific instruments, governance standards, ' +
+              'and a common framework for adherence cartography. ' +
+              '<a href="https://scalacartafoundation.org" target="_blank" rel="noopener" ' +
+                'style="color:rgba(212,168,67,0.72);text-decoration:none;border-bottom:1px solid rgba(212,168,67,0.28);">' +
+                'Visit Consortium &#8599;</a>' +
+            '</div>' +
+          '</div>' +
+          '<div id="res-tessera-body" style="padding:20px;">' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">Loading TESSERA GRC resources…</div>' +
+          '</div>';
+        _stPanel.appendChild(_tesseraMod);
+      })();
+
       // ── ATLAS TAB RAIL — student workspace ─────────────────────────────
       // headerId: 'stu-mod-header' is nested inside student-dash-panel;
       // the rail engine hoists it to dash-body level automatically.
       var STU_RAIL_TABS = [
         { id: 'cohort',    icon: '⌂', label: 'Cohort',
-          elements: ['stu-session-strip', 'stu-mod-snapshot'] },
+          elements: ['stu-session-strip', 'stu-mod-snapshot', 'stu-sentinel-panel'] },
         { id: 'analysis',  icon: '∿', label: 'Analysis',
           elements: ['stu-mod-patterns', 'stu-pe-domain-card'] },
         { id: 'records',   icon: '≡', label: 'Records',
@@ -2425,6 +2551,8 @@ function enterResearcherDashboard() {
           elements: ['stu-mod-thesis', 'stu-mod-validation'] },
         { id: 'tools',     icon: '◇', label: 'Tools',
           elements: ['stu-mod-power', 'stu-mod-registry', 'stu-mod-predictor', 'stu-mod-psycho', 'stu-mod-expand'] },
+        { id: 'tessera',   icon: '⬡', label: 'TESSERA',
+          elements: ['stu-mod-tessera'] },
       ];
       setTimeout(function() {
         if (typeof window._atlasInstallRail === 'function') {
@@ -2490,9 +2618,9 @@ function enterResearcherDashboard() {
         // clipped inside the rail's overflow:hidden container in some browsers.
         if (typeof atlasTip === 'function') {
           var _instTips = {
-            map:   'MAP · Multidimensional Adherence Parameters\n8 behavioural dimensions · AEC tri-domain scoring\nAdditive + PE composite score',
-            mmas:  'MMAS-8 · Morisky Medication Adherence Scale\n8-question validated instrument · 0–8 scale\nINA / UNA pattern classification',
-            peacs: 'PEACS · Predictive Emergence Assessment\nStaged over a quarter · 3 dimension sessions\nArchitecture · Execution · Context domains',
+            map:   'MAP · Multidimensional Adherence Parameters\n8 behavioural dimensions · Architecture / Execution / Context\nPE composite score · INA / UNA phenotype · Recommended for every visit',
+            mmas:  'MMAS-8 · Morisky Medication Adherence Scale\n8-question validated instrument · 0–8 score\nINA / UNA pattern classification · Gold standard global adherence tool',
+            peacs: 'PEACS · Predictive Emergence Assessment for Clinical Services\n3 staged sessions over one quarter: BASE → MVMT → STRATA\nPredicts stability or fragility · generates phenotype and intervention plan',
           };
           Object.keys(_instTips).forEach(function(inst) {
             var btn = document.querySelector('.clin-inst-btn[data-inst="' + inst + '"]');
@@ -2514,6 +2642,9 @@ function enterResearcherDashboard() {
 
         // Init worklist after data loads
         setTimeout(function() {
+          // Set global region mode flag — read by clinical-practice.js and other modules
+          window._atlasGccMode = !!(workspaceProfile && workspaceProfile.features && workspaceProfile.features.gcc_mode);
+          if (typeof _atlasApplyEncounterOptions === 'function') _atlasApplyEncounterOptions(window._atlasGccMode);
           if (typeof renderClinWorklist === 'function') renderClinWorklist();
           if (typeof updateClinKPIs === 'function') updateClinKPIs();
           if (typeof updateClinReport === 'function') updateClinReport();
@@ -2539,6 +2670,38 @@ function enterResearcherDashboard() {
         clinSearch.addEventListener('input', function() { rppSearch.value = this.value; rppFilter(); });
       }
 
+      // ── MODULE · TESSERA GRC — clinician workspace ──────────────────────
+      (function() {
+        if (document.getElementById('clin-mod-tessera')) return;
+        if (!_db) return;
+        var _clinTessera = document.createElement('div');
+        _clinTessera.id = 'clin-mod-tessera';
+        _clinTessera.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;';
+        _clinTessera.innerHTML =
+          '<div style="width:100%;padding:13px 20px 15px;border-bottom:1px solid var(--border);">' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">' +
+              '<div style="width:3px;height:14px;background:#d4a843;border-radius:2px;flex-shrink:0;"></div>' +
+              '<div style="flex:1;">' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">TESSERA GRC · Global Research Consortium</div>' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Research Exchange · Grants · Funding · Membership</div>' +
+              '</div>' +
+            '</div>' +
+            '<div style="font-size:0.80rem;color:rgba(138,160,184,0.75);line-height:1.62;padding-left:13px;">' +
+              '<strong style="color:rgba(205,216,232,0.88);">TESSERA GRC</strong> is the global adherence research consortium of the ' +
+              '<strong style="color:rgba(212,168,67,0.8);">Scala Carta Foundation</strong> — uniting universities, teaching hospitals, ' +
+              'and research institutions across six continents under shared scientific instruments, governance standards, ' +
+              'and a common framework for adherence cartography. ' +
+              '<a href="https://scalacartafoundation.org" target="_blank" rel="noopener" ' +
+                'style="color:rgba(212,168,67,0.72);text-decoration:none;border-bottom:1px solid rgba(212,168,67,0.28);">' +
+                'Visit Consortium &#8599;</a>' +
+            '</div>' +
+          '</div>' +
+          '<div id="res-tessera-body" style="padding:20px;">' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">Loading TESSERA GRC resources…</div>' +
+          '</div>';
+        _db.appendChild(_clinTessera);
+      })();
+
       // ── ATLAS TAB RAIL — clinician workspace ─────────────────────────────
       // role-id-banner is the pinned header (shows clinician name + role chip).
       // clinician-dash-panel holds the full worklist + internal tab system.
@@ -2546,10 +2709,14 @@ function enterResearcherDashboard() {
       var CLIN_RAIL_TABS = [
         { id: 'patients', icon: '⊕', label: 'Patients',
           elements: ['clinician-dash-panel'] },
-        { id: 'mtm',      icon: '⏱', label: 'MTM',
+        { id: 'mtm',
+          icon:  (workspaceProfile && workspaceProfile.features && workspaceProfile.features.gcc_mode) ? '📋' : '⏱',
+          label: (workspaceProfile && workspaceProfile.features && workspaceProfile.features.gcc_mode) ? 'Encounters' : 'MTM',
           elements: ['daily-intake-panel', 'mtm-timer-panel', 'mtm-audit-panel'] },
         { id: 'overview', icon: '◈', label: 'Overview',
           elements: ['cpo-panel'] },
+        { id: 'tessera',  icon: '⬡', label: 'TESSERA',
+          elements: ['clin-mod-tessera'] },
       ];
       setTimeout(function() {
         if (typeof window._atlasInstallRail === 'function') {
@@ -2589,14 +2756,17 @@ function enterResearcherDashboard() {
       const ribEy = document.getElementById('rib-eyebrow');
       const ribTi = document.getElementById('rib-title');
       const ribSu = document.getElementById('rib-sub');
-      const ribLabel = isPharm   ? '⚕ Clinical Practice Dashboard'
+      const _gccMode = !!(workspaceProfile && workspaceProfile.features && workspaceProfile.features.gcc_mode);
+      const ribLabel = isPharm   ? (_gccMode ? '⚕ Pharmacy Clinical Workspace' : '⚕ Clinical Practice Dashboard')
                      : isStudent ? '◎ Student Workspace'
                      :             '◈ Research Program Dashboard';
       const ribDefault = isPharm   ? 'Clinical Workspace'
                        : isStudent ? 'Student Workspace'
                        :             'Research Workspace';
       const ribDesc = isPharm
-        ? 'Real-time patient monitoring · adherence alerts and care gaps · bulk import and CSV export · clinical workflow and billing documentation. Built for pharmacists, nurses, NPs, PAs, and care coordinators.'
+        ? (_gccMode
+            ? 'Real-time patient monitoring · adherence alerts and care gaps · MAP and PEACS assessment · patient consultation and encounter documentation. Built for pharmacists, clinical staff, and patient support program coordinators in GCC pharmacy practice.'
+            : 'Real-time patient monitoring · adherence alerts and care gaps · bulk import and CSV export · clinical workflow and billing documentation. Built for pharmacists, nurses, NPs, PAs, and care coordinators.')
         : isStudent
         ? 'Your personal cohort for thesis and coursework research. Collect MAP and PEACS data, run adherence phenotyping, export for your institution, and cite the instruments in your publication.'
         : 'Cohort analytics, adherence phenotyping, drug-condition stratification, natural language data queries, and PE Domain cohort intelligence. Built for academic publication and grant reporting.';
@@ -3038,10 +3208,7 @@ function enterResearcherDashboard() {
   if (_sentinelRoleOk && hasModule('clinical_sentinel')) {
     setTimeout(initSentinel, 600);
   }
-  // ATLAS Control button — superadmin only. Button lives in the static nav bar
-  // (index.html #acc-open-btn, display:none by default). Show it here for superadmin.
-  const _accBtn = document.getElementById('acc-open-btn');
-  if (_accBtn) _accBtn.style.display = isSuperAdmin() ? 'flex' : 'none';
+
   const prevNudge = document.getElementById('researcher-upgrade-nudge');
   if (prevNudge) prevNudge.remove();
 
@@ -3794,26 +3961,37 @@ function enterResearcherDashboard() {
 
         // ── MODULE · TESSERA GRC Grant Resource Center — researcher / PI card ──────
         (function() {
-          if (document.getElementById('res-mod-airc')) return;
-          var _aircTarget = document.getElementById('researcher-patient-panel') || document.getElementById('res-analytics-panel');
-          if (!_aircTarget || !_aircTarget.parentNode) return;
+          if (document.getElementById('res-mod-tessera')) return;
+          var _tesseraTarget = document.getElementById('researcher-patient-panel') || document.getElementById('res-analytics-panel');
+          if (!_tesseraTarget || !_tesseraTarget.parentNode) return;
 
-          var _aircMod = document.createElement('div');
-          _aircMod.id = 'res-mod-airc';
-          _aircMod.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;';
-          _aircMod.innerHTML =
-            '<div style="width:100%;padding:13px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">' +
-              '<div style="width:3px;height:14px;background:#d4a843;border-radius:2px;flex-shrink:0;"></div>' +
-              '<div style="flex:1;">' +
-                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">TESSERA GRC (Global Research Consortium)</div>' +
-                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Grant Resources · Funding · TESSERA GRC Membership</div>' +
+          var _tesseraMod = document.createElement('div');
+          _tesseraMod.id = 'res-mod-tessera';
+          _tesseraMod.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;';
+          _tesseraMod.innerHTML =
+            '<div style="width:100%;padding:13px 20px 15px;border-bottom:1px solid var(--border);">' +
+              '<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">' +
+                '<div style="width:3px;height:14px;background:#d4a843;border-radius:2px;flex-shrink:0;"></div>' +
+                '<div style="flex:1;">' +
+                  '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">TESSERA GRC · Global Research Consortium</div>' +
+                  '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Grant Resources · Funding · TESSERA GRC Membership</div>' +
+                '</div>' +
+              '</div>' +
+              '<div style="font-size:0.80rem;color:rgba(138,160,184,0.75);line-height:1.62;padding-left:13px;">' +
+                '<strong style="color:rgba(205,216,232,0.88);">TESSERA GRC</strong> is the global adherence research consortium of the ' +
+                '<strong style="color:rgba(212,168,67,0.8);">Scala Carta Foundation</strong> — uniting universities, teaching hospitals, ' +
+                'and research institutions across six continents under shared scientific instruments, governance standards, ' +
+                'and a common framework for adherence cartography. ' +
+                '<a href="https://scalacartafoundation.org" target="_blank" rel="noopener" ' +
+                  'style="color:rgba(212,168,67,0.72);text-decoration:none;border-bottom:1px solid rgba(212,168,67,0.28);">' +
+                  'Visit Consortium &#8599;</a>' +
               '</div>' +
             '</div>' +
-            '<div id="res-airc-body" style="padding:20px;">' +
+            '<div id="res-tessera-body" style="padding:20px;">' +
               '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">Loading TESSERA GRC resources…</div>' +
             '</div>';
 
-          _aircTarget.parentNode.insertBefore(_aircMod, _aircTarget);
+          _tesseraTarget.parentNode.insertBefore(_tesseraMod, _tesseraTarget);
 
           // LMIC Training module — injected alongside TESSERA GRC, lazy-inited on tab click
           if (!document.getElementById('res-mod-lmic-training')) {
@@ -3831,7 +4009,7 @@ function enterResearcherDashboard() {
               '<div id="res-lmic-training-body" style="padding:20px;">' +
                 '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">Loading training curriculum…</div>' +
               '</div>';
-            _aircTarget.parentNode.insertBefore(_lmicMod, _aircTarget);
+            _tesseraTarget.parentNode.insertBefore(_lmicMod, _tesseraTarget);
           }
 
           // Wave 1-4 module panels — injected alongside TESSERA GRC, lazy-inited on tab click
@@ -3902,6 +4080,14 @@ function enterResearcherDashboard() {
               loading: 'Loading certification hub\u2026'
             },
             {
+              id: 'res-mod-portfolio',
+              bodyId: 'res-portfolio-body',
+              color: '#8b6ff5',
+              eyebrow: 'Research Portfolio',
+              title: 'ATLAS Evidence Portfolio',
+              loading: 'Building your portfolio\u2026'
+            },
+            {
               id: 'res-mod-heor',
               bodyId: 'res-heor-body',
               color: '#2ec98a',
@@ -3943,7 +4129,7 @@ function enterResearcherDashboard() {
                 '<div id="' + m.bodyId + '" style="padding:20px;">' +
                   '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.80rem;color:var(--dim);">' + m.loading + '</div>' +
                 '</div>';
-              _aircTarget.parentNode.insertBefore(_mod, _aircTarget);
+              _tesseraTarget.parentNode.insertBefore(_mod, _tesseraTarget);
             }
           });
 
@@ -3954,65 +4140,382 @@ function enterResearcherDashboard() {
         // Runs at 800ms so sentinel-panel (injected at 600ms) already exists.
         if (_isPiWs) {
           var _piRailColor = _resBarColor; // '#d4a843'
+          // ── PI rail: 9 tabs ───────────────────────────────────────────────
+          // Grouping rationale:
+          //   Overview     = command center + study identity nudge (setup + daily pulse)
+          //   Studies      = research mgmt + country intel + ISR study builder (all pre-trial tools)
+          //   Analytics    = cohort analytics + HEOR + equity (all outcome analytics)
+          //   Validate     = psychometric validation + item analysis (label distinct from Analytics)
+          //   Publish      = citations + power + APA + certification (all output tools)
+          //   Records      = cohort map + patient panel + bulk import / QR tools
+          //   Longitudinal = session tracking + dropout risk (both time-series modules)
+          //   Integrations = MaaS + DHIS2 + Pharmacy + Open Data (external service connectors)
+          //   TESSERA      = consortium membership + LMIC training (global research community)
           var PI_RAIL_TABS = [
-            { id: 'overview',     icon: '⌂', label: 'Overview',
-              elements: ['session-launcher-panel', 'dash-pulse-bar-ref'] },
-            { id: 'studies',      icon: '◈', label: 'Studies',
-              elements: ['pi-research-panel', 'res-mod-registry'] },
-            { id: 'analytics',    icon: '∿', label: 'Analytics',
-              elements: ['res-analytics-panel', 'res-advanced-accordion'] },
-            { id: 'analysis',     icon: '∑', label: 'Analysis',
+            { id: 'overview',      icon: '⌂', label: 'Overview',
+              elements: ['study-title-nudge', 'session-launcher-panel', 'dash-pulse-bar-ref'] },
+            { id: 'studies',       icon: '◈', label: 'Studies',
+              elements: ['pi-research-panel', 'res-mod-registry', 'res-mod-country-intel', 'res-mod-isr'] },
+            { id: 'analytics',     icon: '∿', label: 'Analytics',
+              elements: ['res-analytics-panel', 'res-advanced-accordion', 'res-mod-heor', 'res-mod-equity'] },
+            { id: 'analysis',      icon: '∑', label: 'Validate',
               elements: ['res-mod-validation', 'res-mod-psycho'] },
-            { id: 'publications', icon: '✦', label: 'Publications',
-              elements: ['res-mod-apa-gen', 'res-mod-predictor', 'res-mod-power'] },
-            { id: 'records',      icon: '≡', label: 'Records',
-              elements: ['res-records-banner', 'res-mod-cohort-map', 'researcher-patient-panel'] },
-            { id: 'admin',        icon: '⊘', label: 'Admin',
-              elements: ['study-title-nudge', 'res-tools-bar'] },
-            { id: 'airc',         icon: '⬡', label: 'TESSERA',
-              elements: ['res-mod-airc'] },
-            { id: 'learning',     icon: '🌍', label: 'Learning',
-              elements: ['res-mod-lmic-training'] },
-            { id: 'pharmacy',      icon: '⊛', label: 'Pharmacy',   elements: ['res-mod-pharmacy'] },
-            { id: 'intel',         icon: '◉', label: 'Intel',       elements: ['res-mod-country-intel'] },
-            { id: 'predict',       icon: '∿', label: 'Predict',     elements: ['res-mod-predictive'] },
-            { id: 'tracking',      icon: '≋', label: 'Tracking',    elements: ['res-mod-longitudinal'] },
-            { id: 'isr',           icon: '◫', label: 'ISR',         elements: ['res-mod-isr'] },
-            { id: 'heor',          icon: '∑', label: 'HEOR',        elements: ['res-mod-heor'] },
-            { id: 'certification', icon: '✦', label: 'Certify',     elements: ['res-mod-certification'] },
-            { id: 'opendata',      icon: '⬡', label: 'Open Data',   elements: ['res-mod-open-data'] },
-            { id: 'equity',        icon: '◈', label: 'Equity',      elements: ['res-mod-equity'] },
-            { id: 'maas',          icon: '⊕', label: 'MaaS',        elements: ['res-mod-maas'] },
-            { id: 'dhis2',         icon: '≡', label: 'DHIS2',       elements: ['res-mod-dhis2'] },
+            { id: 'publications',  icon: '✦', label: 'Publish',
+              elements: ['res-mod-apa-gen', 'res-mod-predictor', 'res-mod-power', 'res-mod-certification'] },
+            { id: 'records',       icon: '≡', label: 'Records',
+              elements: ['res-records-banner', 'res-mod-cohort-map', 'researcher-patient-panel', 'res-tools-bar'] },
+            { id: 'longitudinal',  icon: '≋', label: 'Longitudinal',
+              elements: ['res-mod-longitudinal', 'res-mod-predictive'] },
+            { id: 'integrations',  icon: '⊕', label: 'Integrations',
+              elements: ['res-mod-maas', 'res-mod-dhis2', 'res-mod-pharmacy', 'res-mod-open-data'] },
+            { id: 'tessera',       icon: '⬡', label: 'TESSERA',
+              elements: ['res-mod-tessera', 'res-mod-lmic-training'] },
           ];
           setTimeout(function() {
             if (typeof window._atlasInstallRail === 'function') {
               window._atlasInstallRail(PI_RAIL_TABS, _piRailColor);
             }
+
+            // ── PI OVERVIEW COMMAND CENTER ────────────────────────────────
+            // Injected into atlas-tab-overview after the rail mounts.
+            // Skeleton renders immediately; _piRefreshOverview() populates
+            // live values once initPiResearchPanel() loads cohort data.
+            (function() {
+              var _ovTab = document.getElementById('atlas-tab-overview');
+              if (!_ovTab || document.getElementById('pi-overview-cmd')) return;
+
+              var _cmd = document.createElement('div');
+              _cmd.id = 'pi-overview-cmd';
+              _cmd.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+
+              _cmd.innerHTML =
+                // ── Row 1: Study identity ──────────────────────────────────
+                '<div id="pi-ov-identity" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+                  '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-family:var(--font-mono);font-size:0.46rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;">PI WORKSPACE · ATLAS</div>' +
+                    '<div id="pi-ov-study-name" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.28rem;font-weight:300;color:var(--bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>' +
+                  '</div>' +
+                  '<div id="pi-ov-irb" style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);white-space:nowrap;"></div>' +
+                  '<div id="pi-ov-status-badge" style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(78,156,245,0.10);border:1px solid rgba(78,156,245,0.25);color:var(--base);border-radius:20px;padding:3px 12px;">Enrolling</div>' +
+                '</div>' +
+
+                // ── Row 2: 4 KPI tiles ─────────────────────────────────────
+                '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">' +
+                  _piOvKpi('pi-ov-enrolled',  'Enrolled',     '—', 'participants') +
+                  _piOvKpi('pi-ov-velocity',  'Velocity',     '—', 'per week') +
+                  _piOvKpi('pi-ov-mmas',      'Mean MMAS-8',  '—', 'avg score / 8') +
+                  _piOvKpi('pi-ov-pe',        'Mean PE',      '—', 'predictive emergence') +
+                '</div>' +
+
+                // ── Row 3: Enrollment progress bar ────────────────────────
+                '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">' +
+                    '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);">Enrollment Progress</div>' +
+                    '<div id="pi-ov-progress-pct" style="font-family:var(--font-mono);font-size:0.80rem;color:var(--pe);">—</div>' +
+                  '</div>' +
+                  '<div style="height:6px;background:var(--border2);border-radius:4px;overflow:hidden;">' +
+                    '<div id="pi-ov-progress-bar" style="height:100%;background:var(--pe);border-radius:4px;width:0%;transition:width 0.6s;"></div>' +
+                  '</div>' +
+                  '<div id="pi-ov-progress-sub" style="font-family:var(--font-mono);font-size:0.66rem;color:var(--dim);margin-top:6px;">—</div>' +
+                '</div>' +
+
+                // ── Row 4: MAP domains + adherence distribution ───────────
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+
+                  // MAP domain tribar
+                  '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;">' +
+                    '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">MAP Domain Averages</div>' +
+                    _piOvDomainRow('pi-ov-arch', 'Architecture',  '#4e9cf5') +
+                    _piOvDomainRow('pi-ov-exec', 'Execution',     '#8b6ff5') +
+                    _piOvDomainRow('pi-ov-ctx',  'Context-Guard', '#2ec98a') +
+                  '</div>' +
+
+                  // Adherence distribution
+                  '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;">' +
+                    '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Adherence Distribution</div>' +
+                    '<div style="display:flex;gap:4px;height:28px;border-radius:5px;overflow:hidden;margin-bottom:10px;">' +
+                      '<div id="pi-ov-dist-high" style="background:rgba(239,68,68,0.55);height:100%;transition:width 0.5s;" title="Low adherence"></div>' +
+                      '<div id="pi-ov-dist-med"  style="background:rgba(245,158,11,0.55);height:100%;transition:width 0.5s;" title="Moderate adherence"></div>' +
+                      '<div id="pi-ov-dist-low"  style="background:rgba(46,201,138,0.55);height:100%;transition:width 0.5s;" title="High adherence"></div>' +
+                    '</div>' +
+                    '<div style="display:flex;gap:14px;font-family:var(--font-mono);font-size:0.68rem;">' +
+                      '<span><span id="pi-ov-pct-high" style="color:#ef4444;font-weight:600;">—%</span> Low</span>' +
+                      '<span><span id="pi-ov-pct-med"  style="color:#f59e0b;font-weight:600;">—%</span> Med</span>' +
+                      '<span><span id="pi-ov-pct-good" style="color:#2ec98a;font-weight:600;">—%</span> High</span>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+
+                // ── Row 5: Fragility alert + CONSORT snapshot ─────────────
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+
+                  // Fragility counter
+                  '<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid rgba(245,158,11,0.6);border-radius:12px;padding:14px 20px;">' +
+                    '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Adherence Fragility</div>' +
+                    '<div style="display:flex;align-items:baseline;gap:8px;">' +
+                      '<div id="pi-ov-fragility-n" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:2.2rem;font-weight:300;color:#f59e0b;line-height:1;">—</div>' +
+                      '<div style="font-family:var(--font-mono);font-size:0.66rem;color:var(--dim);">patients</div>' +
+                    '</div>' +
+                    '<div style="font-family:var(--font-mono);font-size:0.64rem;color:var(--dim);margin-top:4px;line-height:1.5;">MMAS-8 ≥ 6 · PE &lt; 0.65<br>hidden binding constraint</div>' +
+                  '</div>' +
+
+                  // CONSORT numbers
+                  '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;">' +
+                    '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">CONSORT Snapshot</div>' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">' +
+                      _piOvConsortRow('pi-ov-c-assessed', 'Assessed') +
+                      _piOvConsortRow('pi-ov-c-enrolled', 'Enrolled') +
+                      _piOvConsortRow('pi-ov-c-ltfu',     'LTFU') +
+                      _piOvConsortRow('pi-ov-c-analyzed', 'Analyzed') +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+
+                // ── Row 6: Cohort stability band ──────────────────────────
+                '<div id="pi-ov-stability-section" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-top:10px;">' +
+                  '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Cohort Stability Classification</div>' +
+                  '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">' +
+                    '<div style="flex:1;min-width:90px;text-align:center;">' +
+                      '<div id="pi-ov-sf-stable" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.6rem;font-weight:300;color:#10b981;">—</div>' +
+                      '<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:2px;">Stable</div>' +
+                    '</div>' +
+                    '<div style="flex:1;min-width:90px;text-align:center;">' +
+                      '<div id="pi-ov-sf-conditional" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.6rem;font-weight:300;color:#3b82f6;">—</div>' +
+                      '<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:2px;">Conditional</div>' +
+                    '</div>' +
+                    '<div style="flex:1;min-width:90px;text-align:center;">' +
+                      '<div id="pi-ov-sf-domain" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.6rem;font-weight:300;color:#f59e0b;">—</div>' +
+                      '<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:2px;">Domain-Fragile</div>' +
+                    '</div>' +
+                    '<div style="flex:1;min-width:90px;text-align:center;">' +
+                      '<div id="pi-ov-sf-fragile" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.6rem;font-weight:300;color:#ef4444;">—</div>' +
+                      '<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:2px;">Compoundly Fragile</div>' +
+                    '</div>' +
+                  '</div>' +
+                  '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;">' +
+                    '<div id="pi-ov-sf-bar-stable"      style="background:#10b981;transition:width 0.6s;width:0%;"></div>' +
+                    '<div id="pi-ov-sf-bar-conditional" style="background:#3b82f6;transition:width 0.6s;width:0%;"></div>' +
+                    '<div id="pi-ov-sf-bar-domain"      style="background:#f59e0b;transition:width 0.6s;width:0%;"></div>' +
+                    '<div id="pi-ov-sf-bar-fragile"     style="background:#ef4444;transition:width 0.6s;width:0%;"></div>' +
+                  '</div>' +
+                  '<div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;">' +
+                    '<div style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);">' +
+                      '<div style="width:8px;height:8px;border-radius:2px;background:#10b981;"></div> Stable (PE\u22650.65, all domains\u22650.55)' +
+                    '</div>' +
+                    '<div style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);">' +
+                      '<div style="width:8px;height:8px;border-radius:2px;background:#3b82f6;"></div> Conditional' +
+                    '</div>' +
+                    '<div style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);">' +
+                      '<div style="width:8px;height:8px;border-radius:2px;background:#f59e0b;"></div> Domain-Fragile (any domain&lt;0.35)' +
+                    '</div>' +
+                    '<div style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);">' +
+                      '<div style="width:8px;height:8px;border-radius:2px;background:#ef4444;"></div> Compoundly Fragile (all&lt;0.55)' +
+                    '</div>' +
+                  '</div>' +
+                '</div>';
+
+              // Helper functions used above (must be defined before innerHTML is set
+              // — but since we built the string via functions, define them first below)
+              _ovTab.appendChild(_cmd);
+
+              // Populate static fields from workspaceProfile immediately
+              // workspaceProfile is a `let` global (audit-router-state.js), not window.*
+              var _wp = (typeof workspaceProfile !== 'undefined' && workspaceProfile) ? workspaceProfile : {};
+              var _nameEl = document.getElementById('pi-ov-study-name');
+              if (_nameEl) _nameEl.textContent = (_wp.study_title || _wp.display_name || _wp.name || '—');
+              var _irbEl = document.getElementById('pi-ov-irb');
+              if (_irbEl && _wp.irb_protocol) _irbEl.textContent = 'Protocol · ' + _wp.irb_protocol;
+            })();
+
+            // ── Helper: KPI tile HTML ─────────────────────────────────────
+            function _piOvKpi(id, label, val, sub) {
+              return '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;">' +
+                '<div style="font-family:var(--font-mono);font-size:0.50rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">' + label + '</div>' +
+                '<div id="' + id + '-val" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.85rem;font-weight:300;color:var(--bright);line-height:1;">' + val + '</div>' +
+                '<div style="font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);margin-top:3px;">' + sub + '</div>' +
+              '</div>';
+            }
+
+            // ── Helper: domain bar row HTML ───────────────────────────────
+            function _piOvDomainRow(id, label, color) {
+              return '<div style="margin-bottom:10px;">' +
+                '<div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.66rem;color:var(--dim);margin-bottom:4px;">' +
+                  '<span>' + label + '</span>' +
+                  '<span id="' + id + '-val" style="color:var(--text);">—</span>' +
+                '</div>' +
+                '<div style="height:5px;background:var(--border2);border-radius:3px;overflow:hidden;">' +
+                  '<div id="' + id + '-bar" style="height:100%;background:' + color + ';border-radius:3px;width:0%;transition:width 0.5s;"></div>' +
+                '</div>' +
+              '</div>';
+            }
+
+            // ── Helper: CONSORT row HTML ──────────────────────────────────
+            function _piOvConsortRow(id, label) {
+              return '<div>' +
+                '<div style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.10em;text-transform:uppercase;color:var(--dim);">' + label + '</div>' +
+                '<div id="' + id + '" style="font-family:var(--font-mono);font-size:0.86rem;color:var(--text);margin-top:1px;">—</div>' +
+              '</div>';
+            }
+
+            // ── Stability classification helper ───────────────────────────
+            function _pisfClass(r) {
+              var pe = r.pe != null ? +r.pe : null;
+              var a  = r.a  != null ? +r.a  : null;
+              var e  = r.e  != null ? +r.e  : null;
+              var c  = r.c  != null ? +r.c  : null;
+              var sc = r.score != null ? +r.score : null;
+              if (pe === null) return 'unknown';
+              if (a !== null && e !== null && c !== null && a < 0.55 && e < 0.55 && c < 0.55) return 'fragile';
+              if (sc !== null && sc >= 6 && pe < 0.65) return 'hidden';
+              if ((a !== null && a < 0.35) || (e !== null && e < 0.35) || (c !== null && c < 0.35)) return 'domain';
+              if (pe >= 0.65 && (a == null || a >= 0.55) && (e == null || e >= 0.55) && (c == null || c >= 0.55)) return 'stable';
+              return 'conditional';
+            }
+
+            // ── Live refresh function — called by pi-research.js after data loads ──
+            window._piRefreshOverview = function(records, target) {
+              if (!records || !records.length) return;
+              var _s = function(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
+              var _sw = function(id, v) { var el = document.getElementById(id); if (el) el.style.width = v; };
+
+              var count    = records.length;
+              var now      = Date.now();
+              var recent   = records.filter(function(r){ return (r.timestamp||0) > now - 8*7*24*3600*1000; });
+              var velocity = (recent.length / 8).toFixed(1);
+
+              // MMAS-8 mean
+              var scoreRecs = records.filter(function(r){ return r.score != null; });
+              var meanMmas  = scoreRecs.length ? (scoreRecs.reduce(function(s,r){ return s+(+r.score); },0) / scoreRecs.length).toFixed(2) : '—';
+
+              // PE mean
+              var peRecs   = records.filter(function(r){ return r.pe != null; });
+              var meanPe   = peRecs.length ? (peRecs.reduce(function(s,r){ return s+(+r.pe); },0) / peRecs.length).toFixed(3) : '—';
+
+              // MAP domain means
+              var domRecs  = records.filter(function(r){ return r.a!=null && r.e!=null && r.c!=null; });
+              var meanA    = domRecs.length ? domRecs.reduce(function(s,r){ return s+(+r.a); },0)/domRecs.length : null;
+              var meanE    = domRecs.length ? domRecs.reduce(function(s,r){ return s+(+r.e); },0)/domRecs.length : null;
+              var meanC    = domRecs.length ? domRecs.reduce(function(s,r){ return s+(+r.c); },0)/domRecs.length : null;
+
+              // Adherence distribution
+              var hiN=0, medN=0, lowN=0;
+              scoreRecs.forEach(function(r){ var sc=+r.score; if(sc<6)hiN++; else if(sc<8)medN++; else lowN++; });
+              var tot = hiN+medN+lowN || 1;
+              var hiPct=Math.round(hiN/tot*100), medPct=Math.round(medN/tot*100), lowPct=100-hiPct-medPct;
+
+              // Fragility: MMAS≥6 but PE<0.65
+              var fragN = records.filter(function(r){ return r.score>=6 && r.pe!=null && (+r.pe)<0.65; }).length;
+
+              // Stability band
+              var sfRecs = records.filter(function(r){ return r.pe != null; });
+              var sfCounts = { stable:0, conditional:0, domain:0, hidden:0, fragile:0, unknown:0 };
+              sfRecs.forEach(function(r){ sfCounts[_pisfClass(r)]++; });
+              var sfTotal = sfRecs.length || 1;
+              function _sfPct(n) { return ((n/sfTotal)*100).toFixed(1)+'%'; }
+              function _sfPctN(n) { return ((n/sfTotal)*100); }
+
+              // Enrollment progress
+              var tgt      = target || 0;
+              var pct      = tgt>0 ? Math.min(100, Math.round(count/tgt*100)) : 0;
+              var projText = '—';
+              if (tgt>0 && velocity>0 && count<tgt) {
+                var weeksLeft = (tgt-count)/parseFloat(velocity);
+                var projDate  = new Date(now+weeksLeft*7*24*3600*1000);
+                projText = 'Projected completion: ' + projDate.toLocaleDateString('en-US',{year:'numeric',month:'short'});
+              } else if (tgt>0 && count>=tgt) {
+                projText = 'Target met';
+              }
+
+              // CONSORT from cached data
+              var cd = window._piConsortData || {};
+
+              // Populate KPIs
+              _s('pi-ov-enrolled-val', count.toLocaleString() + (tgt>0 ? ' / '+tgt : ''));
+              _s('pi-ov-velocity-val', velocity);
+              _s('pi-ov-mmas-val',     meanMmas);
+              _s('pi-ov-pe-val',       meanPe);
+
+              // Enrollment bar
+              _sw('pi-ov-progress-bar', pct+'%');
+              _s('pi-ov-progress-pct', pct ? pct+'%' : '—');
+              _s('pi-ov-progress-sub', tgt>0 ? projText : 'Set an enrollment target in Admin to track progress');
+
+              // Status badge
+              var badge = document.getElementById('pi-ov-status-badge');
+              if (badge) {
+                if (tgt>0 && count>=tgt) {
+                  badge.textContent='Complete'; badge.style.background='rgba(46,201,138,0.10)'; badge.style.borderColor='rgba(46,201,138,0.25)'; badge.style.color='var(--strata)';
+                } else {
+                  badge.textContent='Enrolling'; badge.style.background='rgba(78,156,245,0.10)'; badge.style.borderColor='rgba(78,156,245,0.25)'; badge.style.color='var(--base)';
+                }
+              }
+
+              // MAP domains
+              if (meanA!=null) { _s('pi-ov-arch-val', meanA.toFixed(3)); _sw('pi-ov-arch-bar', Math.round(meanA*100)+'%'); }
+              if (meanE!=null) { _s('pi-ov-exec-val', meanE.toFixed(3)); _sw('pi-ov-exec-bar', Math.round(meanE*100)+'%'); }
+              if (meanC!=null) { _s('pi-ov-ctx-val',  meanC.toFixed(3)); _sw('pi-ov-ctx-bar',  Math.round(meanC*100)+'%'); }
+
+              // Distribution bar segments
+              var _dh = document.getElementById('pi-ov-dist-high');
+              var _dm = document.getElementById('pi-ov-dist-med');
+              var _dl = document.getElementById('pi-ov-dist-low');
+              if (_dh) _dh.style.width = hiPct+'%';
+              if (_dm) _dm.style.width = medPct+'%';
+              if (_dl) _dl.style.width = lowPct+'%';
+              _s('pi-ov-pct-high', hiPct+'%');
+              _s('pi-ov-pct-med',  medPct+'%');
+              _s('pi-ov-pct-good', lowPct+'%');
+
+              // Fragility
+              _s('pi-ov-fragility-n', fragN);
+
+              // CONSORT
+              _s('pi-ov-c-assessed', (cd.assessed || count).toLocaleString());
+              _s('pi-ov-c-enrolled', (cd.enrolledN || scoreRecs.length).toLocaleString());
+              _s('pi-ov-c-ltfu',     (cd.ltfuN || 0).toLocaleString());
+              _s('pi-ov-c-analyzed', (cd.analyzedN || scoreRecs.length).toLocaleString());
+
+              // Stability band KPI labels
+              _s('pi-ov-sf-stable',      sfCounts.stable + ' · ' + _sfPct(sfCounts.stable));
+              _s('pi-ov-sf-conditional', (sfCounts.conditional + sfCounts.hidden) + ' · ' + _sfPct(sfCounts.conditional + sfCounts.hidden));
+              _s('pi-ov-sf-domain',      sfCounts.domain + ' · ' + _sfPct(sfCounts.domain));
+              _s('pi-ov-sf-fragile',     sfCounts.fragile + ' · ' + _sfPct(sfCounts.fragile));
+
+              // Stability band bar segments (deferred for CSS transition)
+              setTimeout(function() {
+                _sw('pi-ov-sf-bar-stable',      _sfPctN(sfCounts.stable) + '%');
+                _sw('pi-ov-sf-bar-conditional', _sfPctN(sfCounts.conditional + sfCounts.hidden) + '%');
+                _sw('pi-ov-sf-bar-domain',      _sfPctN(sfCounts.domain) + '%');
+                _sw('pi-ov-sf-bar-fragile',     _sfPctN(sfCounts.fragile) + '%');
+              }, 50);
+
+              // Study name (refresh in case workspaceProfile loaded late)
+              var _wp2 = (typeof workspaceProfile !== 'undefined' && workspaceProfile) ? workspaceProfile : {};
+              _s('pi-ov-study-name', _wp2.study_title || _wp2.display_name || _wp2.name || '—');
+              var _irbEl2 = document.getElementById('pi-ov-irb');
+              if (_irbEl2 && _wp2.irb_protocol) _irbEl2.textContent = 'Protocol · ' + _wp2.irb_protocol;
+            };
+
           }, 800);
         } else {
-          // ── Researcher (non-PI) rail ─────────────────────────────────────
+          // ── Researcher (non-PI) rail: 8 tabs ─────────────────────────────
           var RES_RAIL_TABS = [
-            { id: 'overview',     icon: '⌂', label: 'Overview',
+            { id: 'overview',      icon: '⌂', label: 'Overview',
               elements: ['session-launcher-panel', 'dash-pulse-bar-ref'] },
-            { id: 'analytics',    icon: '∿', label: 'Analytics',
-              elements: ['res-analytics-panel', 'res-advanced-accordion'] },
-            { id: 'publications', icon: '✦', label: 'Publications',
-              elements: ['res-mod-apa-gen', 'res-mod-predictor', 'res-mod-power'] },
-            { id: 'statistics',   icon: '∑', label: 'Statistics',
-              elements: ['res-mod-psycho'] },
-            { id: 'records',      icon: '≡', label: 'Records',
+            { id: 'analytics',     icon: '∿', label: 'Analytics',
+              elements: ['res-analytics-panel', 'res-advanced-accordion', 'res-mod-heor'] },
+            { id: 'publications',  icon: '✦', label: 'Publish',
+              elements: ['res-mod-apa-gen', 'res-mod-predictor', 'res-mod-power', 'res-mod-certification'] },
+            { id: 'analysis',      icon: '∑', label: 'Validate',
+              elements: ['res-mod-validation', 'res-mod-psycho'] },
+            { id: 'records',       icon: '≡', label: 'Records',
               elements: ['res-records-banner', 'res-mod-cohort-map', 'researcher-patient-panel'] },
-            { id: 'research',     icon: '◈', label: 'Research',
-              elements: ['res-mod-registry', 'res-tools-bar'] },
-            { id: 'airc',         icon: '⬡', label: 'TESSERA',
-              elements: ['res-mod-airc'] },
-            { id: 'learning',     icon: '🌍', label: 'Learning',
-              elements: ['res-mod-lmic-training'] },
-            { id: 'intel',         icon: '◉', label: 'Intel',       elements: ['res-mod-country-intel'] },
-            { id: 'tracking',      icon: '≋', label: 'Tracking',    elements: ['res-mod-longitudinal'] },
-            { id: 'heor',          icon: '∑', label: 'HEOR',        elements: ['res-mod-heor'] },
-            { id: 'certification', icon: '✦', label: 'Certify',     elements: ['res-mod-certification'] },
+            { id: 'research',      icon: '◈', label: 'Research',
+              elements: ['res-mod-registry', 'res-tools-bar', 'res-mod-country-intel'] },
+            { id: 'longitudinal',  icon: '≋', label: 'Longitudinal',
+              elements: ['res-mod-longitudinal', 'res-mod-predictive'] },
+            { id: 'tessera',       icon: '⬡', label: 'TESSERA',
+              elements: ['res-mod-tessera', 'res-mod-lmic-training'] },
           ];
           setTimeout(function() {
             if (typeof window._atlasInstallRail === 'function') {
@@ -4027,16 +4530,16 @@ function enterResearcherDashboard() {
         // Skipped if user is already an active or pending consortium member.
         setTimeout(function() {
           (function() {
-            if (localStorage.getItem('airc_nudge_dismissed') === '1') return;
+            if (localStorage.getItem('tessera_nudge_dismissed') === '1') return;
             var _nudgeUid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
             if (!_nudgeUid) return;
             firebase.database().ref('consortium_members/' + _nudgeUid).once('value').then(function(snap) {
               var _memberData = snap.val();
               if (_memberData && (_memberData.status === 'active' || _memberData.status === 'pending')) return;
               var _nudgeDb = document.querySelector('#screen-dashboard .dash-body');
-              if (!_nudgeDb || document.getElementById('airc-nudge-banner')) return;
+              if (!_nudgeDb || document.getElementById('tessera-nudge-banner')) return;
               var _nudgeBanner = document.createElement('div');
-              _nudgeBanner.id = 'airc-nudge-banner';
+              _nudgeBanner.id = 'tessera-nudge-banner';
               _nudgeBanner.style.cssText = [
                 'width:100%',
                 'box-sizing:border-box',
@@ -4054,20 +4557,20 @@ function enterResearcherDashboard() {
                 '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.75rem;color:var(--bright);flex:1;">' +
                   '<strong>Join TESSERA GRC</strong> &mdash; Access grant templates, letters of support, and the global research network.' +
                 '</span>' +
-                '<button id="airc-nudge-learn" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;background:#d4a843;color:#000;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;flex-shrink:0;">Learn More</button>' +
-                '<button id="airc-nudge-dismiss" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.85rem;background:transparent;border:none;color:var(--dim);cursor:pointer;padding:0 4px;flex-shrink:0;" title="Dismiss">&#x2715;</button>';
+                '<button id="tessera-nudge-learn" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;background:#d4a843;color:#000;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;flex-shrink:0;">Learn More</button>' +
+                '<button id="tessera-nudge-dismiss" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.85rem;background:transparent;border:none;color:var(--dim);cursor:pointer;padding:0 4px;flex-shrink:0;" title="Dismiss">&#x2715;</button>';
               var _nudgeRail = document.getElementById('atlas-rail-wrapper');
               if (_nudgeRail && _nudgeRail.parentNode === _nudgeDb) {
                 _nudgeDb.insertBefore(_nudgeBanner, _nudgeRail);
               } else {
                 _nudgeDb.insertBefore(_nudgeBanner, _nudgeDb.firstChild);
               }
-              document.getElementById('airc-nudge-learn').addEventListener('click', function() {
-                if (typeof window.atlasTabSwitch === 'function') window.atlasTabSwitch('airc');
+              document.getElementById('tessera-nudge-learn').addEventListener('click', function() {
+                if (typeof window.atlasTabSwitch === 'function') window.atlasTabSwitch('tessera');
               });
-              document.getElementById('airc-nudge-dismiss').addEventListener('click', function() {
-                localStorage.setItem('airc_nudge_dismissed', '1');
-                var _b = document.getElementById('airc-nudge-banner');
+              document.getElementById('tessera-nudge-dismiss').addEventListener('click', function() {
+                localStorage.setItem('tessera_nudge_dismissed', '1');
+                var _b = document.getElementById('tessera-nudge-banner');
                 if (_b) {
                   _b.style.opacity = '0';
                   setTimeout(function() { if (_b.parentNode) _b.parentNode.removeChild(_b); }, 300);
@@ -4095,11 +4598,11 @@ function enterResearcherDashboard() {
   // ── TESSERA GRC RAIL BADGE INJECTOR ─────────────────────────────────────────────────
   // Injects a membership tier badge at the bottom of #atlas-rail-nav.
   // Called at 2000ms inside the PI/Researcher workspace init block.
-  // Idempotent: skips if #airc-rail-badge already exists.
+  // Idempotent: skips if #tessera-rail-badge already exists.
   function _sgrInjectMemberBadge() {
     var _railNav = document.getElementById('atlas-rail-nav');
     if (!_railNav) return;
-    if (document.getElementById('airc-rail-badge')) return;
+    if (document.getElementById('tessera-rail-badge')) return;
     var _badgeUid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
     if (!_badgeUid) return;
     firebase.database().ref('consortium_members/' + _badgeUid).once('value').then(function(snap) {
@@ -4108,7 +4611,7 @@ function enterResearcherDashboard() {
       var _status = _bd.status;
       if (_status !== 'active' && _status !== 'pending') return;
       var _badge = document.createElement('div');
-      _badge.id = 'airc-rail-badge';
+      _badge.id = 'tessera-rail-badge';
       if (_status === 'active') {
         var _tier = _bd.tier;
         var _tierLabel = 'TESSERA GRC';
@@ -4304,10 +4807,23 @@ function enterResearcherDashboard() {
       }
     });
 
+    // ── 8b. Wave modules injected outside .dash-body (siblings of res-analytics-panel
+    //        in #screen-dashboard) must also be hidden — they escape step 8 because
+    //        they are children of #screen-dashboard, not .dash-body.
+    //        Identify them by the 'res-mod-' prefix; exclude modals and overlays.
+    var _screen = document.getElementById('screen-dashboard');
+    if (_screen) {
+      Array.from(_screen.children).forEach(function(child) {
+        var id = child.id || '';
+        if (id.indexOf('res-mod-') === 0 || id === 'res-analytics-panel' || id === 'researcher-patient-panel') {
+          if (child.style.display !== 'none') child.style.display = 'none';
+        }
+      });
+    }
+
     window._atlasActiveTab  = tabs[0].id;
     window._atlasRailColor  = accentColor;
     window._atlasRailTabs   = tabs;
-    console.log('[ATLAS] Tab rail installed · role:', window._atlasRailRole, '· tabs:', tabs.length);
   };
   // ── END ATLAS TAB RAIL ENGINE ────────────────────────────────────────────
 
@@ -4355,8 +4871,9 @@ function enterResearcherDashboard() {
       if (typeof database !== 'undefined') {
         database.ref('audit_log').push({
           cfr11: true, action: 'SESSION_TIMEOUT',
-          actor_uid: user.uid, actor_email: user.email,
-          timestamp_utc: new Date().toISOString(), client_ts: Date.now(), table: 'session'
+          uid: user.uid, actor_email: user.email,
+          timestamp: Date.now(),
+          timestamp_utc: new Date().toISOString(), table: 'session'
         }).catch(function(){});
       }
       firebase.auth().signOut().then(function() {
