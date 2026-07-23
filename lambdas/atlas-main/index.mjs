@@ -6,6 +6,8 @@
  *   POST /verify-otp              — Superadmin MFA — verify OTP and issue token
  *   POST /resend-otp              — Superadmin MFA — resend OTP
  *   POST /issue-key               — Automated workspace key issuance + permission registry
+ *   POST /rotate-key              — PI/researcher self-service workspace key rotation
+ *   POST /adherence-pulse-test    — Send test weekly pulse digest email
  *   POST /create-checkout-session — Stripe Checkout session creation
  *   POST /stripe-webhook          — Stripe payment webhook
  *   POST /send-magic-link         — Firebase magic link for self-serve keys
@@ -74,8 +76,14 @@ const VERIFY_BASE_URL = 'https://keys.adherence.cc/verify';
 let _cachedFirebaseKeyB64 = null;
 
 async function getServiceAccount() {
+  // Support FIREBASE_SERVICE_ACCOUNT as full JSON object (legacy env var format)
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    return { client_email: sa.client_email, private_key: sa.private_key };
+  }
+
   const email = process.env.FIREBASE_CLIENT_EMAIL;
-  if (!email) throw new Error('FIREBASE_CLIENT_EMAIL env var missing');
+  if (!email) throw new Error('FIREBASE_CLIENT_EMAIL or FIREBASE_SERVICE_ACCOUNT env var required');
 
   if (!_cachedFirebaseKeyB64) {
     // Prefer env var if present (local dev / migration period), fall back to SSM
@@ -914,17 +922,31 @@ const INSTITUTION_SEAT_QUOTA = {
   observer:         { included_max: 3  },
 };
 
-async function sendWelcomeEmail(email, name, key, role, institution, study_title, intended_use, createdAt, certNum, subscription_end) {
-  const tc       = TIERS[role];
-  const atlasUrl = `https://atlas.adherence.cc?key=${key}`;
+async function sendWelcomeEmail(email, name, key, role, institution, study_title, intended_use, createdAt, certNum, subscription_end, opts = {}) {
+  const tc         = TIERS[role];
+  const atlasUrl   = `https://atlas.adherence.cc?key=${key}`;
   const includeLetter = LETTER_TIERS.has(role) && study_title && certNum;
-  const verifyUrl = certNum ? `${VERIFY_BASE_URL}?cert=${encodeURIComponent(certNum)}` : null;
+  const verifyUrl  = certNum ? `${VERIFY_BASE_URL}?cert=${encodeURIComponent(certNum)}` : null;
+  const isLmic     = !!opts.lmic_grant;
+  const country    = opts.country || '';
+
+  const lmicNote = isLmic ? `
+  <div style="border-left:3px solid rgba(139,111,245,0.7);padding:20px 22px;margin-bottom:28px;background:rgba(139,111,245,0.05);">
+    <p style="font-family:Georgia,serif;font-size:1rem;font-weight:300;color:#fff;margin:0 0 14px;">Dear ${name},</p>
+    <p style="font-size:0.84rem;line-height:1.8;color:rgba(200,220,240,0.8);margin:0 0 12px;">I wanted to personally welcome you to the Scala Carta Foundation TESSERA Research Consortium. Your application from ${institution}${country ? ' in ' + country : ''} stood out, and I am genuinely glad to offer you complimentary access to the ATLAS platform through our LMIC Research Grant program.</p>
+    <p style="font-size:0.84rem;line-height:1.8;color:rgba(200,220,240,0.8);margin:0 0 12px;">The TESSERA consortium exists precisely for this reason: to ensure that researchers working in under-resourced settings have access to the same validated instruments and analytical infrastructure as institutions with significant funding.${study_title ? ' Your study, <em style="color:rgba(200,220,240,0.95);">"' + study_title + '"</em>, is now part of that network.' : ''}</p>
+    <p style="font-size:0.84rem;line-height:1.8;color:rgba(200,220,240,0.8);margin:0 0 12px;">Your workspace gives you full access to the Multidimensional Adherence Parameters (MAP) instrument, MMAS-8 scoring, and the PEACS behavioral phenotyping framework. Your Letter of Permission is attached to this email. It is a legally recognized document you can present to your IRB, ethics committee, or any journal requiring proof of instrument authorization.</p>
+    <p style="font-size:0.84rem;line-height:1.8;color:rgba(200,220,240,0.8);margin:0 0 18px;">If you have questions at any point during your study, reach me directly at <a href="mailto:philip.morisky@adherence.cc" style="color:rgba(212,168,67,0.85);">philip.morisky@adherence.cc</a>. I read every message.</p>
+    <p style="font-size:0.84rem;line-height:1.8;color:rgba(200,220,240,0.8);margin:0 0 2px;">Welcome aboard.</p>
+    <p style="font-size:0.82rem;color:rgba(200,220,240,0.55);margin:0;line-height:1.7;">Philip Morisky, MBA<br/>Founder, Scala Carta Foundation &middot; CEO, Adherence Cartography<br/>Director, TESSERA GRC<br/><a href="https://adherence.cc" style="color:rgba(212,168,67,0.6);text-decoration:none;">adherence.cc</a> &middot; <a href="https://scalacartafoundation.org" style="color:rgba(212,168,67,0.6);text-decoration:none;">scalacartafoundation.org</a></p>
+  </div>` : '';
 
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"/></head>
 <body style="margin:0;padding:32px 20px;background:#060e1e;font-family:'IBM Plex Mono',Courier,monospace;color:#c8d8ea;">
 <div style="max-width:560px;margin:0 auto;border:1px solid rgba(212,168,67,0.22);border-top:3px solid rgba(212,168,67,0.75);border-radius:4px;padding:36px;">
   <div style="font-size:0.78rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.7);margin-bottom:24px;">ADHERENCE CARTOGRAPHY · ATLAS</div>
+  ${lmicNote}
   <h1 style="font-family:Georgia,serif;font-size:1.75rem;font-weight:300;color:#fff;margin:0 0 6px;">Your workspace key is ready.</h1>
   <p style="color:rgba(200,220,240,0.6);font-size:0.86rem;line-height:1.7;margin:0 0 28px;">Welcome, ${name}. Your <strong style="color:#fff;">${tc.label}</strong> workspace for <strong style="color:#fff;">${institution}</strong> has been provisioned.</p>
   <div style="background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.18);border-radius:3px;padding:22px;text-align:center;margin-bottom:28px;">
@@ -989,7 +1011,7 @@ async function sendWelcomeEmail(email, name, key, role, institution, study_title
 export async function handleIssueKey(body, origin) {
   const { name, email, institution, role, study_title, intended_use,
           stripe_session_id, stripe_customer_id, stripe_subscription_id,
-          plan_type } = body;
+          plan_type, lmic_grant, country } = body;
   if (!name || !email || !institution || !role)
     return respond(400, { error: 'Missing required fields: name, email, institution, role' }, origin);
   if (!TIERS[role])
@@ -1073,7 +1095,7 @@ export async function handleIssueKey(body, origin) {
 
   let emailSent = false;
   try {
-    await sendWelcomeEmail(email, name, key, role, institution, study_title, intended_use, now, certNum, subscriptionEnd);
+    await sendWelcomeEmail(email, name, key, role, institution, study_title, intended_use, now, certNum, subscriptionEnd, { lmic_grant: !!lmic_grant, country: country || '' });
     emailSent = true;
   } catch(e) { console.error('[issue-key] Email failed:', e.message); }
   return respond(201, {
@@ -1450,56 +1472,52 @@ export async function sendLetterEmailStandalone(profile) {
 //                       TTL attribute: ttl_epoch (N) — 90 days
 //
 // ── Token verification for /db endpoint ─────────────────────────────────────
-// Decodes the Firebase ID token (JWT), validates it against Firebase's
-// accounts:lookup REST endpoint, and extracts workspace + role claims.
-// ATLAS custom tokens embed claims at top-level of the ID token payload.
+// Verifies the Firebase ID token cryptographically using Firebase's public keys.
+// Does NOT call accounts:lookup — that endpoint requires FIREBASE_WEB_API_KEY
+// which may have HTTP-referer restrictions that block server-side Lambda calls.
 async function _verifyDBToken(authHeader) {
   const token = (authHeader || '').replace(/^Bearer\s+/i, '').trim();
   if (!token) return { ok: false, error: 'Missing token' };
 
-  // 1. Decode JWT payload (base64url) — we validate with Firebase next
-  let payload;
+  const parts = token.split('.');
+  if (parts.length !== 3) return { ok: false, error: 'Malformed JWT' };
+
+  let header, payload;
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return { ok: false, error: 'Malformed JWT' };
-    payload = JSON.parse(Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+    header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
+    payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
   } catch(e) {
     return { ok: false, error: 'JWT decode failed' };
   }
 
-  // 2. Quick expiry check before network round-trip
+  // Expiry check
   if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
     return { ok: false, error: 'Token expired' };
   }
 
-  // 3. Validate with Firebase accounts:lookup (confirms token is genuine and not revoked)
-  const apiKey = process.env.FIREBASE_WEB_API_KEY;
-  if (!apiKey) return { ok: false, error: 'Server config error: missing FIREBASE_WEB_API_KEY' };
-
-  try {
-    const result = await new Promise((resolve, reject) => {
-      const pl = JSON.stringify({ idToken: token });
-      const req = https.request({
-        hostname: 'identitytoolkit.googleapis.com',
-        path:     `/v1/accounts:lookup?key=${apiKey}`,
-        method:   'POST',
-        headers:  { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(pl) },
-      }, res => {
-        let d = ''; res.on('data', c => d += c);
-        res.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { reject(e); } });
-      });
-      req.on('error', reject); req.write(pl); req.end();
-    });
-
-    if (result.error || !result.users?.[0]) {
-      return { ok: false, error: 'Firebase rejected token: ' + (result.error?.message || 'unknown') };
-    }
-  } catch(e) {
-    return { ok: false, error: 'Token validation network error: ' + e.message };
+  // Issuer / audience check
+  const projectId = process.env.FIREBASE_PROJECT_ID || 'adherence-project-2026';
+  if (payload.iss !== `https://securetoken.google.com/${projectId}`) {
+    return { ok: false, error: 'Invalid token issuer' };
+  }
+  if (payload.aud !== projectId) {
+    return { ok: false, error: 'Invalid token audience' };
   }
 
-  // 4. Extract workspace and role from JWT payload claims
-  // ATLAS custom tokens set: workspace (key), role, tier, institution
+  // RS256 signature verification using Firebase public keys — no API key needed
+  try {
+    const certs = await _getFirebasePubKeys();
+    const cert  = certs[header.kid];
+    if (!cert) return { ok: false, error: 'Unknown signing key: ' + header.kid };
+    const verifier = crypto.createVerify('RSA-SHA256');
+    verifier.update(parts[0] + '.' + parts[1]);
+    if (!verifier.verify(cert, Buffer.from(parts[2], 'base64url'))) {
+      return { ok: false, error: 'Invalid token signature' };
+    }
+  } catch(e) {
+    return { ok: false, error: 'Token verification error: ' + e.message };
+  }
+
   const workspaceKey = payload.workspace || payload.workspace_key || null;
   const role         = payload.role || 'student';
 
@@ -1760,6 +1778,8 @@ export const handler = async (event) => {
   if (path.endsWith('/add-study'))                    return handleAddStudy(body, origin);
   if (path.endsWith('/lock-dataset'))                 return handleLockDataset(body, origin);
   if (path.endsWith('/issue-pub-license'))            return handleIssuePubLicense(body, origin);
+  if (path.endsWith('/rotate-key'))                   return handleRotateKey(body, origin, event);
+  if (path.endsWith('/adherence-pulse-test'))         return handlePulseTest(body, origin);
   if (path.endsWith('/institution/seat-status'))      return handleInstSeatStatus(body, origin);
   if (path.endsWith('/institution/provision-seat'))   return handleInstProvisionSeat(body, origin);
   if (path.endsWith('/admin/create-key'))             return handleAdminCreateKey(body, origin, event);
@@ -1778,7 +1798,7 @@ export const handler = async (event) => {
   if (path.endsWith('/gai-inquiry'))   return handleGAIInquiry(body, origin);
   if (path.startsWith('/create-checkout-session') || path.startsWith('/send-magic-link') ||
       path.startsWith('/gai-checkout') || path.startsWith('/seat-checkout') ||
-      path.startsWith('/institution-checkout')) {
+      path.startsWith('/institution-checkout') || path.startsWith('/tessera-payment-link')) {
     return await handleStripeRoutes(path, method, event.body, event.headers);
   }
 
@@ -1836,7 +1856,7 @@ async function verifyAdminToken(event) {
   const certs = await _getFirebasePubKeys();
   const cert  = certs[header.kid];
   if (!cert) throw new Error('Unknown signing key: ' + header.kid);
-  const verifier = crypto.createVerify('RS256');
+  const verifier = crypto.createVerify('RSA-SHA256');
   verifier.update(parts[0] + '.' + parts[1]);
   if (!verifier.verify(cert, Buffer.from(parts[2], 'base64url'))) throw new Error('Invalid token signature');
 
@@ -2794,4 +2814,170 @@ async function handleIssuePubLicense(body, origin) {
 
   console.log(`[issue-pub-license] ${licKey} issued for ${pi.trim()}`);
   return respond(201, { licKey, issuedDate: now }, origin);
+}
+
+// ── Token verification for user-scoped (non-superadmin) routes ────────────────
+async function verifyUserToken(event) {
+  const auth = (event.headers?.authorization || event.headers?.Authorization || '').replace('Bearer ', '').trim();
+  if (!auth) throw new Error('Missing Authorization header');
+  const parts = auth.split('.');
+  if (parts.length !== 3) throw new Error('Invalid token format');
+  const header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
+  const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+  const now = Math.floor(Date.now() / 1000);
+  if (!payload.exp || payload.exp < now) throw new Error('Token expired');
+  if (payload.iat && payload.iat > now + 300) throw new Error('Token iat in future');
+  const projectId = process.env.FIREBASE_PROJECT_ID || 'adherence-project-2026';
+  if (payload.iss !== `https://securetoken.google.com/${projectId}`) throw new Error('Invalid token issuer');
+  if (payload.aud !== projectId) throw new Error('Invalid token audience');
+  const certs = await _getFirebasePubKeys();
+  const cert  = certs[header.kid];
+  if (!cert) throw new Error('Unknown signing key');
+  const verifier = crypto.createVerify('RSA-SHA256');
+  verifier.update(parts[0] + '.' + parts[1]);
+  if (!verifier.verify(cert, Buffer.from(parts[2], 'base64url'))) throw new Error('Invalid token signature');
+  return payload;
+}
+
+// ── ROUTE: POST /rotate-key (PI / researcher self-service key rotation) ───────
+async function handleRotateKey(body, origin, event) {
+  let payload;
+  try { payload = await verifyUserToken(event); }
+  catch(e) { return respond(401, { error: e.message }, origin); }
+
+  const { current_key, scope } = body;
+  if (!current_key) return respond(400, { error: 'current_key required' }, origin);
+  if (scope !== 'self') return respond(400, { error: 'Only scope: "self" is supported' }, origin);
+
+  const normalizedKey  = current_key.trim().toUpperCase();
+  const tokenWorkspace = (payload.workspace || payload.workspace_key || '').toUpperCase();
+  if (tokenWorkspace !== normalizedKey) {
+    return respond(403, { error: 'Token workspace does not match current_key' }, origin);
+  }
+
+  const role = (payload.role || '').toLowerCase();
+  if (!['pi', 'researcher'].includes(role)) {
+    return respond(403, { error: 'Key rotation is available for PI and Researcher keys only' }, origin);
+  }
+
+  const oldProfile = await lookupWorkspaceKey(normalizedKey);
+  if (!oldProfile || oldProfile.active === false) {
+    return respond(403, { error: 'Invalid or inactive workspace key' }, origin);
+  }
+
+  const tc     = TIERS[oldProfile.role] || TIERS.researcher;
+  const abbrev = oldProfile.abbrev || buildAbbrev(oldProfile.institution || 'ATLAS');
+  const suffix = randomSuffix();
+  const year   = new Date().getFullYear();
+  const newKey = `${tc.prefix}-${abbrev}-${suffix}-${year}`;
+  const now    = Date.now();
+
+  const newProfile = { ...oldProfile, key: newKey, created_at: now, rotated_from: normalizedKey, key_type: 'self_rotated' };
+  try {
+    await _ssmForKey(newKey).send(new PutParameterCommand({
+      Name: `/atlas/workspaces/${newKey}`, Value: JSON.stringify(newProfile), Type: 'String', Overwrite: true,
+    }));
+  } catch(e) {
+    console.error('[rotate-key] SSM write failed:', e.message);
+    return respond(500, { error: 'Failed to create new key: ' + e.message }, origin);
+  }
+
+  try {
+    const deactivated = { ...oldProfile, active: false, rotated_to: newKey, rotated_at: now };
+    await _ssmForKey(normalizedKey).send(new PutParameterCommand({
+      Name: `/atlas/workspaces/${normalizedKey}`, Value: JSON.stringify(deactivated), Type: 'String', Overwrite: true,
+    }));
+    _wsCache.delete(normalizedKey);
+  } catch(e) {
+    console.warn('[rotate-key] Old key deactivation warning:', e.message);
+  }
+
+  if (oldProfile.email) {
+    try {
+      await ses.send(new SendEmailCommand({
+        Source: `ATLAS Platform <${SES_FROM_EMAIL}>`,
+        ReplyToAddresses: ['info@adherence.cc'],
+        Destination: { ToAddresses: [oldProfile.email] },
+        Message: {
+          Subject: { Data: 'Your ATLAS workspace key has been rotated' },
+          Body: {
+            Html: { Data: `<p>Your ATLAS workspace key has been rotated.</p><p>New key: <strong>${newKey}</strong></p><p><a href="https://atlas.adherence.cc?key=${newKey}">Access ATLAS</a></p><p>Previous key <code>${normalizedKey}</code> has been deactivated.</p>` },
+            Text: { Data: `New ATLAS key: ${newKey}\nhttps://atlas.adherence.cc?key=${newKey}\n\nPrevious key ${normalizedKey} has been deactivated.` },
+          },
+        },
+      }));
+    } catch(e) {
+      console.warn('[rotate-key] Email send failed (key still rotated):', e.message);
+    }
+  }
+
+  console.log(`[rotate-key] ${normalizedKey} → ${newKey}`);
+  return respond(200, { new_key: newKey }, origin);
+}
+
+// ── ROUTE: POST /adherence-pulse-test (send test weekly pulse digest) ─────────
+async function handlePulseTest(body, origin) {
+  const { workspace, email } = body;
+  if (!workspace) return respond(400, { error: 'workspace required' }, origin);
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return respond(400, { error: 'valid email required' }, origin);
+  }
+
+  const normalizedKey = workspace.trim().toUpperCase();
+  const profile = await lookupWorkspaceKey(normalizedKey);
+  if (!profile || profile.active === false) {
+    return respond(403, { error: 'Invalid or inactive workspace key' }, origin);
+  }
+
+  const label    = profile.cohortLabel || normalizedKey;
+  const subject  = `[TEST] ATLAS Weekly Pulse — ${label}`;
+  const htmlBody = `
+<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0;">
+  <div style="background:#0d1b2e;padding:1.5rem;text-align:center;">
+    <span style="font-size:1.1rem;font-weight:600;color:#fff;letter-spacing:0.05em;">ATLAS Weekly Pulse</span>
+    <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:4px;letter-spacing:0.12em;text-transform:uppercase;">Test Digest · ${label}</div>
+  </div>
+  <div style="padding:1.5rem;">
+    <p style="color:#555;font-size:0.9rem;line-height:1.6;">This is a test message confirming your Pulse Sentinel digest is configured correctly. Live digests include your actual GAI score, submission counts, and at-risk patient alerts.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:1rem;">
+      <tr><td style="padding:0.75rem 0;border-bottom:1px solid #f0f0f0;">
+        <span style="color:#555;font-size:0.875rem;">Global Adherence Index (GAI)</span>
+        <strong style="float:right;color:#4e9cf5;">0.74 (sample)</strong>
+      </td></tr>
+      <tr><td style="padding:0.75rem 0;border-bottom:1px solid #f0f0f0;">
+        <span style="color:#555;font-size:0.875rem;">New submissions this week</span>
+        <strong style="float:right;">12 (sample)</strong>
+      </td></tr>
+      <tr><td style="padding:0.75rem 0;">
+        <span style="color:#555;font-size:0.875rem;">⚠ At-risk patients (GAI &lt; 0.55)</span>
+        <strong style="float:right;color:#f44336;">3 (sample)</strong>
+      </td></tr>
+    </table>
+    <a href="https://atlas.adherence.cc" style="display:block;margin-top:1.25rem;text-align:center;padding:0.75rem;background:#4e9cf5;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">View Full Dashboard →</a>
+  </div>
+  <div style="background:#f9f9f9;padding:0.75rem 1.5rem;border-radius:0 0 10px 10px;text-align:center;">
+    <span style="font-size:0.75rem;color:#999;">ATLAS Platform · <a href="https://atlas.adherence.cc" style="color:#4e9cf5;">Manage preferences</a></span>
+  </div>
+</div>`;
+
+  try {
+    await ses.send(new SendEmailCommand({
+      Source: `ATLAS Platform <${SES_FROM_EMAIL}>`,
+      ReplyToAddresses: ['info@adherence.cc'],
+      Destination: { ToAddresses: [email] },
+      Message: {
+        Subject: { Data: subject },
+        Body: {
+          Html: { Data: htmlBody },
+          Text: { Data: `[TEST] ATLAS Weekly Pulse — ${label}\n\nThis is a test digest. Live digests include your actual GAI score, submission counts, and at-risk patient alerts.\n\nhttps://atlas.adherence.cc` },
+        },
+      },
+    }));
+  } catch(e) {
+    console.error('[adherence-pulse-test] SES send failed:', e.message);
+    return respond(500, { error: 'Email delivery failed: ' + e.message }, origin);
+  }
+
+  console.log(`[adherence-pulse-test] Test digest sent to ${email} for workspace ${normalizedKey}`);
+  return respond(200, { ok: true, email }, origin);
 }

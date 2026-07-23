@@ -1607,7 +1607,7 @@ async function piConfirmKeyRotation() {
     }
 
     // Call the key revocation API (scoped to own key only)
-    const workerBase = window._WORKER_URL || '/_worker';
+    const workerBase = '/lambda-proxy';
     const response = await fetch(`${workerBase}/rotate-key`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${await firebase.auth().currentUser?.getIdToken()}` },
