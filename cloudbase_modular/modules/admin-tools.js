@@ -14,16 +14,37 @@
 function openPatientQR() {
   if (!currentWorkspace) { showToast('No workspace active — enter a workspace key first.'); return; }
   const assessBase = window.location.origin + '/assess';
-  const lang   = (typeof mmasCurrentLang !== 'undefined' ? mmasCurrentLang : 'en');
-  const url    = `${assessBase}?ws=${encodeURIComponent(currentWorkspace)}&lang=${lang}`;
-  const qrSrc  = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(url)}&format=png&ecc=M`;
-  document.getElementById('pqr-qr-img').src    = qrSrc;
+  const lang = (typeof mmasCurrentLang !== 'undefined' ? mmasCurrentLang : 'en');
+  // Populate lang selector with all available MMAS_QUESTIONS languages
+  const sel = document.getElementById('pqr-lang-select');
+  sel.innerHTML = '';
+  if (typeof MMAS_QUESTIONS !== 'undefined') {
+    Object.keys(MMAS_QUESTIONS).sort((a, b) => {
+      const na = MMAS_QUESTIONS[a].name || a;
+      const nb = MMAS_QUESTIONS[b].name || b;
+      return na.localeCompare(nb);
+    }).forEach(code => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = MMAS_QUESTIONS[code].name || code.toUpperCase();
+      sel.appendChild(opt);
+    });
+  }
+  sel.value = (MMAS_QUESTIONS && MMAS_QUESTIONS[lang]) ? lang : 'en';
+  const activeLang = sel.value;
+  const url   = `${assessBase}?ws=${encodeURIComponent(currentWorkspace)}&lang=${activeLang}`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(url)}&format=png&ecc=M`;
+  document.getElementById('pqr-qr-img').src             = qrSrc;
   document.getElementById('pqr-url-display').textContent = url;
   document.getElementById('pqr-ws-label').textContent    = currentWorkspace;
-  document.getElementById('pqr-lang-label').textContent  = (typeof MMAS_QUESTIONS !== 'undefined' && MMAS_QUESTIONS[lang]) ? MMAS_QUESTIONS[lang].name : lang.toUpperCase();
-  const m = document.getElementById('patient-qr-modal');
-  m.style.display = 'flex';
-  // Wire lang param into URL when user changes language during the modal
+  document.getElementById('patient-qr-modal').style.display = 'flex';
+  window._pqrUrl = url;
+}
+function pqrChangeLang(langCode) {
+  const ws  = document.getElementById('pqr-ws-label').textContent;
+  const url = `${window.location.origin}/assess?ws=${encodeURIComponent(ws)}&lang=${langCode}`;
+  document.getElementById('pqr-qr-img').src             = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(url)}&format=png&ecc=M`;
+  document.getElementById('pqr-url-display').textContent = url;
   window._pqrUrl = url;
 }
 /**
@@ -48,7 +69,8 @@ function pqrCopyLink() {
 function pqrPrint() {
   const url  = document.getElementById('pqr-url-display').textContent;
   const ws   = document.getElementById('pqr-ws-label').textContent;
-  const lang = document.getElementById('pqr-lang-label').textContent;
+  const sel  = document.getElementById('pqr-lang-select');
+  const lang = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : 'English';
   const qr   = document.getElementById('pqr-qr-img').src;
   const sheet = document.getElementById('pqr-print-sheet');
   sheet.innerHTML = `<div class="pqr-print-page">
@@ -422,10 +444,10 @@ function ensureGlobeRotating() {
   if (!entryEl || !entryEl.classList.contains('active')) return;
   if (window._ambientRotateRaf) return; // already running — do nothing
   let _bearing = 0;
-  try { _bearing = _ambientGlobe.getBearing ? _ambientGlobe.getBearing() : 0; } catch(e) {}
+  try { _bearing = _ambientGlobe.getBearing ? _ambientGlobe.getBearing() : 0; } catch(e) { console.warn('atlas-globe:', e); }
   const _spin = () => {
     _bearing = (_bearing + 0.018) % 360;
-    try { _ambientGlobe.jumpTo({ bearing: _bearing }); } catch(e) {}
+    try { _ambientGlobe.jumpTo({ bearing: _bearing }); } catch(e) { console.warn('atlas-globe:', e); }
     window._ambientRotateRaf = requestAnimationFrame(_spin);
   };
   window._ambientRotateRaf = requestAnimationFrame(_spin);
@@ -511,7 +533,7 @@ function initAmbientGlobe() {
           'space-color': 'rgb(2,5,18)',
           'star-intensity': 0.4
         });
-      } catch(e) {}
+      } catch(e) { console.warn('atlas-globe:', e); }
 
       // Fully visible — the gradient overlay controls the fade, not the globe opacity
       wrap.style.opacity = '1';
@@ -555,7 +577,7 @@ function initAmbientGlobe() {
         }
 
         if (_ambientGlobe && typeof _ambientGlobe.jumpTo === 'function') {
-          try { _ambientGlobe.jumpTo({ bearing, pitch, center: [lng, lat], zoom }); } catch(e) {}
+          try { _ambientGlobe.jumpTo({ bearing, pitch, center: [lng, lat], zoom }); } catch(e) { console.warn('atlas-globe:', e); }
         }
         window._ambientRotateRaf = requestAnimationFrame(rotate);
       };
@@ -599,7 +621,7 @@ function initAmbientGlobe() {
               paint:{ 'circle-radius':3.5, 'circle-color':['get','color'], 'circle-opacity':0.95, 'circle-blur':0.1 }
             });
           }
-        } catch(e) {}
+        } catch(e) { console.warn('atlas-globe:', e); }
         return true;
       }
 
@@ -765,7 +787,7 @@ function injectPeacsPercentile(peScore) {
         workspace: (typeof currentWorkspace !== 'undefined') ? currentWorkspace : 'UNKNOWN',
         url: window.location.href.split('?')[0],
         ua: navigator.userAgent.slice(0, 120),
-        timestamp: Date.now()
+        ts: Date.now()
       };
       if (typeof database !== 'undefined') {
         database.ref('errors').push(payload).catch(() => {});
@@ -1800,5 +1822,63 @@ function renderICCDemographics(records) {
   renderHBar(eduEntries, EDU_COLORS, 'icc-demo-edu');
 }
 
+// ── mapData coord backfill (superadmin utility) ──────────────────────────────
+// Finds all /mapData records with null or 0,0 coordinates and patches them
+// using country centroids. Run once after bulk uploads with missing city data.
+// Usage: atlasBackfillMapCoords() from console or superadmin tools panel.
+const _ATLAS_CENTROIDS = {'Afghanistan':[33.93,67.71],'Algeria':[28.03,1.66],'Angola':[-11.20,17.87],'Argentina':[-38.42,-63.62],'Australia':[-25.27,133.78],'Austria':[47.52,14.55],'Azerbaijan':[40.14,47.58],'Bangladesh':[23.68,90.36],'Bolivia':[-16.29,-63.59],'Brazil':[-14.24,-51.93],'Cambodia':[12.57,104.99],'Cameroon':[7.37,12.35],'Canada':[56.13,-106.35],'Chile':[-35.68,-71.54],'China':[35.86,104.20],'Colombia':[4.57,-74.30],'Croatia':[45.10,15.20],'Cuba':[21.52,-77.78],'Czechia':[49.82,15.47],'Czech Republic':[49.82,15.47],'Denmark':[56.26,9.50],'Ecuador':[-1.83,-78.18],'Egypt':[26.82,30.80],'Ethiopia':[9.15,40.49],'Finland':[61.92,25.75],'France':[46.23,2.21],'Germany':[51.17,10.45],'Ghana':[7.95,-1.02],'Greece':[39.07,21.82],'Guatemala':[15.78,-90.23],'Honduras':[15.20,-86.24],'Hungary':[47.16,19.50],'India':[20.59,78.96],'Indonesia':[-0.79,113.92],'Iran':[32.43,53.69],'Iraq':[33.22,43.68],'Ireland':[53.41,-8.24],'Israel':[31.05,34.85],'Italy':[41.87,12.57],'Japan':[36.20,138.25],'Jordan':[30.59,36.24],'Kazakhstan':[48.02,66.92],'Kenya':[0.02,37.91],'Kuwait':[29.31,47.48],'Kyrgyzstan':[41.20,74.77],'Lebanon':[33.85,35.86],'Libya':[26.34,17.23],'Malaysia':[4.21,101.98],'Mexico':[23.63,-102.55],'Moldova':[47.41,28.37],'Morocco':[31.79,-7.09],'Mozambique':[-18.67,35.53],'Myanmar':[16.87,96.08],'Nepal':[28.39,84.12],'Netherlands':[52.13,5.29],'New Zealand':[-40.90,174.89],'Nicaragua':[12.87,-85.21],'Nigeria':[9.08,8.68],'Norway':[60.47,8.47],'Oman':[21.51,55.92],'Pakistan':[30.38,69.35],'Panama':[8.54,-80.78],'Paraguay':[-23.44,-58.44],'Peru':[-9.19,-75.02],'Philippines':[12.88,121.77],'Poland':[51.92,19.15],'Portugal':[39.40,-8.22],'Qatar':[25.35,51.18],'Romania':[45.94,24.97],'Russia':[61.52,105.32],'Saudi Arabia':[23.89,45.08],'Senegal':[14.50,-14.45],'Serbia':[44.02,21.01],'Singapore':[1.35,103.82],'Somalia':[5.15,46.20],'South Africa':[-30.56,22.94],'South Korea':[35.91,127.77],'Spain':[40.46,-3.75],'Sri Lanka':[7.87,80.77],'Sweden':[60.13,18.64],'Switzerland':[46.82,8.23],'Syria':[34.80,38.99],'Taiwan':[23.70,120.96],'Tajikistan':[38.86,71.28],'Tanzania':[-6.37,34.89],'Thailand':[15.87,100.99],'Tunisia':[33.89,9.54],'Turkey':[38.96,35.24],'Uganda':[1.37,32.29],'Ukraine':[48.38,31.17],'United Arab Emirates':[23.42,53.85],'United Kingdom':[55.38,-3.44],'United States':[37.09,-95.71],'Uruguay':[-32.52,-55.77],'Uzbekistan':[41.38,64.59],'Venezuela':[6.42,-66.59],'Vietnam':[14.06,108.28],'Yemen':[15.55,48.52],'Zambia':[-13.13,27.85],'Zimbabwe':[-19.02,29.15]};
+
+async function atlasBackfillMapCoords() {
+  const user = firebase.auth().currentUser;
+  if (!user) { showToast('Not authenticated.', 2500); return; }
+  const tok = await user.getIdTokenResult();
+  if (tok.claims?.role !== 'superadmin') { showToast('Superadmin only.', 2500); return; }
+
+  showToast('Scanning mapData for null coordinates…', 3000);
+  const snap = await database.ref('mapData').once('value');
+  if (!snap.exists()) { showToast('mapData is empty.', 2000); return; }
+
+  // Collect records that need patching: { key, lat, lng }
+  const toPatch = [];
+  let skipped = 0;
+
+  snap.forEach(child => {
+    const r   = child.val();
+    const key = child.key;
+    const hasCoords = r.latitude && r.longitude && !(r.latitude === 0 && r.longitude === 0);
+    // Normalize country name to title-case for centroid lookup
+    const nc = (r.country || '').trim().replace(/\S+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    const ctr = _ATLAS_CENTROIDS[nc];
+    // Skip only if coords are real AND not sitting exactly on the country centroid (failed geocode fallback)
+    const atCentroid = ctr && hasCoords && Math.abs(r.latitude - ctr[0]) < 0.01 && Math.abs(r.longitude - ctr[1]) < 0.01;
+    if (hasCoords && !atCentroid) { skipped++; return; }
+    if (!ctr) { skipped++; return; }
+    toPatch.push({ key, lat: ctr[0], lng: ctr[1] });
+  });
+
+  if (!toPatch.length) { showToast(`No null-coord records found. ${skipped} already have coordinates.`, 3500); return; }
+
+  showToast(`Patching ${toPatch.length} records…`, 3000);
+
+  // Write each record at its own node path — root-level multi-path updates are
+  // blocked by Firebase rules. Per-node updates hit only the allowed path.
+  let patched = 0, failed = 0;
+  await Promise.all(toPatch.map(async ({ key, lat, lng }) => {
+    try {
+      await database.ref('mapData/' + key).update({ latitude: lat, longitude: lng });
+      patched++;
+    } catch (e) {
+      console.warn('[ATLAS] backfill failed for', key, e.message);
+      failed++;
+    }
+  }));
+
+  const msg = failed
+    ? `Patched ${patched} · ${failed} failed (check console). ${skipped} already had coords.`
+    : `✓ Patched ${patched} records with country centroids. ${skipped} already had coordinates.`;
+  showToast(msg, 6000);
+}
+
+window.atlasBackfillMapCoords = atlasBackfillMapCoords;
 
 
