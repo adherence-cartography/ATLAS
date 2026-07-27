@@ -443,6 +443,10 @@
     "tessera_grants": {
       ".read": true,
       ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "tessera_meta": {
+      ".read": true,
+      ".write": "auth != null && auth.token.role === 'superadmin'"
     }
   }
 }
