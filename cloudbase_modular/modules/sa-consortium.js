@@ -374,6 +374,7 @@ function _saCons_renderSubNav(container) {
     { id: 'impact',       label: 'Impact'         },
     { id: 'registry',     label: 'Registry'       },
     { id: 'exchange',     label: '◎ Exchange'     },
+    { id: 'accounting',   label: '⬡ Grants Ledger' },
   ];
   return tabs.map(t => `
     <button class="sc-subtab ${t.id === _saCons_activeSubTab ? 'sc-subtab-active' : 'sc-subtab-inactive'}"
@@ -406,6 +407,7 @@ window._saCons_switchTab = function(tabId, contentEl) {
   if (tabId === 'impact')       _saCons_renderImpact(contentEl);
   if (tabId === 'registry')     _saCons_renderRegistry(contentEl);
   if (tabId === 'applications') _saCons_renderApplications(contentEl);
+  if (tabId === 'accounting')  _saCons_renderAccounting(contentEl);
   if (tabId === 'exchange') {
     if (typeof window.saGrantRenderExchange === 'function') {
       window.saGrantRenderExchange(contentEl);
@@ -435,6 +437,7 @@ function _saCons_renderShell(container) {
     { id: 'impact',       label: 'Impact'         },
     { id: 'registry',     label: 'Registry'       },
     { id: 'exchange',     label: '◎ Exchange'     },
+    { id: 'accounting',   label: '⬡ Grants Ledger' },
   ];
 
   container.innerHTML = `
@@ -3459,4 +3462,212 @@ function _saCons_showGrantConfirmation(name, email, key, country, expiry) {
 
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// TAB: GRANTS LEDGER — Accounting & Documentation Export
+// ═════════════════════════════════════════════════════════════════════════════
+
+const _ACCT_TIER_LABEL = {
+  0: 'Founder', 1: 'Institutional Partner', 2: 'Validation Partner',
+  3: 'Research Affiliate', 4: 'Student Affiliate', 5: 'Industry Partner',
+};
+const _ACCT_GRANT_TYPE = {
+  lmic_grant:         'LMIC Research Grant',
+  subscription_grant: 'Subscription Grant',
+  community_gateway:  'Community Gateway',
+};
+
+function _saCons_acctComputeRow(key, g) {
+  const now     = Date.now();
+  const monthly = _CONS_MONTHLY_PRICE[g.tier] || 0;
+  const end     = (g.status === 'revoked' && g.revoked_at) ? g.revoked_at : now;
+  const monthsRaw = g.granted_at ? Math.max(0, (end - g.granted_at) / (1000 * 60 * 60 * 24 * 30.4375)) : 0;
+  return {
+    key,
+    recipient:      g.recipient      || '',
+    email:          g.email          || '',
+    institution:    g.institution    || '',
+    country:        g.country        || '',
+    grant_type:     _ACCT_GRANT_TYPE[g.grant_type] || g.grant_type || '',
+    tier:           g.tier != null   ? g.tier : '',
+    tier_label:     _ACCT_TIER_LABEL[g.tier] || '',
+    monthly_value:  monthly,
+    granted_at_raw: g.granted_at     || 0,
+    granted_at:     g.granted_at     ? new Date(g.granted_at).toISOString().slice(0, 10) : '',
+    end_date:       (g.status === 'revoked' && g.revoked_at)
+                      ? new Date(g.revoked_at).toISOString().slice(0, 10)
+                      : 'Active',
+    status:         g.status         || 'active',
+    months_active:  monthsRaw,
+    total_value:    Math.round(monthly * monthsRaw),
+    study_title:    g.study_title    || '',
+    granted_by:     g.granted_by     || 'superadmin',
+    tessera_grc_id: g.tessera_grc_id || '',
+  };
+}
+
+window._saCons_downloadGrantsCSV = function() {
+  const rows = window._saCons_acctRows || [];
+  const esc  = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const headers = [
+    'Grant ID', 'Recipient', 'Email', 'Institution', 'Country',
+    'Grant Type', 'Tier #', 'Tier Label', 'Monthly Retail ($)',
+    'Grant Start Date', 'End / Status Date', 'Status',
+    'Months Active', 'Total In-Kind Value ($)',
+    'Study / Research Focus', 'Granted By', 'TESSERA GRC ID',
+  ];
+  const lines = [headers.join(',')];
+  rows.forEach(r => lines.push([
+    r.key, r.recipient, r.email, r.institution, r.country,
+    r.grant_type, r.tier, r.tier_label, r.monthly_value,
+    r.granted_at, r.end_date, r.status,
+    r.months_active.toFixed(2), r.total_value,
+    r.study_title, r.granted_by, r.tessera_grc_id,
+  ].map(esc).join(',')));
+  const totalMonths = rows.reduce((s, r) => s + r.months_active, 0);
+  const totalValue  = rows.reduce((s, r) => s + r.total_value, 0);
+  lines.push(['TOTAL', '', '', '', '', '', '', '', '',
+    '', '', '', totalMonths.toFixed(2), totalValue, '', '', ''].map(esc).join(','));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'tessera_grants_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+function _saCons_renderAccounting(container) {
+  container.innerHTML = `<div style="color:${_CC.muted};font-size:0.90rem;padding:20px 0;">Loading grant ledger…</div>`;
+
+  firebase.database().ref('tessera_grants').once('value').then(snap => {
+    const raw  = snap.val() || {};
+    const rows = Object.entries(raw)
+      .map(([k, g]) => g ? _saCons_acctComputeRow(k, g) : null)
+      .filter(Boolean)
+      .sort((a, b) => b.granted_at_raw - a.granted_at_raw);
+
+    window._saCons_acctRows = rows;
+
+    const totalCount  = rows.length;
+    const activeCount = rows.filter(r => r.status === 'active').length;
+    const totalValue  = rows.reduce((s, r) => s + r.total_value, 0);
+    const countries   = new Set(rows.map(r => r.country).filter(Boolean));
+    const fmtUSD      = v => '$' + v.toLocaleString('en-US');
+
+    const statCard = (label, value, color) => `
+      <div style="background:${_CC.card};border:1px solid ${_CC.border};border-radius:10px;padding:20px 22px;text-align:center;">
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.9rem;font-weight:300;color:${color};line-height:1;">${value}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:${_CC.muted};margin-top:6px;">${label}</div>
+      </div>`;
+
+    const statusPill = status => status === 'active'
+      ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.28);">Active</span>`
+      : `<span style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:rgba(96,120,152,0.10);color:${_CC.muted};border:1px solid ${_CC.border};">Concluded</span>`;
+
+    const tableRows = rows.map(r => `
+      <tr>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:${_CC.dim};max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_saCons_esc(r.key)}">${_saCons_esc(r.key.slice(0,14))}…</td>
+        <td>
+          <div style="font-weight:500;color:${_CC.bright};">${_saCons_esc(r.recipient)}</div>
+          <div style="font-size:0.72rem;color:${_CC.dim};">${_saCons_esc(r.email)}</div>
+        </td>
+        <td>
+          <div>${_saCons_esc(r.institution)}</div>
+          <div style="font-size:0.72rem;color:${_CC.dim};">${_saCons_esc(r.country)}</div>
+        </td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:rgba(139,111,245,0.85);">${_saCons_esc(r.tier_label)}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:${_CC.amber};">${fmtUSD(r.monthly_value)}<span style="font-size:0.60rem;color:${_CC.dim};">/mo</span></td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;">${_saCons_esc(r.granted_at)}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:${_CC.muted};">${_saCons_esc(r.end_date)}</td>
+        <td>${statusPill(r.status)}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:${_CC.muted};text-align:right;">${r.months_active.toFixed(1)}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.88rem;font-weight:600;color:rgba(16,185,129,0.9);text-align:right;">${fmtUSD(r.total_value)}</td>
+        <td style="font-size:0.78rem;color:${_CC.muted};max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${_saCons_esc(r.study_title)}">${_saCons_esc(r.study_title)}</td>
+      </tr>`).join('');
+
+    container.innerHTML = `
+      <div style="margin-bottom:28px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.22em;text-transform:uppercase;color:${_CC.amber};margin-bottom:6px;">Grants Ledger · Accounting Export</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.45rem;font-weight:300;color:${_CC.text};">TESSERA GRC — In-Kind Grant Registry</div>
+        <div style="font-size:0.82rem;color:${_CC.muted};margin-top:5px;max-width:620px;">All grants awarded through the TESSERA GRC where no cash payment is collected. Values are computed organically from retail tier pricing × elapsed months. Use the CSV export for journal entry preparation in QuickBooks or equivalent.</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;">
+        ${statCard('Grants Awarded', totalCount, _CC.amber)}
+        ${statCard('Total In-Kind Value', fmtUSD(totalValue), 'rgba(16,185,129,0.9)')}
+        ${statCard('Active Grants', activeCount, 'rgba(139,111,245,0.9)')}
+        ${statCard('Countries Reached', countries.size, 'rgba(6,182,212,0.9)')}
+      </div>
+
+      <div style="background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.18);border-left:3px solid ${_CC.amber};border-radius:6px;padding:16px 20px;margin-bottom:28px;font-size:0.82rem;color:${_CC.muted};line-height:1.7;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:${_CC.amber};margin-bottom:10px;">Intercompany Transaction Structure</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div>
+            <div style="font-weight:600;color:${_CC.text};margin-bottom:4px;">Scala Carta Foundation (Nonprofit)</div>
+            Records each grant as <em>Program Service Expense — Grant Awards (In-Kind)</em>. Value equals retail monthly price × months active. No cash outflow. Report on Form 990 Schedule I when individual cumulative grant value exceeds $5,000. This ledger is the supporting schedule.
+          </div>
+          <div>
+            <div style="font-weight:600;color:${_CC.text};margin-bottom:4px;">Adherence Cartography (For-Profit)</div>
+            Records access provided as <em>Charitable Contribution Expense</em> at fair market value. Journal entry: Dr. Charitable Contribution Expense / Cr. Revenue. Issue a quarterly contribution acknowledgment letter to Scala Carta Foundation. Retain as substantiation under IRC §170.
+          </div>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(212,168,67,0.12);font-size:0.78rem;">
+          <strong style="color:${_CC.text};">Net cash effect: $0.</strong> These are in-kind transactions. The figures here represent fair market value of ATLAS access provided at no charge, documented for IRS compliance, audit, and grant reporting. Have a CPA review journal entries and Form 990 Schedule I annually.
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:${_CC.dim};">
+          ${totalCount} grant${totalCount !== 1 ? 's' : ''} · as of ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </div>
+        <button onclick="_saCons_downloadGrantsCSV()"
+          style="display:flex;align-items:center;gap:7px;padding:8px 18px;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.85);cursor:pointer;transition:all 0.15s;"
+          onmouseover="this.style.background='rgba(16,185,129,0.20)'" onmouseout="this.style.background='rgba(16,185,129,0.10)'">
+          ↓ Download CSV
+        </button>
+      </div>
+
+      ${rows.length === 0
+        ? `<div style="color:${_CC.muted};font-size:0.88rem;padding:32px 0;text-align:center;">No grants on record yet. Awards appear here automatically when LMIC access is provisioned.</div>`
+        : `<div style="overflow-x:auto;">
+            <table class="sc-table">
+              <thead>
+                <tr>
+                  <th>Grant ID</th>
+                  <th>Recipient</th>
+                  <th>Institution / Country</th>
+                  <th>Tier</th>
+                  <th>Monthly Value</th>
+                  <th>Start Date</th>
+                  <th>End / Status Date</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Months</th>
+                  <th style="text-align:right;">In-Kind Value</th>
+                  <th>Study / Research Focus</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+                <tr style="border-top:2px solid rgba(212,168,67,0.25);">
+                  <td colspan="8" style="font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:${_CC.amber};">Total</td>
+                  <td style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;font-weight:600;color:${_CC.text};text-align:right;">${rows.reduce((s,r) => s + r.months_active, 0).toFixed(1)}</td>
+                  <td style="font-family:'IBM Plex Mono',monospace;font-size:0.88rem;font-weight:700;color:rgba(16,185,129,0.95);text-align:right;">${fmtUSD(totalValue)}</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>`}
+
+      <div style="margin-top:22px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.10em;color:${_CC.dim};line-height:1.7;border-top:1px solid ${_CC.border};padding-top:14px;">
+        CSV includes 17 fields: Grant ID · Recipient · Email · Institution · Country · Grant Type · Tier # · Tier Label · Monthly Retail ($) · Grant Start Date · End / Status Date · Status · Months Active · Total In-Kind Value ($) · Study / Research Focus · Granted By · TESSERA GRC ID.
+        QuickBooks import: <em>Accountant → Journal Entries → Import</em>. Map "Total In-Kind Value ($)" to both Program Service Expense and Contribution Revenue lines. Consult your CPA for entity-specific chart of accounts mapping.
+      </div>
+    `;
+  }).catch(err => {
+    container.innerHTML = `<div style="color:rgba(239,68,68,0.8);font-size:0.85rem;padding:20px 0;">Failed to load grant ledger: ${_saCons_esc(err.message)}</div>`;
+  });
 }
