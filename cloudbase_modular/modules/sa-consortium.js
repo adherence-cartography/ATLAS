@@ -3504,6 +3504,7 @@ function _saCons_acctComputeRow(key, g) {
     study_title:    g.study_title    || '',
     granted_by:     g.granted_by     || 'superadmin',
     tessera_grc_id: g.tessera_grc_id || '',
+    revoked_at_raw: g.revoked_at     || null,
   };
 }
 
@@ -3624,11 +3625,18 @@ function _saCons_renderAccounting(container) {
         <div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:${_CC.dim};">
           ${totalCount} grant${totalCount !== 1 ? 's' : ''} · as of ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
-        <button onclick="_saCons_downloadGrantsCSV()"
-          style="display:flex;align-items:center;gap:7px;padding:8px 18px;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.85);cursor:pointer;transition:all 0.15s;"
-          onmouseover="this.style.background='rgba(16,185,129,0.20)'" onmouseout="this.style.background='rgba(16,185,129,0.10)'">
-          ↓ Download CSV
-        </button>
+        <div style="display:flex;gap:8px;">
+          <button onclick="_saCons_showQuarterSelector()"
+            style="display:flex;align-items:center;gap:7px;padding:8px 18px;background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.30);border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(212,168,67,0.85);cursor:pointer;transition:all 0.15s;"
+            onmouseover="this.style.background='rgba(212,168,67,0.18)'" onmouseout="this.style.background='rgba(212,168,67,0.08)'">
+            ◎ Quarterly Letter
+          </button>
+          <button onclick="_saCons_downloadGrantsCSV()"
+            style="display:flex;align-items:center;gap:7px;padding:8px 18px;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.85);cursor:pointer;transition:all 0.15s;"
+            onmouseover="this.style.background='rgba(16,185,129,0.20)'" onmouseout="this.style.background='rgba(16,185,129,0.10)'">
+            ↓ Download CSV
+          </button>
+        </div>
       </div>
 
       ${rows.length === 0
@@ -3671,3 +3679,251 @@ function _saCons_renderAccounting(container) {
     container.innerHTML = `<div style="color:rgba(239,68,68,0.8);font-size:0.85rem;padding:20px 0;">Failed to load grant ledger: ${_saCons_esc(err.message)}</div>`;
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUARTERLY LETTER GENERATOR
+// ─────────────────────────────────────────────────────────────────────────────
+
+window._saCons_showQuarterSelector = function() {
+  document.getElementById('sc-quarter-sel-overlay')?.remove();
+  const now = new Date();
+  const curQ = Math.floor(now.getMonth() / 3) + 1;
+  const curY = now.getFullYear();
+  // Default to previous quarter
+  const defQ = curQ === 1 ? 4 : curQ - 1;
+  const defY = curQ === 1 ? curY - 1 : curY;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sc-quarter-sel-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,14,26,0.72);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(3px);';
+  overlay.innerHTML = `
+    <div style="background:#0f1923;border:1px solid rgba(212,168,67,0.30);border-radius:14px;padding:32px 36px;width:340px;box-shadow:0 0 48px rgba(0,0,0,0.5);">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.24em;text-transform:uppercase;color:rgba(212,168,67,0.7);margin-bottom:10px;">Generate Quarterly Letter</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:300;color:#e8f0f8;margin-bottom:22px;line-height:1.3;">Intercompany Grant<br>Contribution Record</div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(96,120,152,0.75);display:block;margin-bottom:6px;">Quarter</label>
+        <select id="sc-qs-quarter" style="width:100%;background:#0b1220;border:1px solid rgba(212,168,67,0.22);border-radius:7px;padding:9px 12px;color:#cdd8e8;font-family:'IBM Plex Mono',monospace;font-size:0.80rem;outline:none;">
+          <option value="1" ${defQ===1?'selected':''}>Q1 — January · February · March</option>
+          <option value="2" ${defQ===2?'selected':''}>Q2 — April · May · June</option>
+          <option value="3" ${defQ===3?'selected':''}>Q3 — July · August · September</option>
+          <option value="4" ${defQ===4?'selected':''}>Q4 — October · November · December</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:26px;">
+        <label style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(96,120,152,0.75);display:block;margin-bottom:6px;">Year</label>
+        <input id="sc-qs-year" type="number" value="${defY}" min="2025" max="2099"
+          style="width:100%;background:#0b1220;border:1px solid rgba(212,168,67,0.22);border-radius:7px;padding:9px 12px;color:#cdd8e8;font-family:'IBM Plex Mono',monospace;font-size:0.80rem;outline:none;box-sizing:border-box;"/>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="
+            const q=parseInt(document.getElementById('sc-qs-quarter').value);
+            const y=parseInt(document.getElementById('sc-qs-year').value);
+            document.getElementById('sc-quarter-sel-overlay').remove();
+            _saCons_generateQuarterlyLetter(q,y);"
+          style="flex:1;padding:11px;background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.40);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:#d4a843;cursor:pointer;transition:background 0.15s;"
+          onmouseover="this.style.background='rgba(212,168,67,0.22)'" onmouseout="this.style.background='rgba(212,168,67,0.12)'">
+          Generate Letter
+        </button>
+        <button onclick="document.getElementById('sc-quarter-sel-overlay').remove();"
+          style="padding:11px 18px;background:transparent;border:1px solid rgba(96,120,152,0.25);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(96,120,152,0.65);cursor:pointer;">
+          Cancel
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+};
+
+window._saCons_generateQuarterlyLetter = function(q, year) {
+  const MS   = 1000 * 60 * 60 * 24 * 30.4375;
+  const qStart = new Date(year, (q - 1) * 3, 1).getTime();
+  const qEnd   = new Date(year, q * 3, 1).getTime();
+  const qNames = ['', 'January–March', 'April–June', 'July–September', 'October–December'];
+  const qMonths= ['', 'January 1', 'April 1', 'July 1', 'October 1'];
+  const qEnds  = ['', 'March 31', 'June 30', 'September 30', 'December 31'];
+  const fmtUSD = v => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const today  = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  const allRows = window._saCons_acctRows || [];
+  const rows = allRows.map(r => {
+    if (!r.granted_at_raw) return null;
+    const grantEnd = (r.status === 'revoked' && r.revoked_at_raw) ? r.revoked_at_raw : Date.now();
+    const overlapStart = Math.max(r.granted_at_raw, qStart);
+    const overlapEnd   = Math.min(grantEnd, qEnd);
+    if (overlapEnd <= overlapStart) return null;
+    const months = (overlapEnd - overlapStart) / MS;
+    const value  = Math.round(r.monthly_value * months);
+    return { ...r, months_in_quarter: months, value_in_quarter: value };
+  }).filter(Boolean);
+
+  const totalValue = rows.reduce((s, r) => s + r.value_in_quarter, 0);
+
+  const tableRows = rows.map((r, i) => `
+    <tr style="border-bottom:1px solid #e8e4dc;">
+      <td style="padding:9px 12px;font-size:9pt;color:#2a3a50;">${i + 1}</td>
+      <td style="padding:9px 12px;">
+        <div style="font-weight:600;color:#1a2535;font-size:9pt;">${r.recipient}</div>
+        <div style="font-size:8pt;color:#6a7a8e;">${r.email}</div>
+      </td>
+      <td style="padding:9px 12px;font-size:8.5pt;color:#2a3a50;">${r.institution}<br><span style="color:#8a9aae;">${r.country}</span></td>
+      <td style="padding:9px 12px;font-size:8.5pt;color:#2a3a50;">${r.tier_label}</td>
+      <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:8pt;color:#2a3a50;text-align:right;">${fmtUSD(r.monthly_value)}/mo</td>
+      <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:8pt;text-align:right;">${r.months_in_quarter.toFixed(2)}</td>
+      <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:9pt;font-weight:600;color:#1a6b4a;text-align:right;">${fmtUSD(r.value_in_quarter)}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Q${q} ${year} Grant Contribution Record — Scala Carta Foundation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:10.5pt;line-height:1.75;color:#1a2535;background:#faf8f4;max-width:800px;margin:40px auto;box-shadow:0 8px 48px rgba(0,0,0,0.15);}
+  @media print{html{background:white;}body{margin:0;box-shadow:none;max-width:100%;}.no-print{display:none!important;}}
+  .letterhead{background:#0b1a2e;padding:36px 56px 28px;}
+  .band-top{height:4px;background:linear-gradient(90deg,#c09a3a,#d4b050,#c09a3a);}
+  .band-bottom{height:1px;background:linear-gradient(90deg,transparent,rgba(212,176,80,0.35),transparent);}
+  .letter-body{background:#ffffff;padding:52px 64px 56px;}
+  .footer-bar{background:#0b1a2e;padding:14px 56px;display:flex;justify-content:space-between;align-items:center;}
+  table{width:100%;border-collapse:collapse;}
+  thead tr{background:#0b1a2e;}
+  thead th{padding:9px 12px;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:6.5pt;letter-spacing:0.18em;text-transform:uppercase;color:rgba(200,216,234,0.5);font-weight:400;}
+  thead th:last-child,thead th:nth-last-child(2){text-align:right;}
+  tfoot tr{background:#f4f0e8;}
+  tfoot td{padding:11px 12px;font-family:'IBM Plex Mono',monospace;font-size:9.5pt;font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="no-print" style="background:#f0ede7;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;">
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:#6a7a8e;">Q${q} ${year} · Intercompany Grant Contribution Record</span>
+  <button onclick="window.print()" style="padding:8px 20px;background:#0b1a2e;border:none;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:#d4a843;cursor:pointer;">Print / Save PDF</button>
+</div>
+
+<div class="band-top"></div>
+<div class="letterhead">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;">
+    <div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:6.5pt;letter-spacing:0.32em;text-transform:uppercase;color:rgba(200,216,234,0.35);margin-bottom:8px;">Scala Carta Foundation</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:22pt;font-weight:300;color:#e8f0f8;line-height:1.1;margin-bottom:4px;">Intercompany Grant<br><em style="color:#d4b050;">Contribution Record</em></div>
+      <div style="font-size:8.5pt;color:rgba(200,216,234,0.4);margin-top:6px;">Q${q} ${year} &nbsp;&middot;&nbsp; ${qMonths[q]}, ${year} &ndash; ${qEnds[q]}, ${year}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:6.5pt;letter-spacing:0.22em;text-transform:uppercase;color:rgba(200,216,234,0.3);margin-bottom:4px;">Document Type</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:7.5pt;color:rgba(200,216,234,0.6);margin-bottom:14px;">Quarterly Contribution Record</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:6.5pt;letter-spacing:0.22em;text-transform:uppercase;color:rgba(200,216,234,0.3);margin-bottom:4px;">Issued</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:7.5pt;color:rgba(200,216,234,0.6);">${today}</div>
+    </div>
+  </div>
+</div>
+<div class="band-bottom"></div>
+
+<div class="letter-body">
+
+  <!-- Parties -->
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0;border:1px solid #ddd8cc;border-radius:4px;overflow:hidden;margin-bottom:36px;">
+    <div style="padding:20px 24px;background:#f8f6f2;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:6.5pt;letter-spacing:0.22em;text-transform:uppercase;color:#c09a3a;margin-bottom:6px;">Issuing Entity</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:13pt;font-weight:500;color:#0b1a2e;margin-bottom:4px;">Scala Carta Foundation</div>
+      <div style="font-size:8.5pt;color:#6a7a8e;line-height:1.6;">501(c)(3) nonprofit organization &mdash; pending IRS determination<br>TESSERA Adherence Consortium, governing body<br><strong>Philip Morisky</strong>, Founder &nbsp;&middot;&nbsp; philip.morisky@adherence.cc</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;padding:0 16px;background:#f0ede7;border-left:1px solid #ddd8cc;border-right:1px solid #ddd8cc;">
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:10pt;font-style:italic;color:#8a9aae;writing-mode:vertical-lr;transform:rotate(180deg);letter-spacing:0.06em;">issued to</div>
+    </div>
+    <div style="padding:20px 24px;background:#f8f6f2;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:6.5pt;letter-spacing:0.22em;text-transform:uppercase;color:#c09a3a;margin-bottom:6px;">Contributing Entity</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:13pt;font-weight:500;color:#0b1a2e;margin-bottom:4px;">Adherence Cartography</div>
+      <div style="font-size:8.5pt;color:#6a7a8e;line-height:1.6;">For-profit entity &mdash; operator of the ATLAS Adherence Platform<br>Providing in-kind platform access to TESSERA grant recipients<br><strong>Philip Morisky</strong>, CEO &nbsp;&middot;&nbsp; philip.morisky@adherence.cc</div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <p style="margin-bottom:16px;">This Quarterly Grant Contribution Record documents in-kind platform access provided by <strong>Adherence Cartography</strong> to TESSERA-affiliated grant recipients during <strong>Q${q} ${year} (${qMonths[q]}, ${year} through ${qEnds[q]}, ${year})</strong>, as directed by Scala Carta Foundation through its TESSERA GRC grant program.</p>
+
+  <p style="margin-bottom:16px;">Adherence Cartography provided access to the ATLAS Adherence Platform at no charge to the researchers listed below. The fair market value of this access is computed as the published retail monthly price for each membership tier, prorated to the number of days the grant was active within the quarter.</p>
+
+  <p style="margin-bottom:28px;">This record should be retained by both entities for their respective financial records. <strong>Adherence Cartography</strong> should retain this as substantiation of an in-kind contribution. <strong>Scala Carta Foundation</strong> should retain this as documentation of a Program Service Expense (In-Kind Grant Awards) for Form 990 reporting purposes. Neither entity should rely solely on this document for tax treatment without review by a qualified CPA and tax attorney.</p>
+
+  <!-- Grant table -->
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:6.5pt;letter-spacing:0.22em;text-transform:uppercase;color:#c09a3a;margin-bottom:10px;">Grant Recipients — Q${q} ${year} (${qNames[q]})</div>
+
+  ${rows.length === 0
+    ? `<div style="padding:24px;background:#f8f6f2;border:1px solid #ddd8cc;border-radius:4px;font-size:9pt;color:#6a7a8e;text-align:center;">No active grants during this quarter.</div>`
+    : `<table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Recipient</th>
+            <th>Institution / Country</th>
+            <th>Membership Tier</th>
+            <th style="text-align:right;">Monthly Rate</th>
+            <th style="text-align:right;">Months in Q${q}</th>
+            <th style="text-align:right;">Quarter Value</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" style="color:#1a6b4a;letter-spacing:0.08em;text-transform:uppercase;font-size:7.5pt;">Total In-Kind Contribution &mdash; Q${q} ${year}</td>
+            <td></td>
+            <td style="color:#1a6b4a;text-align:right;font-size:11pt;">${fmtUSD(totalValue)}</td>
+          </tr>
+        </tfoot>
+      </table>`}
+
+  <!-- Attestation -->
+  <div style="margin-top:36px;padding:18px 22px;background:#f4f0e8;border:1px solid rgba(192,154,58,0.28);border-left:3px solid #c09a3a;border-radius:3px;font-size:9pt;color:#2a3a50;line-height:1.75;">
+    <strong style="color:#0b1a2e;">Attestation.</strong> Scala Carta Foundation hereby confirms that the in-kind platform access listed above was received from Adherence Cartography during Q${q} ${year}. The fair market values shown reflect the published retail pricing for each ATLAS membership tier as of the grant award date. <strong>No goods or services were provided by Scala Carta Foundation to Adherence Cartography in exchange for this contribution.</strong> This record is issued for intercompany documentation, financial reporting, and regulatory compliance purposes. Both parties acknowledge that the tax treatment of these transactions should be reviewed and confirmed annually by their respective CPAs and legal counsel.
+  </div>
+
+  <!-- Signatures -->
+  <div style="margin-top:48px;padding-top:24px;border-top:1px solid #ddd8cc;">
+    <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:13pt;font-weight:500;color:#0b1a2e;margin-bottom:6px;">Acknowledgment</div>
+    <p style="font-size:9pt;color:#6a7a8e;margin-bottom:32px;">Authorized representatives of both entities confirm the accuracy of the grant contribution record above.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:7pt;letter-spacing:0.2em;text-transform:uppercase;color:#c09a3a;margin-bottom:18px;">Scala Carta Foundation</div>
+        <div style="border-bottom:1px solid #1a2535;margin-bottom:6px;height:36px;"></div>
+        <div style="font-size:7.5pt;color:#6a7a8e;margin-bottom:18px;">Signature</div>
+        <div style="border-bottom:1px solid #1a2535;margin-bottom:6px;height:24px;"></div>
+        <div style="font-size:7.5pt;color:#6a7a8e;margin-bottom:18px;">Philip Morisky &nbsp;&middot;&nbsp; Founder</div>
+        <div style="border-bottom:1px solid #1a2535;margin-bottom:6px;height:24px;"></div>
+        <div style="font-size:7.5pt;color:#6a7a8e;">Date</div>
+      </div>
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:7pt;letter-spacing:0.2em;text-transform:uppercase;color:#c09a3a;margin-bottom:18px;">Adherence Cartography</div>
+        <div style="border-bottom:1px solid #1a2535;margin-bottom:6px;height:36px;"></div>
+        <div style="font-size:7.5pt;color:#6a7a8e;margin-bottom:18px;">Signature</div>
+        <div style="border-bottom:1px solid #1a2535;margin-bottom:6px;height:24px;"></div>
+        <div style="font-size:7.5pt;color:#6a7a8e;margin-bottom:18px;">Philip Morisky &nbsp;&middot;&nbsp; CEO</div>
+        <div style="border-bottom:1px solid #1a2535;margin-bottom:6px;height:24px;"></div>
+        <div style="font-size:7.5pt;color:#6a7a8e;">Date</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-bar">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:7pt;letter-spacing:0.14em;text-transform:uppercase;color:rgba(200,216,234,0.3);line-height:1.7;">
+    Scala Carta Foundation &nbsp;&middot;&nbsp; TESSERA Adherence Consortium<br>
+    Q${q} ${year} Intercompany Grant Contribution Record
+  </div>
+  <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:9pt;font-style:italic;color:rgba(200,216,234,0.2);">For financial records only &nbsp;&middot;&nbsp; Consult your CPA</div>
+</div>
+<div style="height:3px;background:linear-gradient(90deg,#c09a3a,#d4b050,#c09a3a);"></div>
+
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=780,scrollbars=yes');
+  if (!w) { alert('Pop-up blocked. Please allow pop-ups for this page and try again.'); return; }
+  w.document.write(html);
+  w.document.close();
+};
