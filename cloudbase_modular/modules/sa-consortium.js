@@ -48,6 +48,9 @@ const _CONS_TIER_TO_TESSERA = { 0:'founder', 1:'institutional', 2:'validation', 
 // Reverse map: tessera_tiles tier string → numeric
 const _TESSERA_TIER_TO_CONS = { founder:0, institutional:1, validation:2, affiliate:3, student:4, industry:5 };
 
+// Annual subscription price by tier — used to compute organic grant value on tessera_grants
+const _CONS_ANNUAL_PRICE = { 0: 0, 1: 5999, 2: 1999, 3: 499, 4: 199, 5: 12000 };
+
 // ── Country list ─────────────────────────────────────────────────────────────
 const _CONS_COUNTRIES = [
   'United States','United Kingdom','Canada','Australia','New Zealand',
@@ -440,6 +443,9 @@ function _saCons_renderShell(container) {
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.6rem;font-weight:300;color:${_CC.text};line-height:1.2;">Scala Carta Foundation</div>
         <div style="font-size:0.84rem;color:${_CC.muted};margin-top:5px;">TESSERA GRC — membership applications, registry, funding intelligence, letters of support, and global impact metrics.</div>
       </div>
+      <button onclick="if(typeof openTesseraContributionPortal==='function') openTesseraContributionPortal(); else {document.getElementById('tessera-contribution-modal').style.display='flex';}" style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:9px 18px;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.85);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.20)';this.style.borderColor='rgba(16,185,129,0.6)'" onmouseout="this.style.background='rgba(16,185,129,0.10)';this.style.borderColor='rgba(16,185,129,0.35)'">
+        <span style="font-size:0.9rem;">↑</span> Submit Normative Data
+      </button>
     </div>
 
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid ${_CC.border};">
@@ -977,6 +983,11 @@ window._saCons_saveEditMember = async function(key) {
   const errEl       = document.getElementById('sc-edit-member-error');
   const saveBtn     = document.getElementById('sc-edit-member-save');
 
+  // Capture pre-save state to detect activation transition
+  const _prevMember   = _saCons_membersCache.find(x => x._key === key);
+  const _wasNotActive = !_prevMember || _prevMember.status !== 'active';
+  const _hadWorkspace = !!(_prevMember?.workspace_key);
+
   const instruments = [];
   ['MAP','MMAS-8','PEACS'].forEach(inst => {
     const id = 'sc-edit-inst-' + inst.replace(/[^a-z0-9]/gi,'').toLowerCase();
@@ -1012,12 +1023,49 @@ window._saCons_saveEditMember = async function(key) {
         email:       email,
       });
       if (typeof atlasAuditLog === 'function') atlasAuditLog('lmic_access_granted', { uid: key, country, institution });
+
+      // Write tessera_grants entry for public Impact Ledger.
+      // Value is NOT stored — the website computes it organically from tier + elapsed months.
+      // Only create/re-activate if no active record exists, so granted_at is not reset on edits.
+      const existingGrant = await db.ref('tessera_grants/' + key).once('value');
+      const grantVal = existingGrant.val();
+      if (!grantVal || grantVal.status === 'revoked') {
+        await db.ref('tessera_grants/' + key).set({
+          recipient:      name,
+          institution:    institution,
+          country:        country,
+          study_title:    study || '',
+          grant_type:     'lmic_grant',
+          tier:           tier,
+          granted_at:     Date.now(),
+          status:         'active',
+          email:          email,
+          tessera_grc_id: tesseraId,
+        });
+        if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_grant_created', { uid: key, tier, country, institution });
+      } else {
+        // Already active — update metadata only, preserve granted_at
+        await db.ref('tessera_grants/' + key).update({
+          recipient:    name,
+          institution:  institution,
+          country:      country,
+          study_title:  study || '',
+          tier:         tier,
+          email:        email,
+        });
+      }
     } else if (!lmicTier) {
       // Revoke: mark inactive rather than delete to preserve audit trail
       const existing = await db.ref('lmic_access/' + key).once('value');
       if (existing.val()) {
         await db.ref('lmic_access/' + key + '/active').set(false);
         if (typeof atlasAuditLog === 'function') atlasAuditLog('lmic_access_revoked', { uid: key });
+      }
+      // Stop the clock on tessera_grants — value locks at revoked_at
+      const existingGrant = await db.ref('tessera_grants/' + key).once('value');
+      if (existingGrant.val() && existingGrant.val().status === 'active') {
+        await db.ref('tessera_grants/' + key).update({ status: 'revoked', revoked_at: Date.now() });
+        if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_grant_revoked', { uid: key });
       }
     }
 
@@ -1026,6 +1074,11 @@ window._saCons_saveEditMember = async function(key) {
     if (typeof showToast === 'function') showToast('✓ Member updated.' + lmicNote, 2800);
     await _saCons_loadMembers();
     _saCons_renderMembersUI(document.getElementById('sc-tab-content'));
+
+    // Auto-open workspace provisioning when a member is activated without one
+    if (status === 'active' && _wasNotActive && !_hadWorkspace) {
+      _saCons_provisionWorkspace(key);
+    }
   } catch (e) {
     errEl.textContent = 'Save failed: ' + e.message;
     errEl.style.display = 'block';
@@ -1395,6 +1448,47 @@ window._saCons_submitProvisionWs = async function(memberKey) {
   }
 };
 
+window._saCons_sendPaymentLink = async function(memberKey) {
+  const m     = _saCons_membersCache.find(x => x._key === memberKey);
+  const email = (document.getElementById('sc-pw-email')?.value || '').trim().toLowerCase() || m?.contact_email || m?.email || '';
+  const name  = ((document.getElementById('sc-pw-fname')?.value || '') + ' ' + (document.getElementById('sc-pw-lname')?.value || '')).trim() || m?.name || '';
+  const inst  = (document.getElementById('sc-pw-inst')?.value  || '').trim() || m?.institution || '';
+  const study = (document.getElementById('sc-pw-study')?.value || '').trim() || m?.study_title  || '';
+
+  if (!email) { if (typeof showToast === 'function') showToast('Email is required to send a payment link.'); return; }
+  if (!inst)  { if (typeof showToast === 'function') showToast('Institution is required.'); return; }
+
+  const btn = document.getElementById('sc-pw-pay-btn');
+  if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
+
+  try {
+    const resp = await fetch(LAMBDA_URL + '/tessera-payment-link', {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ member_key: memberKey, name, email, institution: inst, study_title: study || null, role: 'student' }),
+    });
+    const res = await resp.json().catch(() => ({}));
+    if (!res.url) {
+      if (btn) { btn.textContent = 'Send Payment Link — $199 / yr'; btn.disabled = false; }
+      if (typeof showToast === 'function') showToast('Error: ' + (res.error || `HTTP ${resp.status}`));
+      return;
+    }
+    await firebase.database().ref('consortium_members/' + memberKey).update({
+      payment_pending: true,
+      payment_link_sent_at: Date.now(),
+      payment_stripe_session: res.session_id || null,
+    });
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_payment_link_sent', { memberKey, email, session_id: res.session_id });
+    document.getElementById('sc-prov-ws-overlay')?.remove();
+    if (typeof showToast === 'function') showToast(`Payment link sent to ${email}. Key will issue automatically on payment.`, 5000);
+    await _saCons_loadMembers();
+    _saCons_renderMembersUI(document.getElementById('sc-tab-content'));
+  } catch(e) {
+    if (btn) { btn.textContent = 'Send Payment Link — $199 / yr'; btn.disabled = false; }
+    if (typeof showToast === 'function') showToast('Network error — ' + e.message);
+  }
+};
+
 // ═════════════════════════════════════════════════════════════════════════════
 // TAB 2: FUNDING BOARD
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1739,12 +1833,11 @@ I fully endorse the qualifications of ${l.recipient_name} and the research team 
 
 Sincerely,
 
-Philip R. Morisky, ScD, MSPH, MPH
-Professor Emeritus, UCLA Fielding School of Public Health
-Developer, Morisky Medication Adherence Scale (MMAS-8)
-Developer, Medication Adherence Phenotyping (MAP) Instrument
+Philip Morisky, MBA
+Founder, Scala Carta Foundation · CEO, Adherence Cartography
+Developer, Multidimensional Adherence Parameters (MAP)
 Director, TESSERA GRC
-atlasadherence.com`;
+adherence.cc`;
 
   const overlay = document.createElement('div');
   overlay.id = 'sc-preview-letter-overlay';
@@ -2289,7 +2382,7 @@ function _saCons_renderApplications(container) {
 function _saCons_renderApplicationsUI(container) {
   const apps = _saCons_applicationsCache;
   const pending  = apps.filter(a => a.status === 'pending');
-  const approved = apps.filter(a => a.status === 'approved' || a.status === 'active');
+  const approved = apps.filter(a => a.status === 'approved' || a.status === 'active' || a.status === 'granted');
   const rejected = apps.filter(a => a.status === 'rejected');
 
   const pendingBanner = pending.length ? `
@@ -2322,8 +2415,12 @@ function _saCons_renderApplicationsUI(container) {
     const tierColor  = _CONS_TIER_COLORS[a.tier] || _CC.dim;
     const tierLabel  = _CONS_TIER_LABELS[a.tier]  || `Tier ${a.tier || '?'}`;
     const statusColor = a.status === 'pending' ? _CC.orange
+      : a.status === 'payment_pending' ? _CC.gold
+      : a.status === 'granted' ? _CC.purple
       : a.status === 'approved' || a.status === 'active' ? _CC.green : _CC.red;
     const statusLabel = a.status === 'pending' ? 'Pending'
+      : a.status === 'payment_pending' ? 'Awaiting Payment'
+      : a.status === 'granted' ? 'LMIC Granted'
       : a.status === 'approved' || a.status === 'active' ? 'Approved' : 'Rejected';
     const dateStr = a.applied_at
       ? new Date(a.applied_at).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'})
@@ -2336,7 +2433,8 @@ function _saCons_renderApplicationsUI(container) {
       : '';
 
     const actionBtns = a.status === 'pending' ? `
-      <button onclick="_saCons_approveApp('${a._key}')" style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;padding:5px 12px;border-radius:5px;border:none;background:${_CC.green};color:#000;cursor:pointer;font-weight:600;margin-right:5px;">Approve</button>
+      ${a.lmic_eligible ? `<button onclick="_saCons_fastTrackLmicGrant('${a._key}')" style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;padding:5px 10px;border-radius:5px;border:1px solid rgba(139,111,245,0.45);background:rgba(139,111,245,0.12);color:#8b6ff5;cursor:pointer;font-weight:600;margin-right:5px;">LMIC Grant</button>` : ''}
+      <button onclick="_saCons_approveApp('${a._key}')" style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;padding:5px 10px;border-radius:5px;border:1px solid rgba(212,168,67,0.45);background:rgba(212,168,67,0.10);color:rgba(212,168,67,0.92);cursor:pointer;font-weight:600;margin-right:5px;">Send Payment Link</button>
       <button onclick="_saCons_rejectApp('${a._key}')" style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.08em;text-transform:uppercase;padding:5px 10px;border-radius:5px;border:1px solid rgba(239,68,68,0.35);background:transparent;color:${_CC.red};cursor:pointer;">Reject</button>
     ` : `<span style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;color:${statusColor};">${statusLabel}</span>`;
 
@@ -2362,7 +2460,7 @@ function _saCons_renderApplicationsUI(container) {
       </div>
       <div style="background:${_CC.surface};border:1px solid ${_CC.border};border-radius:9px;padding:16px 18px;">
         <div style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;font-weight:600;color:${_CC.green};">${approved.length}</div>
-        <div style="font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:${_CC.dim};margin-top:4px;">Approved</div>
+        <div style="font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;color:${_CC.dim};margin-top:4px;">Approved / Granted</div>
       </div>
       <div style="background:${_CC.surface};border:1px solid ${_CC.border};border-radius:9px;padding:16px 18px;">
         <div style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;font-weight:600;color:${_CC.text};">${apps.length}</div>
@@ -2460,16 +2558,19 @@ window._saCons_openAppDrawer = function(key) {
       ${isPending ? `
         <div style="border-top:1px solid ${_CC.border};padding-top:20px;display:flex;flex-direction:column;gap:10px;">
           <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:${_CC.dim};">Review Decision</div>
-          <div style="display:flex;gap:10px;">
-            <button onclick="_saCons_approveApp('${a._key}')" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;padding:12px;border-radius:7px;border:none;background:${_CC.green};color:#000;cursor:pointer;">Approve & Create Member</button>
-            <button onclick="_saCons_rejectApp('${a._key}')" style="flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;padding:12px 16px;border-radius:7px;border:1px solid rgba(239,68,68,0.35);background:transparent;color:${_CC.red};cursor:pointer;">Reject</button>
-          </div>
-          <div style="font-size:0.72rem;color:${_CC.dim};line-height:1.5;">
-            Approving will create a consortium_members record with status "pending" and copy all applicant data. You can then provision workspace access and issue a TESSERA ID from the Members tab.
+          ${a.lmic_eligible ? `
+          <button onclick="_saCons_fastTrackLmicGrant('${a._key}')" style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;padding:13px;border-radius:7px;border:1px solid rgba(139,111,245,0.5);background:rgba(139,111,245,0.14);color:rgba(139,111,245,0.95);cursor:pointer;">✦ TESSERA LMIC Grant — Issue Key Now</button>
+          <div style="font-size:0.70rem;color:rgba(139,111,245,0.6);line-height:1.5;padding:0 2px;">One-click: creates member, issues student workspace key (1-year), activates LMIC researcher access. No payment required. Key ready to send immediately.</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:${_CC.dim};text-align:center;padding:2px 0;">— or standard review pathway —</div>` : ''}
+          <button onclick="_saCons_approveApp('${a._key}')" style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;padding:13px;border-radius:7px;border:1px solid rgba(212,168,67,0.5);background:rgba(212,168,67,0.12);color:rgba(212,168,67,0.95);cursor:pointer;">Approve — Send Payment Link ($199/yr)</button>
+          <div style="font-size:0.70rem;color:${_CC.dim};line-height:1.5;padding:0 2px;">Member record, consortium letter, mosaic tile, and workspace key are created automatically once payment is confirmed.</div>
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <button onclick="_saCons_approveAndComp('${a._key}')" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.08em;text-transform:uppercase;padding:9px;border-radius:7px;border:1px solid ${_CC.border};background:transparent;color:${_CC.muted};cursor:pointer;">Comp / Issue Free</button>
+            <button onclick="_saCons_rejectApp('${a._key}')" style="flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.08em;text-transform:uppercase;padding:9px 14px;border-radius:7px;border:1px solid rgba(239,68,68,0.35);background:transparent;color:${_CC.red};cursor:pointer;">Reject</button>
           </div>
         </div>` : `
         <div style="border-top:1px solid ${_CC.border};padding-top:16px;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:${a.status==='rejected'?_CC.red:_CC.green};">${a.status === 'rejected' ? 'Application rejected' : 'Application approved — member record created'}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:${a.status==='rejected'?_CC.red:a.status==='granted'?_CC.purple:_CC.green};">${a.status === 'rejected' ? 'Application rejected' : a.status === 'granted' ? 'LMIC Grant issued — workspace key provisioned' : 'Application approved — member record created'}</span>
         </div>`}
     </div>`;
   document.body.appendChild(overlay);
@@ -2479,10 +2580,70 @@ window._saCons_openAppDrawer = function(key) {
 window._saCons_approveApp = async function(key) {
   const a = _saCons_applicationsCache.find(x => x._key === key);
   if (!a) return;
-  if (!confirm(`Approve application from ${a.name || a.contact_email}?\n\nThis will create a consortium member record and mark the application as approved.`)) return;
+  if (a.member_key) {
+    if (typeof showToast === 'function') showToast('Member already exists for this application.', 3000);
+    _saCons_provisionWorkspace(a.member_key);
+    return;
+  }
+  if (!confirm(`Send payment link to ${a.name || a.contact_email}?\n\nThis will email them a $199/year Stripe checkout link. Their member record, consortium letter, mosaic tile, and workspace key are all created automatically once payment is confirmed.`)) return;
+
+  const email = (a.contact_email || a.email || '').trim().toLowerCase();
+  const name  = (a.name || '').trim();
+  const inst  = (a.institution || '').trim();
+  if (!email) { alert('No email address on this application.'); return; }
+
   try {
     const db = firebase.database();
-    // 1. Create member record in consortium_members
+    // Write staging record — webhook reads this after payment to provision everything
+    await db.ref('consortium_pending_members/' + key).set({
+      name, email, contact_email: a.contact_email || a.email || '',
+      institution: inst, department: a.department || '', country: a.country || '',
+      role: a.role || '', tier: a.tier || 3, study_title: a.study_title || '',
+      disease_areas: a.disease_areas || [], instruments: a.instruments || [],
+      irb_status: a.irb_status || '', description: a.description || '',
+      open_science: a.open_science || false, lmic_eligible: a.lmic_eligible || false,
+      orcid: a.orcid || '', linkedin: a.linkedin || '',
+      applied_at: a.applied_at || Date.now(), application_ref: a.application_ref || '',
+      grant_agency: a.grant_agency || '', grant_mechanism: a.grant_mechanism || '',
+      country_flag: _CONS_FLAGS[a.country] || '',
+      tile_tier: _CONS_TIER_TO_TESSERA[a.tier || 3] || 'affiliate',
+      staged_at: Date.now(),
+    });
+    await db.ref('consortium_applications/' + key).update({ status: 'payment_pending', staged_at: Date.now() });
+
+    const resp = await fetch(LAMBDA_URL + '/tessera-payment-link', {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app_key: key, name, email, institution: inst, study_title: a.study_title || null, role: 'student' }),
+    });
+    const res = await resp.json().catch(() => ({}));
+    if (!res.url) {
+      await db.ref('consortium_applications/' + key + '/status').set('pending');
+      await db.ref('consortium_pending_members/' + key).remove();
+      alert('Payment link error: ' + (res.error || `HTTP ${resp.status}`));
+      return;
+    }
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_payment_link_sent', { appKey: key, email });
+    document.getElementById('sc-app-drawer')?.remove();
+    if (typeof showToast === 'function') showToast(`Payment link emailed to ${email}. Everything provisions automatically on payment.`, 5000);
+    await _saCons_loadApplications();
+    _saCons_renderApplicationsUI(document.getElementById('sc-tab-content'));
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+};
+
+window._saCons_approveAndComp = async function(key) {
+  const a = _saCons_applicationsCache.find(x => x._key === key);
+  if (!a) return;
+  if (a.member_key) {
+    if (typeof showToast === 'function') showToast('Member already exists for this application.', 3000);
+    _saCons_provisionWorkspace(a.member_key);
+    return;
+  }
+  if (!confirm(`Comp/approve ${a.name || a.contact_email} without payment?\n\nThis immediately creates the member record, consortium letter, and mosaic tile, then opens workspace provisioning. Use for internal team, pilot partners, or waived fees.`)) return;
+  try {
+    const db = firebase.database();
     const memberData = {
       name:          a.name          || '',
       contact_email: a.contact_email || a.email || '',
@@ -2499,27 +2660,26 @@ window._saCons_approveApp = async function(key) {
       description:   a.description   || '',
       open_science:  a.open_science  || false,
       lmic_eligible: a.lmic_eligible || false,
-      lmic_tier:     a.open_science  || false,
       orcid:         a.orcid         || '',
       linkedin:      a.linkedin      || '',
-      preferred_name:a.preferred_name|| '',
-      referral:      a.referral      || '',
-      status:        'pending',
-      application_ref: a.application_ref || '',
       applied_at:    a.applied_at    || Date.now(),
       approved_at:   Date.now(),
-      tessera_id:    null,
+      application_ref: a.application_ref || '',
+      status:        'active',
       source:        'tessera-signup-form-v1',
     };
-    await db.ref('consortium_members').push(memberData);
-    // 2. Mark application as approved
-    await db.ref('consortium_applications/' + key + '/status').set('approved');
+    const newRef = await db.ref('consortium_members').push(memberData);
+    const newMemberKey = newRef.key;
+    await db.ref('consortium_applications/' + key).update({ status: 'approved', member_key: newMemberKey });
+    await _saCons_autoProvisionOnApproval(newMemberKey, a, a.tier || 3);
     document.getElementById('sc-app-drawer')?.remove();
-    if (typeof showToast === 'function') showToast('✓ Application approved. Use the Workspace and Mosaic buttons in the Members tab to complete onboarding.', 5000);
+    if (typeof showToast === 'function') showToast('✓ Comped. Letter issued, mosaic tile added. Provision workspace to complete.', 4000);
+    await _saCons_loadMembers();
     await _saCons_loadApplications();
     _saCons_renderApplicationsUI(document.getElementById('sc-tab-content'));
-  } catch (e) {
-    alert('Error approving application: ' + e.message);
+    _saCons_provisionWorkspace(newMemberKey);
+  } catch(e) {
+    alert('Error: ' + e.message);
   }
 };
 
@@ -3058,3 +3218,244 @@ window._saTessera_submitRegisterMember = async function(tileKey) {
     btn.disabled = false;
   }
 };
+
+// ── TESSERA LMIC Grant Fast-Track ─────────────────────────────────────────────
+// One-click pathway: application → member record + workspace key + lmic_access,
+// all without the manual provisioning modal. Triggered from the application drawer
+// or the table row "LMIC Grant" button when lmic_eligible === true.
+//
+// Firebase writes:
+//   consortium_members/{newKey}  — full member record, status: active, tier: 4
+//   workspaces/{issuedKey}       — workspace metadata, lmic_grant: true, 1yr expiry
+//   lmic_access/{newKey}         — active LMIC access record
+//   consortium_applications/{appKey} — status: granted, workspace_key recorded
+//
+window._saCons_fastTrackLmicGrant = async function(appKey) {
+  const a = _saCons_applicationsCache.find(x => x._key === appKey);
+  if (!a) { if (typeof showToast === 'function') showToast('Application not found.', 3000); return; }
+  if (a.member_key || a.status === 'granted') {
+    if (typeof showToast === 'function') showToast('LMIC Grant already issued for this application.', 3000);
+    return;
+  }
+
+  const name  = (a.name || '').trim() || (a.contact_email || '').split('@')[0];
+  const email = (a.contact_email || a.email || '').trim().toLowerCase();
+  const inst  = (a.institution || '').trim();
+
+  if (!email) { if (typeof showToast === 'function') showToast('No email on this application — cannot provision.', 3500); return; }
+  if (!inst)  { if (typeof showToast === 'function') showToast('No institution on this application — cannot provision.', 3500); return; }
+
+  const confirmed = confirm(
+    `Issue TESSERA LMIC Grant to ${name || email}?\n\n` +
+    `This will:\n` +
+    `  • Create a TESSERA Student Affiliate (Tier 4) member record\n` +
+    `  • Issue a student workspace key (1-year expiry)\n` +
+    `  • Activate LMIC researcher access\n` +
+    `  • No payment required\n\n` +
+    `You will be shown the key to copy and send to the researcher.`
+  );
+  if (!confirmed) return;
+
+  document.getElementById('sc-app-drawer')?.remove();
+  if (typeof showToast === 'function') showToast('Provisioning LMIC grant…', 1500);
+
+  try {
+    const db = firebase.database();
+
+    // 1. Create consortium_members record (status: active, tier: 4 Student Affiliate)
+    const memberData = {
+      name:            a.name            || '',
+      contact_email:   a.contact_email   || a.email || '',
+      email:           a.email           || a.contact_email || '',
+      institution:     a.institution     || '',
+      department:      a.department      || '',
+      country:         a.country         || '',
+      role:            a.role            || 'Student',
+      tier:            4,
+      study_title:     a.study_title     || '',
+      disease_areas:   a.disease_areas   || [],
+      instruments:     a.instruments     || [],
+      irb_status:      a.irb_status      || '',
+      description:     a.description     || '',
+      open_science:    a.open_science    || false,
+      lmic_eligible:   true,
+      lmic_tier:       true,
+      orcid:           a.orcid           || '',
+      preferred_name:  a.preferred_name  || '',
+      referral:        a.referral        || '',
+      status:          'active',
+      application_ref: a.application_ref || '',
+      applied_at:      a.applied_at      || Date.now(),
+      approved_at:     Date.now(),
+      tessera_id:      null,
+      source:          'lmic-grant-fast-track',
+    };
+    const newRef = await db.ref('consortium_members').push(memberData);
+    const newMemberKey = newRef.key;
+
+    // 2. Generate workspace key via Lambda
+    const keyResp = await fetch(LAMBDA_URL + '/issue-key', {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, email,
+        institution: inst,
+        role: 'student',
+        peacs_dims: ['base', 'mvmt', 'strata'],
+        lmic_grant: true,
+        country: a.country || '',
+        ...(a.study_title ? { study_title: a.study_title } : {}),
+      }),
+    });
+    const keyData = await keyResp.json().catch(() => ({}));
+    if (!keyData.key) throw new Error(keyData.error || `Key issuance failed (HTTP ${keyResp.status})`);
+    const issuedKey = keyData.key;
+
+    // 3. Write workspaces/{key} with LMIC grant metadata and 1-year expiry
+    const expiry = new Date();
+    expiry.setFullYear(expiry.getFullYear() + 1);
+    const expiryStr = expiry.toISOString().slice(0, 10);
+
+    await db.ref('workspaces/' + issuedKey).update({
+      role:           'student',
+      created_at:     Date.now(),
+      name,
+      email,
+      institution:    inst,
+      peacs_dims:     ['base', 'mvmt', 'strata'],
+      tessera_member: true,
+      tessera_tier:   4,
+      lmic_grant:     true,
+      expiry:         expiryStr,
+      sa_note:        `TESSERA LMIC Grant · ${a.country || 'Unknown'} · ${new Date().toISOString().slice(0, 10)}`,
+    });
+
+    // 4. Back-link member record to issued key
+    await db.ref('consortium_members/' + newMemberKey).update({ workspace_key: issuedKey });
+
+    // 5. Write lmic_access record (keyed by member push key)
+    await db.ref('lmic_access/' + newMemberKey).set({
+      active:         true,
+      country:        a.country    || '',
+      institution:    inst,
+      tessera_grc_id: '',
+      granted_by:     'lmic-grant-fast-track',
+      granted_at:     Date.now(),
+      email,
+    });
+
+    // 6. Mark application as granted with workspace reference
+    await db.ref('consortium_applications/' + appKey).update({
+      status:        'granted',
+      granted_at:    Date.now(),
+      workspace_key: issuedKey,
+      member_key:    newMemberKey,
+    });
+
+    // 7. Audit log
+    if (typeof atlasAuditLog === 'function') {
+      atlasAuditLog('lmic_grant_issued', {
+        appKey, newMemberKey, issuedKey,
+        email, country: a.country || '',
+      });
+    }
+
+    // 8. Auto-provision letter of support + mosaic tile
+    await _saCons_autoProvisionOnApproval(newMemberKey, a, 4);
+
+    // 9. Reload lists and show confirmation
+    await _saCons_loadMembers();
+    await _saCons_loadApplications();
+    _saCons_renderApplicationsUI(document.getElementById('sc-tab-content'));
+    _saCons_showGrantConfirmation(name, email, issuedKey, a.country || '', expiryStr);
+
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Grant issuance failed: ' + e.message, 6000);
+    console.error('[TESSERA LMIC Grant]', e);
+  }
+};
+
+// ── Auto-provision letter of support + mosaic tile on approval/grant ──────────
+// Called by both _saCons_approveApp and _saCons_fastTrackLmicGrant immediately
+// after the member record is created. All data comes from the application object
+// so no manual input is required.
+async function _saCons_autoProvisionOnApproval(memberKey, a, tierNum) {
+  const db          = firebase.database();
+  const instruments = (a.instruments && a.instruments.length) ? a.instruments.join(', ') : 'MAP, MMAS-8';
+  const tierStr     = _CONS_TIER_TO_TESSERA[tierNum] || 'affiliate';
+
+  // 1. Issue letter of support
+  const letterData = {
+    recipient_name:   a.name            || '',
+    country:          a.country         || '',
+    institution:      a.institution     || '',
+    study_title:      a.study_title     || '',
+    instrument:       instruments,
+    purpose:          a.description     || 'Research use within the TESSERA GRC consortium',
+    grant_agency:     a.grant_agency    || '',
+    grant_mechanism:  a.grant_mechanism || '',
+    status:           'issued',
+    issued_at:        Date.now(),
+    auto_issued:      true,
+    member_key:       memberKey,
+  };
+  const letterRef = await db.ref('consortium_letters').push(letterData);
+  if (typeof atlasAuditLog === 'function') {
+    atlasAuditLog('consortium_letter_issued', {
+      recipient: a.name, institution: a.institution, auto: true, memberKey,
+    });
+  }
+
+  // 2. Create mosaic tile and back-link to member record
+  const tileData = {
+    name:         a.name            || '',
+    country:      a.country         || '',
+    countryFlag:  _CONS_FLAGS[a.country] || '',
+    tier:         tierStr,
+    joinedAt:     Date.now(),
+  };
+  if (a.role)        tileData.role        = a.role;
+  if (a.institution) tileData.affiliation = a.institution;
+  if (a.orcid)       tileData.orcid       = a.orcid;
+  if (a.linkedin)    tileData.linkedin    = a.linkedin;
+
+  const tileRef = await db.ref('tessera_tiles').push(tileData);
+  await db.ref('consortium_members/' + memberKey + '/tessera_tile_key').set(tileRef.key);
+  if (typeof atlasAuditLog === 'function') {
+    atlasAuditLog('tessera_tile_added', { memberKey, tileKey: tileRef.key, name: a.name, auto: true });
+  }
+}
+
+// ── Grant confirmation overlay ────────────────────────────────────────────────
+// Displays the issued key with a one-click copy button so Philip can immediately
+// paste it into an email to the researcher.
+function _saCons_showGrantConfirmation(name, email, key, country, expiry) {
+  const existing = document.getElementById('sc-grant-confirm-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sc-grant-confirm-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(6,12,24,0.82);backdrop-filter:blur(6px);';
+  overlay.innerHTML = `
+    <div style="background:${_CC.surface};border:1px solid rgba(139,111,245,0.45);border-radius:14px;padding:34px 38px;max-width:480px;width:92%;text-align:center;box-shadow:0 0 48px rgba(139,111,245,0.12);">
+      <div style="font-size:2rem;margin-bottom:10px;">✓</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.24em;text-transform:uppercase;color:rgba(139,111,245,0.8);margin-bottom:10px;">TESSERA LMIC Grant Issued</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:${_CC.bright};margin-bottom:3px;">${_saCons_esc(name)}</div>
+      <div style="font-size:0.76rem;color:${_CC.dim};margin-bottom:6px;">${_saCons_esc(email)}${country ? ' · ' + _saCons_esc(country) : ''}</div>
+      <div style="font-size:0.72rem;color:${_CC.dim};margin-bottom:22px;">Student Affiliate (Tier 4) · LMIC access active · Expires ${_saCons_esc(expiry)}</div>
+
+      <div style="background:${_CC.bg};border:1px solid rgba(139,111,245,0.32);border-radius:9px;padding:16px 20px;margin-bottom:22px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.20em;text-transform:uppercase;color:${_CC.dim};margin-bottom:8px;">Workspace Key</div>
+        <div id="sc-grant-key-val" style="font-family:'IBM Plex Mono',monospace;font-size:1.08rem;font-weight:600;color:rgba(139,111,245,0.95);letter-spacing:0.07em;">${_saCons_esc(key)}</div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:18px;">
+        <button onclick="navigator.clipboard.writeText('${_saCons_esc(key)}').then(()=>{ this.textContent='✓ Copied'; setTimeout(()=>{ this.textContent='Copy Key'; },1800); }).catch(()=>{ document.execCommand('copy'); });" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;padding:11px 24px;border-radius:6px;border:1px solid rgba(139,111,245,0.45);background:rgba(139,111,245,0.12);color:rgba(139,111,245,0.95);cursor:pointer;transition:background 0.13s;">Copy Key</button>
+        <button onclick="document.getElementById('sc-grant-confirm-overlay').remove();" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;padding:11px 22px;border-radius:6px;border:1px solid ${_CC.border};background:transparent;color:${_CC.muted};cursor:pointer;">Close</button>
+      </div>
+      <div style="font-size:0.70rem;color:${_CC.dim};line-height:1.6;max-width:360px;margin:0 auto;">Send this key to the researcher by email. Enrollment as TESSERA Student Affiliate and LMIC researcher access are now live in Firebase.</div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}

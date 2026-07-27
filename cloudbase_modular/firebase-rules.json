@@ -372,6 +372,11 @@
         ".read": "auth != null && (auth.token.role === 'superadmin' || auth.uid === $uid)",
         ".write": "auth != null && auth.token.role === 'superadmin'"
       }
+    },
+
+    "tessera_grants": {
+      ".read": true,
+      ".write": "auth != null && auth.token.role === 'superadmin'"
     }
   }
 }
