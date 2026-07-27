@@ -48,8 +48,9 @@ const _CONS_TIER_TO_TESSERA = { 0:'founder', 1:'institutional', 2:'validation', 
 // Reverse map: tessera_tiles tier string → numeric
 const _TESSERA_TIER_TO_CONS = { founder:0, institutional:1, validation:2, affiliate:3, student:4, industry:5 };
 
-// Annual subscription price by tier — used to compute organic grant value on tessera_grants
-const _CONS_ANNUAL_PRICE = { 0: 0, 1: 5999, 2: 1999, 3: 499, 4: 199, 5: 12000 };
+// Retail monthly price by tier — mirrors atlas.adherence.cc/keys pricing, used as reference
+// Tier 4=Student $19/mo · Tier 3=Researcher $49/mo · Tier 2=PI $149/mo · Tier 1=Academic $399/mo
+const _CONS_MONTHLY_PRICE = { 0: 0, 1: 399, 2: 149, 3: 49, 4: 19, 5: 599 };
 
 // ── Country list ─────────────────────────────────────────────────────────────
 const _CONS_COUNTRIES = [
