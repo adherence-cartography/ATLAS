@@ -439,6 +439,10 @@
     "consortium_pending_members": {
       ".read": "auth != null && auth.token.role === 'superadmin'",
       ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "tessera_grants": {
+      ".read": true,
+      ".write": "auth != null && auth.token.role === 'superadmin'"
     }
   }
 }
