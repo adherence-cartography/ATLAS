@@ -423,6 +423,83 @@ window._saCons_switchTab = function(tabId, contentEl) {
   }
 };
 
+// ── TESSERA Normative Contribution Portal (self-contained, no index.html dependency) ──
+function _saCons_buildNormativeModal() {
+  if (document.getElementById('tessera-contribution-modal')) return;
+  const el = document.createElement('div');
+  el.id = 'tessera-contribution-modal';
+  el.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.90);backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:40px 24px;overflow-y:auto;';
+  el.innerHTML = `
+    <div style="background:#081a12;border:1px solid rgba(16,185,129,0.2);border-top:2px solid rgba(16,185,129,0.6);border-radius:16px;padding:28px 28px 24px;max-width:580px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.8);color:#cdd8e8;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.28em;text-transform:uppercase;color:rgba(16,185,129,0.65);margin-bottom:5px;">TESSERA Global Research Consortium</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.55rem;font-weight:300;color:#e8f0f8;">Normative Contribution Portal</div>
+        </div>
+        <button onclick="document.getElementById('tessera-contribution-modal').style.display='none'" style="background:none;border:1px solid rgba(255,255,255,0.12);border-radius:6px;cursor:pointer;color:rgba(255,255,255,0.4);padding:5px 8px;line-height:1;font-size:1rem;" title="Close">✕</button>
+      </div>
+      <div style="padding:12px 14px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.18);border-radius:10px;font-size:0.78rem;color:#94c8ac;line-height:1.65;margin-bottom:20px;">
+        This portal is for researchers enrolled under the <strong style="color:#e8f0f8;">TESSERA Research Contribution License</strong>. Your submission fulfils the data obligation of your license and contributes to the TESSERA Normative Dataset. No patient identifiers are collected or transmitted.
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:10px;padding:14px 16px;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.18);border-radius:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;font-weight:700;color:rgba(16,185,129,0.85);flex-shrink:0;padding-top:2px;">①</div>
+        <div style="flex:1;">
+          <div style="font-size:0.85rem;font-weight:600;color:#e8f0f8;margin-bottom:4px;">Download the Normative Contribution Template</div>
+          <div style="font-size:0.74rem;color:#8aa0b8;margin-bottom:10px;line-height:1.6;">This template has no Patient ID column. It is designed to contain no personal data. Do not add any patient identifiers.</div>
+          <button onclick="if(typeof downloadNormativeTemplate==='function')downloadNormativeTemplate(this)" style="padding:8px 18px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.4);color:rgba(16,185,129,0.95);border-radius:7px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;">↓ Download Normative Template (.xlsx)</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:10px;padding:14px 16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.14);border-radius:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;font-weight:700;color:rgba(16,185,129,0.75);flex-shrink:0;padding-top:2px;">②</div>
+        <div>
+          <div style="font-size:0.85rem;font-weight:600;color:#e8f0f8;margin-bottom:4px;">Complete your data (no patient identifiers)</div>
+          <div style="font-size:0.74rem;color:#8aa0b8;line-height:1.65;">Enter one row per patient assessment. Country, Condition, Age Range, Education Level, and Q1–Q8 responses only. Leave City blank if it feels identifying for your study population.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:18px;padding:14px 16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.14);border-radius:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;font-weight:700;color:rgba(16,185,129,0.75);flex-shrink:0;padding-top:2px;">③</div>
+        <div style="flex:1;">
+          <div style="font-size:0.85rem;font-weight:600;color:#e8f0f8;margin-bottom:8px;">Upload your completed file</div>
+          <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:2px dashed rgba(16,185,129,0.3);border-radius:10px;padding:24px;cursor:pointer;background:rgba(16,185,129,0.03);" onmouseover="this.style.borderColor='rgba(16,185,129,0.6)';this.style.background='rgba(16,185,129,0.07)'" onmouseout="this.style.borderColor='rgba(16,185,129,0.3)';this.style.background='rgba(16,185,129,0.03)'">
+            <input type="file" accept=".xlsx,.xls" onchange="_saCons_tessFileChosen(event)" style="display:none;">
+            <div style="font-size:1.6rem;color:rgba(16,185,129,0.6);">↑</div>
+            <div style="font-size:0.82rem;font-weight:600;color:#cdd8e8;">Drag and drop or click to select file</div>
+            <div style="font-size:0.70rem;color:#607898;font-family:'IBM Plex Mono',monospace;">Accepts .xlsx · .xls · TESSERA Normative Template only</div>
+          </label>
+          <div id="tessera-contrib-status" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:0.78rem;font-family:'IBM Plex Mono',monospace;"></div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('tessera-contribution-modal').style.display='none'" style="width:100%;padding:8px;background:none;border:1px solid rgba(255,255,255,0.08);border-radius:6px;font-size:0.75rem;color:#607898;cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:0.06em;text-transform:uppercase;">Close</button>
+    </div>
+  `;
+  document.body.appendChild(el);
+}
+
+window._saCons_openNormativePortal = function() {
+  _saCons_buildNormativeModal();
+  const m = document.getElementById('tessera-contribution-modal');
+  if (m) m.style.display = 'flex';
+};
+
+window._saCons_tessFileChosen = function(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const statusEl = document.getElementById('tessera-contrib-status');
+  if (statusEl) {
+    statusEl.style.display = 'block';
+    statusEl.style.background = 'rgba(16,185,129,0.08)';
+    statusEl.style.border = '1px solid rgba(16,185,129,0.25)';
+    statusEl.style.color = '#94c8ac';
+    statusEl.textContent = 'Reading file: ' + file.name + '…';
+  }
+  document.getElementById('tessera-contribution-modal').style.display = 'none';
+  if (typeof processBulkUpload === 'function') {
+    processBulkUpload(file);
+  } else {
+    setTimeout(() => { if (typeof processBulkUpload === 'function') processBulkUpload(file); }, 800);
+  }
+};
+
 // ── Main shell ────────────────────────────────────────────────────────────────
 function _saCons_renderShell(container) {
   const pendingCount = _saCons_applicationsCache.filter(a => a.status === 'pending').length;
@@ -447,7 +524,7 @@ function _saCons_renderShell(container) {
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.6rem;font-weight:300;color:${_CC.text};line-height:1.2;">Scala Carta Foundation</div>
         <div style="font-size:0.84rem;color:${_CC.muted};margin-top:5px;">TESSERA GRC — membership applications, registry, funding intelligence, letters of support, and global impact metrics.</div>
       </div>
-      <button onclick="if(typeof openTesseraContributionPortal==='function') openTesseraContributionPortal(); else {document.getElementById('tessera-contribution-modal').style.display='flex';}" style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:9px 18px;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.85);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.20)';this.style.borderColor='rgba(16,185,129,0.6)'" onmouseout="this.style.background='rgba(16,185,129,0.10)';this.style.borderColor='rgba(16,185,129,0.35)'">
+      <button onclick="window._saCons_openNormativePortal()" style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:9px 18px;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.85);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.20)';this.style.borderColor='rgba(16,185,129,0.6)'" onmouseout="this.style.background='rgba(16,185,129,0.10)';this.style.borderColor='rgba(16,185,129,0.35)'">
         <span style="font-size:0.9rem;">↑</span> Submit Normative Data
       </button>
     </div>
