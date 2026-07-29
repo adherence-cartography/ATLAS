@@ -543,9 +543,77 @@ function _saCons_renderShell(container) {
   const normBtn = document.getElementById('sc-normative-portal-btn');
   if (normBtn) {
     normBtn.addEventListener('click', function() {
-      _saCons_buildNormativeModal();
-      const m = document.getElementById('tessera-contribution-modal');
-      if (m) m.style.display = 'flex';
+      _saCons_showNormativeInline(container);
+    });
+  }
+}
+
+function _saCons_showNormativeInline(container) {
+  container.innerHTML = `
+    <div style="max-width:620px;margin:0 auto;padding:8px 0;">
+      <button id="sc-norm-back" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:none;border:1px solid ${_CC.border};border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.10em;text-transform:uppercase;color:${_CC.muted};cursor:pointer;margin-bottom:24px;" onmouseover="this.style.color='${_CC.text}';this.style.borderColor='${_CC.muted}'" onmouseout="this.style.color='${_CC.muted}';this.style.borderColor='${_CC.border}'">← Back to Consortium</button>
+
+      <div style="font-size:0.60rem;letter-spacing:0.28em;text-transform:uppercase;color:rgba(16,185,129,0.65);margin-bottom:6px;font-family:'IBM Plex Mono',monospace;">TESSERA Global Research Consortium</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.8rem;font-weight:300;color:${_CC.text};margin-bottom:6px;">Normative Contribution Portal</div>
+      <div style="font-size:0.78rem;color:rgba(16,185,129,0.75);margin-bottom:24px;">Submit de-identified MAP assessment data to the TESSERA Normative Dataset</div>
+
+      <div style="padding:14px 16px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.18);border-radius:10px;font-size:0.78rem;color:${_CC.muted};line-height:1.7;margin-bottom:20px;">
+        This portal is for researchers enrolled under the <strong style="color:${_CC.text};">TESSERA Research Contribution License</strong>. Your submission fulfils the data obligation of your license and contributes to the TESSERA Normative Dataset. No patient identifiers are collected or transmitted.
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:12px;padding:16px;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.18);border-radius:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;font-weight:700;color:rgba(16,185,129,0.85);flex-shrink:0;padding-top:2px;">①</div>
+        <div style="flex:1;">
+          <div style="font-size:0.86rem;font-weight:600;color:${_CC.text};margin-bottom:4px;">Download the Normative Contribution Template</div>
+          <div style="font-size:0.74rem;color:${_CC.muted};margin-bottom:12px;line-height:1.6;">This template has no Patient ID column and is designed to contain no personal data. Do not add any patient identifiers.</div>
+          <button id="sc-norm-dl-btn" style="padding:9px 20px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.4);color:rgba(16,185,129,0.95);border-radius:7px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;" onmouseover="this.style.background='rgba(16,185,129,0.22)'" onmouseout="this.style.background='rgba(16,185,129,0.12)'">↓ Download Normative Template (.xlsx)</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:12px;padding:16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.14);border-radius:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;font-weight:700;color:rgba(16,185,129,0.75);flex-shrink:0;padding-top:2px;">②</div>
+        <div>
+          <div style="font-size:0.86rem;font-weight:600;color:${_CC.text};margin-bottom:4px;">Complete your data (no patient identifiers)</div>
+          <div style="font-size:0.74rem;color:${_CC.muted};line-height:1.65;">Enter one row per patient assessment. Country, Condition, Age Range, Education Level, and Q1–Q8 responses only. Leave City blank if it feels identifying for your study population.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;padding:16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.14);border-radius:10px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;font-weight:700;color:rgba(16,185,129,0.75);flex-shrink:0;padding-top:2px;">③</div>
+        <div style="flex:1;">
+          <div style="font-size:0.86rem;font-weight:600;color:${_CC.text};margin-bottom:10px;">Upload your completed file</div>
+          <label id="sc-norm-upload-label" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:2px dashed rgba(16,185,129,0.3);border-radius:10px;padding:28px;cursor:pointer;background:rgba(16,185,129,0.03);" onmouseover="this.style.borderColor='rgba(16,185,129,0.6)';this.style.background='rgba(16,185,129,0.07)'" onmouseout="this.style.borderColor='rgba(16,185,129,0.3)';this.style.background='rgba(16,185,129,0.03)'">
+            <input type="file" id="sc-norm-file-input" accept=".xlsx,.xls" style="display:none;">
+            <div style="font-size:2rem;color:rgba(16,185,129,0.6);">↑</div>
+            <div style="font-size:0.84rem;font-weight:600;color:${_CC.text};">Drag and drop or click to select file</div>
+            <div style="font-size:0.70rem;color:${_CC.muted};font-family:'IBM Plex Mono',monospace;">Accepts .xlsx · .xls · TESSERA Normative Template only</div>
+          </label>
+          <div id="sc-norm-status" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:0.78rem;font-family:'IBM Plex Mono',monospace;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);color:rgba(16,185,129,0.85);"></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('sc-norm-back').addEventListener('click', function() {
+    if (typeof window.saConsortiumInit === 'function') window.saConsortiumInit(container);
+  });
+
+  document.getElementById('sc-norm-dl-btn').addEventListener('click', function() {
+    if (typeof downloadNormativeTemplate === 'function') downloadNormativeTemplate(this);
+  });
+
+  const fileInput = document.getElementById('sc-norm-file-input');
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const st = document.getElementById('sc-norm-status');
+      if (st) { st.style.display = 'block'; st.textContent = 'Reading file: ' + file.name + '…'; }
+      if (typeof processBulkUpload === 'function') {
+        processBulkUpload(file);
+      } else {
+        setTimeout(() => { if (typeof processBulkUpload === 'function') processBulkUpload(file); }, 800);
+      }
     });
   }
 }
