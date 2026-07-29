@@ -524,7 +524,7 @@ function _saCons_renderShell(container) {
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.6rem;font-weight:300;color:${_CC.text};line-height:1.2;">Scala Carta Foundation</div>
         <div style="font-size:0.84rem;color:${_CC.muted};margin-top:5px;">TESSERA GRC — membership applications, registry, funding intelligence, letters of support, and global impact metrics.</div>
       </div>
-      <button onclick="window._saCons_openNormativePortal()" style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:9px 18px;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.85);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.20)';this.style.borderColor='rgba(16,185,129,0.6)'" onmouseout="this.style.background='rgba(16,185,129,0.10)';this.style.borderColor='rgba(16,185,129,0.35)'">
+      <button id="sc-normative-portal-btn" style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:9px 18px;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.85);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.20)';this.style.borderColor='rgba(16,185,129,0.6)'" onmouseout="this.style.background='rgba(16,185,129,0.10)';this.style.borderColor='rgba(16,185,129,0.35)'">
         <span style="font-size:0.9rem;">↑</span> Submit Normative Data
       </button>
     </div>
@@ -539,6 +539,15 @@ function _saCons_renderShell(container) {
 
     <div id="sc-tab-content"></div>
   `;
+
+  const normBtn = document.getElementById('sc-normative-portal-btn');
+  if (normBtn) {
+    normBtn.addEventListener('click', function() {
+      _saCons_buildNormativeModal();
+      const m = document.getElementById('tessera-contribution-modal');
+      if (m) m.style.display = 'flex';
+    });
+  }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
