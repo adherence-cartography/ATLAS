@@ -14,7 +14,7 @@ function accOpenEditKey(key) {
   // Move modal to body so it escapes any stacking context created by the Control panel
   if (modal.parentElement !== document.body) document.body.appendChild(modal);
   // Pre-fill from loaded key data
-  const k = (_kmAllKeys || []).find(k => k.key === key) || {};
+  const k = (_kmAllKeys || []).find(k => k.key === key) || (_saPlatWsAll || []).find(k => k.key === key) || {};
   document.getElementById('km-edit-key-display').textContent = key;
   document.getElementById('km-edit-name').value        = k.name        || '';
   document.getElementById('km-edit-email').value       = k.email       || '';
@@ -1223,7 +1223,7 @@ async function accCreateWorkspace() {
   const key = (document.getElementById('acc-ws-key')?.value||'').trim().toUpperCase();
   const name = (document.getElementById('acc-ws-name')?.value||'').trim();
   const _roleRaw = document.getElementById('acc-ws-role')?.value||'researcher';
-  const _instTypeMap = { institution_academic:'academic', institution_health:'health', institution_amc:'amc' };
+  const _instTypeMap = { institution_academic:'academic', institution_health:'health', institution_amc:'amc', institution_sponsored:'sponsored' };
   const role = _instTypeMap[_roleRaw] ? 'institution' : _roleRaw;
   const institution_type = _instTypeMap[_roleRaw] || null;
   const parent = (document.getElementById('acc-ws-parent')?.value||'').trim().toUpperCase()||null;

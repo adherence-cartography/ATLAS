@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -7,7 +7,7 @@
 <meta name="atlas-build" content="2026.06.15-pharmacy-gateway-v2"/>
 <meta name="description" content="ATLAS Pharmacy Gateway — MAP medication adherence assessment for community pharmacists"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&family=Noto+Sans+Arabic:wght@300;400;600&display=swap" rel="stylesheet"/>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" integrity="sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0" crossorigin="anonymous"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" integrity="sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p" crossorigin="anonymous"></script>
@@ -35,7 +35,7 @@
   --exec:#06b6d4;
   --ctx:#a78bfa;
   --font-display:'Cormorant Garamond',Georgia,serif;
-  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-body:'IBM Plex Sans','Noto Sans Arabic',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',monospace;
   --r:12px;
 }
@@ -912,6 +912,67 @@ body::before{
   font-family:var(--font-body);
 }
 
+@keyframes pgSpin{to{transform:rotate(360deg);}}
+.pg-spinner{
+  width:40px;height:40px;border-radius:50%;
+  border:3px solid rgba(212,168,67,0.15);
+  border-top-color:rgba(212,168,67,0.85);
+  animation:pgSpin 0.8s linear infinite;
+}
+.pg-gate-center{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:20px;padding:40px 24px;
+}
+.pg-invalid-icon{font-size:2.5rem;opacity:0.7;}
+.pg-invalid-title{
+  font-size:1.4rem;font-weight:600;
+  color:var(--text);margin:0;
+}
+.pg-invalid-msg{
+  font-size:0.95rem;color:var(--muted);
+  text-align:center;max-width:320px;margin:0;
+  line-height:1.5;
+}
+.pg-invalid-code{
+  font-family:var(--font-mono);font-size:0.8rem;
+  letter-spacing:0.1em;color:rgba(248,113,113,0.9);
+  background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);
+  border-radius:6px;padding:6px 14px;
+}
+.pg-ws-link{
+  display:none;align-items:center;gap:10px;
+  background:rgba(46,201,138,0.06);
+  border:1px solid rgba(46,201,138,0.2);
+  border-radius:8px;padding:10px 14px;
+  margin-bottom:20px;
+}
+.pg-ws-link-icon{color:var(--optimal);font-size:1rem;}
+.pg-ws-link-label{
+  font-family:var(--font-mono);font-size:0.62rem;
+  letter-spacing:0.16em;text-transform:uppercase;
+  color:rgba(46,201,138,0.65);
+}
+.pg-ws-link-name{
+  font-size:0.85rem;color:var(--text);margin-top:2px;
+}
+.alert-push-btn{
+  width:100%;padding:16px;
+  background:rgba(46,201,138,0.08);
+  border:1px solid rgba(46,201,138,0.3);
+  border-radius:var(--r);
+  color:rgba(46,201,138,0.9);
+  font-family:var(--font-body);font-size:1rem;font-weight:500;
+  cursor:pointer;transition:all 0.2s;margin-bottom:10px;
+}
+.alert-push-btn:hover{
+  background:rgba(46,201,138,0.15);
+  border-color:rgba(46,201,138,0.5);
+}
+.alert-push-btn:disabled{
+  opacity:0.55;cursor:default;
+}
+
 /* ═══════════════════════════════════════════
    PRINT STYLES
 ═══════════════════════════════════════════ */
@@ -946,8 +1007,53 @@ body::before{
 </head>
 <body>
 
+<!-- ═══ SCREEN 0: LOADING ═══ -->
+<div id="screen-loading" class="screen active">
+  <header class="pharm-header">
+    <div class="header-brand">
+      <div class="header-badge">
+        <span class="header-badge-dot"></span>
+        ATLAS · Pharmacy Gateway
+      </div>
+      <div class="header-title"><em>MAP</em> Assessment</div>
+    </div>
+    <div class="header-meta">
+      <div class="header-tessera">TESSERA GRC</div>
+      <div class="header-scala">Scala Carta Foundation</div>
+    </div>
+  </header>
+  <div class="pg-gate-center">
+    <div class="pg-spinner"></div>
+    <div style="font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);">Verifying site access&#8230;</div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 0b: INVALID KEY ═══ -->
+<div id="screen-invalid" class="screen">
+  <header class="pharm-header">
+    <div class="header-brand">
+      <div class="header-badge">
+        <span class="header-badge-dot" style="background:#ef4444;box-shadow:0 0 6px #ef4444;"></span>
+        ATLAS · Pharmacy Gateway
+      </div>
+      <div class="header-title"><em>MAP</em> Assessment</div>
+    </div>
+    <div class="header-meta">
+      <div class="header-tessera">TESSERA GRC</div>
+      <div class="header-scala">Scala Carta Foundation</div>
+    </div>
+  </header>
+  <div class="pg-gate-center">
+    <div class="pg-invalid-icon">&#9888;</div>
+    <p class="pg-invalid-title">Site Not Found</p>
+    <p class="pg-invalid-msg" id="invalid-msg">This site code could not be verified.</p>
+    <code class="pg-invalid-code" id="invalid-site-code"></code>
+    <p class="pg-invalid-msg" style="font-size:0.82rem;margin-top:8px;">Contact your administrator or Adherence Cartography to obtain a valid pharmacy site URL.</p>
+  </div>
+</div>
+
 <!-- ═══ SCREEN 1: SETUP ═══ -->
-<div id="screen-setup" class="screen active">
+<div id="screen-setup" class="screen">
   <header class="pharm-header">
     <div class="header-brand">
       <div class="header-badge">
@@ -966,6 +1072,14 @@ body::before{
     <div class="setup-intro">
       <h2 id="setup-intro-h2">Pharmacy Assessment Setup</h2>
       <p id="setup-intro-p">Configure the session before handing the tablet to your patient. This takes about 10 seconds.</p>
+    </div>
+
+    <div id="pg-ws-link" class="pg-ws-link">
+      <div class="pg-ws-link-icon">&#10003;</div>
+      <div>
+        <div class="pg-ws-link-label">Connected to Workspace</div>
+        <div class="pg-ws-link-name" id="pg-ws-link-name"></div>
+      </div>
     </div>
 
     <div class="setup-fields">
@@ -1027,10 +1141,35 @@ body::before{
         <label class="field-label" for="language-select" id="lbl-language">Language</label>
         <select class="field-select" id="language-select">
           <option value="en">English</option>
+          <option value="el">Ελληνικά</option>
+          <option value="pl">Polski</option>
           <option value="it">Italian</option>
           <option value="es">Spanish</option>
           <option value="fr">French</option>
           <option value="ar">Arabic</option>
+          <option value="de">Deutsch</option>
+          <option value="zh">中文</option>
+          <option value="zh-TW">繁體中文</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="ru">Русский</option>
+          <option value="tr">Türkçe</option>
+          <option value="hi">हिन्दी</option>
+          <option value="id">Bahasa Indonesia</option>
+          <option value="tl">Filipino</option>
+          <option value="sw">Kiswahili</option>
+          <option value="af">Afrikaans</option>
+          <option value="sq">Shqip</option>
+          <option value="bn">বাংলা</option>
+          <option value="hr">Hrvatski</option>
+          <option value="da">Dansk</option>
+          <option value="nl">Nederlands</option>
+          <option value="fi">Suomi</option>
+          <option value="ms">Bahasa Melayu</option>
+          <option value="sv">Svenska</option>
+          <option value="uk">Українська</option>
+          <option value="ur">اردو</option>
+          <option value="vi">Tiếng Việt</option>
         </select>
       </div>
     </div>
@@ -1225,6 +1364,9 @@ body::before{
     </div>
 
     <div class="alert-actions">
+      <button class="alert-push-btn" id="btn-push-workspace" onclick="pushAlertToWorkspace()" style="display:none">
+        &#128228; Push to Linked Workspace
+      </button>
       <button class="alert-copy-btn" id="btn-copy-alert" onclick="copyAlert()">
         &#128203; Copy to Clipboard
       </button>
@@ -1258,7 +1400,7 @@ body::before{
   <div class="dash-body">
     <div id="dash-demo-banner" style="display:none;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:12px 18px;margin-bottom:4px;display:none;align-items:center;gap:12px;">
       <span style="font-size:1.1rem;">&#9888;</span>
-      <span id="demo-banner-text" style="font-family:var(--font-mono);font-size:0.75rem;letter-spacing:0.14em;text-transform:uppercase;color:#f59e0b;">Demo Mode &mdash; Rome Pilot Sample Data. No real Firebase reads or writes.</span>
+      <span id="demo-banner-text" style="font-family:var(--font-mono);font-size:0.75rem;letter-spacing:0.14em;text-transform:uppercase;color:#f59e0b;">Demo Mode &mdash; Sample Assessment Data. No real Firebase reads or writes.</span>
     </div>
     <div id="dash-content">
       <div class="dash-loading">Loading site data&#8230;</div>
@@ -1267,8 +1409,8 @@ body::before{
       <button class="dash-back-btn" id="btn-back-assessment" onclick="showScreen('screen-setup')" style="flex:1;min-width:160px;">
         &#8592; Back to Assessment
       </button>
-      <button class="dash-back-btn" id="fofi-report-btn" onclick="generateFOFIReport()" style="flex:1;min-width:160px;border-color:rgba(212,168,67,0.35);color:rgba(212,168,67,0.85);">
-        &#128196; Generate FOFI Report
+      <button class="dash-back-btn" id="report-btn" onclick="generatePharmacyReport()" style="flex:1;min-width:160px;border-color:rgba(212,168,67,0.35);color:rgba(212,168,67,0.85);">
+        &#128196; Generate Report
       </button>
     </div>
   </div>
@@ -1293,14 +1435,76 @@ if(!firebase.apps.length){
   firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.database();
-firebase.auth().signInAnonymously().catch(e=>console.warn('[ATLAS-PG] anon auth:',e.message));
 
 // ── Site code: read from ?site= URL param ─────────────────────────────────
-// Pharmacies receive a URL like pharmacy.html?site=PH-ROM-001
-// Assessments are tagged with this code so the PI can filter by pharmacy.
-const _PG_SITE_CODE = (new URLSearchParams(window.location.search)).get('site') || 'UNASSIGNED';
-// ── Demo mode: ?demo=true shows synthetic Rome pilot data, no Firebase writes ──
+const _PG_SITE_CODE = ((new URLSearchParams(window.location.search)).get('site') || '').trim().toUpperCase() || 'UNASSIGNED';
+// ── Demo mode: ?demo=true shows synthetic data, no Firebase writes ──
 const _PG_DEMO = (new URLSearchParams(window.location.search)).get('demo') === 'true';
+// ── Workspace profile: populated after successful site code validation ─────
+let _pgWorkspaceProfile = null;
+
+async function _pgInitGateway(){
+  if(_PG_DEMO){
+    await firebase.auth().signInAnonymously().catch(e=>console.warn('[ATLAS-PG] demo auth:',e.message));
+    showScreen('screen-setup');
+    return;
+  }
+  if(_PG_SITE_CODE === 'UNASSIGNED'){
+    const el = document.getElementById('invalid-msg');
+    if(el) el.textContent = 'No site code provided. Pharmacy gateway URLs must include a ?site= parameter.';
+    showScreen('screen-invalid');
+    return;
+  }
+  try{
+    const ctrl = new AbortController();
+    setTimeout(()=>ctrl.abort(), 12000);
+    const resp = await fetch('/lambda-proxy/validate-key',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key: _PG_SITE_CODE}),
+      signal: ctrl.signal
+    });
+    const data = await resp.json();
+    if(!data.valid){
+      const el = document.getElementById('invalid-msg');
+      if(el) el.textContent = data.error || 'This site code is invalid or has expired.';
+      const codeEl = document.getElementById('invalid-site-code');
+      if(codeEl) codeEl.textContent = _PG_SITE_CODE;
+      showScreen('screen-invalid');
+      return;
+    }
+    await firebase.auth().signInWithCustomToken(data.token);
+    _pgWorkspaceProfile = data.profile || {};
+    // Pre-fill pharmacy name from workspace profile
+    const nameInput = document.getElementById('pharmacy-name');
+    if(nameInput && !nameInput.value && _pgWorkspaceProfile.name){
+      nameInput.value = _pgWorkspaceProfile.name;
+    }
+    // Show workspace-link badge if connected to a PI workspace
+    if(_pgWorkspaceProfile.parent_pi){
+      const badge = document.getElementById('pg-ws-link');
+      const nameEl = document.getElementById('pg-ws-link-name');
+      if(badge) badge.style.display = 'flex';
+      if(nameEl) nameEl.textContent = _pgWorkspaceProfile.parent_institution_name || _pgWorkspaceProfile.parent_pi;
+    }
+    showScreen('screen-setup');
+  } catch(err){
+    const el = document.getElementById('invalid-msg');
+    if(el) el.textContent = err.name === 'AbortError'
+      ? 'Request timed out. Check your connection and try again.'
+      : 'Could not verify this site. Check your connection and try again.';
+    const codeEl = document.getElementById('invalid-site-code');
+    if(codeEl) codeEl.textContent = _PG_SITE_CODE;
+    showScreen('screen-invalid');
+    console.warn('[ATLAS-PG] Gateway validation error:', err.message);
+  }
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', _pgInitGateway);
+} else {
+  _pgInitGateway();
+}
 
 // ═══════════════════════════════════════════
 // MAP QUESTIONS (all 8) — Multidimensional Adherence Parameters
@@ -1501,9 +1705,9 @@ const UI_STRINGS = {
     hdr_badge_dashboard:'Site Dashboard',
     hdr_title_dashboard:'Statistics',
     dash_this_month:'This Month',
-    demo_banner_text:'Demo Mode \u2014 Rome Pilot Sample Data. No real Firebase reads or writes.',
+    demo_banner_text:'Demo Mode \u2014 Sample Assessment Data. No real Firebase reads or writes.',
     btn_back_assessment:'\u2190 Back to Assessment',
-    btn_fofi:'\uD83D\uDCC4 Generate FOFI Report',
+    btn_report:'\uD83D\uDCC4 Generate Report',
     insight_arch:'This patient may have doubts about whether their medication is working. A conversation with their prescriber about treatment goals is recommended.',
     insight_exec:'This patient has a habit or routine gap. A structured reminder system or blister pack could help.',
     insight_ctx:'This patient faces practical barriers (travel, convenience, access). A prescriber discussion about simplifying the regimen may help.',
@@ -1520,6 +1724,8 @@ const UI_STRINGS = {
     af_instrument:'Instrument',
     af_assessed:'patient assessed at',
     q_counter_format:'Question {n} of 8',
+    ans_yes:'Yes',
+    ans_no:'No',
   },
   it: {
     setup_intro_h2:'Configurazione Valutazione Farmacia',
@@ -1575,9 +1781,9 @@ const UI_STRINGS = {
     hdr_badge_dashboard:'Dashboard Sito',
     hdr_title_dashboard:'Statistiche',
     dash_this_month:'Questo Mese',
-    demo_banner_text:'Modalit\u00e0 Demo \u2014 Dati Campione Pilota Roma. Nessuna lettura o scrittura Firebase reale.',
+    demo_banner_text:'Modalit\u00e0 Demo \u2014 Dati Campione. Nessuna lettura o scrittura Firebase reale.',
     btn_back_assessment:'\u2190 Torna alla Valutazione',
-    btn_fofi:'\uD83D\uDCC4 Genera Rapporto FOFI',
+    btn_report:'\uD83D\uDCC4 Genera Rapporto',
     insight_arch:'Questo paziente potrebbe avere dubbi sull\'efficacia del suo farmaco. Si raccomanda una conversazione con il prescrittore sugli obiettivi terapeutici.',
     insight_exec:'Questo paziente presenta una lacuna nell\'abitudine o nella routine. Un sistema di promemoria strutturato o una confezione blister potrebbe essere utile.',
     insight_ctx:'Questo paziente incontra barriere pratiche (viaggi, comodit\u00e0, accesso). Una discussione con il prescrittore per semplificare la terapia potrebbe essere utile.',
@@ -1594,7 +1800,2007 @@ const UI_STRINGS = {
     af_instrument:'Strumento',
     af_assessed:'paziente valutato presso',
     q_counter_format:'Domanda {n} di 8',
-  }
+    ans_yes:'Sì',
+    ans_no:'No',
+  },
+  es: {
+    setup_intro_h2:'Configuración de la Evaluación',
+    setup_intro_p:'Configure la sesión antes de entregar la tableta al paciente. Tarda unos 10 segundos.',
+    lbl_pharmacy_name:'Nombre de la Farmacia (opcional)',
+    lbl_condition:'Condición del Paciente',
+    opt_condition_default:'Seleccionar condición...',
+    opt_condition_hyp:'Hipertensión', opt_condition_dia:'Diabetes',
+    opt_condition_cvd:'Cardiovascular', opt_condition_other:'Otro',
+    lbl_medication:'Tipo de Medicamento (opcional)',
+    ph_medication:'ej. inhibidor ECA, Metformina...',
+    lbl_age:'Rango de Edad del Paciente (opcional)',
+    opt_age_default:'Seleccionar rango de edad...',
+    opt_age_prefer_not:'Prefiero no decirlo',
+    lbl_gender:'Género (opcional)',
+    opt_gender_default:'Seleccionar...',
+    opt_gender_male:'Masculino', opt_gender_female:'Femenino',
+    opt_gender_nb:'No binario', opt_gender_pnts:'Prefiero no decirlo',
+    lbl_patient_ref:'Código de Referencia del Paciente (opcional)',
+    ph_patient_ref:'ej. iniciales + año de nacimiento: MR1958',
+    lbl_language:'Idioma',
+    begin_label:'Iniciar Evaluación',
+    begin_sub:'Entregue la tableta al paciente · aproximadamente 3 minutos',
+    setup_footnote:'MAP · Parámetros Multidimensionales de Adherencia<br>Administrado por el farmacéutico · Los códigos de referencia son no identificativos',
+    demo_mode_label:'Modo Demo Activo',
+    demo_shortcut_btn:'📊 Ver Panel (68 Pacientes de Muestra)',
+    hdr_badge_question:'Evaluación del Paciente',
+    hdr_title_question:'Preguntas',
+    q_back:'← Atrás',
+    hdr_badge_results:'Evaluación Completada',
+    hdr_title_results:'Resultados',
+    tl_pe_label:'Puntuación MAP PE:',
+    tl_pe_suffix:'/ 1.00',
+    domain_breakdown_title:'Desglose por Dominio',
+    domain_arch:'Arquitectura', domain_exec:'Ejecución', domain_ctx:'Contexto-Guardia',
+    insight_label:'Evaluación Clínica',
+    peacs_label:'Fenotipo PEACS',
+    btn_alert:'⚠ Enviar Alerta al Prescriptor',
+    btn_save_new:'✓ Guardar y Nuevo Paciente',
+    btn_print:'🖨 Imprimir Resumen',
+    btn_dashboard:'📊 Ver Panel de Farmacia',
+    tl_green:'Adherencia Alta: Bajo Riesgo',
+    tl_amber:'Riesgo Elevado: Monitorear',
+    tl_red:'Alto Riesgo: Alerta al Prescriptor Recomendada',
+    hdr_badge_alert:'Alerta al Prescriptor',
+    hdr_title_alert:'Tarjeta de Alerta',
+    alert_header_title:'Riesgo de No Adherencia Identificado',
+    alert_header_sub:'Alto Riesgo · Notificación al Prescriptor Recomendada',
+    alert_card_title:'Alerta MAP ATLAS',
+    btn_copy:'📋 Copiar al Portapapeles',
+    btn_email:'✉ Enviar por Correo Electrónico',
+    btn_back_results:'← Volver a Resultados',
+    hdr_badge_dashboard:'Panel del Sitio',
+    hdr_title_dashboard:'Estadísticas',
+    dash_this_month:'Este Mes',
+    demo_banner_text:'Modo Demo — Datos de evaluación de muestra. Sin lecturas ni escrituras reales en Firebase.',
+    btn_back_assessment:'← Volver a la Evaluación',
+    btn_report:'📄 Generar Informe',
+    insight_arch:'Este paciente puede tener dudas sobre si su medicamento está funcionando. Se recomienda una conversación con su prescriptor sobre los objetivos del tratamiento.',
+    insight_exec:'Este paciente tiene una brecha de hábito o rutina. Un sistema de recordatorio estructurado o un blister podría ayudar.',
+    insight_ctx:'Este paciente enfrenta barreras prácticas (viaje, comodidad, acceso). Una discusión con el prescriptor para simplificar el régimen puede ayudar.',
+    peacs_full:'Adherente Total',
+    peacs_forgetter:'Olvidadizo de Rutina',
+    peacs_skipper:'Saltador Situacional',
+    peacs_stopper:'Optimista Interrumpidor',
+    peacs_resistor:'Resistente Intencional',
+    peacs_mixed:'Perfil de Adherencia Mixto',
+    af_patient:'Paciente', af_date:'Fecha', af_pe:'Puntuación MAP PE',
+    af_risk:'Nivel de Riesgo', af_domain:'Dominio Primario de Fallo',
+    af_rec:'Recomendación Clínica', af_action:'Acción Recomendada',
+    af_action_val:'Por favor discuta las barreras de adherencia en la próxima cita.',
+    af_instrument:'Instrumento',
+    af_assessed:'paciente evaluado en',
+    q_counter_format:'Pregunta {n} de 8',
+    ans_yes:'Sí',
+    ans_no:'No',
+  },
+  fr: {
+    setup_intro_h2:'Configuration de l’évaluation',
+    setup_intro_p:'Configurez la session avant de remettre la tablette au patient. Cela prend environ 10 secondes.',
+    lbl_pharmacy_name:'Nom de la Pharmacie (optionnel)',
+    lbl_condition:'Condition du Patient',
+    opt_condition_default:'Sélectionner la condition...',
+    opt_condition_hyp:'Hypertension', opt_condition_dia:'Diabète',
+    opt_condition_cvd:'Cardiovasculaire', opt_condition_other:'Autre',
+    lbl_medication:'Type de Médicament (optionnel)',
+    ph_medication:'ex. inhibiteur ECA, Metformine...',
+    lbl_age:'Tranche d’âge du Patient (optionnel)',
+    opt_age_default:'Sélectionner la tranche d’âge...',
+    opt_age_prefer_not:'Préfère ne pas répondre',
+    lbl_gender:'Genre (optionnel)',
+    opt_gender_default:'Sélectionner...',
+    opt_gender_male:'Masculin', opt_gender_female:'Féminin',
+    opt_gender_nb:'Non binaire', opt_gender_pnts:'Préfère ne pas répondre',
+    lbl_patient_ref:'Code de Référence Patient (optionnel)',
+    ph_patient_ref:'ex. initiales + année de naissance : MR1958',
+    lbl_language:'Langue',
+    begin_label:'Commencer l’évaluation',
+    begin_sub:'Remettez la tablette au patient · environ 3 minutes',
+    setup_footnote:'MAP · Paramètres Multidimensionnels d’Adhérence<br>Administré par le pharmacien · Les codes de référence sont non identificatoires',
+    demo_mode_label:'Mode Démo Actif',
+    demo_shortcut_btn:'📊 Voir le Tableau de Bord (68 Patients Exemples)',
+    hdr_badge_question:'Évaluation du Patient',
+    hdr_title_question:'Questions',
+    q_back:'← Retour',
+    hdr_badge_results:'Évaluation Terminée',
+    hdr_title_results:'Résultats',
+    tl_pe_label:'Score MAP PE :',
+    tl_pe_suffix:'/ 1.00',
+    domain_breakdown_title:'Détail par Domaine',
+    domain_arch:'Architecture', domain_exec:'Exécution', domain_ctx:'Contexte-Garde',
+    insight_label:'Évaluation Clinique',
+    peacs_label:'Phénotype PEACS',
+    btn_alert:'⚠ Envoyer une Alerte au Prescripteur',
+    btn_save_new:'✓ Enregistrer et Nouveau Patient',
+    btn_print:'🖨 Imprimer le Résumé',
+    btn_dashboard:'📊 Voir le Tableau de Bord de la Pharmacie',
+    tl_green:'Adhérence Élevée : Faible Risque',
+    tl_amber:'Risque Élevé : À Surveiller',
+    tl_red:'Risque Élevé : Alerte au Prescripteur Recommandée',
+    hdr_badge_alert:'Alerte au Prescripteur',
+    hdr_title_alert:'Fiche d’Alerte',
+    alert_header_title:'Risque de Non-Adhérence Identifié',
+    alert_header_sub:'Risque Élevé · Notification au Prescripteur Recommandée',
+    alert_card_title:'Alerte MAP ATLAS',
+    btn_copy:'📋 Copier dans le Presse-papiers',
+    btn_email:'✉ Envoyer par Email',
+    btn_back_results:'← Retour aux Résultats',
+    hdr_badge_dashboard:'Tableau de Bord du Site',
+    hdr_title_dashboard:'Statistiques',
+    dash_this_month:'Ce Mois',
+    demo_banner_text:'Mode Démo — Données d\'évaluation exemple. Aucune lecture ou écriture Firebase réelle.',
+    btn_back_assessment:'← Retour à l’Évaluation',
+    btn_report:'📄 Générer le Rapport',
+    insight_arch:'Ce patient peut avoir des doutes sur l’efficacité de son médicament. Une conversation avec son prescripteur sur les objectifs du traitement est recommandée.',
+    insight_exec:'Ce patient a une lacune d’habitude ou de routine. Un système de rappel structuré ou un blister pourrait aider.',
+    insight_ctx:'Ce patient fait face à des obstacles pratiques (voyage, commodité, accès). Une discussion avec le prescripteur pour simplifier le traitement peut aider.',
+    peacs_full:'Adhérent Complet',
+    peacs_forgetter:'Oublieur de Routine',
+    peacs_skipper:'Sauteur Situationnel',
+    peacs_stopper:'Optimiste Interrupteur',
+    peacs_resistor:'Résistant Intentionnel',
+    peacs_mixed:'Profil d’Adhérence Mixte',
+    af_patient:'Patient', af_date:'Date', af_pe:'Score MAP PE',
+    af_risk:'Niveau de Risque', af_domain:'Domaine Primaire de Défaillance',
+    af_rec:'Recommandation Clinique', af_action:'Action Recommandée',
+    af_action_val:'Veuillez discuter des obstacles à l’adhérence lors du prochain rendez-vous.',
+    af_instrument:'Instrument',
+    af_assessed:'patient évalué à',
+    q_counter_format:'Question {n} sur 8',
+    ans_yes:'Oui',
+    ans_no:'Non',
+  },
+  ar: {
+    setup_intro_h2:'إعداد جلسة التقييم',
+    setup_intro_p:'قم بإعداد الجلسة قبل تسليم الجهاز اللوحي للمريض. يستغرق ذلك حوالي 10 ثوان.',
+    lbl_pharmacy_name:'اسم الصيدلية (اختياري)',
+    lbl_condition:'حالة المريض',
+    opt_condition_default:'اختر الحالة...',
+    opt_condition_hyp:'ارتفاع ضغط الدم', opt_condition_dia:'داء السكري',
+    opt_condition_cvd:'أمراض القلب والأوعية', opt_condition_other:'أخرى',
+    lbl_medication:'نوع الدواء (اختياري)',
+    ph_medication:'مثل: مثبط ACE، ميتفورمين...',
+    lbl_age:'الفئة العمرية للمريض (اختياري)',
+    opt_age_default:'اختر الفئة العمرية...',
+    opt_age_prefer_not:'أفضل عدم الإفصاح',
+    lbl_gender:'الجنس (اختياري)',
+    opt_gender_default:'اختر...',
+    opt_gender_male:'ذكر', opt_gender_female:'أنثى',
+    opt_gender_nb:'غير ثنائي', opt_gender_pnts:'أفضل عدم الإفصاح',
+    lbl_patient_ref:'رمز مرجعية المريض (اختياري)',
+    ph_patient_ref:'مثل: الأحرف الأولى + سنة الميلاد: MR1958',
+    lbl_language:'اللغة',
+    begin_label:'بدء التقييم',
+    begin_sub:'سلّم الجهاز اللوحي للمريض · حوالي 3 دقائق',
+    setup_footnote:'MAP · معايير الالتزام متعددة الأبعاد<br>تطبيقه الصيدلاني · رموز المرجعية غير معرّفة',
+    demo_mode_label:'وضع عرض توضيحي نشط',
+    demo_shortcut_btn:'📊 عرض لوحة التحكم (68 مريضًا نموذجيًا)',
+    hdr_badge_question:'تقييم المريض',
+    hdr_title_question:'الأسئلة',
+    q_back:'← رجوع',
+    hdr_badge_results:'اكتمل التقييم',
+    hdr_title_results:'النتائج',
+    tl_pe_label:'درجة MAP PE:',
+    tl_pe_suffix:'‏/ 1.00',
+    domain_breakdown_title:'تفصيل النطاقات',
+    domain_arch:'البنية', domain_exec:'التنفيذ', domain_ctx:'حارس السياق',
+    insight_label:'تقييم سريري',
+    peacs_label:'نمط PEACS',
+    btn_alert:'⚠ إرسال تنبيه للطبيب المعالج',
+    btn_save_new:'✓ حفظ ومريض جديد',
+    btn_print:'🖨 طباعة الملخص',
+    btn_dashboard:'📊 عرض لوحة تحكم الصيدلية',
+    tl_green:'الالتزام قوي: خطر منخفض',
+    tl_amber:'خطر متصاعد: مراقبة',
+    tl_red:'خطر عالي: تنبيه للطبيب المعالج موصى به',
+    hdr_badge_alert:'تنبيه للطبيب المعالج',
+    hdr_title_alert:'بطاقة التنبيه',
+    alert_header_title:'تم تحديد خطر عدم الالتزام',
+    alert_header_sub:'خطر عالي · إشعار الطبيب المعالج موصى به',
+    alert_card_title:'تنبيه MAP ATLAS',
+    btn_copy:'📋 نسخ إلى الحافظة',
+    btn_email:'✉ إرسال عبر البريد الإلكتروني',
+    btn_back_results:'← العودة إلى النتائج',
+    hdr_badge_dashboard:'لوحة تحكم الموقع',
+    hdr_title_dashboard:'الإحصاءات',
+    dash_this_month:'هذا الشهر',
+    demo_banner_text:'وضع عرض توضيحي — بيانات عينة ريما. لا قراءة أو كتابة حقيقية في Firebase.',
+    btn_back_assessment:'← العودة إلى التقييم',
+    btn_report:'📄 إنشاء تقرير',
+    insight_arch:'قد يكون لدى هذا المريض شكوك حول فاعلية دوائه. يوصى بإجراء محادثة مع طبيبه حول أهداف العلاج.',
+    insight_exec:'يعاني هذا المريض من خلل في العادة أو الروتين. قد يساعد نظام تذكير منظّم أو استخدام عبوة بليستر.',
+    insight_ctx:'يواجه هذا المريض عقبات عملية (سفر، وصول، تكاليف). قد تفيد مناقشة تبسيط النظام مع الطبيب.',
+    peacs_full:'ملتزم تمامًا',
+    peacs_forgetter:'ناسي الروتين',
+    peacs_skipper:'متخطّ ظرفي',
+    peacs_stopper:'متفائل متوقف',
+    peacs_resistor:'رافض متعمد',
+    peacs_mixed:'ملف التزام مختلط',
+    af_patient:'المريض', af_date:'التاريخ', af_pe:'درجة MAP PE',
+    af_risk:'مستوى الخطر', af_domain:'نطاق الفشل الرئيسي',
+    af_rec:'التوصية السريرية', af_action:'الإجراء الموصى به',
+    af_action_val:'يرجى مناقشة عوائق الالتزام في الموعد القادم.',
+    af_instrument:'الأداة',
+    af_assessed:'تم تقييم المريض في',
+    q_counter_format:'سؤال {n} من 8',
+    ans_yes:'نعم',
+    ans_no:'لا',
+  },
+  el: {
+    setup_intro_h2: 'Εκτίμηση Τήρησης Αγωγής MAP · Φαρμακείο',
+    setup_intro_p: 'Βοηθήστε τους ασθενείς σας με ένα σύντομο εργαλείο εκτίμησης τήρησης αγωγής MAP. Αποτελέσματα σε 3 λεπτά.',
+    lbl_pharmacy_name: 'Όνομα Φαρμακείου',
+    lbl_condition: 'Κύρια Ιατρική Κατάσταση',
+    opt_condition_default: 'Επιλέξτε κατάσταση...',
+    opt_condition_hyp: 'Υπέρταση',
+    opt_condition_dia: 'Διαβήτης',
+    opt_condition_cvd: 'Καρδιαγγειακά',
+    opt_condition_other: 'Άλλο',
+    lbl_medication: 'Φαρμακευτική αγωγή',
+    ph_medication: 'π.χ. Μετφορμίνη 500mg',
+    lbl_age: 'Ηλικιακή Ομάδα',
+    opt_age_default: 'Επιλέξτε ηλικιακή ομάδα...',
+    opt_age_prefer_not: 'Προτιμώ να μη δηλώσω',
+    lbl_gender: 'Φύλο',
+    opt_gender_default: 'Επιλέξτε...',
+    opt_gender_male: 'Άνδρας',
+    opt_gender_female: 'Γυναίκα',
+    opt_gender_nb: 'Άλλο',
+    opt_gender_pnts: 'Προτιμώ να μη δηλώσω',
+    lbl_patient_ref: 'Αναφορά Ασθενή',
+    ph_patient_ref: 'π.χ. αρχικά + έτος γέννησης: ΑΑ1958',
+    lbl_language: 'Γλώσσα',
+    begin_label: 'Έναρξη Εκτίμησης MAP',
+    begin_sub: 'Εκτιμήστε την τήρηση αγωγής του ασθενή σε 3 λεπτά.',
+    setup_footnote: 'MAP © Donald E. Morisky · Με άδεια από Adherence Inc.',
+    demo_mode_label: 'Λειτουργία Demo',
+    demo_shortcut_btn: 'Γρήγορη Demo →',
+    hdr_badge_question: 'Αξιολόγηση',
+    hdr_title_question: 'Εκτίμηση Τήρησης',
+    q_back: '← Πίσω',
+    hdr_badge_results: 'Αποτελέσματα',
+    hdr_title_results: 'Αποτελέσματα Τήρησης',
+    tl_pe_label: 'Δείκτης MAP PE',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Ανάλυση Τομέων',
+    domain_arch: 'Αρχιτεκτονική (Στάση)',
+    domain_exec: 'Εκτέλεση (Ρουτίνα)',
+    domain_ctx: 'Πλαίσιο (Φραγμοί)',
+    domain_arch_sub: 'Πεποιθήσεις & Πρόθεση',
+    domain_exec_sub: 'Καθημερινή Συμπεριφορά',
+    domain_ctx_sub: 'Εξωτερικές Συνθήκες',
+    clinical_rec_title: 'Κλινική Σύσταση',
+    next_steps_title: 'Επόμενα Βήματα',
+    print_summary_btn: 'Εκτύπωση Περίληψης',
+    new_assessment_btn: 'Νέα Αξιολόγηση',
+    af_title: 'Περίληψη Αξιολόγησης MAP',
+    af_pharmacy: 'Φαρμακείο',
+    af_patient: 'Ασθενής',
+    af_date: 'Ημερομηνία',
+    af_pe: 'Βαθμολογία MAP PE',
+    af_risk: 'Επίπεδο Κινδύνου',
+    af_domain: 'Κύριος Τομέας Αποτυχίας',
+    af_rec: 'Κλινική Σύσταση',
+    af_action: 'Προτεινόμενη Ενέργεια',
+    af_action_val: 'Συζητήστε τα εμπόδια τήρησης αγωγής στο επόμενο ραντεβού.',
+    af_instrument: 'Εργαλείο',
+    af_assessed: 'Ο ασθενής αξιολογήθηκε στις',
+    q_counter_format: 'Ερώτηση {n} από 8',
+    ans_yes: 'Ναι',
+    ans_no: 'Όχι',
+  },
+  pl: {
+    setup_intro_h2: 'Ocena Adherencji MAP · Apteka',
+    setup_intro_p: 'Pomóż swoim pacjentom dzięki krótkiemu narzędziu oceny adherencji MAP. Wyniki w 3 minuty.',
+    lbl_pharmacy_name: 'Nazwa apteki',
+    lbl_condition: 'Główna choroba',
+    opt_condition_default: 'Wybierz chorobę...',
+    opt_condition_hyp: 'Nadciśnienie',
+    opt_condition_dia: 'Cukrzyca',
+    opt_condition_cvd: 'Choroby sercowo-naczyniowe',
+    opt_condition_other: 'Inne',
+    lbl_medication: 'Lek',
+    ph_medication: 'np. Metformina 500mg',
+    lbl_age: 'Przedział wiekowy',
+    opt_age_default: 'Wybierz przedział wiekowy...',
+    opt_age_prefer_not: 'Wolę nie mówić',
+    lbl_gender: 'Płeć',
+    opt_gender_default: 'Wybierz...',
+    opt_gender_male: 'Mężczyzna',
+    opt_gender_female: 'Kobieta',
+    opt_gender_nb: 'Inne',
+    opt_gender_pnts: 'Wolę nie mówić',
+    lbl_patient_ref: 'Identyfikator pacjenta',
+    ph_patient_ref: 'np. inicjały + rok urodzenia: JK1958',
+    lbl_language: 'Język',
+    begin_label: 'Rozpocznij ocenę MAP',
+    begin_sub: 'Oceń adherencję pacjenta w 3 minuty.',
+    setup_footnote: 'MAP © Donald E. Morisky · Na licencji Adherence Inc.',
+    demo_mode_label: 'Tryb demo',
+    demo_shortcut_btn: 'Szybkie demo →',
+    hdr_badge_question: 'Ocena',
+    hdr_title_question: 'Ocena adherencji',
+    q_back: '← Powrót',
+    hdr_badge_results: 'Wyniki',
+    hdr_title_results: 'Wyniki adherencji',
+    tl_pe_label: 'Wskaźnik MAP PE',
+    tl_pe_suffix: '/ 1,00',
+    domain_breakdown_title: 'Analiza domen',
+    domain_arch: 'Architektura (Postawa)',
+    domain_exec: 'Wykonanie (Rutyna)',
+    domain_ctx: 'Kontekst (Bariery)',
+    domain_arch_sub: 'Przekonania i zamiar',
+    domain_exec_sub: 'Codzienne zachowanie',
+    domain_ctx_sub: 'Warunki zewnętrzne',
+    clinical_rec_title: 'Zalecenie kliniczne',
+    next_steps_title: 'Kolejne kroki',
+    print_summary_btn: 'Drukuj podsumowanie',
+    new_assessment_btn: 'Nowa ocena',
+    af_title: 'Podsumowanie oceny MAP',
+    af_pharmacy: 'Apteka',
+    af_patient: 'Pacjent',
+    af_date: 'Data',
+    af_pe: 'Wynik MAP PE',
+    af_risk: 'Poziom ryzyka',
+    af_domain: 'Główna domena niepowodzenia',
+    af_rec: 'Zalecenie kliniczne',
+    af_action: 'Zalecane działanie',
+    af_action_val: 'Omów bariery adherencji na następnej wizycie.',
+    af_instrument: 'Narzędzie',
+    af_assessed: 'Pacjent oceniony w',
+    q_counter_format: 'Pytanie {n} z 8',
+    ans_yes: 'Tak',
+    ans_no: 'Nie',
+  },
+  de: {
+    setup_intro_h2: 'MAP-Adhärenz-Assessment · Apotheke',
+    setup_intro_p: 'Konfigurieren Sie die Sitzung, bevor Sie dem Patienten das Tablet übergeben. Dauert ca. 10 Sekunden.',
+    lbl_pharmacy_name: 'Name der Apotheke (optional)',
+    lbl_condition: 'Erkrankung des Patienten',
+    opt_condition_default: 'Erkrankung wählen...',
+    opt_condition_hyp: 'Bluthochdruck',
+    opt_condition_dia: 'Diabetes',
+    opt_condition_cvd: 'Herz-Kreislauf-Erkrankung',
+    opt_condition_other: 'Sonstige',
+    lbl_medication: 'Medikament (optional)',
+    ph_medication: 'z.B. Metformin 500 mg',
+    lbl_age: 'Altersgruppe (optional)',
+    opt_age_default: 'Altersgruppe wählen...',
+    opt_age_prefer_not: 'Keine Angabe',
+    lbl_gender: 'Geschlecht (optional)',
+    opt_gender_default: 'Auswählen...',
+    opt_gender_male: 'Männlich',
+    opt_gender_female: 'Weiblich',
+    opt_gender_nb: 'Divers',
+    opt_gender_pnts: 'Keine Angabe',
+    lbl_patient_ref: 'Patientenreferenz (optional)',
+    ph_patient_ref: 'z.B. Initialen + Geburtsjahr: PM1958',
+    lbl_language: 'Sprache',
+    begin_label: 'Bewertung starten',
+    begin_sub: 'Tablet dem Patienten übergeben · ca. 3 Minuten',
+    setup_footnote: 'MAP © Donald E. Morisky · Lizenziert durch Adherence Inc.',
+    demo_mode_label: 'Demo-Modus',
+    demo_shortcut_btn: 'Schnell-Demo →',
+    hdr_badge_question: 'Bewertung',
+    hdr_title_question: 'Adhärenz-Assessment',
+    q_back: '← Zurück',
+    hdr_badge_results: 'Ergebnisse',
+    hdr_title_results: 'Adhärenz-Ergebnisse',
+    tl_pe_label: 'MAP PE-Index',
+    tl_pe_suffix: '/ 1,00',
+    domain_breakdown_title: 'Domänen-Übersicht',
+    domain_arch: 'Architektur (Einstellung)',
+    domain_exec: 'Ausführung (Routine)',
+    domain_ctx: 'Kontext (Barrieren)',
+    domain_arch_sub: 'Überzeugungen und Absicht',
+    domain_exec_sub: 'Tägliches Verhalten',
+    domain_ctx_sub: 'Äußere Bedingungen',
+    clinical_rec_title: 'Klinische Empfehlung',
+    next_steps_title: 'Nächste Schritte',
+    print_summary_btn: 'Zusammenfassung drucken',
+    new_assessment_btn: 'Neue Bewertung',
+    af_title: 'MAP-Assessment-Zusammenfassung',
+    af_pharmacy: 'Apotheke',
+    af_patient: 'Patient',
+    af_date: 'Datum',
+    af_pe: 'MAP PE-Wert',
+    af_risk: 'Risikostufe',
+    af_domain: 'Primäre Versagensdomäne',
+    af_rec: 'Klinische Empfehlung',
+    af_action: 'Empfohlene Maßnahme',
+    af_action_val: 'Bitte besprechen Sie Adhärenzbarrieren beim nächsten Termin.',
+    af_instrument: 'Instrument',
+    af_assessed: 'Patient bewertet am',
+    q_counter_format: 'Frage {n} von 8',
+    ans_yes: 'Ja',
+    ans_no: 'Nein',
+  },
+  zh: {
+    setup_intro_h2: 'MAP 依从性评估 · 药房',
+    setup_intro_p: '在将平板电脑交给患者之前，请配置本次会话。大约需要10秒钟。',
+    lbl_pharmacy_name: '药房名称（选填）',
+    lbl_condition: '患者病情',
+    opt_condition_default: '选择病情...',
+    opt_condition_hyp: '高血压',
+    opt_condition_dia: '糖尿病',
+    opt_condition_cvd: '心血管疾病',
+    opt_condition_other: '其他',
+    lbl_medication: '药物类型（选填）',
+    ph_medication: '例如：二甲双胍 500mg',
+    lbl_age: '年龄段（选填）',
+    opt_age_default: '选择年龄段...',
+    opt_age_prefer_not: '不愿透露',
+    lbl_gender: '性别（选填）',
+    opt_gender_default: '请选择...',
+    opt_gender_male: '男',
+    opt_gender_female: '女',
+    opt_gender_nb: '非二元',
+    opt_gender_pnts: '不愿透露',
+    lbl_patient_ref: '患者参考编码（选填）',
+    ph_patient_ref: '例如：姓名缩写 + 出生年份：ZM1958',
+    lbl_language: '语言',
+    begin_label: '开始评估',
+    begin_sub: '将平板电脑交给患者 · 约3分钟',
+    setup_footnote: 'MAP © Donald E. Morisky · 由 Adherence Inc. 授权',
+    demo_mode_label: '演示模式',
+    demo_shortcut_btn: '快速演示 →',
+    hdr_badge_question: '评估',
+    hdr_title_question: '依从性评估',
+    q_back: '← 返回',
+    hdr_badge_results: '结果',
+    hdr_title_results: '依从性结果',
+    tl_pe_label: 'MAP PE 指数',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: '领域分析',
+    domain_arch: '架构（态度）',
+    domain_exec: '执行（习惯）',
+    domain_ctx: '情境（障碍）',
+    domain_arch_sub: '信念与意图',
+    domain_exec_sub: '日常行为',
+    domain_ctx_sub: '外部条件',
+    clinical_rec_title: '临床建议',
+    next_steps_title: '下一步',
+    print_summary_btn: '打印摘要',
+    new_assessment_btn: '新评估',
+    af_title: 'MAP 评估摘要',
+    af_pharmacy: '药房',
+    af_patient: '患者',
+    af_date: '日期',
+    af_pe: 'MAP PE 评分',
+    af_risk: '风险等级',
+    af_domain: '主要失效领域',
+    af_rec: '临床建议',
+    af_action: '建议措施',
+    af_action_val: '请在下次就诊时讨论依从性障碍。',
+    af_instrument: '工具',
+    af_assessed: '患者评估于',
+    q_counter_format: '第 {n} 题，共 8 题',
+    ans_yes: '是',
+    ans_no: '否',
+  },
+  'zh-TW': {
+    setup_intro_h2: 'MAP 依從性評估 · 藥局',
+    setup_intro_p: '在將平板電腦交給患者之前，請設定本次工作階段。大約需要10秒鐘。',
+    lbl_pharmacy_name: '藥局名稱（選填）',
+    lbl_condition: '患者病情',
+    opt_condition_default: '選擇病情...',
+    opt_condition_hyp: '高血壓',
+    opt_condition_dia: '糖尿病',
+    opt_condition_cvd: '心血管疾病',
+    opt_condition_other: '其他',
+    lbl_medication: '藥物類型（選填）',
+    ph_medication: '例如：二甲雙胍 500mg',
+    lbl_age: '年齡層（選填）',
+    opt_age_default: '選擇年齡層...',
+    opt_age_prefer_not: '不願透露',
+    lbl_gender: '性別（選填）',
+    opt_gender_default: '請選擇...',
+    opt_gender_male: '男',
+    opt_gender_female: '女',
+    opt_gender_nb: '非二元',
+    opt_gender_pnts: '不願透露',
+    lbl_patient_ref: '患者參考代碼（選填）',
+    ph_patient_ref: '例如：姓名縮寫 + 出生年份：ZM1958',
+    lbl_language: '語言',
+    begin_label: '開始評估',
+    begin_sub: '將平板電腦交給患者 · 約3分鐘',
+    setup_footnote: 'MAP © Donald E. Morisky · 由 Adherence Inc. 授權',
+    demo_mode_label: '示範模式',
+    demo_shortcut_btn: '快速示範 →',
+    hdr_badge_question: '評估',
+    hdr_title_question: '依從性評估',
+    q_back: '← 返回',
+    hdr_badge_results: '結果',
+    hdr_title_results: '依從性結果',
+    tl_pe_label: 'MAP PE 指數',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: '領域分析',
+    domain_arch: '架構（態度）',
+    domain_exec: '執行（習慣）',
+    domain_ctx: '情境（障礙）',
+    domain_arch_sub: '信念與意圖',
+    domain_exec_sub: '日常行為',
+    domain_ctx_sub: '外部條件',
+    clinical_rec_title: '臨床建議',
+    next_steps_title: '後續步驟',
+    print_summary_btn: '列印摘要',
+    new_assessment_btn: '新評估',
+    af_title: 'MAP 評估摘要',
+    af_pharmacy: '藥局',
+    af_patient: '患者',
+    af_date: '日期',
+    af_pe: 'MAP PE 評分',
+    af_risk: '風險等級',
+    af_domain: '主要失效領域',
+    af_rec: '臨床建議',
+    af_action: '建議措施',
+    af_action_val: '請在下次就診時討論依從性障礙。',
+    af_instrument: '工具',
+    af_assessed: '患者評估於',
+    q_counter_format: '第 {n} 題，共 8 題',
+    ans_yes: '是',
+    ans_no: '否',
+  },
+  ja: {
+    setup_intro_h2: 'MAP アドヒアランス評価 · 薬局',
+    setup_intro_p: '患者にタブレットを渡す前に、セッションを設定してください。約10秒で完了します。',
+    lbl_pharmacy_name: '薬局名（任意）',
+    lbl_condition: '患者の疾患',
+    opt_condition_default: '疾患を選択...',
+    opt_condition_hyp: '高血圧',
+    opt_condition_dia: '糖尿病',
+    opt_condition_cvd: '心血管疾患',
+    opt_condition_other: 'その他',
+    lbl_medication: '薬剤の種類（任意）',
+    ph_medication: '例：メトホルミン 500mg',
+    lbl_age: '年齢層（任意）',
+    opt_age_default: '年齢層を選択...',
+    opt_age_prefer_not: '回答しない',
+    lbl_gender: '性別（任意）',
+    opt_gender_default: '選択...',
+    opt_gender_male: '男性',
+    opt_gender_female: '女性',
+    opt_gender_nb: 'ノンバイナリー',
+    opt_gender_pnts: '回答しない',
+    lbl_patient_ref: '患者参照コード（任意）',
+    ph_patient_ref: '例：イニシャル + 生年：TY1958',
+    lbl_language: '言語',
+    begin_label: '評価を開始',
+    begin_sub: '患者にタブレットを渡してください · 約3分',
+    setup_footnote: 'MAP © Donald E. Morisky · Adherence Inc. ライセンス',
+    demo_mode_label: 'デモモード',
+    demo_shortcut_btn: 'クイックデモ →',
+    hdr_badge_question: '評価',
+    hdr_title_question: 'アドヒアランス評価',
+    q_back: '← 戻る',
+    hdr_badge_results: '結果',
+    hdr_title_results: 'アドヒアランス結果',
+    tl_pe_label: 'MAP PE指数',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'ドメイン分析',
+    domain_arch: 'アーキテクチャ（態度）',
+    domain_exec: '実行（習慣）',
+    domain_ctx: 'コンテキスト（障壁）',
+    domain_arch_sub: '信念と意図',
+    domain_exec_sub: '日常的な行動',
+    domain_ctx_sub: '外部環境',
+    clinical_rec_title: '臨床的推奨',
+    next_steps_title: '次のステップ',
+    print_summary_btn: '要約を印刷',
+    new_assessment_btn: '新しい評価',
+    af_title: 'MAP評価要約',
+    af_pharmacy: '薬局',
+    af_patient: '患者',
+    af_date: '日付',
+    af_pe: 'MAP PEスコア',
+    af_risk: 'リスクレベル',
+    af_domain: '主要な失敗ドメイン',
+    af_rec: '臨床的推奨',
+    af_action: '推奨アクション',
+    af_action_val: '次回の受診時にアドヒアランスの障壁について話し合ってください。',
+    af_instrument: '測定ツール',
+    af_assessed: '患者評価日時',
+    q_counter_format: '質問 {n} / 8',
+    ans_yes: 'はい',
+    ans_no: 'いいえ',
+  },
+  ko: {
+    setup_intro_h2: 'MAP 복약 순응도 평가 · 약국',
+    setup_intro_p: '환자에게 태블릿을 건네기 전에 세션을 설정하십시오. 약 10초가 소요됩니다.',
+    lbl_pharmacy_name: '약국 이름 (선택 사항)',
+    lbl_condition: '환자 상태',
+    opt_condition_default: '상태 선택...',
+    opt_condition_hyp: '고혈압',
+    opt_condition_dia: '당뇨병',
+    opt_condition_cvd: '심혈관 질환',
+    opt_condition_other: '기타',
+    lbl_medication: '약물 유형 (선택 사항)',
+    ph_medication: '예: 메트포르민 500mg',
+    lbl_age: '연령대 (선택 사항)',
+    opt_age_default: '연령대 선택...',
+    opt_age_prefer_not: '답변 거부',
+    lbl_gender: '성별 (선택 사항)',
+    opt_gender_default: '선택...',
+    opt_gender_male: '남성',
+    opt_gender_female: '여성',
+    opt_gender_nb: '논바이너리',
+    opt_gender_pnts: '답변 거부',
+    lbl_patient_ref: '환자 참조 코드 (선택 사항)',
+    ph_patient_ref: '예: 이니셜 + 출생연도: KM1958',
+    lbl_language: '언어',
+    begin_label: '평가 시작',
+    begin_sub: '환자에게 태블릿 전달 · 약 3분',
+    setup_footnote: 'MAP © Donald E. Morisky · Adherence Inc. 라이선스',
+    demo_mode_label: '데모 모드',
+    demo_shortcut_btn: '빠른 데모 →',
+    hdr_badge_question: '평가',
+    hdr_title_question: '복약 순응도 평가',
+    q_back: '← 뒤로',
+    hdr_badge_results: '결과',
+    hdr_title_results: '복약 순응도 결과',
+    tl_pe_label: 'MAP PE 지수',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: '도메인 분석',
+    domain_arch: '아키텍처 (태도)',
+    domain_exec: '실행 (루틴)',
+    domain_ctx: '상황 (장벽)',
+    domain_arch_sub: '신념과 의도',
+    domain_exec_sub: '일상적인 행동',
+    domain_ctx_sub: '외부 환경',
+    clinical_rec_title: '임상 권고사항',
+    next_steps_title: '다음 단계',
+    print_summary_btn: '요약 인쇄',
+    new_assessment_btn: '새 평가',
+    af_title: 'MAP 평가 요약',
+    af_pharmacy: '약국',
+    af_patient: '환자',
+    af_date: '날짜',
+    af_pe: 'MAP PE 점수',
+    af_risk: '위험 수준',
+    af_domain: '주요 실패 도메인',
+    af_rec: '임상 권고사항',
+    af_action: '권고 조치',
+    af_action_val: '다음 진료 시 복약 순응도 장벽에 대해 논의하십시오.',
+    af_instrument: '도구',
+    af_assessed: '환자 평가 일시',
+    q_counter_format: '질문 {n} / 8',
+    ans_yes: '예',
+    ans_no: '아니오',
+  },
+  ru: {
+    setup_intro_h2: 'Оценка приверженности MAP · Аптека',
+    setup_intro_p: 'Настройте сеанс перед тем, как передать планшет пациенту. Займёт около 10 секунд.',
+    lbl_pharmacy_name: 'Название аптеки (необязательно)',
+    lbl_condition: 'Диагноз пациента',
+    opt_condition_default: 'Выберите диагноз...',
+    opt_condition_hyp: 'Гипертония',
+    opt_condition_dia: 'Сахарный диабет',
+    opt_condition_cvd: 'Сердечно-сосудистые заболевания',
+    opt_condition_other: 'Другое',
+    lbl_medication: 'Вид препарата (необязательно)',
+    ph_medication: 'напр. Метформин 500 мг',
+    lbl_age: 'Возрастная группа (необязательно)',
+    opt_age_default: 'Выберите возрастную группу...',
+    opt_age_prefer_not: 'Не хочу указывать',
+    lbl_gender: 'Пол (необязательно)',
+    opt_gender_default: 'Выберите...',
+    opt_gender_male: 'Мужской',
+    opt_gender_female: 'Женский',
+    opt_gender_nb: 'Небинарный',
+    opt_gender_pnts: 'Не хочу указывать',
+    lbl_patient_ref: 'Код пациента (необязательно)',
+    ph_patient_ref: 'напр. инициалы + год рождения: ПМ1958',
+    lbl_language: 'Язык',
+    begin_label: 'Начать оценку',
+    begin_sub: 'Передайте планшет пациенту · около 3 минут',
+    setup_footnote: 'MAP © Donald E. Morisky · Лицензия Adherence Inc.',
+    demo_mode_label: 'Демо-режим',
+    demo_shortcut_btn: 'Быстрое демо →',
+    hdr_badge_question: 'Оценка',
+    hdr_title_question: 'Оценка приверженности',
+    q_back: '← Назад',
+    hdr_badge_results: 'Результаты',
+    hdr_title_results: 'Результаты приверженности',
+    tl_pe_label: 'MAP PE-индекс',
+    tl_pe_suffix: '/ 1,00',
+    domain_breakdown_title: 'Анализ по доменам',
+    domain_arch: 'Архитектура (Установка)',
+    domain_exec: 'Исполнение (Рутина)',
+    domain_ctx: 'Контекст (Барьеры)',
+    domain_arch_sub: 'Убеждения и намерения',
+    domain_exec_sub: 'Повседневное поведение',
+    domain_ctx_sub: 'Внешние условия',
+    clinical_rec_title: 'Клиническая рекомендация',
+    next_steps_title: 'Следующие шаги',
+    print_summary_btn: 'Распечатать сводку',
+    new_assessment_btn: 'Новая оценка',
+    af_title: 'Сводка оценки MAP',
+    af_pharmacy: 'Аптека',
+    af_patient: 'Пациент',
+    af_date: 'Дата',
+    af_pe: 'Оценка MAP PE',
+    af_risk: 'Уровень риска',
+    af_domain: 'Основной проблемный домен',
+    af_rec: 'Клиническая рекомендация',
+    af_action: 'Рекомендуемое действие',
+    af_action_val: 'Обсудите барьеры приверженности на следующем приёме.',
+    af_instrument: 'Инструмент',
+    af_assessed: 'Пациент оценён',
+    q_counter_format: 'Вопрос {n} из 8',
+    ans_yes: 'Да',
+    ans_no: 'Нет',
+  },
+  tr: {
+    setup_intro_h2: 'MAP Uyum Değerlendirmesi · Eczane',
+    setup_intro_p: 'Tableti hastaya vermeden önce oturumu yapılandırın. Yaklaşık 10 saniye sürer.',
+    lbl_pharmacy_name: 'Eczane Adı (isteğe bağlı)',
+    lbl_condition: 'Hasta Durumu',
+    opt_condition_default: 'Durum seçin...',
+    opt_condition_hyp: 'Hipertansiyon',
+    opt_condition_dia: 'Diyabet',
+    opt_condition_cvd: 'Kardiyovasküler Hastalık',
+    opt_condition_other: 'Diğer',
+    lbl_medication: 'İlaç Türü (isteğe bağlı)',
+    ph_medication: 'ör. Metformin 500mg',
+    lbl_age: 'Yaş Aralığı (isteğe bağlı)',
+    opt_age_default: 'Yaş aralığı seçin...',
+    opt_age_prefer_not: 'Belirtmek istemiyorum',
+    lbl_gender: 'Cinsiyet (isteğe bağlı)',
+    opt_gender_default: 'Seçin...',
+    opt_gender_male: 'Erkek',
+    opt_gender_female: 'Kadın',
+    opt_gender_nb: 'İkili olmayan',
+    opt_gender_pnts: 'Belirtmek istemiyorum',
+    lbl_patient_ref: 'Hasta Referans Kodu (isteğe bağlı)',
+    ph_patient_ref: 'ör. baş harfler + doğum yılı: AM1958',
+    lbl_language: 'Dil',
+    begin_label: 'Değerlendirmeyi Başlat',
+    begin_sub: 'Tableti hastaya verin · yaklaşık 3 dakika',
+    setup_footnote: 'MAP © Donald E. Morisky · Adherence Inc. Lisansı',
+    demo_mode_label: 'Demo Modu',
+    demo_shortcut_btn: 'Hızlı Demo →',
+    hdr_badge_question: 'Değerlendirme',
+    hdr_title_question: 'Uyum Değerlendirmesi',
+    q_back: '← Geri',
+    hdr_badge_results: 'Sonuçlar',
+    hdr_title_results: 'Uyum Sonuçları',
+    tl_pe_label: 'MAP PE Endeksi',
+    tl_pe_suffix: '/ 1,00',
+    domain_breakdown_title: 'Alan Analizi',
+    domain_arch: 'Mimari (Tutum)',
+    domain_exec: 'Uygulama (Rutin)',
+    domain_ctx: 'Bağlam (Engeller)',
+    domain_arch_sub: 'İnançlar ve Niyet',
+    domain_exec_sub: 'Günlük Davranış',
+    domain_ctx_sub: 'Dış Koşullar',
+    clinical_rec_title: 'Klinik Öneri',
+    next_steps_title: 'Sonraki Adımlar',
+    print_summary_btn: 'Özeti Yazdır',
+    new_assessment_btn: 'Yeni Değerlendirme',
+    af_title: 'MAP Değerlendirme Özeti',
+    af_pharmacy: 'Eczane',
+    af_patient: 'Hasta',
+    af_date: 'Tarih',
+    af_pe: 'MAP PE Puanı',
+    af_risk: 'Risk Düzeyi',
+    af_domain: 'Birincil Başarısızlık Alanı',
+    af_rec: 'Klinik Öneri',
+    af_action: 'Önerilen Eylem',
+    af_action_val: 'Lütfen bir sonraki randevuda uyum engellerini görüşün.',
+    af_instrument: 'Ölçüm Aracı',
+    af_assessed: 'Hasta değerlendirme tarihi',
+    q_counter_format: 'Soru {n} / 8',
+    ans_yes: 'Evet',
+    ans_no: 'Hayır',
+  },
+  hi: {
+    setup_intro_h2: 'MAP अनुपालन मूल्यांकन · फार्मेसी',
+    setup_intro_p: 'रोगी को टैबलेट देने से पहले सत्र कॉन्फ़िगर करें। इसमें लगभग 10 सेकंड लगेंगे।',
+    lbl_pharmacy_name: 'फार्मेसी का नाम (वैकल्पिक)',
+    lbl_condition: 'रोगी की स्थिति',
+    opt_condition_default: 'स्थिति चुनें...',
+    opt_condition_hyp: 'उच्च रक्तचाप',
+    opt_condition_dia: 'मधुमेह',
+    opt_condition_cvd: 'हृदय रोग',
+    opt_condition_other: 'अन्य',
+    lbl_medication: 'दवा का प्रकार (वैकल्पिक)',
+    ph_medication: 'उदा. मेटफॉर्मिन 500mg',
+    lbl_age: 'आयु वर्ग (वैकल्पिक)',
+    opt_age_default: 'आयु वर्ग चुनें...',
+    opt_age_prefer_not: 'बताना नहीं चाहते',
+    lbl_gender: 'लिंग (वैकल्पिक)',
+    opt_gender_default: 'चुनें...',
+    opt_gender_male: 'पुरुष',
+    opt_gender_female: 'महिला',
+    opt_gender_nb: 'गैर-द्विआधारी',
+    opt_gender_pnts: 'बताना नहीं चाहते',
+    lbl_patient_ref: 'रोगी संदर्भ कोड (वैकल्पिक)',
+    ph_patient_ref: 'उदा. आद्याक्षर + जन्म वर्ष: PM1958',
+    lbl_language: 'भाषा',
+    begin_label: 'मूल्यांकन शुरू करें',
+    begin_sub: 'रोगी को टैबलेट दें · लगभग 3 मिनट',
+    setup_footnote: 'MAP © Donald E. Morisky · Adherence Inc. द्वारा लाइसेंस प्राप्त',
+    demo_mode_label: 'डेमो मोड',
+    demo_shortcut_btn: 'त्वरित डेमो →',
+    hdr_badge_question: 'मूल्यांकन',
+    hdr_title_question: 'अनुपालन मूल्यांकन',
+    q_back: '← वापस',
+    hdr_badge_results: 'परिणाम',
+    hdr_title_results: 'अनुपालन परिणाम',
+    tl_pe_label: 'MAP PE सूचकांक',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'डोमेन विश्लेषण',
+    domain_arch: 'संरचना (रवैया)',
+    domain_exec: 'क्रियान्वयन (दिनचर्या)',
+    domain_ctx: 'संदर्भ (बाधाएं)',
+    domain_arch_sub: 'विश्वास और इरादा',
+    domain_exec_sub: 'दैनिक व्यवहार',
+    domain_ctx_sub: 'बाहरी परिस्थितियां',
+    clinical_rec_title: 'नैदानिक सिफारिश',
+    next_steps_title: 'अगले कदम',
+    print_summary_btn: 'सारांश प्रिंट करें',
+    new_assessment_btn: 'नया मूल्यांकन',
+    af_title: 'MAP मूल्यांकन सारांश',
+    af_pharmacy: 'फार्मेसी',
+    af_patient: 'रोगी',
+    af_date: 'तारीख',
+    af_pe: 'MAP PE स्कोर',
+    af_risk: 'जोखिम स्तर',
+    af_domain: 'प्राथमिक विफलता डोमेन',
+    af_rec: 'नैदानिक सिफारिश',
+    af_action: 'अनुशंसित कार्रवाई',
+    af_action_val: 'कृपया अगली नियुक्ति पर अनुपालन बाधाओं पर चर्चा करें।',
+    af_instrument: 'उपकरण',
+    af_assessed: 'रोगी का मूल्यांकन',
+    q_counter_format: 'प्रश्न {n} / 8',
+    ans_yes: 'हाँ',
+    ans_no: 'नहीं',
+  },
+  id: {
+    setup_intro_h2: 'Pengaturan Penilaian Apotek',
+    setup_intro_p: 'Konfigurasikan sesi sebelum menyerahkan tablet kepada pasien. Ini membutuhkan sekitar 10 detik.',
+    lbl_pharmacy_name: 'Nama Apotek (opsional)',
+    lbl_condition: 'Kondisi Pasien',
+    opt_condition_default: 'Pilih kondisi...',
+    opt_condition_hyp: 'Hipertensi', opt_condition_dia: 'Diabetes',
+    opt_condition_cvd: 'Kardiovaskular', opt_condition_other: 'Lainnya',
+    lbl_medication: 'Jenis Obat (opsional)',
+    ph_medication: 'mis. ACE inhibitor, Metformin...',
+    lbl_age: 'Rentang Usia Pasien (opsional)',
+    opt_age_default: 'Pilih rentang usia...',
+    opt_age_prefer_not: 'Tidak ingin menyebutkan',
+    lbl_gender: 'Jenis Kelamin (opsional)',
+    opt_gender_default: 'Pilih...',
+    opt_gender_male: 'Laki-laki', opt_gender_female: 'Perempuan',
+    opt_gender_nb: 'Non-biner', opt_gender_pnts: 'Tidak ingin menyebutkan',
+    lbl_patient_ref: 'Kode Referensi Pasien (opsional)',
+    ph_patient_ref: 'mis. inisial + tahun lahir: MR1958',
+    lbl_language: 'Bahasa',
+    begin_label: 'Mulai Penilaian',
+    begin_sub: 'Serahkan tablet kepada pasien · sekitar 3 menit',
+    setup_footnote: 'MAP · Parameter Kepatuhan Multidimensi<br>Dikelola oleh apoteker · Kode referensi pasien tidak mengidentifikasi individu',
+    demo_mode_label: 'Mode Demo Aktif',
+    demo_shortcut_btn: '📊 Lihat Dasbor (68 Pasien Sampel)',
+    hdr_badge_question: 'Penilaian Pasien',
+    hdr_title_question: 'Pertanyaan',
+    q_back: '← Kembali',
+    hdr_badge_results: 'Penilaian Selesai',
+    hdr_title_results: 'Hasil',
+    tl_pe_label: 'Indeks MAP PE:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Rincian Domain',
+    domain_arch: 'Arsitektur', domain_exec: 'Eksekusi', domain_ctx: 'Penjaga-Konteks',
+    insight_label: 'Wawasan Klinis',
+    peacs_label: 'Fenotipe PEACS',
+    btn_alert: '⚠ Kirim Peringatan Penulis Resep',
+    btn_save_new: '✓ Simpan dan Pasien Baru',
+    btn_print: '🖨 Cetak Ringkasan',
+    btn_dashboard: '📊 Lihat Dasbor Apotek',
+    tl_green: 'Kepatuhan Kuat: Risiko Rendah',
+    tl_amber: 'Risiko Meningkat: Pantau',
+    tl_red: 'Risiko Tinggi: Peringatan Penulis Resep Disarankan',
+    hdr_badge_alert: 'Peringatan Penulis Resep',
+    hdr_title_alert: 'Kartu Peringatan',
+    alert_header_title: 'Risiko Ketidakpatuhan Teridentifikasi',
+    alert_header_sub: 'Risiko Tinggi · Notifikasi Penulis Resep Disarankan',
+    alert_card_title: 'Peringatan MAP ATLAS',
+    btn_copy: '📋 Salin ke Clipboard',
+    btn_email: '✉ Kirim via Email',
+    btn_back_results: '← Kembali ke Hasil',
+    hdr_badge_dashboard: 'Dasbor Situs',
+    hdr_title_dashboard: 'Statistik',
+    dash_this_month: 'Bulan Ini',
+    demo_banner_text: 'Mode Demo — Data Sampel Percontohan Roma. Tidak ada pembacaan atau penulisan Firebase nyata.',
+    btn_back_assessment: '← Kembali ke Penilaian',
+    btn_report: '📄 Buat Laporan',
+    insight_arch: 'Pasien ini mungkin meragukan efektivitas obatnya. Disarankan percakapan dengan penulis resep mengenai tujuan pengobatan.',
+    insight_exec: 'Pasien ini memiliki kesenjangan kebiasaan atau rutinitas. Sistem pengingat terstruktur atau kemasan blister dapat membantu.',
+    insight_ctx: 'Pasien ini menghadapi hambatan praktis (perjalanan, kenyamanan, akses). Diskusi dengan penulis resep untuk menyederhanakan rejimen mungkin membantu.',
+    peacs_full: 'Patuh Penuh',
+    peacs_forgetter: 'Pelupa Rutinitas',
+    peacs_skipper: 'Penyimpang Situasional',
+    peacs_stopper: 'Penghenti Optimistis',
+    peacs_resistor: 'Penolak Sengaja',
+    peacs_mixed: 'Profil Kepatuhan Campuran',
+    af_patient: 'Pasien', af_date: 'Tanggal', af_pe: 'Indeks MAP PE',
+    af_risk: 'Tingkat Risiko', af_domain: 'Kegagalan Domain Utama',
+    af_rec: 'Rekomendasi Klinis', af_action: 'Tindakan yang Disarankan',
+    af_action_val: 'Mohon diskusikan hambatan kepatuhan pada janji berikutnya.',
+    af_instrument: 'Instrumen',
+    af_assessed: 'pasien dinilai di',
+    q_counter_format: 'Pertanyaan {n} dari 8',
+    ans_yes: 'Ya',
+    ans_no: 'Tidak',
+  },
+  tl: {
+    setup_intro_h2: 'Setup ng Pagtatasa sa Parmasya',
+    setup_intro_p: 'I-configure ang sesyon bago ibigay ang tablet sa pasyente. Tumatagal ito ng humigit-kumulang 10 segundo.',
+    lbl_pharmacy_name: 'Pangalan ng Parmasya (opsyonal)',
+    lbl_condition: 'Kondisyon ng Pasyente',
+    opt_condition_default: 'Pumili ng kondisyon...',
+    opt_condition_hyp: 'Hypertension', opt_condition_dia: 'Diabetes',
+    opt_condition_cvd: 'Cardiovascular', opt_condition_other: 'Iba pa',
+    lbl_medication: 'Uri ng Gamot (opsyonal)',
+    ph_medication: 'hal. ACE inhibitor, Metformin...',
+    lbl_age: 'Hanay ng Edad ng Pasyente (opsyonal)',
+    opt_age_default: 'Pumili ng hanay ng edad...',
+    opt_age_prefer_not: 'Mas gusto kong huwag sabihin',
+    lbl_gender: 'Kasarian (opsyonal)',
+    opt_gender_default: 'Pumili...',
+    opt_gender_male: 'Lalaki', opt_gender_female: 'Babae',
+    opt_gender_nb: 'Non-binary', opt_gender_pnts: 'Mas gusto kong huwag sabihin',
+    lbl_patient_ref: 'Code ng Sanggunian ng Pasyente (opsyonal)',
+    ph_patient_ref: 'hal. mga inisyal + taon ng kapanganakan: MR1958',
+    lbl_language: 'Wika',
+    begin_label: 'Simulan ang Pagtatasa',
+    begin_sub: 'Ibigay ang tablet sa pasyente · humigit-kumulang 3 minuto',
+    setup_footnote: 'MAP · Multidimensional na mga Parameter ng Pagsunod<br>Pinamamahalaan ng parmasyutiko · Hindi nagpapakilala ang mga code ng sanggunian ng pasyente',
+    demo_mode_label: 'Aktibo ang Demo Mode',
+    demo_shortcut_btn: '📊 Tingnan ang Dashboard (68 Sample na Pasyente)',
+    hdr_badge_question: 'Pagtatasa ng Pasyente',
+    hdr_title_question: 'Mga Tanong',
+    q_back: '← Bumalik',
+    hdr_badge_results: 'Tapos na ang Pagtatasa',
+    hdr_title_results: 'Mga Resulta',
+    tl_pe_label: 'MAP PE Index:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Breakdown ng Domain',
+    domain_arch: 'Arkitektura', domain_exec: 'Pagpapatupad', domain_ctx: 'Konteksto-Bantay',
+    insight_label: 'Klinikal na Pananaw',
+    peacs_label: 'PEACS Phenotype',
+    btn_alert: '⚠ Magpadala ng Alerto sa Nagreseta',
+    btn_save_new: '✓ I-save at Bagong Pasyente',
+    btn_print: '🖨 I-print ang Buod',
+    btn_dashboard: '📊 Tingnan ang Dashboard ng Parmasya',
+    tl_green: 'Malakas ang Pagsunod: Mababang Panganib',
+    tl_amber: 'Nakataas na Panganib: Subaybayan',
+    tl_red: 'Mataas na Panganib: Inirekomendang Alerto sa Nagreseta',
+    hdr_badge_alert: 'Alerto sa Nagreseta',
+    hdr_title_alert: 'Card ng Alerto',
+    alert_header_title: 'Natukoy ang Panganib sa Hindi Pagsunod',
+    alert_header_sub: 'Mataas na Panganib · Inirekomendang Abiso sa Nagreseta',
+    alert_card_title: 'ATLAS MAP Alerto',
+    btn_copy: '📋 Kopyahin sa Clipboard',
+    btn_email: '✉ Ipadala sa pamamagitan ng Email',
+    btn_back_results: '← Bumalik sa mga Resulta',
+    hdr_badge_dashboard: 'Dashboard ng Site',
+    hdr_title_dashboard: 'Mga Istatistika',
+    dash_this_month: 'Ngayong Buwan',
+    demo_banner_text: 'Demo Mode — Data ng Sample ng Piloto sa Roma. Walang tunay na pagbabasa o pagsusulat ng Firebase.',
+    btn_back_assessment: '← Bumalik sa Pagtatasa',
+    btn_report: '📄 Gumawa ng Ulat',
+    insight_arch: 'Ang pasyenteng ito ay maaaring may pagdududa kung gumagana ang kanilang gamot. Inirekomenda ang pag-uusap sa nagreseta tungkol sa mga layunin ng paggamot.',
+    insight_exec: 'Ang pasyenteng ito ay may kakulangan sa gawi o rutina. Ang isang structured na sistema ng paalala o blister pack ay maaaring makatulong.',
+    insight_ctx: 'Ang pasyenteng ito ay nahaharap sa mga praktikal na hadlang (paglalakbay, kaginhawaan, access). Ang talakayan sa nagreseta upang pasimplehin ang rehimen ay maaaring makatulong.',
+    peacs_full: 'Ganap na Sumusunod',
+    peacs_forgetter: 'Nagkalimot ng Rutina',
+    peacs_skipper: 'Paminsan-minsang Lumilihis',
+    peacs_stopper: 'Optimistikong Tumitigil',
+    peacs_resistor: 'Sadyang Tumatanggi',
+    peacs_mixed: 'Halo-halong Profile ng Pagsunod',
+    af_patient: 'Pasyente', af_date: 'Petsa', af_pe: 'MAP PE Index',
+    af_risk: 'Antas ng Panganib', af_domain: 'Pangunahing Pagpalya ng Domain',
+    af_rec: 'Klinikal na Rekomendasyon', af_action: 'Inirekomendang Aksyon',
+    af_action_val: 'Pakitalakayin ang mga hadlang sa pagsunod sa susunod na appointment.',
+    af_instrument: 'Instrumento',
+    af_assessed: 'pasyente na sinuri sa',
+    q_counter_format: 'Tanong {n} ng 8',
+    ans_yes: 'Oo',
+    ans_no: 'Hindi',
+  },
+  sw: {
+    setup_intro_h2: 'Usanidi wa Tathmini ya Duka la Dawa',
+    setup_intro_p: 'Sanidi kikao kabla ya kumpa mgonjwa kompyuta kibao. Hii inachukua sekunde 10 hivi.',
+    lbl_pharmacy_name: 'Jina la Duka la Dawa (si lazima)',
+    lbl_condition: 'Hali ya Mgonjwa',
+    opt_condition_default: 'Chagua hali...',
+    opt_condition_hyp: 'Shinikizo la Damu', opt_condition_dia: 'Kisukari',
+    opt_condition_cvd: 'Moyo na Mishipa', opt_condition_other: 'Nyingine',
+    lbl_medication: 'Aina ya Dawa (si lazima)',
+    ph_medication: 'mfano: ACE inhibitor, Metformin...',
+    lbl_age: 'Kundi la Umri wa Mgonjwa (si lazima)',
+    opt_age_default: 'Chagua kundi la umri...',
+    opt_age_prefer_not: 'Ninapendelea kutosema',
+    lbl_gender: 'Jinsia (si lazima)',
+    opt_gender_default: 'Chagua...',
+    opt_gender_male: 'Mwanaume', opt_gender_female: 'Mwanamke',
+    opt_gender_nb: 'Isiyo ya pande mbili', opt_gender_pnts: 'Ninapendelea kutosema',
+    lbl_patient_ref: 'Nambari ya Kumbukumbu ya Mgonjwa (si lazima)',
+    ph_patient_ref: 'mfano: herufi za kwanza + mwaka wa kuzaliwa: MR1958',
+    lbl_language: 'Lugha',
+    begin_label: 'Anza Tathmini',
+    begin_sub: 'Mpe mgonjwa kompyuta kibao · dakika 3 hivi',
+    setup_footnote: 'MAP · Vigezo vya Ufuataji wa Pande Nyingi<br>Inasimamiwa na mfamasia · Nambari za kumbukumbu za wagonjwa hazitambulishi watu binafsi',
+    demo_mode_label: 'Hali ya Maonyesho Imewashwa',
+    demo_shortcut_btn: '📊 Tazama Dashibodi (Wagonjwa 68 wa Mfano)',
+    hdr_badge_question: 'Tathmini ya Mgonjwa',
+    hdr_title_question: 'Maswali',
+    q_back: '← Rudi',
+    hdr_badge_results: 'Tathmini Imekamilika',
+    hdr_title_results: 'Matokeo',
+    tl_pe_label: 'Faharisi ya MAP PE:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Mgawanyiko wa Kikoa',
+    domain_arch: 'Muundo', domain_exec: 'Utekelezaji', domain_ctx: 'Muktadha-Ulinzi',
+    insight_label: 'Ufahamu wa Kliniki',
+    peacs_label: 'Aina ya PEACS',
+    btn_alert: '⚠ Tuma Tahadhari kwa Daktari',
+    btn_save_new: '✓ Hifadhi na Mgonjwa Mpya',
+    btn_print: '🖨 Chapisha Muhtasari',
+    btn_dashboard: '📊 Tazama Dashibodi ya Duka la Dawa',
+    tl_green: 'Ufuataji Imara: Hatari Ndogo',
+    tl_amber: 'Hatari Imeongezeka: Fuatilia',
+    tl_red: 'Hatari Kubwa: Tahadhari kwa Daktari Inashauriwa',
+    hdr_badge_alert: 'Tahadhari kwa Daktari',
+    hdr_title_alert: 'Kadi ya Tahadhari',
+    alert_header_title: 'Hatari ya Kutofuata Imeonekana',
+    alert_header_sub: 'Hatari Kubwa · Taarifa kwa Daktari Inashauriwa',
+    alert_card_title: 'Tahadhari ya ATLAS MAP',
+    btn_copy: '📋 Nakili kwenye Clipboard',
+    btn_email: '✉ Tuma kwa Barua Pepe',
+    btn_back_results: '← Rudi kwa Matokeo',
+    hdr_badge_dashboard: 'Dashibodi ya Tovuti',
+    hdr_title_dashboard: 'Takwimu',
+    dash_this_month: 'Mwezi Huu',
+    demo_banner_text: 'Hali ya Maonyesho — Data ya Mfano wa Majaribio ya Roma. Hakuna usomaji au uandishi wa Firebase halisi.',
+    btn_back_assessment: '← Rudi kwa Tathmini',
+    btn_report: '📄 Tengeneza Ripoti',
+    insight_arch: 'Mgonjwa huyu anaweza kuwa na mashaka kuhusu ufanisi wa dawa yake. Mazungumzo na daktari kuhusu malengo ya matibabu yanashauriwa.',
+    insight_exec: 'Mgonjwa huyu ana pengo katika tabia au utaratibu. Mfumo wa vikumbusho vilivyopangwa au pakiti ya blister unaweza kusaidia.',
+    insight_ctx: 'Mgonjwa huyu anakabiliwa na vizuizi vya vitendo (safari, urahisi, upatikanaji). Majadiliano na daktari kuhusu kurahisisha mpango wa dawa yanaweza kusaidia.',
+    peacs_full: 'Mfuataji Kamili',
+    peacs_forgetter: 'Msahaulifu wa Utaratibu',
+    peacs_skipper: 'Mwenye Kuruka Hali',
+    peacs_stopper: 'Msimamishaji Mwenye Matumaini',
+    peacs_resistor: 'Mpinzani wa Makusudi',
+    peacs_mixed: 'Mfumo wa Ufuataji Uliochanganyika',
+    af_patient: 'Mgonjwa', af_date: 'Tarehe', af_pe: 'Faharisi ya MAP PE',
+    af_risk: 'Kiwango cha Hatari', af_domain: 'Kushindwa kwa Kikoa Kikuu',
+    af_rec: 'Mapendekezo ya Kliniki', af_action: 'Hatua Inayopendekezwa',
+    af_action_val: 'Tafadhali jadili vizuizi vya ufuataji katika miadi ijayo.',
+    af_instrument: 'Chombo',
+    af_assessed: 'mgonjwa aliyetathminiwa katika',
+    q_counter_format: 'Swali {n} la 8',
+    ans_yes: 'Ndiyo',
+    ans_no: 'Hapana',
+  },
+  af: {
+    setup_intro_h2: 'Apteekevaluasie-opstelling',
+    setup_intro_p: 'Stel die sessie op voordat u die tablet aan die pasient gee. Dit neem ongeveer 10 sekondes.',
+    lbl_pharmacy_name: 'Apteeknaam (opsioneel)',
+    lbl_condition: 'Pasienttoestand',
+    opt_condition_default: 'Kies toestand...',
+    opt_condition_hyp: 'Hipertensie', opt_condition_dia: 'Diabetes',
+    opt_condition_cvd: 'Kardiovaskuler', opt_condition_other: 'Ander',
+    lbl_medication: 'Medikasietipe (opsioneel)',
+    ph_medication: 'bv. ACE-remmer, Metformien...',
+    lbl_age: 'Pasient Ouderdomsreeks (opsioneel)',
+    opt_age_default: 'Kies ouderdomsreeks...',
+    opt_age_prefer_not: 'Verkies om nie te se nie',
+    lbl_gender: 'Geslag (opsioneel)',
+    opt_gender_default: 'Kies...',
+    opt_gender_male: 'Manlik', opt_gender_female: 'Vroulik',
+    opt_gender_nb: 'Nie-binere', opt_gender_pnts: 'Verkies om nie te se nie',
+    lbl_patient_ref: 'Pasientverwysings-kode (opsioneel)',
+    ph_patient_ref: 'bv. voorletters + geboortejaar: MR1958',
+    lbl_language: 'Taal',
+    begin_label: 'Begin Evaluasie',
+    begin_sub: 'Gee tablet aan pasient · ongeveer 3 minute',
+    setup_footnote: 'MAP · Multidimensionele Nakomingesparameters<br>Toegedien deur apteker · Pasientverwysings-kodes is nie-identifiserend',
+    demo_mode_label: 'Demo-modus Aktief',
+    demo_shortcut_btn: '📊 Bekyk Dashboard (68 Voorbeeldpasiente)',
+    hdr_badge_question: 'Pasientevaluasie',
+    hdr_title_question: 'Vrae',
+    q_back: '← Terug',
+    hdr_badge_results: 'Evaluasie Voltooi',
+    hdr_title_results: 'Resultate',
+    tl_pe_label: 'MAP PE-indeks:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Domeinuiteensetting',
+    domain_arch: 'Argitektuur', domain_exec: 'Uitvoering', domain_ctx: 'Konteks-Bewaker',
+    insight_label: 'Kliniese Insig',
+    peacs_label: 'PEACS-fenotipe',
+    btn_alert: '⚠ Stuur Voorskrywerwaarskuwing',
+    btn_save_new: '✓ Stoor en Nuwe Pasient',
+    btn_print: '🖨 Druk Opsomming',
+    btn_dashboard: '📊 Bekyk Apteek-dashboard',
+    tl_green: 'Nakoming Sterk: Lae Risiko',
+    tl_amber: 'Verhoogde Risiko: Monitor',
+    tl_red: 'Hoe Risiko: Voorskrywerwaarskuwing Aanbeveel',
+    hdr_badge_alert: 'Voorskrywerwaarskuwing',
+    hdr_title_alert: 'Waarskuwingskaart',
+    alert_header_title: 'Nakomingsrisiko Geidentifiseer',
+    alert_header_sub: 'Hoe Risiko · Voorskrywerkennisgewing Aanbeveel',
+    alert_card_title: 'ATLAS MAP-waarskuwing',
+    btn_copy: '📋 Kopieer na Knipbord',
+    btn_email: '✉ Stuur per E-pos',
+    btn_back_results: '← Terug na Resultate',
+    hdr_badge_dashboard: 'Siteopsigbord',
+    hdr_title_dashboard: 'Statistieke',
+    dash_this_month: 'Hierdie Maand',
+    demo_banner_text: 'Demo-modus — Voorbeelddata. Geen werklike Firebase-lees of -skryfwerk nie.',
+    btn_back_assessment: '← Terug na Evaluasie',
+    btn_report: '📄 Genereer Verslag',
+    insight_arch: 'Hierdie pasient kan twyfel of hul medikasie werk. \'n Gesprek met die voorskrywer oor behandelingsdoelwitte word aanbeveel.',
+    insight_exec: 'Hierdie pasient het \'n gewoonte- of roetinegaping. \'n Gestruktureerde herinneringstelsel of blouerdrukpakket kan help.',
+    insight_ctx: 'Hierdie pasient staar praktiese hindernisse in die gesig (reis, gerief, toegang). \'n Bespreking met die voorskrywer om die behandelingsplan te vereenvoudig kan help.',
+    peacs_full: 'Volle Nakomeling',
+    peacs_forgetter: 'Roetine-vergeter',
+    peacs_skipper: 'Situasionele Oorslaner',
+    peacs_stopper: 'Optimistiese Stopper',
+    peacs_resistor: 'Opsetlike Weerstaander',
+    peacs_mixed: 'Gemengde Nakominsprofiel',
+    af_patient: 'Pasient', af_date: 'Datum', af_pe: 'MAP PE-indeks',
+    af_risk: 'Risikovlak', af_domain: 'Primere Domeinmislukking',
+    af_rec: 'Kliniese Aanbeveling', af_action: 'Aanbevole Aksie',
+    af_action_val: 'Bespreek asseblief nakomingshindernisse by die volgende afspraak.',
+    af_instrument: 'Instrument',
+    af_assessed: 'pasient geevalueer by',
+    q_counter_format: 'Vraag {n} van 8',
+    ans_yes: 'Ja',
+    ans_no: 'Nee',
+  },
+  sq: {
+    setup_intro_h2: 'Konfigurimi i Vleresimit te Farmacise',
+    setup_intro_p: 'Konfiguroni sesionin para se t\'i jepni tabletën pacientit. Kjo zgjat rreth 10 sekonda.',
+    lbl_pharmacy_name: 'Emri i Farmacise (opsional)',
+    lbl_condition: 'Gjendja e Pacientit',
+    opt_condition_default: 'Zgjidhni gjendjen...',
+    opt_condition_hyp: 'Hipertension', opt_condition_dia: 'Diabet',
+    opt_condition_cvd: 'Kardiovaskular', opt_condition_other: 'Tjeter',
+    lbl_medication: 'Lloji i Ilaçit (opsional)',
+    ph_medication: 'p.sh. frenues ACE, Metformin...',
+    lbl_age: 'Grupi Moshor i Pacientit (opsional)',
+    opt_age_default: 'Zgjidhni grupin moshor...',
+    opt_age_prefer_not: 'Preferoj te mos them',
+    lbl_gender: 'Gjinia (opsional)',
+    opt_gender_default: 'Zgjidhni...',
+    opt_gender_male: 'Mashkull', opt_gender_female: 'Femer',
+    opt_gender_nb: 'Jo-binar', opt_gender_pnts: 'Preferoj te mos them',
+    lbl_patient_ref: 'Kodi i Referencës se Pacientit (opsional)',
+    ph_patient_ref: 'p.sh. iniciale + viti i lindjes: MR1958',
+    lbl_language: 'Gjuha',
+    begin_label: 'Fillo Vleresimine',
+    begin_sub: 'Jepi tabletën pacientit · rreth 3 minuta',
+    setup_footnote: 'MAP · Parametrat Shumedimensionale te Pajtueshmërise<br>Administrohet nga farmacisti · Kodet e referencës se pacientit nuk identifikojne individe',
+    demo_mode_label: 'Modaliteti Demo Aktiv',
+    demo_shortcut_btn: '📊 Shiko Panelin (68 Paciente Shembull)',
+    hdr_badge_question: 'Vleresimi i Pacientit',
+    hdr_title_question: 'Pyetje',
+    q_back: '← Kthehu',
+    hdr_badge_results: 'Vleresimi Perfundoi',
+    hdr_title_results: 'Rezultate',
+    tl_pe_label: 'Indeksi MAP PE:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Ndarja sipas Domeneve',
+    domain_arch: 'Arkitekture', domain_exec: 'Ekzekutim', domain_ctx: 'Kontekst-Ruajtje',
+    insight_label: 'Njohuri Klinike',
+    peacs_label: 'Fenotip PEACS',
+    btn_alert: '⚠ Dergo Alarmin te Pershkruesi',
+    btn_save_new: '✓ Ruaj dhe Pacient i Ri',
+    btn_print: '🖨 Printo Permbledhjen',
+    btn_dashboard: '📊 Shiko Panelin e Farmacise',
+    tl_green: 'Pajtueshmeria e Forte: Rrezik i Ulet',
+    tl_amber: 'Rrezik i Rritur: Monitoroni',
+    tl_red: 'Rrezik i Larte: Alarmi i Pershkruesit Rekomandohet',
+    hdr_badge_alert: 'Alarmi i Pershkruesit',
+    hdr_title_alert: 'Kartela e Alarmit',
+    alert_header_title: 'Rreziku i Mospajtueshmerise u Identifikua',
+    alert_header_sub: 'Rrezik i Larte · Njoftimi i Pershkruesit Rekomandohet',
+    alert_card_title: 'Alarmi i ATLAS MAP',
+    btn_copy: '📋 Kopjo ne Clipboard',
+    btn_email: '✉ Dergo me Email',
+    btn_back_results: '← Kthehu te Rezultatet',
+    hdr_badge_dashboard: 'Paneli i Faqes',
+    hdr_title_dashboard: 'Statistika',
+    dash_this_month: 'Kete Muaj',
+    demo_banner_text: 'Modaliteti Demo — Te dhena shembull. Asnje lexim ose shkrim real Firebase.',
+    btn_back_assessment: '← Kthehu te Vleresimi',
+    btn_report: '📄 Gjenero Raportin',
+    insight_arch: 'Ky pacient mund te kete dyshime nese ilaçi i tij po funksionon. Rekomandohet nje bisede me pershkruesin ne lidhje me qellimet e trajtimit.',
+    insight_exec: 'Ky pacient ka nje boshllëk zakoni ose rutine. Nje sistem i strukturuar kujtuesesh ose pakete blister mund te ndihmoje.',
+    insight_ctx: 'Ky pacient perball barriera praktike (udhetim, komoditet, akses). Nje diskutim me pershkruesin per te thjeshtuar regjimin mund te ndihmoje.',
+    peacs_full: 'Pajtues i Plote',
+    peacs_forgetter: 'Harrestar Rutine',
+    peacs_skipper: 'Kapercyes Situacional',
+    peacs_stopper: 'Nderprerës Optimist',
+    peacs_resistor: 'Rezistues i Qellimshëm',
+    peacs_mixed: 'Profil i Perzier Pajtueshmerie',
+    af_patient: 'Pacienti', af_date: 'Data', af_pe: 'Indeksi MAP PE',
+    af_risk: 'Niveli i Rrezikut', af_domain: 'Deshtiimi Primar i Domenit',
+    af_rec: 'Rekomandim Klinik', af_action: 'Veprimi i Rekomanduar',
+    af_action_val: 'Ju lutem diskutoni barrierat e pajtueshmërise ne takimin tjeter.',
+    af_instrument: 'Instrumenti',
+    af_assessed: 'pacienti i vleresuar ne',
+    q_counter_format: 'Pyetja {n} nga 8',
+    ans_yes: 'Po',
+    ans_no: 'Jo',
+  },
+  bn: {
+    setup_intro_h2: 'ফার্মেসি মূল্যায়ন সেটআপ',
+    setup_intro_p: 'রোগীর কাছে ট্যাবলেট হস্তান্তরের আগে সেশন কনফিগার করুন। এটি প্রায় ১০ সেকেন্ড সময় নেয়।',
+    lbl_pharmacy_name: 'ফার্মেসির নাম (ঐচ্ছিক)',
+    lbl_condition: 'রোগীর অবস্থা',
+    opt_condition_default: 'অবস্থা নির্বাচন করুন...',
+    opt_condition_hyp: 'উচ্চ রক্তচাপ', opt_condition_dia: 'ডায়াবেটিস',
+    opt_condition_cvd: 'কার্ডিওভাসকুলার', opt_condition_other: 'অন্যান্য',
+    lbl_medication: 'ওষুধের ধরন (ঐচ্ছিক)',
+    ph_medication: 'যেমন: ACE ইনহিবিটর, মেটফর্মিন...',
+    lbl_age: 'রোগীর বয়স সীমা (ঐচ্ছিক)',
+    opt_age_default: 'বয়স সীমা নির্বাচন করুন...',
+    opt_age_prefer_not: 'না বলতে পছন্দ করি',
+    lbl_gender: 'লিঙ্গ (ঐচ্ছিক)',
+    opt_gender_default: 'নির্বাচন করুন...',
+    opt_gender_male: 'পুরুষ', opt_gender_female: 'মহিলা',
+    opt_gender_nb: 'নন-বাইনারি', opt_gender_pnts: 'না বলতে পছন্দ করি',
+    lbl_patient_ref: 'রোগীর রেফারেন্স কোড (ঐচ্ছিক)',
+    ph_patient_ref: 'যেমন: আদ্যক্ষর + জন্মসাল: MR1958',
+    lbl_language: 'ভাষা',
+    begin_label: 'মূল্যায়ন শুরু করুন',
+    begin_sub: 'রোগীর কাছে ট্যাবলেট দিন · প্রায় ৩ মিনিট',
+    setup_footnote: 'MAP · বহুমাত্রিক আনুগত্য প্যারামিটার<br>ফার্মাসিস্ট দ্বারা পরিচালিত · রোগীর রেফারেন্স কোড পরিচয় প্রকাশ করে না',
+    demo_mode_label: 'ডেমো মোড সক্রিয়',
+    demo_shortcut_btn: '📊 ড্যাশবোর্ড দেখুন (৬৮ জন নমুনা রোগী)',
+    hdr_badge_question: 'রোগীর মূল্যায়ন',
+    hdr_title_question: 'প্রশ্নসমূহ',
+    q_back: '← ফিরে যান',
+    hdr_badge_results: 'মূল্যায়ন সম্পন্ন',
+    hdr_title_results: 'ফলাফল',
+    tl_pe_label: 'MAP PE সূচক:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'ডোমেইন বিভাজন',
+    domain_arch: 'স্থাপত্য', domain_exec: 'বাস্তবায়ন', domain_ctx: 'প্রেক্ষাপট-রক্ষক',
+    insight_label: 'ক্লিনিকাল অন্তর্দৃষ্টি',
+    peacs_label: 'PEACS ফিনোটাইপ',
+    btn_alert: '⚠ প্রেসক্রাইবারকে সতর্কতা পাঠান',
+    btn_save_new: '✓ সংরক্ষণ করুন এবং নতুন রোগী',
+    btn_print: '🖨 সারসংক্ষেপ মুদ্রণ করুন',
+    btn_dashboard: '📊 ফার্মেসি ড্যাশবোর্ড দেখুন',
+    tl_green: 'আনুগত্য শক্তিশালী: কম ঝুঁকি',
+    tl_amber: 'বর্ধিত ঝুঁকি: পর্যবেক্ষণ করুন',
+    tl_red: 'উচ্চ ঝুঁকি: প্রেসক্রাইবার সতর্কতা প্রস্তাবিত',
+    hdr_badge_alert: 'প্রেসক্রাইবার সতর্কতা',
+    hdr_title_alert: 'সতর্কতা কার্ড',
+    alert_header_title: 'আনুগত্য ঝুঁকি চিহ্নিত হয়েছে',
+    alert_header_sub: 'উচ্চ ঝুঁকি · প্রেসক্রাইবার বিজ্ঞপ্তি প্রস্তাবিত',
+    alert_card_title: 'ATLAS MAP সতর্কতা',
+    btn_copy: '📋 ক্লিপবোর্ডে অনুলিপি করুন',
+    btn_email: '✉ ইমেইলে পাঠান',
+    btn_back_results: '← ফলাফলে ফিরে যান',
+    hdr_badge_dashboard: 'সাইট ড্যাশবোর্ড',
+    hdr_title_dashboard: 'পরিসংখ্যান',
+    dash_this_month: 'এই মাসে',
+    demo_banner_text: 'ডেমো মোড — রোম পাইলট নমুনা ডেটা। কোনো বাস্তব Firebase পড়া বা লেখা নেই।',
+    btn_back_assessment: '← মূল্যায়নে ফিরে যান',
+    btn_report: '📄 রিপোর্ট তৈরি করুন',
+    insight_arch: 'এই রোগীর ওষুধ কাজ করছে কিনা সে বিষয়ে সন্দেহ থাকতে পারে। চিকিৎসার লক্ষ্যমাত্রা নিয়ে প্রেসক্রাইবারের সাথে কথোপকথনের সুপারিশ করা হয়।',
+    insight_exec: 'এই রোগীর অভ্যাস বা রুটিনে ঘাটতি রয়েছে। একটি কাঠামোগত স্মারক ব্যবস্থা বা ব্লিস্টার প্যাক সাহায্য করতে পারে।',
+    insight_ctx: 'এই রোগী ব্যবহারিক বাধার মুখোমুখি (ভ্রমণ, সুবিধা, প্রবেশাধিকার)। নিয়মকানুন সরলীকরণের জন্য প্রেসক্রাইবারের সাথে আলোচনা সহায়ক হতে পারে।',
+    peacs_full: 'সম্পূর্ণ অনুগামী',
+    peacs_forgetter: 'রুটিন ভুলে যাওয়া',
+    peacs_skipper: 'পরিস্থিতিগত বাদ দেওয়া',
+    peacs_stopper: 'আশাবাদী থামনেওয়ালা',
+    peacs_resistor: 'ইচ্ছাকৃত প্রতিরোধকারী',
+    peacs_mixed: 'মিশ্র আনুগত্য প্রোফাইল',
+    af_patient: 'রোগী', af_date: 'তারিখ', af_pe: 'MAP PE সূচক',
+    af_risk: 'ঝুঁকির স্তর', af_domain: 'প্রাথমিক ডোমেইন ব্যর্থতা',
+    af_rec: 'ক্লিনিকাল সুপারিশ', af_action: 'প্রস্তাবিত পদক্ষেপ',
+    af_action_val: 'পরবর্তী অ্যাপয়েন্টমেন্টে আনুগত্যের বাধাগুলি নিয়ে আলোচনা করুন।',
+    af_instrument: 'যন্ত্র',
+    af_assessed: 'রোগীর মূল্যায়ন করা হয়েছে',
+    q_counter_format: 'প্রশ্ন {n} / ৮',
+    ans_yes: 'হ্যাঁ',
+    ans_no: 'না',
+  },
+  hr: {
+    setup_intro_h2: 'Postavljanje procjene ljekarne',
+    setup_intro_p: 'Konfigurirajte sesiju prije predaje tableta pacijentu. To traje oko 10 sekundi.',
+    lbl_pharmacy_name: 'Naziv ljekarne (neobavezno)',
+    lbl_condition: 'Stanje pacijenta',
+    opt_condition_default: 'Odaberite stanje...',
+    opt_condition_hyp: 'Hipertenzija', opt_condition_dia: 'Dijabetes',
+    opt_condition_cvd: 'Kardiovaskularne bolesti', opt_condition_other: 'Ostalo',
+    lbl_medication: 'Vrsta lijeka (neobavezno)',
+    ph_medication: 'npr. ACE inhibitor, Metformin...',
+    lbl_age: 'Dobna skupina pacijenta (neobavezno)',
+    opt_age_default: 'Odaberite dobnu skupinu...',
+    opt_age_prefer_not: 'Radije ne bih rekao',
+    lbl_gender: 'Spol (neobavezno)',
+    opt_gender_default: 'Odaberite...',
+    opt_gender_male: 'Musko', opt_gender_female: 'Zensko',
+    opt_gender_nb: 'Nebinarno', opt_gender_pnts: 'Radije ne bih rekao',
+    lbl_patient_ref: 'Referentni kod pacijenta (neobavezno)',
+    ph_patient_ref: 'npr. inicijali + godina rodenja: MR1958',
+    lbl_language: 'Jezik',
+    begin_label: 'Zapocni procjenu',
+    begin_sub: 'Predajte tablet pacijentu · otprilike 3 minute',
+    setup_footnote: 'MAP · Visedimenzionalni parametri adherencije<br>Provodi ljekarnik · Referentni kodovi pacijenata nisu identifikacijski',
+    demo_mode_label: 'Demo nacin aktivan',
+    demo_shortcut_btn: '📊 Pogledaj nadzornu plocu (68 uzornih pacijenata)',
+    hdr_badge_question: 'Procjena pacijenta',
+    hdr_title_question: 'Pitanja',
+    q_back: '← Natrag',
+    hdr_badge_results: 'Procjena dovrsena',
+    hdr_title_results: 'Rezultati',
+    tl_pe_label: 'MAP PE indeks:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Pregled domene',
+    domain_arch: 'Arhitektura', domain_exec: 'Izvedba', domain_ctx: 'Kontekst-Cuvar',
+    insight_label: 'Klinicki uvid',
+    peacs_label: 'PEACS fenotip',
+    btn_alert: '⚠ Posalji upozorenje propisivatelju',
+    btn_save_new: '✓ Spremi i novi pacijent',
+    btn_print: '🖨 Ispisi sazetak',
+    btn_dashboard: '📊 Pogledaj nadzornu plocu ljekarne',
+    tl_green: 'Adherencija snazna: Nizak rizik',
+    tl_amber: 'Poviseni rizik: Pratite',
+    tl_red: 'Visok rizik: Upozorenje propisivatelju preporuceno',
+    hdr_badge_alert: 'Upozorenje propisivatelju',
+    hdr_title_alert: 'Kartica upozorenja',
+    alert_header_title: 'Identificiran rizik neadherencije',
+    alert_header_sub: 'Visok rizik · Preporuca se obavijest propisivatelju',
+    alert_card_title: 'ATLAS MAP upozorenje',
+    btn_copy: '📋 Kopiraj u meduspremnik',
+    btn_email: '✉ Posalji e-postom',
+    btn_back_results: '← Natrag na rezultate',
+    hdr_badge_dashboard: 'Nadzorna ploca stranice',
+    hdr_title_dashboard: 'Statistike',
+    dash_this_month: 'Ovaj mjesec',
+    demo_banner_text: 'Demo nacin — Uzorni podaci rimskog pilota. Nema stvarnih Firebase ocitavanja ili pisanja.',
+    btn_back_assessment: '← Natrag na procjenu',
+    btn_report: '📄 Generiraj izvještaj',
+    insight_arch: 'Ovaj pacijent mozda ima sumnje u djelotvornost svog lijeka. Preporucuje se razgovor s propisivateljem o ciljevima lijecenja.',
+    insight_exec: 'Ovaj pacijent ima prazninu u navikama ili rutini. Strukturirani sustav podsjetnika ili blister pakiranje moze pomoci.',
+    insight_ctx: 'Ovaj pacijent suocava se s prakticnim preprekama (putovanje, praktičnost, dostupnost). Razgovor s propisivateljem o pojednostavljivanju rezima moze pomoci.',
+    peacs_full: 'Potpuno adherentan',
+    peacs_forgetter: 'Zaboravljivac rutine',
+    peacs_skipper: 'Situacijski preskakac',
+    peacs_stopper: 'Optimisticki prekidac',
+    peacs_resistor: 'Namjerni rezistivac',
+    peacs_mixed: 'Mijesani profil adherencije',
+    af_patient: 'Pacijent', af_date: 'Datum', af_pe: 'MAP PE indeks',
+    af_risk: 'Razina rizika', af_domain: 'Primarna greska domene',
+    af_rec: 'Klinicka preporuka', af_action: 'Preporucena radnja',
+    af_action_val: 'Molimo razgovarajte o preprekama adherenciji na sljedecem pregledu.',
+    af_instrument: 'Instrument',
+    af_assessed: 'pacijent procijenjen u',
+    q_counter_format: 'Pitanje {n} od 8',
+    ans_yes: 'Da',
+    ans_no: 'Ne',
+  },
+  da: {
+    setup_intro_h2: 'Apoteksopsætning',
+    setup_intro_p: 'Konfigurer sessionen, inden du giver patienten tabletten. Det tager ca. 10 sekunder.',
+    lbl_pharmacy_name: 'Apotek (valgfrit)',
+    lbl_condition: 'Patientens tilstand',
+    opt_condition_default: 'Vælg tilstand...',
+    opt_condition_hyp: 'Hypertension', opt_condition_dia: 'Diabetes',
+    opt_condition_cvd: 'Hjerte-kar-sygdom', opt_condition_other: 'Andet',
+    lbl_medication: 'Medicintype (valgfrit)',
+    ph_medication: 'f.eks. ACE-hæmmer, Metformin...',
+    lbl_age: 'Patientens aldersgruppe (valgfrit)',
+    opt_age_default: 'Vælg aldersgruppe...',
+    opt_age_prefer_not: 'Foretrækker ikke at sige',
+    lbl_gender: 'Køn (valgfrit)',
+    opt_gender_default: 'Vælg...',
+    opt_gender_male: 'Mand', opt_gender_female: 'Kvinde',
+    opt_gender_nb: 'Ikke-binær', opt_gender_pnts: 'Foretrækker ikke at sige',
+    lbl_patient_ref: 'Patientreferencekode (valgfrit)',
+    ph_patient_ref: 'f.eks. initialer + fødselsår: MR1958',
+    lbl_language: 'Sprog',
+    begin_label: 'Start vurdering',
+    begin_sub: 'Giv patienten tabletten · ca. 3 minutter',
+    setup_footnote: 'MAP · Multidimensionale adhærensparametre<br>Administreret af farmaceut · Patientreferencer er ikke-identificerende',
+    demo_mode_label: 'Demo-tilstand aktiv',
+    demo_shortcut_btn: '📊 Se dashboard (68 eksempelpatienter)',
+    hdr_badge_question: 'Patientvurdering',
+    hdr_title_question: 'Spørgsmål',
+    q_back: '← Tilbage',
+    hdr_badge_results: 'Vurdering afsluttet',
+    hdr_title_results: 'Resultater',
+    tl_pe_label: 'MAP PE-indeks:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Domæneoversigt',
+    domain_arch: 'Arkitektur', domain_exec: 'Udførelse', domain_ctx: 'Kontekst-Vagt',
+    insight_label: 'Klinisk indsigt',
+    peacs_label: 'PEACS-fænotype',
+    btn_alert: '⚠ Send advarsel til ordinerende læge',
+    btn_save_new: '✓ Gem og ny patient',
+    btn_print: '🖨 Udskriv resume',
+    btn_dashboard: '📊 Se apotek-dashboard',
+    tl_green: 'Adhærens stærk: Lav risiko',
+    tl_amber: 'Øget risiko: Overvåg',
+    tl_red: 'Høj risiko: Advarsel til ordinerende læge anbefales',
+    hdr_badge_alert: 'Advarsel til ordinerende læge',
+    hdr_title_alert: 'Advarselskort',
+    alert_header_title: 'Non-adhærensrisiko identificeret',
+    alert_header_sub: 'Høj risiko · Underretning af ordinerende læge anbefales',
+    alert_card_title: 'ATLAS MAP-advarsel',
+    btn_copy: '📋 Kopiér til udklipsholder',
+    btn_email: '✉ Send via e-mail',
+    btn_back_results: '← Tilbage til resultater',
+    hdr_badge_dashboard: 'Site-dashboard',
+    hdr_title_dashboard: 'Statistik',
+    dash_this_month: 'Denne måned',
+    demo_banner_text: 'Demo-tilstand — Rom-piloteksempeldata. Ingen rigtige Firebase-læsninger eller -skrivninger.',
+    btn_back_assessment: '← Tilbage til vurdering',
+    btn_report: '📄 Generer rapport',
+    insight_arch: 'Denne patient er måske i tvivl om, hvorvidt medicinen virker. Det anbefales at tale med den ordinerende læge om behandlingsmål.',
+    insight_exec: 'Denne patient har huller i vaner eller rutiner. Et struktureret påmindelsessystem eller blisterpakke kan hjælpe.',
+    insight_ctx: 'Denne patient møder praktiske barrierer (rejser, bekvemmelighed, adgang). Det kan hjælpe at tale med den ordinerende læge om forenkling af regimet.',
+    peacs_full: 'Fuldt adhærent',
+    peacs_forgetter: 'Rutineforglemmende',
+    peacs_skipper: 'Situationsbestemt springer',
+    peacs_stopper: 'Optimistisk stopper',
+    peacs_resistor: 'Bevidst modstander',
+    peacs_mixed: 'Blandet adhærensprofil',
+    af_patient: 'Patient', af_date: 'Dato', af_pe: 'MAP PE-indeks',
+    af_risk: 'Risikoniveau', af_domain: 'Primær domænefejl',
+    af_rec: 'Klinisk anbefaling', af_action: 'Anbefalet handling',
+    af_action_val: 'Diskuter adhærensbarrierer ved næste aftale.',
+    af_instrument: 'Instrument',
+    af_assessed: 'patient vurderet ved',
+    q_counter_format: 'Spørgsmål {n} af 8',
+    ans_yes: 'Ja',
+    ans_no: 'Nej',
+  },
+  nl: {
+    setup_intro_h2: 'Apotheekopstelling',
+    setup_intro_p: 'Configureer de sessie voordat u de tablet aan de patiënt geeft. Dit duurt ongeveer 10 seconden.',
+    lbl_pharmacy_name: 'Apotheeknaam (optioneel)',
+    lbl_condition: 'Aandoening patiënt',
+    opt_condition_default: 'Selecteer aandoening...',
+    opt_condition_hyp: 'Hypertensie', opt_condition_dia: 'Diabetes',
+    opt_condition_cvd: 'Hart- en vaatziekten', opt_condition_other: 'Overig',
+    lbl_medication: 'Medicatietype (optioneel)',
+    ph_medication: 'bijv. ACE-remmer, Metformine...',
+    lbl_age: 'Leeftijdsgroep patiënt (optioneel)',
+    opt_age_default: 'Selecteer leeftijdsgroep...',
+    opt_age_prefer_not: 'Zeg ik liever niet',
+    lbl_gender: 'Geslacht (optioneel)',
+    opt_gender_default: 'Selecteer...',
+    opt_gender_male: 'Man', opt_gender_female: 'Vrouw',
+    opt_gender_nb: 'Non-binair', opt_gender_pnts: 'Zeg ik liever niet',
+    lbl_patient_ref: 'Patiëntreferentiecode (optioneel)',
+    ph_patient_ref: 'bijv. initialen + geboortejaar: MR1958',
+    lbl_language: 'Taal',
+    begin_label: 'Beoordeling starten',
+    begin_sub: 'Geef patiënt de tablet · ongeveer 3 minuten',
+    setup_footnote: 'MAP · Multidimensionale adherentieparameters<br>Beheerd door apotheker · Patiëntreferenties zijn niet-identificerend',
+    demo_mode_label: 'Demomodus actief',
+    demo_shortcut_btn: '📊 Bekijk dashboard (68 voorbeeldpatiënten)',
+    hdr_badge_question: 'Patiëntbeoordeling',
+    hdr_title_question: 'Vragen',
+    q_back: '← Terug',
+    hdr_badge_results: 'Beoordeling voltooid',
+    hdr_title_results: 'Resultaten',
+    tl_pe_label: 'MAP PE-index:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Domeinoverzicht',
+    domain_arch: 'Architectuur', domain_exec: 'Uitvoering', domain_ctx: 'Context-Bewaker',
+    insight_label: 'Klinisch inzicht',
+    peacs_label: 'PEACS-fenotype',
+    btn_alert: '⚠ Stuur waarschuwing naar voorschrijver',
+    btn_save_new: '✓ Opslaan en nieuwe patiënt',
+    btn_print: '🖨 Samenvatting afdrukken',
+    btn_dashboard: '📊 Bekijk apothekdashboard',
+    tl_green: 'Adherentie sterk: Laag risico',
+    tl_amber: 'Verhoogd risico: Bewaken',
+    tl_red: 'Hoog risico: Waarschuwing aan voorschrijver aanbevolen',
+    hdr_badge_alert: 'Waarschuwing voorschrijver',
+    hdr_title_alert: 'Waarschuwingskaart',
+    alert_header_title: 'Non-adherentierisico geïdentificeerd',
+    alert_header_sub: 'Hoog risico · Melding aan voorschrijver aanbevolen',
+    alert_card_title: 'ATLAS MAP-waarschuwing',
+    btn_copy: '📋 Kopiëren naar klembord',
+    btn_email: '✉ Verzenden per e-mail',
+    btn_back_results: '← Terug naar resultaten',
+    hdr_badge_dashboard: 'Site-dashboard',
+    hdr_title_dashboard: 'Statistieken',
+    dash_this_month: 'Deze maand',
+    demo_banner_text: 'Demomodus — Voorbeeldgegevens. Geen echte Firebase-lees- of schrijfbewerkingen.',
+    btn_back_assessment: '← Terug naar beoordeling',
+    btn_report: '📄 Rapport genereren',
+    insight_arch: 'Deze patiënt twijfelt mogelijk aan de werking van zijn medicatie. Een gesprek met de voorschrijver over behandeldoelen wordt aanbevolen.',
+    insight_exec: 'Deze patiënt heeft hiaten in gewoonten of routines. Een gestructureerd herinneringssysteem of blisterverpakking kan helpen.',
+    insight_ctx: 'Deze patiënt ervaart praktische barrières (reizen, gemak, toegang). Een gesprek met de voorschrijver over vereenvoudiging van het schema kan helpen.',
+    peacs_full: 'Volledig adherent',
+    peacs_forgetter: 'Routine-vergeter',
+    peacs_skipper: 'Situationeel overslaan',
+    peacs_stopper: 'Optimistische stopper',
+    peacs_resistor: 'Bewuste tegenstander',
+    peacs_mixed: 'Gemengd adherentieprofiel',
+    af_patient: 'Patiënt', af_date: 'Datum', af_pe: 'MAP PE-index',
+    af_risk: 'Risiconiveau', af_domain: 'Primaire domeinmislukking',
+    af_rec: 'Klinische aanbeveling', af_action: 'Aanbevolen actie',
+    af_action_val: 'Bespreek adherentiebarrières bij de volgende afspraak.',
+    af_instrument: 'Instrument',
+    af_assessed: 'patiënt beoordeeld bij',
+    q_counter_format: 'Vraag {n} van 8',
+    ans_yes: 'Ja',
+    ans_no: 'Nee',
+  },
+  fi: {
+    setup_intro_h2: 'Apteekin asetukset',
+    setup_intro_p: 'Määritä istunto ennen tabletin antamista potilaalle. Tämä kestää noin 10 sekuntia.',
+    lbl_pharmacy_name: 'Apteekin nimi (valinnainen)',
+    lbl_condition: 'Potilaan tila',
+    opt_condition_default: 'Valitse tila...',
+    opt_condition_hyp: 'Verenpainetauti', opt_condition_dia: 'Diabetes',
+    opt_condition_cvd: 'Sydän- ja verisuonisairaus', opt_condition_other: 'Muu',
+    lbl_medication: 'Lääketyyppi (valinnainen)',
+    ph_medication: 'esim. ACE-estäjä, Metformiini...',
+    lbl_age: 'Potilaan ikäryhmä (valinnainen)',
+    opt_age_default: 'Valitse ikäryhmä...',
+    opt_age_prefer_not: 'Mieluummin en sano',
+    lbl_gender: 'Sukupuoli (valinnainen)',
+    opt_gender_default: 'Valitse...',
+    opt_gender_male: 'Mies', opt_gender_female: 'Nainen',
+    opt_gender_nb: 'Muunsukupuolinen', opt_gender_pnts: 'Mieluummin en sano',
+    lbl_patient_ref: 'Potilasviitekoodi (valinnainen)',
+    ph_patient_ref: 'esim. nimikirjaimet + syntymävuosi: MR1958',
+    lbl_language: 'Kieli',
+    begin_label: 'Aloita arviointi',
+    begin_sub: 'Anna potilaalle tabletti · noin 3 minuuttia',
+    setup_footnote: 'MAP · Moniulotteiset hoitomyönteisyysparametrit<br>Farmaseutin hallinnoima · Potilasviitteet eivät ole tunnistavia',
+    demo_mode_label: 'Demotila käytössä',
+    demo_shortcut_btn: '📊 Näytä kojelauta (68 esimerkkipotilasta)',
+    hdr_badge_question: 'Potilasarviointi',
+    hdr_title_question: 'Kysymykset',
+    q_back: '← Takaisin',
+    hdr_badge_results: 'Arviointi valmis',
+    hdr_title_results: 'Tulokset',
+    tl_pe_label: 'MAP PE -indeksi:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Verkkotunnusalue',
+    domain_arch: 'Arkkitehtuuri', domain_exec: 'Suoritus', domain_ctx: 'Konteksti-Vartija',
+    insight_label: 'Kliininen näkemys',
+    peacs_label: 'PEACS-fenotyyppi',
+    btn_alert: '⚠ Lähetä varoitus määräävälle lääkärille',
+    btn_save_new: '✓ Tallenna ja uusi potilas',
+    btn_print: '🖨 Tulosta yhteenveto',
+    btn_dashboard: '📊 Näytä apteekin kojelauta',
+    tl_green: 'Hoitomyönteisyys vahva: Matala riski',
+    tl_amber: 'Kohonnut riski: Seuraa',
+    tl_red: 'Korkea riski: Varoitus määräävälle lääkärille suositellaan',
+    hdr_badge_alert: 'Varoitus määräävälle lääkärille',
+    hdr_title_alert: 'Varoituskortti',
+    alert_header_title: 'Hoitomyönteisyysriski havaittu',
+    alert_header_sub: 'Korkea riski · Määräävän lääkärin ilmoitus suositellaan',
+    alert_card_title: 'ATLAS MAP -varoitus',
+    btn_copy: '📋 Kopioi leikepöydälle',
+    btn_email: '✉ Lähetä sähköpostilla',
+    btn_back_results: '← Takaisin tuloksiin',
+    hdr_badge_dashboard: 'Sivuston kojelauta',
+    hdr_title_dashboard: 'Tilastot',
+    dash_this_month: 'Tässä kuussa',
+    demo_banner_text: 'Demotila — Rooman pilottiesimerkkitiedot. Ei todellisia Firebase-lukuja tai -kirjoituksia.',
+    btn_back_assessment: '← Takaisin arviointiin',
+    btn_report: '📄 Luo raportti',
+    insight_arch: 'Tällä potilaalla saattaa olla epäilyksiä lääkityksensä tehosta. Suositellaan keskustelua määräävän lääkärin kanssa hoitotavoitteista.',
+    insight_exec: 'Tällä potilaalla on aukkoja tottumuksissa tai rutiineissa. Jäsennelty muistijärjestelmä tai läpipainopakkaus voi auttaa.',
+    insight_ctx: 'Tämä potilas kohtaa käytännön esteitä (matkustaminen, mukavuus, saatavuus). Hoitoregiimiä kannattaa yksinkertaistaa yhdessä määräävän lääkärin kanssa.',
+    peacs_full: 'Täysin hoitomyönteinen',
+    peacs_forgetter: 'Rutiinin unohtaja',
+    peacs_skipper: 'Tilannekohtainen ohittaja',
+    peacs_stopper: 'Optimistinen lopettaja',
+    peacs_resistor: 'Tietoinen vastustaja',
+    peacs_mixed: 'Sekamuotoinen hoitomyönteisyysprofiili',
+    af_patient: 'Potilas', af_date: 'Päivämäärä', af_pe: 'MAP PE -indeksi',
+    af_risk: 'Riskitaso', af_domain: 'Ensisijainen verkkotunnusvirhe',
+    af_rec: 'Kliininen suositus', af_action: 'Suositeltu toimenpide',
+    af_action_val: 'Keskustele hoitomyönteisyyden esteistä seuraavalla käynnillä.',
+    af_instrument: 'Instrumentti',
+    af_assessed: 'potilas arvioitu',
+    q_counter_format: 'Kysymys {n} / 8',
+    ans_yes: 'Kyllä',
+    ans_no: 'Ei',
+  },
+  ms: {
+    setup_intro_h2: 'Persediaan Farmasi',
+    setup_intro_p: 'Konfigurasikan sesi sebelum memberikan tablet kepada pesakit. Ini mengambil masa kira-kira 10 saat.',
+    lbl_pharmacy_name: 'Nama Farmasi (pilihan)',
+    lbl_condition: 'Keadaan Pesakit',
+    opt_condition_default: 'Pilih keadaan...',
+    opt_condition_hyp: 'Hipertensi', opt_condition_dia: 'Diabetes',
+    opt_condition_cvd: 'Kardiovaskular', opt_condition_other: 'Lain-lain',
+    lbl_medication: 'Jenis Ubat (pilihan)',
+    ph_medication: 'cth. Perencat ACE, Metformin...',
+    lbl_age: 'Kumpulan Umur Pesakit (pilihan)',
+    opt_age_default: 'Pilih kumpulan umur...',
+    opt_age_prefer_not: 'Lebih suka tidak memberitahu',
+    lbl_gender: 'Jantina (pilihan)',
+    opt_gender_default: 'Pilih...',
+    opt_gender_male: 'Lelaki', opt_gender_female: 'Perempuan',
+    opt_gender_nb: 'Bukan binari', opt_gender_pnts: 'Lebih suka tidak memberitahu',
+    lbl_patient_ref: 'Kod Rujukan Pesakit (pilihan)',
+    ph_patient_ref: 'cth. inisial + tahun lahir: MR1958',
+    lbl_language: 'Bahasa',
+    begin_label: 'Mulakan Penilaian',
+    begin_sub: 'Berikan tablet kepada pesakit · kira-kira 3 minit',
+    setup_footnote: 'MAP · Parameter Pematuhan Multidimensi<br>Ditadbir oleh ahli farmasi · Kod rujukan pesakit tidak mengenal pasti',
+    demo_mode_label: 'Mod demo aktif',
+    demo_shortcut_btn: '📊 Lihat papan pemuka (68 pesakit sampel)',
+    hdr_badge_question: 'Penilaian Pesakit',
+    hdr_title_question: 'Soalan',
+    q_back: '← Kembali',
+    hdr_badge_results: 'Penilaian Selesai',
+    hdr_title_results: 'Keputusan',
+    tl_pe_label: 'Indeks MAP PE:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Pecahan Domain',
+    domain_arch: 'Seni Bina', domain_exec: 'Pelaksanaan', domain_ctx: 'Penjaga Konteks',
+    insight_label: 'Pandangan Klinikal',
+    peacs_label: 'Fenotip PEACS',
+    btn_alert: '⚠ Hantar amaran kepada pengamal',
+    btn_save_new: '✓ Simpan dan pesakit baru',
+    btn_print: '🖨 Cetak ringkasan',
+    btn_dashboard: '📊 Lihat papan pemuka farmasi',
+    tl_green: 'Pematuhan kukuh: Risiko rendah',
+    tl_amber: 'Risiko meningkat: Pantau',
+    tl_red: 'Risiko tinggi: Amaran kepada pengamal disyorkan',
+    hdr_badge_alert: 'Amaran Pengamal',
+    hdr_title_alert: 'Kad Amaran',
+    alert_header_title: 'Risiko Ketidakpatuhan Dikenal Pasti',
+    alert_header_sub: 'Risiko tinggi · Pemberitahuan pengamal disyorkan',
+    alert_card_title: 'Amaran ATLAS MAP',
+    btn_copy: '📋 Salin ke papan klip',
+    btn_email: '✉ Hantar melalui e-mel',
+    btn_back_results: '← Kembali ke keputusan',
+    hdr_badge_dashboard: 'Papan Pemuka Tapak',
+    hdr_title_dashboard: 'Statistik',
+    dash_this_month: 'Bulan ini',
+    demo_banner_text: 'Mod demo — Data sampel perintis Rom. Tiada pembacaan atau penulisan Firebase sebenar.',
+    btn_back_assessment: '← Kembali ke penilaian',
+    btn_report: '📄 Jana laporan',
+    insight_arch: 'Pesakit ini mungkin meragui keberkesanan ubatannya. Perbincangan dengan pengamal tentang matlamat rawatan adalah disyorkan.',
+    insight_exec: 'Pesakit ini mempunyai jurang dalam tabiat atau rutin. Sistem peringatan berstruktur atau pembungkusan blister boleh membantu.',
+    insight_ctx: 'Pesakit ini menghadapi halangan praktikal (perjalanan, kemudahan, akses). Berbincang dengan pengamal tentang penyederhanaan rejimen boleh membantu.',
+    peacs_full: 'Patuh sepenuhnya',
+    peacs_forgetter: 'Pelupa rutin',
+    peacs_skipper: 'Pelangkau situasi',
+    peacs_stopper: 'Penghenti optimis',
+    peacs_resistor: 'Penentang sedar',
+    peacs_mixed: 'Profil pematuhan campuran',
+    af_patient: 'Pesakit', af_date: 'Tarikh', af_pe: 'Indeks MAP PE',
+    af_risk: 'Tahap Risiko', af_domain: 'Kegagalan Domain Utama',
+    af_rec: 'Cadangan Klinikal', af_action: 'Tindakan Disyorkan',
+    af_action_val: 'Bincangkan halangan pematuhan pada temujanji seterusnya.',
+    af_instrument: 'Instrumen',
+    af_assessed: 'pesakit dinilai di',
+    q_counter_format: 'Soalan {n} daripada 8',
+    ans_yes: 'Ya',
+    ans_no: 'Tidak',
+  },
+  sv: {
+    setup_intro_h2: 'Apoteksinställning',
+    setup_intro_p: 'Konfigurera sessionen innan du ger patienten plattan. Det tar ungefär 10 sekunder.',
+    lbl_pharmacy_name: 'Apoteksnamn (valfritt)',
+    lbl_condition: 'Patientens tillstånd',
+    opt_condition_default: 'Välj tillstånd...',
+    opt_condition_hyp: 'Hypertoni', opt_condition_dia: 'Diabetes',
+    opt_condition_cvd: 'Hjärt-kärlsjukdom', opt_condition_other: 'Annat',
+    lbl_medication: 'Läkemedelstyp (valfritt)',
+    ph_medication: 't.ex. ACE-hämmare, Metformin...',
+    lbl_age: 'Patientens åldersgrupp (valfritt)',
+    opt_age_default: 'Välj åldersgrupp...',
+    opt_age_prefer_not: 'Föredrar att inte svara',
+    lbl_gender: 'Kön (valfritt)',
+    opt_gender_default: 'Välj...',
+    opt_gender_male: 'Man', opt_gender_female: 'Kvinna',
+    opt_gender_nb: 'Icke-binär', opt_gender_pnts: 'Föredrar att inte svara',
+    lbl_patient_ref: 'Patientreferenskod (valfritt)',
+    ph_patient_ref: 't.ex. initialer + födelseår: MR1958',
+    lbl_language: 'Språk',
+    begin_label: 'Starta bedömning',
+    begin_sub: 'Ge patienten plattan · ungefär 3 minuter',
+    setup_footnote: 'MAP · Multidimensionella följsamhetsparametrar<br>Administreras av farmaceut · Patientreferenser är icke-identifierande',
+    demo_mode_label: 'Demoläge aktivt',
+    demo_shortcut_btn: '📊 Visa instrumentpanel (68 exempelpatienter)',
+    hdr_badge_question: 'Patientbedömning',
+    hdr_title_question: 'Frågor',
+    q_back: '← Tillbaka',
+    hdr_badge_results: 'Bedömning klar',
+    hdr_title_results: 'Resultat',
+    tl_pe_label: 'MAP PE-index:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Domänuppdelning',
+    domain_arch: 'Arkitektur', domain_exec: 'Utförande', domain_ctx: 'Kontextvakt',
+    insight_label: 'Klinisk insikt',
+    peacs_label: 'PEACS-fenotyp',
+    btn_alert: '⚠ Skicka varning till förskrivare',
+    btn_save_new: '✓ Spara och ny patient',
+    btn_print: '🖨 Skriv ut sammanfattning',
+    btn_dashboard: '📊 Visa apotek-instrumentpanel',
+    tl_green: 'Följsamhet stark: Låg risk',
+    tl_amber: 'Förhöjd risk: Övervaka',
+    tl_red: 'Hög risk: Varning till förskrivare rekommenderas',
+    hdr_badge_alert: 'Varning till förskrivare',
+    hdr_title_alert: 'Varningskort',
+    alert_header_title: 'Bristande följsamhet identifierad',
+    alert_header_sub: 'Hög risk · Meddelande till förskrivare rekommenderas',
+    alert_card_title: 'ATLAS MAP-varning',
+    btn_copy: '📋 Kopiera till urklipp',
+    btn_email: '✉ Skicka via e-post',
+    btn_back_results: '← Tillbaka till resultat',
+    hdr_badge_dashboard: 'Webbplatsens instrumentpanel',
+    hdr_title_dashboard: 'Statistik',
+    dash_this_month: 'Den här månaden',
+    demo_banner_text: 'Demoläge — Exempeldata från Rompilotet. Inga riktiga Firebase-läsningar eller -skrivningar.',
+    btn_back_assessment: '← Tillbaka till bedömning',
+    btn_report: '📄 Generera rapport',
+    insight_arch: 'Den här patienten kan tvivla på om läkemedlet fungerar. Ett samtal med förskrivaren om behandlingsmål rekommenderas.',
+    insight_exec: 'Den här patienten har brister i vanor eller rutiner. Ett strukturerat påminnelsesystem eller blisterförpackning kan hjälpa.',
+    insight_ctx: 'Den här patienten möter praktiska hinder (resor, bekvämlighet, tillgång). Ett samtal med förskrivaren om förenkling av regimen kan hjälpa.',
+    peacs_full: 'Fullt följsam',
+    peacs_forgetter: 'Rutinglömska',
+    peacs_skipper: 'Situationsbaserad hoppare',
+    peacs_stopper: 'Optimistisk stoppare',
+    peacs_resistor: 'Medveten motståndare',
+    peacs_mixed: 'Blandad följsamhetsprofil',
+    af_patient: 'Patient', af_date: 'Datum', af_pe: 'MAP PE-index',
+    af_risk: 'Risknivå', af_domain: 'Primärt domänfel',
+    af_rec: 'Klinisk rekommendation', af_action: 'Rekommenderad åtgärd',
+    af_action_val: 'Diskutera följsamhetshinder vid nästa besök.',
+    af_instrument: 'Instrument',
+    af_assessed: 'patient bedömd vid',
+    q_counter_format: 'Fråga {n} av 8',
+    ans_yes: 'Ja',
+    ans_no: 'Nej',
+  },
+  uk: {
+    setup_intro_h2: 'Налаштування аптеки',
+    setup_intro_p: 'Налаштуйте сесію перед тим, як передати планшет пацієнту. Це займе приблизно 10 секунд.',
+    lbl_pharmacy_name: 'Назва аптеки (необов\'язково)',
+    lbl_condition: 'Стан пацієнта',
+    opt_condition_default: 'Виберіть стан...',
+    opt_condition_hyp: 'Гіпертонія', opt_condition_dia: 'Діабет',
+    opt_condition_cvd: 'Серцево-судинні захворювання', opt_condition_other: 'Інше',
+    lbl_medication: 'Тип ліків (необов\'язково)',
+    ph_medication: 'напр. Інгібітор АПФ, Метформін...',
+    lbl_age: 'Вікова група пацієнта (необов\'язково)',
+    opt_age_default: 'Виберіть вікову групу...',
+    opt_age_prefer_not: 'Воліє не відповідати',
+    lbl_gender: 'Стать (необов\'язково)',
+    opt_gender_default: 'Виберіть...',
+    opt_gender_male: 'Чоловік', opt_gender_female: 'Жінка',
+    opt_gender_nb: 'Небінарна', opt_gender_pnts: 'Воліє не відповідати',
+    lbl_patient_ref: 'Код посилання пацієнта (необов\'язково)',
+    ph_patient_ref: 'напр. ініціали + рік народження: MR1958',
+    lbl_language: 'Мова',
+    begin_label: 'Почати оцінювання',
+    begin_sub: 'Передайте планшет пацієнту · приблизно 3 хвилини',
+    setup_footnote: 'MAP · Багатовимірні параметри прихильності<br>Адмініструється фармацевтом · Коди пацієнтів не ідентифікують',
+    demo_mode_label: 'Демо-режим активний',
+    demo_shortcut_btn: '📊 Переглянути панель (68 зразкових пацієнтів)',
+    hdr_badge_question: 'Оцінювання пацієнта',
+    hdr_title_question: 'Запитання',
+    q_back: '← Назад',
+    hdr_badge_results: 'Оцінювання завершено',
+    hdr_title_results: 'Результати',
+    tl_pe_label: 'Індекс MAP PE:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Розбивка по доменах',
+    domain_arch: 'Архітектура', domain_exec: 'Виконання', domain_ctx: 'Контекст-Охоронець',
+    insight_label: 'Клінічна думка',
+    peacs_label: 'Фенотип PEACS',
+    btn_alert: '⚠ Надіслати попередження призначаючому лікарю',
+    btn_save_new: '✓ Зберегти та новий пацієнт',
+    btn_print: '🖨 Роздрукувати зведення',
+    btn_dashboard: '📊 Переглянути панель аптеки',
+    tl_green: 'Прихильність висока: Низький ризик',
+    tl_amber: 'Підвищений ризик: Спостерігайте',
+    tl_red: 'Високий ризик: Рекомендується попередження призначаючому лікарю',
+    hdr_badge_alert: 'Попередження призначаючому лікарю',
+    hdr_title_alert: 'Картка попередження',
+    alert_header_title: 'Виявлено ризик неприхильності',
+    alert_header_sub: 'Високий ризик · Рекомендується повідомлення призначаючому лікарю',
+    alert_card_title: 'Попередження ATLAS MAP',
+    btn_copy: '📋 Копіювати в буфер обміну',
+    btn_email: '✉ Надіслати електронною поштою',
+    btn_back_results: '← Повернутися до результатів',
+    hdr_badge_dashboard: 'Панель сайту',
+    hdr_title_dashboard: 'Статистика',
+    dash_this_month: 'Цього місяця',
+    demo_banner_text: 'Демо-режим — Зразкові дані римського пілота. Немає реальних операцій Firebase.',
+    btn_back_assessment: '← Повернутися до оцінювання',
+    btn_report: '📄 Згенерувати звіт',
+    insight_arch: 'Цей пацієнт може сумніватися в ефективності свого лікування. Рекомендується розмова з призначаючим лікарем про цілі лікування.',
+    insight_exec: 'Цей пацієнт має прогалини у звичках або розпорядку. Структурована система нагадувань або блістерне пакування може допомогти.',
+    insight_ctx: 'Цей пацієнт стикається з практичними бар\'єрами (подорожі, зручність, доступ). Розмова з призначаючим лікарем про спрощення режиму може допомогти.',
+    peacs_full: 'Повністю прихильний',
+    peacs_forgetter: 'Той, хто забуває про розпорядок',
+    peacs_skipper: 'Ситуаційний пропускальник',
+    peacs_stopper: 'Оптимістичний зупинювач',
+    peacs_resistor: 'Свідомий противник',
+    peacs_mixed: 'Змішаний профіль прихильності',
+    af_patient: 'Пацієнт', af_date: 'Дата', af_pe: 'Індекс MAP PE',
+    af_risk: 'Рівень ризику', af_domain: 'Основний збій домену',
+    af_rec: 'Клінічна рекомендація', af_action: 'Рекомендована дія',
+    af_action_val: 'Обговоріть бар\'єри прихильності на наступному прийомі.',
+    af_instrument: 'Інструмент',
+    af_assessed: 'пацієнт оцінений о',
+    q_counter_format: 'Запитання {n} з 8',
+    ans_yes: 'Так',
+    ans_no: 'Ні',
+  },
+  ur: {
+    setup_intro_h2: 'فارمیسی سیٹ اپ',
+    setup_intro_p: 'مریض کو ٹیبلٹ دینے سے پہلے سیشن ترتیب دیں۔ اس میں تقریباً 10 سیکنڈ لگتے ہیں۔',
+    lbl_pharmacy_name: 'فارمیسی کا نام (اختیاری)',
+    lbl_condition: 'مریض کی حالت',
+    opt_condition_default: 'حالت منتخب کریں...',
+    opt_condition_hyp: 'ہائی بلڈ پریشر', opt_condition_dia: 'ذیابیطس',
+    opt_condition_cvd: 'قلبی امراض', opt_condition_other: 'دیگر',
+    lbl_medication: 'دوا کی قسم (اختیاری)',
+    ph_medication: 'مثلاً ACE inhibitor، میٹفارمین...',
+    lbl_age: 'مریض کی عمر گروپ (اختیاری)',
+    opt_age_default: 'عمر گروپ منتخب کریں...',
+    opt_age_prefer_not: 'بتانا پسند نہیں',
+    lbl_gender: 'جنس (اختیاری)',
+    opt_gender_default: 'منتخب کریں...',
+    opt_gender_male: 'مرد', opt_gender_female: 'خاتون',
+    opt_gender_nb: 'نان بائنری', opt_gender_pnts: 'بتانا پسند نہیں',
+    lbl_patient_ref: 'مریض کا حوالہ کوڈ (اختیاری)',
+    ph_patient_ref: 'مثلاً ابتدائی حروف + پیدائشی سال: MR1958',
+    lbl_language: 'زبان',
+    begin_label: 'تشخیص شروع کریں',
+    begin_sub: 'مریض کو ٹیبلٹ دیں · تقریباً 3 منٹ',
+    setup_footnote: 'MAP · کثیر جہتی تعمیل پیرامیٹرز<br>فارماسسٹ کے زیر انتظام · مریض کے حوالہ کوڈ شناختی نہیں',
+    demo_mode_label: 'ڈیمو موڈ فعال',
+    demo_shortcut_btn: '📊 ڈیش بورڈ دیکھیں (68 نمونہ مریض)',
+    hdr_badge_question: 'مریض کی تشخیص',
+    hdr_title_question: 'سوالات',
+    q_back: '← واپس',
+    hdr_badge_results: 'تشخیص مکمل',
+    hdr_title_results: 'نتائج',
+    tl_pe_label: 'MAP PE انڈیکس:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'ڈومین کا خلاصہ',
+    domain_arch: 'آرکیٹیکچر', domain_exec: 'عملدرآمد', domain_ctx: 'سیاق و سباق نگہبان',
+    insight_label: 'طبی بصیرت',
+    peacs_label: 'PEACS فینوٹائپ',
+    btn_alert: '⚠ نسخہ لکھنے والے کو انتباہ بھیجیں',
+    btn_save_new: '✓ محفوظ کریں اور نئے مریض',
+    btn_print: '🖨 خلاصہ پرنٹ کریں',
+    btn_dashboard: '📊 فارمیسی ڈیش بورڈ دیکھیں',
+    tl_green: 'تعمیل مضبوط: کم خطرہ',
+    tl_amber: 'بڑھا ہوا خطرہ: نگرانی کریں',
+    tl_red: 'زیادہ خطرہ: نسخہ لکھنے والے کو انتباہ تجویز ہے',
+    hdr_badge_alert: 'نسخہ لکھنے والے کو انتباہ',
+    hdr_title_alert: 'انتباہ کارڈ',
+    alert_header_title: 'عدم تعمیل کا خطرہ شناخت ہوا',
+    alert_header_sub: 'زیادہ خطرہ · نسخہ لکھنے والے کو اطلاع تجویز ہے',
+    alert_card_title: 'ATLAS MAP انتباہ',
+    btn_copy: '📋 کلپ بورڈ پر کاپی کریں',
+    btn_email: '✉ ای میل سے بھیجیں',
+    btn_back_results: '← نتائج پر واپس',
+    hdr_badge_dashboard: 'سائٹ ڈیش بورڈ',
+    hdr_title_dashboard: 'اعداد و شمار',
+    dash_this_month: 'اس مہینے',
+    demo_banner_text: 'ڈیمو موڈ — روم پائلٹ نمونہ ڈیٹا۔ کوئی حقیقی Firebase آپریشن نہیں۔',
+    btn_back_assessment: '← تشخیص پر واپس',
+    btn_report: '📄 رپورٹ بنائیں',
+    insight_arch: 'اس مریض کو اپنی دوا کی افادیت پر شبہ ہو سکتا ہے۔ نسخہ لکھنے والے کے ساتھ علاج کے اہداف پر بات کرنے کی سفارش ہے۔',
+    insight_exec: 'اس مریض کی عادات یا روزمرہ میں خامیاں ہیں۔ ایک منظم یاددہانی نظام یا بلسٹر پیکیجنگ مددگار ہو سکتی ہے۔',
+    insight_ctx: 'اس مریض کو عملی رکاوٹوں کا سامنا ہے (سفر، سہولت، رسائی)۔ نسخہ لکھنے والے کے ساتھ نظام کو سادہ بنانے پر بات کرنا مددگار ہو سکتا ہے۔',
+    peacs_full: 'مکمل تعمیل کرنے والا',
+    peacs_forgetter: 'معمول بھولنے والا',
+    peacs_skipper: 'صورت حال کی بنا پر چھوڑنے والا',
+    peacs_stopper: 'پرامید رکنے والا',
+    peacs_resistor: 'جان بوجھ کر مزاحم',
+    peacs_mixed: 'ملا جلا تعمیل پروفائل',
+    af_patient: 'مریض', af_date: 'تاریخ', af_pe: 'MAP PE انڈیکس',
+    af_risk: 'خطرے کی سطح', af_domain: 'بنیادی ڈومین خرابی',
+    af_rec: 'طبی سفارش', af_action: 'تجویز کردہ اقدام',
+    af_action_val: 'اگلی ملاقات میں تعمیل کی رکاوٹوں پر بات کریں۔',
+    af_instrument: 'آلہ',
+    af_assessed: 'مریض کی تشخیص پر',
+    q_counter_format: 'سوال {n} از 8',
+    ans_yes: 'ہاں',
+    ans_no: 'نہیں',
+  },
+  vi: {
+    setup_intro_h2: 'Cài đặt nhà thuốc',
+    setup_intro_p: 'Cấu hình phiên làm việc trước khi đưa máy tính bảng cho bệnh nhân. Thao tác này mất khoảng 10 giây.',
+    lbl_pharmacy_name: 'Tên nhà thuốc (tùy chọn)',
+    lbl_condition: 'Tình trạng bệnh nhân',
+    opt_condition_default: 'Chọn tình trạng...',
+    opt_condition_hyp: 'Tăng huyết áp', opt_condition_dia: 'Tiểu đường',
+    opt_condition_cvd: 'Tim mạch', opt_condition_other: 'Khác',
+    lbl_medication: 'Loại thuốc (tùy chọn)',
+    ph_medication: 'ví dụ: Thuốc ức chế ACE, Metformin...',
+    lbl_age: 'Nhóm tuổi bệnh nhân (tùy chọn)',
+    opt_age_default: 'Chọn nhóm tuổi...',
+    opt_age_prefer_not: 'Không muốn tiết lộ',
+    lbl_gender: 'Giới tính (tùy chọn)',
+    opt_gender_default: 'Chọn...',
+    opt_gender_male: 'Nam', opt_gender_female: 'Nữ',
+    opt_gender_nb: 'Phi nhị giới', opt_gender_pnts: 'Không muốn tiết lộ',
+    lbl_patient_ref: 'Mã tham chiếu bệnh nhân (tùy chọn)',
+    ph_patient_ref: 'ví dụ: chữ tắt + năm sinh: MR1958',
+    lbl_language: 'Ngôn ngữ',
+    begin_label: 'Bắt đầu đánh giá',
+    begin_sub: 'Đưa máy tính bảng cho bệnh nhân · khoảng 3 phút',
+    setup_footnote: 'MAP · Thông số tuân thủ đa chiều<br>Do dược sĩ quản lý · Mã bệnh nhân không định danh',
+    demo_mode_label: 'Chế độ demo đang hoạt động',
+    demo_shortcut_btn: '📊 Xem bảng điều khiển (68 bệnh nhân mẫu)',
+    hdr_badge_question: 'Đánh giá bệnh nhân',
+    hdr_title_question: 'Câu hỏi',
+    q_back: '← Quay lại',
+    hdr_badge_results: 'Đánh giá hoàn thành',
+    hdr_title_results: 'Kết quả',
+    tl_pe_label: 'Chỉ số MAP PE:',
+    tl_pe_suffix: '/ 1.00',
+    domain_breakdown_title: 'Phân tích theo lĩnh vực',
+    domain_arch: 'Kiến trúc', domain_exec: 'Thực thi', domain_ctx: 'Người bảo vệ ngữ cảnh',
+    insight_label: 'Nhận định lâm sàng',
+    peacs_label: 'Kiểu hình PEACS',
+    btn_alert: '⚠ Gửi cảnh báo cho bác sĩ kê đơn',
+    btn_save_new: '✓ Lưu và bệnh nhân mới',
+    btn_print: '🖨 In tóm tắt',
+    btn_dashboard: '📊 Xem bảng điều khiển nhà thuốc',
+    tl_green: 'Tuân thủ tốt: Nguy cơ thấp',
+    tl_amber: 'Nguy cơ tăng: Theo dõi',
+    tl_red: 'Nguy cơ cao: Khuyến nghị cảnh báo bác sĩ kê đơn',
+    hdr_badge_alert: 'Cảnh báo bác sĩ kê đơn',
+    hdr_title_alert: 'Thẻ cảnh báo',
+    alert_header_title: 'Phát hiện nguy cơ không tuân thủ',
+    alert_header_sub: 'Nguy cơ cao · Khuyến nghị thông báo bác sĩ kê đơn',
+    alert_card_title: 'Cảnh báo ATLAS MAP',
+    btn_copy: '📋 Sao chép vào clipboard',
+    btn_email: '✉ Gửi qua email',
+    btn_back_results: '← Quay lại kết quả',
+    hdr_badge_dashboard: 'Bảng điều khiển trang web',
+    hdr_title_dashboard: 'Thống kê',
+    dash_this_month: 'Tháng này',
+    demo_banner_text: 'Chế độ demo — Dữ liệu mẫu đánh giá. Không có thao tác Firebase thực tế.',
+    btn_back_assessment: '← Quay lại đánh giá',
+    btn_report: '📄 Tạo báo cáo',
+    insight_arch: 'Bệnh nhân này có thể nghi ngờ về hiệu quả của thuốc. Khuyến nghị nói chuyện với bác sĩ kê đơn về mục tiêu điều trị.',
+    insight_exec: 'Bệnh nhân này có lỗ hổng trong thói quen hoặc lịch trình. Hệ thống nhắc nhở có cấu trúc hoặc vỉ thuốc có thể giúp ích.',
+    insight_ctx: 'Bệnh nhân này gặp các rào cản thực tế (đi lại, thuận tiện, tiếp cận). Nói chuyện với bác sĩ kê đơn về việc đơn giản hóa phác đồ có thể giúp ích.',
+    peacs_full: 'Tuân thủ hoàn toàn',
+    peacs_forgetter: 'Người hay quên thói quen',
+    peacs_skipper: 'Người bỏ qua theo tình huống',
+    peacs_stopper: 'Người dừng lạc quan',
+    peacs_resistor: 'Người kháng cự có chủ ý',
+    peacs_mixed: 'Hồ sơ tuân thủ hỗn hợp',
+    af_patient: 'Bệnh nhân', af_date: 'Ngày', af_pe: 'Chỉ số MAP PE',
+    af_risk: 'Mức độ rủi ro', af_domain: 'Lỗi lĩnh vực chính',
+    af_rec: 'Khuyến nghị lâm sàng', af_action: 'Hành động khuyến nghị',
+    af_action_val: 'Thảo luận về các rào cản tuân thủ tại cuộc hẹn tiếp theo.',
+    af_instrument: 'Công cụ',
+    af_assessed: 'bệnh nhân được đánh giá tại',
+    q_counter_format: 'Câu hỏi {n} / 8',
+    ans_yes: 'Có',
+    ans_no: 'Không',
+  },
 };
 
 function _pgLang(){ return document.getElementById('language-select')?.value || 'en'; }
@@ -1668,7 +3874,7 @@ function _pgApplyLang(lang){
   set('dash-this-month', s.dash_this_month);
   set('demo-banner-text', s.demo_banner_text);
   set('btn-back-assessment', s.btn_back_assessment);
-  set('fofi-report-btn', s.btn_fofi);
+  set('report-btn', s.btn_report);
 }
 
 // ═══════════════════════════════════════════
@@ -1732,6 +3938,7 @@ function getQuestionText(idx){
 function renderQuestion(idx){
   const q = QUESTIONS[idx];
   const lang = sessionSetup.language || 'en';
+  document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
   const total = QUESTIONS.length;
   const pct = ((idx) / total) * 100;
 
@@ -1768,11 +3975,11 @@ function renderQuestion(idx){
       <div class="q-answers">
         <button class="answer-btn yes${answers[idx]===1&&q.adherent==='yes'?' selected':answers[idx]===0&&q.adherent==='no'?' selected':''}"
           id="ans-yes" onclick="recordAnswer(${idx},'yes')">
-          &#10003; Yes
+          &#10003; ${_pgS('ans_yes')}
         </button>
         <button class="answer-btn no${answers[idx]===0&&q.adherent==='yes'?' selected':answers[idx]===1&&q.adherent==='no'?' selected':''}"
           id="ans-no" onclick="recordAnswer(${idx},'no')">
-          &#10007; No
+          &#10007; ${_pgS('ans_no')}
         </button>
       </div>
     `;
@@ -1978,17 +4185,20 @@ function computeAndShowResults(){
 //                                    longitudinal tracking in ATLAS PI view)
 // ═══════════════════════════════════════════
 
-// Derive country + city + lat/lon from site code prefix.
-// Lat/lon are required for the ATLAS Mapbox MAP globe to plot this pharmacy's assessments.
-// PH-ROM → Rome (41.9028, 12.4964); PH-MIL → Milan; PH-NAP → Naples; PH-TOR → Turin
-function _pgGeoFromSite(siteCode){
-  const s = (siteCode || '').toUpperCase();
-  if(s.startsWith('PH-ROM'))  return {country:'Italy', city:'Rome',   country_iso2:'IT', latitude:41.9028, longitude:12.4964};
-  if(s.startsWith('PH-MIL'))  return {country:'Italy', city:'Milan',  country_iso2:'IT', latitude:45.4654, longitude:9.1859};
-  if(s.startsWith('PH-NAP'))  return {country:'Italy', city:'Naples', country_iso2:'IT', latitude:40.8358, longitude:14.2487};
-  if(s.startsWith('PH-TOR'))  return {country:'Italy', city:'Turin',  country_iso2:'IT', latitude:45.0703, longitude:7.6869};
-  if(s.startsWith('PH-'))     return {country:'Italy', city:null,     country_iso2:'IT', latitude:41.8719, longitude:12.5674};
-  return {country:null, city:null, country_iso2:null, latitude:null, longitude:null};
+// Geo data for ATLAS Mapbox MAP globe plotting.
+// Coordinates are provisioned per-pharmacy in the SSM profile (fields: country, city,
+// country_iso2, latitude, longitude). Returned by the Lambda in data.profile.
+// Admins add these to the SSM JSON when provisioning a new PHRM- key.
+// If not set, the assessment saves but does not plot on the global map.
+function _pgGeoFromProfile(){
+  const p = _pgWorkspaceProfile || {};
+  return {
+    country:      p.country      || null,
+    city:         p.city         || null,
+    country_iso2: p.country_iso2 || null,
+    latitude:     p.latitude     ? parseFloat(p.latitude)  : null,
+    longitude:    p.longitude    ? parseFloat(p.longitude) : null
+  };
 }
 
 function saveToFirebase(scores, tl, peacs){
@@ -1996,7 +4206,7 @@ function saveToFirebase(scores, tl, peacs){
   try{
     const now  = Date.now();
     const id   = 'pharm_' + now + '_' + Math.random().toString(36).slice(2,8);
-    const geo  = _pgGeoFromSite(_PG_SITE_CODE);
+    const geo  = _pgGeoFromProfile();
 
     // ── Record 1: pharmacy-specific path ─────────────────────────────────────
     const pharmRecord = {
@@ -2109,7 +4319,7 @@ function printSummary(){
 }
 
 function viewDashboard(){
-  document.getElementById('dash-site-label').textContent = _PG_DEMO ? 'DEMO — PH-ROM-001' : _PG_SITE_CODE;
+  document.getElementById('dash-site-label').textContent = _PG_DEMO ? 'DEMO' : _PG_SITE_CODE;
   const banner = document.getElementById('dash-demo-banner');
   if(banner) banner.style.display = _PG_DEMO ? 'flex' : 'none';
   showScreen('screen-dashboard');
@@ -2169,11 +4379,11 @@ function _buildDemoRecords(){
       condition:     pick(conditions),
       age_range:     pick(ageRanges),
       gender:        pick(genders),
-      site_code:     'PH-ROM-001',
-      workspace_key: 'PH-ROM-001',
-      country:       'Italy',
-      city:          'Rome',
-      country_iso2:  'IT',
+      site_code:     'DEMO',
+      workspace_key: 'DEMO',
+      country:       null,
+      city:          null,
+      country_iso2:  null,
       assessment_mode: 'pharmacy'
     };
   });
@@ -2184,20 +4394,15 @@ function _loadDashboardData(){
   if(_PG_DEMO){ _renderDashboardFromRecords(content, _buildDemoRecords()); return; }
   content.innerHTML = '<div class="dash-loading">Loading site data&#8230;</div>';
 
-  firebase.database().ref('pharmacy_assessments').once('value', snap => {
+  firebase.database().ref('pharmacy_assessments')
+    .orderByChild('workspace_key').equalTo(_PG_SITE_CODE)
+    .once('value', snap => {
     const raw = snap.val();
     if(!raw){
       content.innerHTML = '<p class="dash-empty">No assessments recorded yet for this site.</p>';
       return;
     }
-    const all = Object.values(raw);
-    const site = _PG_SITE_CODE.toUpperCase();
-    const siteRecs = (site === 'UNASSIGNED')
-      ? all
-      : all.filter(r =>
-          (r.site_code   || '').toUpperCase() === site ||
-          (r.workspace_key || '').toUpperCase() === site
-        );
+    const siteRecs = Object.values(raw);
     const now = new Date();
     const month = siteRecs.filter(r => {
       const d = new Date(r.ts);
@@ -2348,26 +4553,26 @@ function _renderDashboardFromRecords(content, month){
 }
 
 // ═══════════════════════════════════════════
-// FOFI REPORT GENERATION (inline — does not require pharmacy-gateway.js)
+// PHARMACY REPORT GENERATION (inline — does not require pharmacy-gateway.js)
 // Generates a plain-text ATLAS MAP report and triggers browser download.
 // ═══════════════════════════════════════════
-function generateFOFIReport(){
-  const btn = document.getElementById('fofi-report-btn');
+function generatePharmacyReport(){
+  const btn = document.getElementById('report-btn');
   const lang = _pgLang();
   if(btn){ btn.textContent = lang==='it' ? '\u231b Generazione\u2026' : '\u231b Generating\u2026'; btn.disabled = true; }
 
   const finish = (reportText) => {
-    if(btn){ btn.innerHTML = lang==='it' ? '\uD83D\uDCC4 Genera Rapporto FOFI' : '\uD83D\uDCC4 Generate FOFI Report'; btn.disabled = false; }
+    if(btn){ btn.innerHTML = lang==='it' ? '\uD83D\uDCC4 Genera Rapporto' : '\uD83D\uDCC4 Generate Report'; btn.disabled = false; }
     const blob = new Blob([reportText], {type:'text/plain;charset=utf-8'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = 'ATLAS_MAP_FOFI_Report_' + new Date().toISOString().slice(0,10) + '.txt';
+    a.download = 'ATLAS_MAP_Pharmacy_Report_' + new Date().toISOString().slice(0,10) + '.txt';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    pgToast(lang==='it' ? 'Rapporto FOFI scaricato.' : 'FOFI report downloaded.', 'success');
+    pgToast(lang==='it' ? 'Rapporto scaricato.' : 'Report downloaded.', 'success');
   };
 
   const buildReport = (records) => {
@@ -2378,13 +4583,15 @@ function generateFOFIReport(){
     const reportDate = now.toLocaleDateString(locale,{day:'2-digit',month:'long',year:'numeric'});
     const total = records.length;
     const siteName = _PG_DEMO
-      ? (it ? 'PH-ROM-001 (MODALITA\' DEMO)' : 'PH-ROM-001 (DEMO MODE \u2014 sample data)')
+      ? (it ? 'DEMO (dati campione)' : 'DEMO (sample data)')
       : _PG_SITE_CODE;
+    const orgName = (_pgWorkspaceProfile && (_pgWorkspaceProfile.institution || _pgWorkspaceProfile.parent_institution_name || _pgWorkspaceProfile.name))
+      || 'Adherence Cartography / TESSERA GRC';
     if(total === 0){
       return [
         '================================================================',
         it ? 'RAPPORTO ATLAS MAP ADERENZA FARMACIA' : 'ATLAS MAP PHARMACY ADHERENCE REPORT',
-        it ? 'Ordine dei Farmacisti di Roma / FOFI' : 'Order of Pharmacists of Rome / FOFI',
+        orgName,
         '================================================================',
         '',
         (it ? 'Generato: ' : 'Generated: ') + reportDate,
@@ -2440,7 +4647,7 @@ function generateFOFIReport(){
     return [
       '================================================================',
       it ? 'RAPPORTO ATLAS MAP ADERENZA FARMACIA' : 'ATLAS MAP PHARMACY ADHERENCE REPORT',
-      it ? 'Ordine dei Farmacisti di Roma / FOFI' : 'Order of Pharmacists of Rome / FOFI',
+      orgName,
       '================================================================',
       '',
       (it?'Rapporto Generato:   ':'Report Generated:    ') + reportDate,
@@ -2524,7 +4731,7 @@ function generateFOFIReport(){
     });
     finish(buildReport(month));
   }).catch(err => {
-    if(btn){ btn.innerHTML = '&#128196; Generate FOFI Report'; btn.disabled = false; }
+    if(btn){ btn.innerHTML = '&#128196; Generate Report'; btn.disabled = false; }
     pgToast('Could not generate report: ' + err.message, 'warn');
   });
 }
@@ -2564,6 +4771,19 @@ function goToAlert(){
   `).join('');
 
   document.getElementById('alert-fields').innerHTML = fieldsHtml;
+
+  // Configure workspace push button — visible only when a parent PI is linked
+  const pushBtn = document.getElementById('btn-push-workspace');
+  if(pushBtn){
+    const hasPi = _pgWorkspaceProfile && _pgWorkspaceProfile.parent_pi;
+    pushBtn.style.display = hasPi ? 'block' : 'none';
+    pushBtn.disabled = false;
+    if(hasPi){
+      const piName = _pgWorkspaceProfile.parent_institution_name || _pgWorkspaceProfile.parent_pi;
+      pushBtn.innerHTML = '&#128228; Push to ' + piName + ' workspace';
+    }
+  }
+
   showScreen('screen-alert');
 }
 
@@ -2628,6 +4848,52 @@ function emailAlert(){
   const subject = encodeURIComponent('MAP Adherence Alert -- Action Requested');
   const body = encodeURIComponent(text);
   window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+}
+
+function pushAlertToWorkspace(){
+  if(!_pgWorkspaceProfile || !_pgWorkspaceProfile.parent_pi || !calcResults) return;
+  const lang = _pgLang();
+  const parentPi = _pgWorkspaceProfile.parent_pi.toUpperCase();
+  const {scores, tl, peacs, failDomain, insight} = calcResults;
+  const alertRecord = {
+    type: 'pharmacy_alert',
+    from_site: _PG_SITE_CODE,
+    pharmacy_name: sessionSetup.pharmacyName || _pgWorkspaceProfile.name || null,
+    patient_ref: sessionSetup.patientNumber || null,
+    condition: sessionSetup.condition || null,
+    pe_score: parseFloat(scores.PE.toFixed(4)),
+    arch_score: parseFloat(scores.A.toFixed(4)),
+    exec_score: parseFloat(scores.E.toFixed(4)),
+    ctx_score: parseFloat(scores.Cg.toFixed(4)),
+    traffic_light: tl,
+    peacs_phenotype: peacs,
+    failure_domain: failDomain,
+    insight: insight,
+    language: lang,
+    ts: Date.now(),
+    read: false
+  };
+  db.ref('prescriber_alerts/' + parentPi).push(alertRecord)
+    .then(()=>{
+      pgToast(lang === 'it' ? 'Allerta inviata al workspace del medico.' : 'Alert pushed to prescriber workspace.');
+      const btn = document.getElementById('btn-push-workspace');
+      if(btn){
+        btn.disabled = true;
+        btn.innerHTML = '&#10003; ' + (lang === 'it' ? 'Inviata' : 'Sent');
+      }
+    })
+    .catch(err=>{
+      pgToast((lang === 'it' ? 'Errore: ' : 'Error: ') + err.message, 'warn');
+    });
+  // Mark alert_sent on the most recent pharmacy record
+  try{
+    db.ref('pharmacy_assessments').orderByChild('ts')
+      .limitToLast(1).once('value', snap=>{
+        snap.forEach(child=>{
+          child.ref.update({alert_sent:true, alert_workspace: parentPi});
+        });
+      });
+  } catch(e){}
 }
 
 // ── Demo mode boot: show shortcut button on Setup screen ─────────────────

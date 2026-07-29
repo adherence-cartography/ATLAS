@@ -23,6 +23,106 @@ window._rppPage      = 0;
 /** @type {number} Rows per page */
 window._rppPageSize  = 20;
 
+// ── Region mode: swap encounter/intervention modal options based on gcc_mode ──
+function _atlasApplyEncounterOptions(gccMode) {
+  const sel   = document.getElementById('cp-intv-type');
+  const lbl   = document.getElementById('cp-intv-type-label');
+  const title = document.querySelector('#cp-intervention-modal .cp-intv-title');
+  const note  = document.getElementById('cp-intv-note');
+  const errEl = document.getElementById('cp-intv-err');
+  const saveBtn = document.getElementById('cp-intv-save-btn');
+
+  if (gccMode) {
+    // UAE / GCC pharmacy options
+    if (lbl)   lbl.textContent   = 'Encounter Type';
+    if (title) title.textContent = 'Log Patient Encounter';
+    if (note)  note.placeholder  = 'Describe the encounter, patient response, counseling provided, and any follow-up plan...';
+    if (errEl) errEl.textContent = 'Please select an encounter type.';
+    if (saveBtn) saveBtn.textContent = 'Save Encounter';
+    if (sel) {
+      sel.innerHTML = `
+        <option value="">Select encounter type...</option>
+        <option value="counseling_session">Medication Counseling Session</option>
+        <option value="adherence_assessment">Adherence Assessment (MAP/PEACS)</option>
+        <option value="refill_review">Refill Review &amp; Dispensing</option>
+        <option value="patient_education">Patient Education</option>
+        <option value="specialist_referral">Specialist Referral</option>
+        <option value="follow_up_call">Follow-up Call</option>
+        <option value="medication_review">Medication Review (Clinical)</option>
+        <option value="home_delivery">Home Delivery Coordination</option>
+        <option value="insurance_auth">Insurance / Prior Authorization</option>
+        <option value="other">Other</option>`;
+    }
+  } else {
+    // Global / US defaults
+    if (lbl)   lbl.textContent   = 'Intervention Type';
+    if (title) title.textContent = 'Log Intervention';
+    if (note)  note.placeholder  = 'Describe the intervention taken, patient response, and any follow-up plan...';
+    if (errEl) errEl.textContent = 'Please select an intervention type.';
+    if (saveBtn) saveBtn.textContent = 'Save Intervention';
+    if (sel) {
+      sel.innerHTML = `
+        <option value="">Select type...</option>
+        <option value="counseling">Patient Counseling</option>
+        <option value="refill_sync">Refill Synchronization</option>
+        <option value="care_referral">Care Referral</option>
+        <option value="education">Health Education</option>
+        <option value="escalation">Clinical Escalation</option>
+        <option value="phone_followup">Phone Follow-up</option>
+        <option value="mtm_encounter">MTM Encounter</option>
+        <option value="other">Other</option>`;
+    }
+  }
+}
+window._atlasApplyEncounterOptions = _atlasApplyEncounterOptions;
+
+// ── Shared encounter/intervention type label resolver (gcc_mode-aware) ────────
+function _clinEncounterLabel(type) {
+  if (window._atlasGccMode) {
+    return {
+      counseling_session:    'Medication Counseling Session',
+      adherence_assessment:  'Adherence Assessment (MAP/PEACS)',
+      refill_review:         'Refill Review & Dispensing',
+      patient_education:     'Patient Education',
+      specialist_referral:   'Specialist Referral',
+      follow_up_call:        'Follow-up Call',
+      medication_review:     'Medication Review (Clinical)',
+      home_delivery:         'Home Delivery Coordination',
+      insurance_auth:        'Insurance / Prior Authorization',
+      other:                 'Other',
+      // backward compat — map legacy US keys to closest GCC equivalent
+      counseling:       'Medication Counseling Session',
+      refill_sync:      'Refill Review & Dispensing',
+      care_referral:    'Specialist Referral',
+      education:        'Patient Education',
+      escalation:       'Specialist Referral',
+      phone_followup:   'Follow-up Call',
+      mtm_encounter:    'Medication Review (Clinical)',
+    }[type] || type;
+  } else {
+    return {
+      counseling:       'Patient Counseling',
+      refill_sync:      'Refill Synchronization',
+      care_referral:    'Care Referral',
+      education:        'Health Education',
+      escalation:       'Clinical Escalation',
+      phone_followup:   'Phone Follow-up',
+      mtm_encounter:    'MTM Encounter',
+      other:            'Other',
+      // forward compat — map GCC keys for workspaces that stored data in GCC mode
+      counseling_session:   'Patient Counseling',
+      adherence_assessment: 'Adherence Assessment',
+      refill_review:        'Refill Synchronization',
+      patient_education:    'Health Education',
+      specialist_referral:  'Care Referral',
+      follow_up_call:       'Phone Follow-up',
+      medication_review:    'MTM Encounter',
+      home_delivery:        'Other',
+      insurance_auth:       'Other',
+    }[type] || type;
+  }
+}
+
 /**
  * Sets the RPP MMAS dataset and triggers a full panel rebuild.
  * Called from loadMmasCohortData after MMAS records are loaded.
@@ -554,7 +654,8 @@ function _computePatientRisk(record) {
   const ctxScore = parseFloat(record.map_context || record.ctx_score || record.context || 0.5);
   // If MAP subscale data exists, weight composite; otherwise use MMAS only
   const hasMAP = !!(record.map_architecture || record.arch_score);
-  const composite = hasMAP ? (mmasPct * 0.5) + (((archScore + execScore + ctxScore) / 3) * 0.5) : mmasPct;
+  const mapPE = hasMAP ? Math.pow(Math.max(0, archScore * execScore * ctxScore), 1/3) : null;
+  const composite = hasMAP ? (mmasPct * 0.5) + (mapPE * 0.5) : mmasPct;
   if (composite >= 0.75) return { level: 'Low Risk', color: 'var(--optimal, #4caf50)' };
   if (composite >= 0.50) return { level: 'Moderate', color: 'var(--moderate, #ff9800)' };
   return { level: 'High Risk', color: 'var(--poor, #f44336)' };
@@ -595,8 +696,8 @@ function _atlasShowCounselingModal(patientData) {
 
   const buildUserPrompt = () => {
     const mmasScore = parseFloat(patientData.mmasScore || 0);
-    const cat = typeof getAdherenceCategory === 'function' ? getAdherenceCategory(mmasScore) : { label: mmasScore >= 6 ? 'High' : mmasScore >= 4 ? 'Medium' : 'Low' };
-    const level = cat.label || (mmasScore >= 6 ? 'High' : mmasScore >= 4 ? 'Medium' : 'Low');
+    const cat = typeof getAdherenceCategory === 'function' ? getAdherenceCategory(mmasScore) : { label: mmasScore >= 8 ? 'High' : mmasScore >= 6 ? 'Medium' : 'Low' };
+    const level = cat.label || (mmasScore >= 8 ? 'High' : mmasScore >= 6 ? 'Medium' : 'Low');
     const phenotype = patientData.phenotype || 'PA';
     const phenoDescMap = { INA: 'Intentional Non-Adherence', UNA: 'Unintentional Non-Adherence', PA: 'Partial Adherence', A: 'Adherent' };
     const phenoDesc = phenoDescMap[phenotype] || phenotype;
@@ -660,10 +761,11 @@ async function _rppGenerateCounseling(idx) {
   // Gather patient data
   const mmasScore = _recomputeMMASScore(latestMmas);
 
-  // MAP domain scores from map_q* fields
-  const archScore = ((+latestMmas.map_q2||0) + (+latestMmas.map_q3||0) + (+latestMmas.map_q6||0)) / 3;
-  const execScore = ((+latestMmas.map_q1||0) + (+latestMmas.map_q5||0) + (+latestMmas.map_q8||0)) / 3;
-  const ctxScore  = 0.5 + 0.5 * (((+latestMmas.map_q4||0) + (+latestMmas.map_q7||0)) / 2);
+  // MAP domain scores — use map_q* for MAP records, q* for MMAS records
+  const _q = (f) => +(latestMmas['map_'+f] ?? latestMmas[f] ?? 0);
+  const archScore = (_q('q2') + _q('q3') + _q('q6')) / 3;
+  const execScore = (_q('q1') + _q('q5') + _q('q8')) / 3;
+  const ctxScore  = 0.5 + 0.5 * ((_q('q4') + _q('q7')) / 2);
 
   // MAP phenotype (from stored field or derived)
   let phenotype = latestMmas.map_phenotype || latestMmas.phenotype || 'PA';
@@ -1987,8 +2089,8 @@ function _cpoUpdate() {
           ] ?? null);
       if (q8n === null) return;
       sumA += ((+(r.q2)||0) + (+(r.q3)||0) + (+(r.q6)||0)) / 3;
-      sumE += ((+(r.q1)||0) + (+(r.q4)||0) + (+(r.q5)||0) + q8n) / 4;
-      sumC += +(r.q7 || 0);
+      sumE += ((+(r.q1)||0) + (+(r.q5)||0) + q8n) / 3;
+      sumC += 0.5 + 0.5 * ((+(r.q4)||0) + (+(r.q7)||0)) / 2;
       nDomain++;
     });
   });
@@ -1999,7 +2101,7 @@ function _cpoUpdate() {
     const mA = sumA / nDomain, mE = sumE / nDomain, mC = sumC / nDomain;
     const domains = [
       { name:'Architecture', val:mA, color:'rgba(212,168,67,0.80)',  sub:'Beliefs & decisions (Q2,Q3,Q6)' },
-      { name:'Execution',    val:mE, color:'rgba(78,156,245,0.80)',   sub:'Behavioral reliability (Q1,Q4,Q5,Q8)' },
+      { name:'Execution',    val:mE, color:'rgba(78,156,245,0.80)',   sub:'Behavioral reliability (Q1,Q5,Q8)' },
       { name:'Context',      val:mC, color:'rgba(46,201,138,0.80)',   sub:'Medication burden (Q7)' },
     ];
     dbEl.innerHTML = domains.map(d => `
@@ -2487,6 +2589,117 @@ function _clinLastSeenTs(p) {
   return ts.length ? Math.max(...ts) : 0;
 }
 
+// ── Stability / fragility classification ─────────────────────────────────────
+
+/**
+ * Build a normalized MAP record object with canonical field names
+ * (pe, a, e, c, score) from a patient row p, using the latest MAP record
+ * for structural dimensions and latest MMAS-8 record for self-report score.
+ * Returns null if no MAP data is present.
+ */
+function _clinsfRecord(p) {
+  var mapRec  = _clinLatest(_clinMapRecs(p));
+  var mmasRec = _clinLatest(_clinMmasRecs(p));
+  if (!mapRec) return null;
+
+  // MAP records store raw question items (map_q1-map_q8); compute domains on the fly.
+  // Fall back to pre-computed stored fields only when raw items are absent.
+  var a, e, c, pe;
+  if (mapRec.map_q1 !== undefined) {
+    a  = ((+mapRec.map_q2||0) + (+mapRec.map_q3||0) + (+mapRec.map_q6||0)) / 3;
+    e  = ((+mapRec.map_q1||0) + (+mapRec.map_q5||0) + (+mapRec.map_q8||0)) / 3;
+    c  = 0.5 + 0.5 * (((+mapRec.map_q4||0) + (+mapRec.map_q7||0)) / 2);
+    pe = Math.pow(Math.max(0, a * e * c), 1/3);
+  } else {
+    a  = mapRec.map_architecture ?? mapRec.arch_score ?? mapRec.architecture ?? null;
+    e  = mapRec.exec_score ?? null;
+    c  = mapRec.ctx_score  ?? null;
+    pe = mapRec.pe ?? mapRec.pe_score ?? null;
+  }
+
+  return {
+    pe:    pe,
+    a:     a,
+    e:     e,
+    c:     c,
+    score: mmasRec ? _recomputeMMASScore(mmasRec) : null
+  };
+}
+
+/**
+ * Classify a patient's MAP structural stability into one of six phenotypes:
+ * 'stable' | 'conditional' | 'domain' | 'hidden' | 'fragile' | 'unknown'
+ * @param {Object} r - record with pe, a, e, c (0-1), score (MMAS 0-8)
+ */
+function _clinsfClass(r) {
+  var pe = r.pe != null ? +r.pe : null;
+  var a  = r.a  != null ? +r.a  : null;
+  var e  = r.e  != null ? +r.e  : null;
+  var c  = r.c  != null ? +r.c  : null;
+  var sc = r.score != null ? +r.score : null;
+  if (pe === null) return 'unknown';
+  if (a !== null && e !== null && c !== null && a < 0.55 && e < 0.55 && c < 0.55) return 'fragile';
+  if (sc !== null && sc >= 6 && pe < 0.65) return 'hidden';
+  if ((a !== null && a < 0.35) || (e !== null && e < 0.35) || (c !== null && c < 0.35)) return 'domain';
+  if (pe >= 0.65 && (a == null || a >= 0.55) && (e == null || e >= 0.55) && (c == null || c >= 0.55)) return 'stable';
+  return 'conditional';
+}
+
+/**
+ * Returns a color-coded stability chip HTML string for a patient record.
+ * @param {Object} r - record with pe, a, e, c, score fields
+ */
+function _clinsfBadge(r) {
+  var cl = _clinsfClass(r);
+  var labels = { stable:'Stable', conditional:'Conditional', domain:'Domain-Fragile', hidden:'Hidden Binding', fragile:'Compoundly Fragile', unknown:'Unclassified' };
+  var colors = { stable:'#10b981', conditional:'#3b82f6', domain:'#f59e0b', hidden:'#f97316', fragile:'#ef4444', unknown:'var(--dim)' };
+  var col = colors[cl] || 'var(--dim)';
+  var lbl = labels[cl] || cl;
+  return '<span style="display:inline-block;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:'+col+';background:'+col+'18;border:1px solid '+col+'40;padding:1px 7px;border-radius:3px;">'+lbl+'</span>';
+}
+
+/**
+ * Returns a small icon row showing which MAP domains are failing (<0.35).
+ * Returns empty string if no domains are failing.
+ * @param {Object} r - record with a, e, c fields
+ */
+function _clinDomainFlags(r) {
+  var flags = [];
+  var check = function(key, label) {
+    if (r[key] != null && +r[key] < 0.35) flags.push('<span style="font-family:var(--font-mono);font-size:0.60rem;color:#ef4444;background:rgba(239,68,68,0.1);padding:1px 5px;border-radius:2px;margin-right:3px;">'+label+' '+((+r[key]).toFixed(2))+'</span>');
+  };
+  check('a', 'Arch');
+  check('e', 'Exec');
+  check('c', 'Ctx');
+  return flags.length ? '<div style="margin-top:3px;">'+flags.join('')+'</div>' : '';
+}
+
+/**
+ * Injects a prominent fragility alert banner at the top of a patient detail
+ * container if the patient is classified as 'fragile' or 'hidden'.
+ * Idempotent — skips if banner already present.
+ * @param {Object} r - record with pe, a, e, c, score fields
+ * @param {HTMLElement} container - DOM element to prepend the alert into
+ */
+function _clinFragilityAlert(r, container) {
+  var cl = _clinsfClass(r);
+  if (cl !== 'fragile' && cl !== 'hidden') return;
+
+  var existing = container.querySelector('.atlas-fragility-alert');
+  if (existing) return; // already shown
+
+  var isHidden = cl === 'hidden';
+  var msg = isHidden
+    ? 'Hidden Binding Constraint: Patient self-reports poor adherence (MMAS ' + (r.score||'—') + '/8) but Predictive Emergence (' + ((+r.pe).toFixed(3)) + ') is suppressed, suggesting a fragile structural pattern not captured by self-report alone.'
+    : 'Compoundly Fragile: All three MAP dimensions (Architecture ' + ((+r.a).toFixed(2)) + ', Execution ' + ((+r.e).toFixed(2)) + ', Context-Guard ' + ((+r.c).toFixed(2)) + ') are below clinical threshold. High dropout risk — intervention recommended.';
+
+  var alert = document.createElement('div');
+  alert.className = 'atlas-fragility-alert';
+  alert.style.cssText = 'background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-left:4px solid #ef4444;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:0.82rem;color:var(--text);line-height:1.6;';
+  alert.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:#ef4444;margin-bottom:5px;">&#9888; Adherence Fragility Alert</div>' + msg;
+  container.insertBefore(alert, container.firstChild);
+}
+
 // ── Core worklist render ─────────────────────────────────────────────────────
 
 /**
@@ -2514,10 +2727,50 @@ function renderClinWorklist() {
 
   const allPatients = window._rppData || [];
 
+  // Collect unique workspace values from all patient records (for branch filter)
+  const workspaces = [...new Set((window._rppData || []).flatMap(p => [...(p.mmas||[]), ...(p.map||[])].map(r => r.workspace).filter(Boolean)))].sort();
+
+  // Render branch filter dropdown if PI mode and multiple workspaces present
+  const branchFilterContainerId = 'clin-branch-filter-container';
+  let branchFilterContainer = document.getElementById(branchFilterContainerId);
+  if (typeof isPIMode === 'function' && isPIMode() && workspaces.length >= 2) {
+    if (!branchFilterContainer) {
+      branchFilterContainer = document.createElement('div');
+      branchFilterContainer.id = branchFilterContainerId;
+      branchFilterContainer.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 20px 0;margin-bottom:4px;';
+      branchFilterContainer.innerHTML = `<label style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);flex-shrink:0;">Branch / Location</label>
+        <select id="clin-branch-filter-select" onchange="window._clinBranchFilter=this.value||null;renderClinWorklist();"
+          style="font-family:var(--font-mono);font-size:0.72rem;background:var(--card2);border:1px solid var(--border2);color:var(--muted);border-radius:5px;padding:4px 8px;cursor:pointer;min-width:160px;">
+          <option value="">All Branches</option>
+          ${workspaces.map(ws => `<option value="${ws}"${window._clinBranchFilter===ws?' selected':''}>${ws}</option>`).join('')}
+        </select>`;
+      if (body.parentElement) body.parentElement.insertBefore(branchFilterContainer, body);
+    } else {
+      // Refresh options in case workspaces changed
+      const sel = document.getElementById('clin-branch-filter-select');
+      if (sel) {
+        sel.innerHTML = `<option value="">All Branches</option>` +
+          workspaces.map(ws => `<option value="${ws}"${window._clinBranchFilter===ws?' selected':''}>${ws}</option>`).join('');
+      }
+    }
+  } else if (branchFilterContainer) {
+    branchFilterContainer.style.display = 'none';
+  }
+
   // Show all patients that have any record at all
   let rows = allPatients.filter(p =>
     _clinMapRecs(p).length > 0 || _clinMmasRecs(p).length > 0 || (p.peacs || []).length > 0
   );
+
+  // Branch filter (PI mode — filter by latest MAP or MMAS record workspace)
+  if (window._clinBranchFilter) {
+    rows = rows.filter(p => {
+      const latestMap  = _clinLatest(_clinMapRecs(p));
+      const latestMmas = _clinLatest(_clinMmasRecs(p));
+      const ws = (latestMap && latestMap.workspace) || (latestMmas && latestMmas.workspace) || null;
+      return ws === window._clinBranchFilter;
+    });
+  }
 
   // Search
   const q = ((document.getElementById('clin-search')?.value) || '').trim().toUpperCase();
@@ -2611,6 +2864,11 @@ function renderClinWorklist() {
                 : status === 'atrisk'  ? 'rgba(239,68,68,0.03)'
                 : '';
 
+    // Stability classification badge
+    const sfRec   = _clinsfRecord(p);
+    const sfBadge = sfRec ? _clinsfBadge(sfRec) : '';
+    const sfFlags = sfRec ? _clinDomainFlags(sfRec) : '';
+
     // Score cell helper: show score + small count badge if any records
     const scorePill = (str, color, count, dim) =>
       count > 0
@@ -2626,7 +2884,10 @@ function renderClinWorklist() {
       onclick="openClinPatientBrief('${p.pid}')">
       <div style="display:flex;flex-direction:column;gap:2px;pointer-events:none;">
         <div style="font-family:var(--font-mono);font-size:0.84rem;font-weight:600;color:var(--text);">${p.pid}</div>
+        ${sfBadge ? `<div style="margin-top:1px;">${sfBadge}</div>` : ''}
+        ${sfFlags}
         <div style="font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);">${_clinTimeAgo(lastTs)}</div>
+        ${(typeof isPIMode === 'function' && isPIMode()) ? `<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:1px;">${_clinLatest(_clinMapRecs(p))?.workspace || _clinLatest(_clinMmasRecs(p))?.workspace || '—'}</div>` : ''}
       </div>
       <div style="text-align:right;pointer-events:none;">${scorePill(mapStr, mapMeta.color, mapCount)}</div>
       <div style="text-align:right;pointer-events:none;">${scorePill(mmasStr, mmasColor, mmasCount)}</div>
@@ -3022,7 +3283,7 @@ const _PHENOTYPE_INTERVENTIONS = {
       'Collaborative goal-setting: patient defines own adherence target',
       'Decisional balance exercise: benefits vs concerns'
     ],
-    evidence: 'MI shows 26% improvement in adherence in intentional non-adherers (Lundahl et al., 2013)'
+    evidence: 'MI is supported for ambivalence-driven and volitional non-adherence across multiple RCTs (Lundahl et al., 2013 meta-analysis). Phenotype-specific effect sizes for MAP-defined Intentional Resistors are not yet established.'
   },
   'Routine Forgetter': {
     strategy: 'Habit Anchoring & Environmental Cues',
@@ -3031,7 +3292,7 @@ const _PHENOTYPE_INTERVENTIONS = {
       'Smartphone alarm tied to existing daily routine',
       'Blister pack dispensing for complex regimens'
     ],
-    evidence: 'Habit anchoring reduces missed doses by 38% (Lam & Marsden, 2015)'
+    evidence: 'Environmental cueing and habit-stacking strategies are supported for forgetfulness-driven non-adherence (Lam & Fresco, 2015). Phenotype-specific effect sizes for MAP-defined Routine Forgetters are not yet established.'
   },
   'Situational Skipper': {
     strategy: 'Flexible Dosing Protocol',
@@ -3040,7 +3301,7 @@ const _PHENOTYPE_INTERVENTIONS = {
       'Agreed dose-timing window (plus or minus 4h flexibility)',
       'Pre-emptive planning for known disruption periods'
     ],
-    evidence: 'Flexible dosing windows maintain efficacy while improving adherence in situational skippers (Doshi et al., 2016)'
+    evidence: 'Flexible dosing windows and contingency planning address situational adherence barriers (Doshi et al., 2016). Phenotype-specific effect sizes for MAP-defined Situational Skippers are not yet established.'
   },
   'Side-Effect Avoider': {
     strategy: 'Side Effect Management Counseling',
@@ -3049,7 +3310,7 @@ const _PHENOTYPE_INTERVENTIONS = {
       'Timing adjustment (e.g., take with food, evening dose)',
       'Therapeutic substitution review if intolerable'
     ],
-    evidence: 'Targeted side-effect counseling improves adherence by 31% in this phenotype (Kini & Ho, 2018)'
+    evidence: 'Side-effect counseling and timing/formulation adjustments address medication adverse-effect barriers to adherence (Kini & Ho, 2018). Phenotype-specific effect sizes for MAP-defined Side-Effect Avoiders are not yet established.'
   },
   'Optimistic Stopper': {
     strategy: 'Long-term Consequence Education',
@@ -3058,7 +3319,7 @@ const _PHENOTYPE_INTERVENTIONS = {
       'Visualize risk: stopping statins after 6 months increases cardiac event risk',
       'Pharmacist-led medication review at 3-month mark'
     ],
-    evidence: 'Structured follow-up reduces premature discontinuation by 44% in optimistic stoppers (Ho et al., 2014)'
+    evidence: 'Structured follow-up and long-term consequence education address premature discontinuation in patients who believe they are cured (Ho et al., 2014). Phenotype-specific effect sizes for MAP-defined Optimistic Stoppers are not yet established.'
   }
 };
 
@@ -3154,7 +3415,7 @@ function renderClinCareGaps() {
     const peacsBase  = latestPeacs ? +(latestPeacs.base  || 0) : 0;
     const peacsMvmt  = latestPeacs ? +(latestPeacs.mvmt  || 0) : 0;
     const peacsStrat = latestPeacs ? +(latestPeacs.strata|| 0) : 0;
-    const peacsVal   = latestPeacs ? (peacsBase + peacsMvmt + peacsStrat).toFixed(2) : '—';
+    const peacsVal   = latestPeacs ? (+latestPeacs.pe || +latestPeacs.pe_score || Math.pow(Math.max(0, peacsBase * peacsMvmt * peacsStrat), 1/3)).toFixed(3) : '—';
 
     const lastSeen = _ts(p.lastTs);
     const pid = _esc(p.pid);
@@ -3522,6 +3783,30 @@ function openClinPatientBrief(pid) {
   const peacsPhenotype = peacsRec ? (peacsRec.phenotype || peacsRec.peacs_phenotype || null) : null;
   const peacsPhenotypeCardHtml = peacsPhenotype ? _clinPhenotypeCard(peacsPhenotype) : '';
 
+  // PEACS Next-Step guidance block
+  const _peacsNextStep = (() => {
+    if (!peacsRec) {
+      return { text: 'Start: BASE session (Architecture · monthly)', bg: 'rgba(78,156,245,0.10)', border: 'rgba(78,156,245,0.28)', accent: '#4e9cf5' };
+    }
+    const _base   = peacsRec.base   > 0 ? peacsRec.base   : 0;
+    const _mvmt   = peacsRec.mvmt   > 0 ? peacsRec.mvmt   : 0;
+    const _strata = peacsRec.strata > 0 ? peacsRec.strata : 0;
+    if (_base > 0 && (!peacsRec.mvmt || peacsRec.mvmt === 0)) {
+      return { text: 'Next: MVMT session (Execution · weekly)', bg: 'rgba(139,111,245,0.10)', border: 'rgba(139,111,245,0.28)', accent: '#8b6ff5' };
+    }
+    if (_base > 0 && _mvmt > 0 && (!peacsRec.strata || peacsRec.strata === 0)) {
+      return { text: 'Next: STRATA session (Context · quarterly)', bg: 'rgba(46,201,138,0.10)', border: 'rgba(46,201,138,0.28)', accent: '#2ec98a' };
+    }
+    if (_base > 0 && _mvmt > 0 && _strata > 0) {
+      return { text: 'Complete · Reassess in 90 days', bg: 'rgba(16,185,129,0.10)', border: 'rgba(16,185,129,0.28)', accent: '#10b981' };
+    }
+    return { text: 'Start: BASE session (Architecture · monthly)', bg: 'rgba(78,156,245,0.10)', border: 'rgba(78,156,245,0.28)', accent: '#4e9cf5' };
+  })();
+  const peacsNextStepHtml = `<div style="margin-top:8px;padding:6px 10px;border-radius:6px;background:${_peacsNextStep.bg};border:1px solid ${_peacsNextStep.border};font-family:var(--font-mono);font-size:0.62rem;line-height:1.6;">
+    <div style="color:${_peacsNextStep.accent};letter-spacing:0.10em;text-transform:uppercase;margin-bottom:2px;">Next Step</div>
+    <div style="color:var(--text);">${_peacsNextStep.text}</div>
+  </div>`;
+
   // Status
   const status = p ? _clinCompositeStatus(p) : 'new';
   const lastTs = p ? _clinLastSeenTs(p) : 0;
@@ -3591,6 +3876,7 @@ function openClinPatientBrief(pid) {
 
   // MTM timer (stored per patient so it persists while modal is open)
   const timerKey = '_clinMtmTimer_' + pid;
+  const _briefTitle = window._atlasGccMode ? 'Patient Consultation · Pharmacy Brief' : 'Patient Brief · Rounds Mode';
 
   const modal = document.createElement('div');
   modal.id    = 'clin-brief-modal';
@@ -3602,7 +3888,7 @@ function openClinPatientBrief(pid) {
       <!-- Top bar -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);">
         <div>
-          <div style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;">Patient Brief · Rounds Mode</div>
+          <div style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;">${_briefTitle}</div>
           <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.45rem;font-weight:300;color:var(--bright);">${pid}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
@@ -3649,9 +3935,11 @@ function openClinPatientBrief(pid) {
             ? `<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2rem;font-weight:300;color:${peMeta.color};line-height:1;">${peScore.toFixed(3)}</div>
                <div style="font-family:var(--font-mono);font-size:0.65rem;color:${peMeta.color};margin-top:2px;">${peMeta.label}</div>
                ${peacsDetailHtml}
-               ${peacsPhenotypeCardHtml}`
+               ${peacsPhenotypeCardHtml}
+               ${peacsNextStepHtml}`
             : `<div style="font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);margin-top:4px;">Not assessed</div>
-               <div style="font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);margin-top:2px;">3-stage · quarterly</div>`
+               <div style="font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);margin-top:2px;">3-stage · quarterly</div>
+               ${peacsNextStepHtml}`
           }
           ${peCount > 0 ? `<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:8px;">${peCount} session${peCount !== 1 ? 's' : ''}</div>` : ''}
         </div>
@@ -3701,6 +3989,13 @@ function openClinPatientBrief(pid) {
     }
   });
   document.body.appendChild(modal);
+
+  // Fragility alert: inject at top of the inner card if patient is fragile or hidden
+  const sfRec = p ? _clinsfRecord(p) : null;
+  if (sfRec) {
+    const innerCard = modal.firstElementChild;
+    if (innerCard) _clinFragilityAlert(sfRec, innerCard);
+  }
 
   // Auto-start MTM timer
   _clinBriefMtmToggle(pid, true);
@@ -3953,11 +4248,7 @@ function _cpUpdatePatientRowIntervention(patientNum, record) {
     if (row.dataset.patientNum === String(patientNum)) {
       const intCell = row.querySelector('.cp-last-intv');
       if (intCell) {
-        const typeLabel = {
-          counseling:'Counseling', refill_sync:'Refill Sync', care_referral:'Care Referral',
-          education:'Education', escalation:'Escalation', phone_followup:'Phone Follow-up',
-          mtm_encounter:'MTM Encounter', other:'Other'
-        }[record.type] || record.type;
+        const typeLabel = _clinEncounterLabel(record.type);
         intCell.textContent = typeLabel + ' · ' + new Date(record.timestamp).toLocaleDateString();
         intCell.classList.add('cp-intv-fresh');
       }
@@ -3984,7 +4275,7 @@ function _cpGetLastIntv(patientNum) {
   const entries = Object.values(intvs).sort((a,b) => b.timestamp - a.timestamp);
   if (!entries.length) return '<span class="cp-no-intv">No interventions logged</span>';
   const last = entries[0];
-  const label = {counseling:'Counseling',refill_sync:'Refill Sync',care_referral:'Care Referral',education:'Education',escalation:'Escalation',phone_followup:'Phone Follow-up',mtm_encounter:'MTM Encounter',other:'Other'}[last.type] || last.type;
+  const label = _clinEncounterLabel(last.type);
   return label + ' · ' + new Date(last.timestamp).toLocaleDateString();
 }
 
@@ -3994,7 +4285,7 @@ function _cpRenderIntvHistory(patientNum) {
   const entries = Object.values(intvs).sort((a,b) => b.timestamp - a.timestamp).slice(0,5);
   if (!entries.length) return '';
   return '<div class="cp-intv-hist-title">Recent Interventions</div>' + entries.map(e => {
-    const label = {counseling:'Counseling',refill_sync:'Refill Sync',care_referral:'Care Referral',education:'Education',escalation:'Escalation',phone_followup:'Phone Follow-up',mtm_encounter:'MTM Encounter',other:'Other'}[e.type] || e.type;
+    const label = _clinEncounterLabel(e.type);
     return `<div class="cp-intv-hist-row"><span class="cp-intv-hist-type">${label}</span><span class="cp-intv-hist-date">${new Date(e.timestamp).toLocaleDateString()}</span>${e.note ? `<p class="cp-intv-hist-note">${e.note}</p>` : ''}</div>`;
   }).join('');
 }
@@ -4015,8 +4306,8 @@ function cpPrintSummary(patientNum) {
 
   const score = mmRec ? (mmRec.total_score || mmRec.score || '—') : '—';
   const scoreNum = parseFloat(score);
-  const scoreBand = scoreNum >= 6 ? 'High Adherence' : scoreNum >= 4 ? 'Moderate Adherence' : scoreNum < 4 ? 'Low Adherence' : '—';
-  const scoreColor = scoreNum >= 6 ? '#10b981' : scoreNum >= 4 ? '#f59e0b' : '#ef4444';
+  const scoreBand = scoreNum >= 8 ? 'High Adherence' : scoreNum >= 6 ? 'Medium Adherence' : scoreNum >= 0 ? 'Low Adherence' : '—';
+  const scoreColor = scoreNum >= 8 ? '#10b981' : scoreNum >= 6 ? '#f59e0b' : '#ef4444';
 
   const condition = mmRec?.condition || mmRec?.primary_condition || '—';
   const medications = mmRec?.medications || mmRec?.med_count || '—';
@@ -4038,7 +4329,7 @@ function cpPrintSummary(patientNum) {
     <table class="cs-table">
       <tr><th>Date</th><th>Type</th><th>Note</th></tr>
       ${intvEntries.map(e => {
-        const label = {counseling:'Counseling',refill_sync:'Refill Sync',care_referral:'Care Referral',education:'Education',escalation:'Escalation',phone_followup:'Phone Follow-up',mtm_encounter:'MTM Encounter',other:'Other'}[e.type] || e.type;
+        const label = _clinEncounterLabel(e.type);
         return `<tr><td>${new Date(e.timestamp).toLocaleDateString()}</td><td>${label}</td><td>${e.note || '—'}</td></tr>`;
       }).join('')}
     </table>` : '<p class="cs-na">No interventions logged for this patient.</p>';

@@ -514,7 +514,7 @@ async function downloadTemplate(e) {
 
     // ── DATA ENTRY SHEET ─────────────────────────────────────────────────────
     const COL_HEADERS = [
-      'Country *','City','Patient ID','Assessment Date (YYYY-MM-DD)',
+      'Date (YYYY-MM-DD)','Country *','City','Patient ID','Assessment Date (YYYY-MM-DD)',
       'Condition','Drug Type','Drug Name','Drug Strength','Route of Administration',
       'Gender','Age Range','Education Level',
       'Q1 — Forget to take?','Q2 — Missed past 2 wks?','Q3 — Cut back / felt worse?',
@@ -524,7 +524,7 @@ async function downloadTemplate(e) {
     ];
     // Example row: one highlighted row; delete before uploading
     const EXAMPLE_DATA = [
-      'United States','New York','PT-001 (EXAMPLE — DELETE BEFORE UPLOAD)','2026-01-15',
+      '2026-01-15','United States','New York','PT-001 (EXAMPLE — DELETE BEFORE UPLOAD)','2026-01-15',
       'Hypertension','Single API','Lisinopril','10mg','Oral (Tablet/Capsule)',
       'Male','45-54',"Bachelor's degree",
       'NO','NO','NO','NO','YES','NO','NO','Never',
@@ -782,6 +782,143 @@ async function downloadMAPTemplate(e) {
 window.downloadMAPTemplate = downloadMAPTemplate;
 
 /**
+ * Generates and downloads the TESSERA Normative Contribution Template.
+ * Identical to the standard MMAS-8 bulk upload template but with the Patient ID
+ * column removed. The title row sentinel "NORMATIVE CONTRIBUTION" is detected by
+ * the parser to activate no-PII column mapping.
+ */
+async function downloadNormativeTemplate(btn) {
+  const orig = btn?.textContent;
+  if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
+  try {
+    await ensureSheetJS();
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Names: [] };
+
+    const CONDITIONS   = ['Hypertension','Type 2 Diabetes','Type 1 Diabetes','Heart Failure','Asthma / COPD','HIV/AIDS','Tuberculosis','Epilepsy / Seizure Disorder','Depression','Anxiety Disorder','Schizophrenia / Psychosis','Bipolar Disorder','Cancer (Oncology)','Chronic Kidney Disease','Hypothyroidism','Rheumatoid Arthritis','Osteoporosis','Dyslipidaemia / Hypercholesterolaemia','Atrial Fibrillation','Other'];
+    const AGE_RANGES   = ['Under 18','18–24','25–34','35–44','45–54','55–64','65–74','75 and older','Prefer not to say'];
+    const EDUCATION    = ['No formal education','Primary school','Secondary school','Vocational / Technical','Some university / college','Bachelor\'s degree','Master\'s degree','Doctoral degree','Prefer not to say'];
+    const ROUTES       = ['Oral (Tablet/Capsule)','Sublingual','Buccal','Intravenous (IV)','Intramuscular (IM)','Subcutaneous (SC)','Transdermal (Patch)','Inhaled','Intranasal','Ophthalmic (Eye drops)','Otic (Ear drops)','Rectal (Suppository)','Vaginal','Topical (Cream/Gel)','Other'];
+
+    const lookupAoa = [['ConditionList','AgeRangeList','EducationList','RouteList']];
+    const maxLen = Math.max(CONDITIONS.length, AGE_RANGES.length, EDUCATION.length, ROUTES.length);
+    for (let i = 0; i < maxLen; i++) {
+      lookupAoa.push([CONDITIONS[i]||'', AGE_RANGES[i]||'', EDUCATION[i]||'', ROUTES[i]||'']);
+    }
+    const wsLookup = XLSX.utils.aoa_to_sheet(lookupAoa);
+    wsLookup['!cols'] = [{wch:46},{wch:22},{wch:46},{wch:32}];
+    XLSX.utils.book_append_sheet(wb, wsLookup, 'Lookup');
+    wb.Workbook.Names.push({ Name:'ConditionList', Ref:`Lookup!$A$2:$A$${CONDITIONS.length+1}` });
+    wb.Workbook.Names.push({ Name:'AgeRangeList',  Ref:`Lookup!$B$2:$B$${AGE_RANGES.length+1}` });
+    wb.Workbook.Names.push({ Name:'EducationList', Ref:`Lookup!$C$2:$C$${EDUCATION.length+1}` });
+    wb.Workbook.Names.push({ Name:'RouteList',     Ref:`Lookup!$D$2:$D$${ROUTES.length+1}` });
+
+    const wsInstr = XLSX.utils.aoa_to_sheet([
+      ['TESSERA NORMATIVE CONTRIBUTION TEMPLATE — MMAS-8 · Scala Carta Foundation'],
+      [],
+      ['PURPOSE'],
+      ['This template is for researchers enrolled under the TESSERA Research Contribution License.'],
+      ['It does not contain a Patient ID column. No patient identifiers of any kind should be entered.'],
+      ['Submission of this file fulfils the data contribution obligation of your Research Contribution License.'],
+      [],
+      ['INSTRUCTIONS'],
+      [],
+      ['1.  Fill in the STUDY INFORMATION section (rows 2–7 of the "Data Entry" sheet).'],
+      ['    Study Title (B2), Principal Investigator (B3), and Institution (B4) are required.'],
+      [],
+      ['2.  Enter one row per patient assessment, starting at ROW 11.'],
+      ['    Do NOT add any patient names, ID numbers, NHS numbers, or any other identifier.'],
+      ['    Country and City are used for map geocoding only and are not identifying at population level.'],
+      [],
+      ['3.  Q1–Q7: Select YES or NO. Q5 is REVERSE-SCORED (YES = took last dose = adherent).'],
+      ['    Q8 Frequency: Never/Rarely | Once in a while | Sometimes | Usually | All of the time'],
+      [],
+      ['4.  Save and upload this file through the TESSERA Contribution portal in ATLAS.'],
+      [],
+      ['GDPR / DPA NOTE'],
+      ['This file is designed to contain no personal data as defined under GDPR Art. 4(1) or UK DPA 2018.'],
+      ['It does not require ethics amendment or data management agreement review prior to submission.'],
+      ['If you have questions, contact philip.morisky@adherence.cc before uploading.'],
+    ]);
+    wsInstr['!cols'] = [{wch:115}];
+    XLSX.utils.book_append_sheet(wb, wsInstr, 'Instructions');
+
+    // No Patient ID column — cols: Date, Country, City, Condition, Drug Type, Drug Name,
+    //   Drug Strength, Route, Gender, Age Range, Education, Q1–Q8
+    // Column letters: A=Date B=Country C=City D=Condition E=DrugType F=DrugName
+    //   G=DrugStrength H=Route I=Gender J=AgeRange K=Education L=Q1 M=Q2 N=Q3
+    //   O=Q4 P=Q5 Q=Q6 R=Q7 S=Q8
+    const COL_HEADERS = [
+      'Date (YYYY-MM-DD)','Country *','City',
+      'Condition','Drug Type','Drug Name','Drug Strength','Route of Administration',
+      'Gender','Age Range','Education Level',
+      'Q1 — Forget to take?','Q2 — Missed past 2 wks?','Q3 — Cut back / felt worse?',
+      'Q4 — Forgot when travelling?','Q5 — Took last scheduled dose? (REVERSED)',
+      'Q6 — Stopped when felt in control?','Q7 — Feel hassled by treatment?',
+      'Q8 Frequency (how often forget?)',
+    ];
+    const EXAMPLE_DATA = [
+      '2026-01-15','United States (EXAMPLE — DELETE ROW)','New York',
+      'Hypertension','Single API','Lisinopril','10mg','Oral (Tablet/Capsule)',
+      'Male','45–54','Bachelor\'s degree',
+      'NO','NO','NO','NO','YES','NO','NO','Never/Rarely',
+    ];
+    const dataAoa = [
+      ['ATLAS PLATFORM · MMAS-8 NORMATIVE CONTRIBUTION TEMPLATE'],
+      ['STUDY TITLE *',''],
+      ['PRINCIPAL INVESTIGATOR *',''],
+      ['INSTITUTION *',''],
+      ['IRB PROTOCOL #',''],
+      ['CLINICALTRIALS.GOV ID',''],
+      ['STUDY PHASE / DESIGN',''],
+      [],
+      COL_HEADERS,
+      EXAMPLE_DATA,
+      [],[],[],[],[],[],[],[],[],[],
+    ];
+    const wsData = XLSX.utils.aoa_to_sheet(dataAoa);
+    wsData['!cols'] = [
+      {wch:22},{wch:20},{wch:22},
+      {wch:32},{wch:18},{wch:24},{wch:14},{wch:26},
+      {wch:14},{wch:12},{wch:20},
+      {wch:22},{wch:22},{wch:26},{wch:28},{wch:32},{wch:28},{wch:28},{wch:26},
+    ];
+    const dv = (sqref, formula1, strict) => ({
+      sqref, type:'list', formula1,
+      showDropDown: false,
+      showErrorMessage: !!strict,
+      errorStyle: 'stop', errorTitle: 'Invalid value', error: strict || '',
+    });
+    wsData['!dataValidations'] = [
+      dv('D11:D2000', 'ConditionList', ''),
+      dv('E11:E2000', '"Single API,Combination (FDC),Biological"', ''),
+      dv('H11:H2000', 'RouteList', ''),
+      dv('I11:I2000', '"Male,Female,Other / Prefer not to say"', ''),
+      dv('J11:J2000', 'AgeRangeList', ''),
+      dv('K11:K2000', 'EducationList', ''),
+      dv('L11:R2000', '"YES,NO"', 'Enter YES or NO for Q1–Q7.'),
+      dv('S11:S2000', '"Never/Rarely,Once in a while,Sometimes,Usually,All of the time"', 'Select a Q8 frequency from the dropdown.'),
+    ];
+    XLSX.utils.book_append_sheet(wb, wsData, 'Data Entry');
+    wb.SheetNames = ['Instructions','Data Entry','Lookup'];
+
+    const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+    const blob  = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const dlUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = dlUrl; a.download = 'TESSERA_Normative_Contribution_Template.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(dlUrl);
+    if (typeof showToast === 'function') showToast('TESSERA Normative Contribution Template downloaded. No patient identifiers required.', 6000);
+  } catch(err) {
+    console.error('[normative-template]', err);
+    if (typeof showToast === 'function') showToast('Could not generate template: ' + err.message, 4000);
+  }
+  if (btn) { btn.textContent = orig; btn.disabled = false; }
+}
+window.downloadNormativeTemplate = downloadNormativeTemplate;
+
+/**
  * Triggers a browser download of a CSV file built from headers and rows.
  * Applies CSV injection sanitization (guards against =, +, -, @, tab leading chars).
  * @param {string[]} headers - Column header labels
@@ -836,9 +973,12 @@ function mmasScoreInterpretation(score) {
 // ── Jargon Glossary — adds data-tip tooltips to technical terms in the DOM ───
 const ATLAS_GLOSSARY = {
   'MMAS-8':       'Morisky Medication Adherence Scale — 8 items. The global standard for measuring medication adherence. Score 0–8; higher = better.',
-  'PEACS':        'Predictive Emergence Assessment for Clinical Services — tracks medication adherence patterns across multiple dimensions over time.',
-  'MAP':          'Multidimensional Adherence Parameters — classifies adherence into three domains: Architecture, Execution, and Context.',
-  'MAP Tri-Domain': 'Three-domain adherence framework: Architecture (intentional barriers), Execution (behavioral patterns), Context (social determinants).',
+  'PEACS':        'Predictive Emergence Assessment for Clinical Services — 22-item composite instrument. BASE scale (Architecture, monthly, 7 items), MVMT scale (Execution, weekly, 7 items), STRATA scale (Context, quarterly, 8 items).',
+  'BASE':         'Behavioral Architecture and Stability Evaluation — PEACS Scale 01. Measures structural conditions of care: access reliability, regimen clarity, care relationship quality. 7 items, monthly.',
+  'MVMT':         'Measurable Variance Minimal Term — PEACS Scale 02. Measures behavioral trajectory and drift resistance: whether adherence is stable, improving, or eroding. 7 items, weekly.',
+  'STRATA':       'Social and Treatment Relational Access and Terrain — PEACS Scale 03. Measures socioeconomic, cultural, and environmental conditions affecting adherence. 8 items, quarterly.',
+  'MAP':          'Multidimensional Adherence Parameters — 8-item instrument measuring Architecture, Execution, and Context-Guard domains. Produces PE score and additive 0-8 score.',
+  'MAP Tri-Domain': 'Three-domain adherence framework: Architecture (beliefs and intentional decisions), Execution (behavioral reliability), Context-Guard (environmental friction, floored at 0.5).',
   'KYBOS':        'Know Your Barriers of Scope — a visual cube showing the six dimensions of adherence barriers.',
   'Loom':         'Adherence Loom — a longitudinal visualization showing how adherence patterns weave over time across multiple medications.',
   'Sentinel':     'Automated alert system that flags patients whose adherence score drops below the medium threshold, triggering clinical review.',

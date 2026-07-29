@@ -243,7 +243,7 @@ function _saResBuildRow(r, fields, anonMode, wsCodeMap) {
   const normScore = inst === 'mmas' ? (r.score||0)/8 : inst === 'map' ? Math.pow(Math.max(0,((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3*((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3*(0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2)),1/3) : (r.pe!=null?+r.pe:0);
   const rawScore  = inst === 'mmas' ? (r.score||0) : normScore;
   const tier = inst === 'mmas'
-    ? (rawScore >= 7 ? 'High' : rawScore >= 6 ? 'Medium' : 'Low')
+    ? (rawScore >= 8 ? 'High' : rawScore >= 6 ? 'Medium' : 'Low')
     : (normScore >= 0.85 ? 'Optimal' : normScore >= 0.70 ? 'Good' : normScore >= 0.55 ? 'Moderate' : 'Poor');
 
   const wsRaw = r.institution_code || r.workspace || '';
@@ -485,19 +485,14 @@ function _resTTest(a, b) {
   const t=(m1-m2)/se;
   // Welch-Satterthwaite df
   const df=Math.pow(v1/n1+v2/n2,2)/(Math.pow(v1/n1,2)/(n1-1)+Math.pow(v2/n2,2)/(n2-1));
-  // p-value using normal approx for large df, or beta approx
-  const p = df > 30 ? 2*(1-_resPhi(Math.abs(t))) : _resPFromT(Math.abs(t), df);
+  const p = _resPFromT(Math.abs(t), df);
   return {t,p,df};
 }
 
 function _resPFromT(t, df) {
-  // Regularized incomplete beta approximation
-  const x = df/(df+t*t);
-  const a = df/2, b2 = 0.5;
-  // Use normal approx for moderate df
-  if (df > 10) return 2*(1-_resPhi(t*(1-1/(4*df))/Math.sqrt(1+t*t/(2*df))));
-  // Simple approximation
-  return Math.min(1, 2*Math.exp(-0.717*t - 0.416*t*t/df));
+  // Bailey normal approximation — accurate to ~3 decimal places for df >= 3
+  const z = t * (1 - 1/(4*df)) / Math.sqrt(1 + t*t/(2*df));
+  return Math.max(0, Math.min(1, 2*(1-_resPhi(Math.abs(z)))));
 }
 
 function _resMannWhitney(a, b) {
@@ -532,8 +527,12 @@ function _resANOVA(groups) {
   const dfB=k-1, dfW=N-k;
   if(dfB<1||dfW<1||SSW===0) return {F:null,p:null,eta2:null};
   const F=(SSB/dfB)/(SSW/dfW);
-  // p-value: normal approximation via Fisher's F
-  const p=Math.max(0,Math.min(1,Math.exp(-0.5*(F-1)*dfB)));
+  // p-value: Wilson-Hilferty chi-square approximation for F(dfB, dfW)
+  // Approximates Pr[F(dfB,dfW) >= F] via chi-square(dfB) CDF
+  const chi2 = F * dfB;
+  const dfK = dfB;
+  const whZ = (Math.pow(chi2/dfK, 1/3) - (1 - 2/(9*dfK))) / Math.sqrt(2/(9*dfK));
+  const p = Math.max(0, Math.min(1, 1 - _resPhi(whZ)));
   const eta2=SSB/(SSB+SSW);
   return {F,p,eta2,dfB,dfW};
 }
@@ -634,10 +633,12 @@ function _saResRunAnalysis() {
     if (groups.length < 2) {
       testHTML = `<div class="sa-panel" style="color:${_C.dim};">Need at least 2 groups for comparison tests.</div>`;
     } else {
-      // Run pairwise for top 2 groups (or all pairs if ≤4 groups)
+      // Run pairwise for up to 6 groups (C(6,2)=15 pairs); note if more groups were dropped
+      const pairCap = 6;
+      const cappedN = Math.min(groups.length, pairCap);
       const pairs = [];
-      for (let i=0;i<Math.min(groups.length,4);i++)
-        for (let j=i+1;j<Math.min(groups.length,4);j++) pairs.push([i,j]);
+      for (let i=0;i<cappedN;i++)
+        for (let j=i+1;j<cappedN;j++) pairs.push([i,j]);
 
       const rows = pairs.map(([i,j]) => {
         const A=groups[i], B=groups[j];
@@ -683,7 +684,7 @@ function _saResRunAnalysis() {
             <tbody>${rows}</tbody>
           </table>
         </div>
-        <div style="padding:10px 16px;font-size:0.72rem;color:${_C.dim};">*** p<0.001 · ** p<0.01 · * p<0.05 · ns = not significant. p-values are approximate.</div>
+        <div style="padding:10px 16px;font-size:0.72rem;color:${_C.dim};">*** p&lt;0.001 · ** p&lt;0.01 · * p&lt;0.05 · ns = not significant. p-values are approximate.${groups.length > pairCap ? ` Note: ${groups.length - pairCap} group(s) omitted from pairwise comparison (showing top ${pairCap} only — use ANOVA for all-group test).` : ''}</div>
       </div>`;
     }
   } else if (testSel === 'anova') {
@@ -756,7 +757,7 @@ const _SA_CONDITIONS = [
 
 function _saResGenerateAtlasId() {
   const year = new Date().getFullYear();
-  const seq  = String(Math.floor(Math.random() * 9000) + 1000);
+  const seq  = Date.now().toString(36).slice(-5).toUpperCase();
   return `ATLAS-${year}-${seq}`;
 }
 
@@ -1950,8 +1951,8 @@ function _saRenderTrajectories(container, grouped) {
               ${g.records.map((r, ri) => {
                 const sc = g.scores[ri];
                 const norm = sc/8;
-                const tier = sc >= 7 ? 'High' : sc >= 6 ? 'Medium' : 'Low';
-                const tCol = sc >= 7 ? '#10b981' : sc >= 6 ? '#f59e0b' : '#ef4444';
+                const tier = sc >= 8 ? 'High' : sc >= 6 ? 'Medium' : 'Low';
+                const tCol = sc >= 8 ? '#10b981' : sc >= 6 ? '#f59e0b' : '#ef4444';
                 const ts   = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
                 return `<tr style="border-bottom:1px solid ${_C.border};">
                   <td style="padding:4px 10px;color:${_C.dim};">${ri+1}</td>

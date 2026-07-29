@@ -58,6 +58,7 @@ const _SA_PSY_GROUPS = {
       { id:'construct',      label:'Construct'      },
       { id:'predictive',     label:'Predictive'     },
       { id:'classification', label:'Classification' },
+      { id:'guard',          label:'Context Guard'  },
     ]},
   ],
   peacs: [
@@ -72,7 +73,6 @@ const _SA_PSY_GROUPS = {
       { id:'confusion',    label:'Confusion Matrix' },
       { id:'roc',          label:'ROC / AUC'        },
       { id:'calibration',  label:'Calibration'      },
-      { id:'guard',        label:'Context Guard'     },
     ]},
     { id:'trajectories',  label:'Trajectories',  subs: [
       { id:'longitudinal', label:'Longitudinal'      },
@@ -243,9 +243,6 @@ function _saPsySetTab(tabId) {
   _saPsyDispatch();
 }
 
-// Compatibility shim — old single-arg _saPsyNav still works (used by legacy callers)
-function _saPsyNav(tabId) { _saPsySetTab(tabId); }
-
 // ── Central content dispatch ──────────────────────────────────────────────────
 
 function _saPsyDispatch() {
@@ -304,6 +301,7 @@ function _saPsyDispatch() {
             case 'construct':      _saPsyValidityConstruct(body);      break;
             case 'predictive':     _saPsyValidityPredictive(body);     break;
             case 'classification': _saPsyClassification(body, inst);   break;
+            case 'guard':          _saPsyMapValidGuard(body);          break;
           }
           break;
         }
@@ -400,7 +398,10 @@ function _saPsyComputeItems(inst) {
   const irtA=rIT.map(r=>{const c=Math.max(-0.999,Math.min(0.999,r));return c/Math.sqrt(1-c**2);});
   const irtB=itemMeans.map(p=>_psyLogit(1-p));
 
-  const scoreDist=Array.from({length:9},(_,s)=>totals.filter(t=>Math.round(t)===s).length);
+  const scoreDist=Array.from({length:9},(_,s)=>totals.filter(t=>s===8?t>=8:(Math.floor(t)===s&&t<s+1)).length);
+  const catLow  = totals.filter(t=>t<6).length;
+  const catMed  = totals.filter(t=>t>=6&&t<8).length;
+  const catHigh = totals.filter(t=>t>=8).length;
 
   // MAP-specific: subscale scores
   let subscales = null;
@@ -416,7 +417,7 @@ function _saPsyComputeItems(inst) {
   return { n, K, inst, alpha, omega, sem, splitHalf, rHalf,
            itemMeans, itemSDs, itemVars, rIT, loadings, discrimD,
            corrMatrix, avgInterCorr, irtA, irtB,
-           scoreDist, totalMean, totalSD, subscales,
+           scoreDist, catLow, catMed, catHigh, totalMean, totalSD, subscales,
            raw };  // expose raw for new analyses
 }
 
@@ -761,17 +762,17 @@ function _saPsyOverview(container, inst) {
 
   } else {
     // ── MMAS-8 Overview ───────────────────────────────────────────────────────
-    const lowN  = d.scoreDist.slice(0,6).reduce((s,v)=>s+v,0);
-    const medN  = d.scoreDist[6]+(d.scoreDist[7]||0);
-    const highN = d.scoreDist[8]||0;
+    const lowN  = d.catLow;
+    const medN  = d.catMed;
+    const highN = d.catHigh;
     const semC  = _C.cyan;
     const alpC  = d.alpha>=0.80?_C.green:d.alpha>=0.70?_C.amber:_C.red;
     const cols9 = ['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#10b981','#2ec98a','#2ec98a'];
     const maxBin = Math.max(...d.scoreDist,1);
 
     const cats=[
-      {l:'Low Adherence',    n:lowN,  pct:d.n>0?(lowN/d.n*100):0,  c:'#ef4444', range:'Score 0–5'},
-      {l:'Medium Adherence', n:medN,  pct:d.n>0?(medN/d.n*100):0,  c:'#f59e0b', range:'Score 6–7'},
+      {l:'Low Adherence',    n:lowN,  pct:d.n>0?(lowN/d.n*100):0,  c:'#ef4444', range:'Score < 6'},
+      {l:'Medium Adherence', n:medN,  pct:d.n>0?(medN/d.n*100):0,  c:'#f59e0b', range:'Score 6 to <8'},
       {l:'High Adherence',   n:highN, pct:d.n>0?(highN/d.n*100):0, c:'#10b981', range:'Score 8'},
     ];
 
@@ -820,7 +821,7 @@ function _saPsyOverview(container, inst) {
               <div style="font-size:0.70rem;color:${_C.dim};margin-top:3px;">${c.n.toLocaleString()} records · ${c.range}</div>
             </div>`).join('')}
           <div style="margin-top:10px;padding-top:10px;border-top:1px solid ${_C.border};font-size:0.76rem;color:${_C.dim};line-height:1.6;">
-            MMAS-8 cutoffs: High ≥ 8 · Medium 6–7 · Low &lt; 6
+            MMAS-8 cutoffs: High = 8 · Medium ≥6, &lt;8 · Low &lt; 6
           </div>
         </div>
       </div>
@@ -1388,7 +1389,7 @@ function _saPsyMapDomainNonComp(container) {
       <div style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:10px;">Context Guard — C<sub>guarded</sub> = 0.5 + 0.5 × C<sub>raw</sub></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;font-size:0.80rem;color:${_C.muted};line-height:1.65;">
         <div><span style="color:${_C.text};">Why the guard?</span><br>Context items (Q4, Q7) measure situational factors that are often absent rather than negative — a patient travelling and a patient with ideal circumstances both get C_raw ≈ 0. Without the guard, PE would collapse to zero even for highly adherent patients who simply lack contextual barriers.</div>
-        <div><span style="color:${_C.text};">Mathematical effect</span><br>C_raw ∈ [0, 1] maps to C_guarded ∈ [0.5, 1.0]. This sets a floor so that context can only attenuate PE by at most 21% (vs collapsing it to zero), preserving the signal from Architecture and Execution. See the Context Guard subtab in PEACS → Validation for a live visualization.</div>
+        <div><span style="color:${_C.text};">Mathematical effect</span><br>C_raw ∈ [0, 1] maps to C_guarded ∈ [0.5, 1.0]. This sets a floor so that context can only attenuate PE by at most 21% (vs collapsing it to zero), preserving the signal from Architecture and Execution. This transform is applied during MAP scoring and is specific to the MAP instrument.</div>
       </div>
     </div>`;
 }
@@ -1667,7 +1668,7 @@ function _saPsyComputeValidity(inst) {
     if (base.corrMatrix[i][j] > 0.70) redundantPairs.push({i,j,r:base.corrMatrix[i][j]});
   }
   const cvi = base.rIT.filter(r=>r>=0.30).length / 8;
-  const archIdx=[1,2,5], execIdx=[0,3,4,7], ctxIdx=[6];
+  const archIdx=[1,2,5], execIdx=[0,4,7], ctxIdx=[3,6];
   const domainCVI = inst==='map' ? {
     arch: archIdx.filter(i=>base.rIT[i]>=0.30).length / archIdx.length,
     exec: execIdx.filter(i=>base.rIT[i]>=0.30).length / execIdx.length,
@@ -1695,8 +1696,8 @@ function _saPsyComputeValidity(inst) {
     const mapMat=mapRaw.map(r=>Array.from({length:8},(_,j)=>parse(r['map_q'+(j+1)]))).filter(row=>row.every(v=>!isNaN(v)));
     if (mapMat.length>=10) {
       const archS=mapMat.map(r=>(r[1]+r[2]+r[5])/3);
-      const execS=mapMat.map(r=>(r[0]+r[3]+r[4]+r[7])/4);
-      const ctxS =mapMat.map(r=>r[6]);
+      const execS=mapMat.map(r=>(r[0]+r[4]+r[7])/3);
+      const ctxS =mapMat.map(r=>0.5+0.5*((r[3]+r[6])/2));
       corrArchExec=_psyPearson(archS,execS);
       corrArchCtx =_psyPearson(archS,ctxS);
       corrExecCtx =_psyPearson(execS,ctxS);
@@ -2211,6 +2212,88 @@ function _saPsyClassification(container, inst) {
 
 
 // ══════════════════════════════════════════════════════════════════════════════
+// MAP — CONTEXT GUARD (Validity tab)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function _saPsyMapValidGuard(container) {
+  const d = _saPsyCache.map;
+  if (!d || d.n < 5) {
+    container.innerHTML = `<div style="padding:40px;text-align:center;color:${_C.muted};">Insufficient MAP data.</div>`;
+    return;
+  }
+
+  // C_raw computed directly from Q4 and Q7 item responses (before guard is applied)
+  const cRaw = (d.raw||[])
+    .map(r => ((+r.map_q4||0) + (+r.map_q7||0)) / 2)
+    .filter(v => !isNaN(v));
+  const nWithZeroRaw = cRaw.filter(v => v <= 0.05).length;
+  const nTotal = cRaw.length || 1;
+
+  // Transform curve
+  const W=320, H=200, padL=36, padB=28, padT=16, padR=16;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const toX  = raw => padL + (raw * plotW);
+  const toYg = g   => padT + plotH - ((g - 0.5) / 0.5 * plotH);
+
+  const curvePts = Array.from({length:101}, (_,i) => {
+    const x = i/100; const y = 0.5 + 0.5*x;
+    return `${toX(x).toFixed(1)},${toYg(y).toFixed(1)}`;
+  }).join(' ');
+
+  const ticks = [0, 0.25, 0.5, 0.75, 1.0];
+  const axX = ticks.map(v=>`<text x="${toX(v).toFixed(1)}" y="${padT+plotH+14}" fill="${_C.dim}" font-size="9" text-anchor="middle" font-family="IBM Plex Mono">${v.toFixed(2)}</text>`).join('');
+  const axY = [0.5,0.625,0.75,0.875,1.0].map(v=>`<text x="${padL-5}" y="${toYg(v).toFixed(1)+3}" fill="${_C.dim}" font-size="9" text-anchor="end" font-family="IBM Plex Mono">${v.toFixed(3)}</text>`).join('');
+
+  // C_raw histogram
+  const nBins = 10;
+  const binsRaw = Array.from({length:nBins}, (_,i) => cRaw.filter(v=>v>=i/nBins&&v<(i+1)/nBins).length);
+  binsRaw[nBins-1] += cRaw.filter(v=>v>=1.0).length;
+  const maxBin = Math.max(...binsRaw, 1);
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="sa-panel">
+        <div style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:8px;">Context Guard Transform — C<sub>raw</sub> → C<sub>guarded</sub></div>
+        <div style="font-size:0.78rem;color:${_C.dim};margin-bottom:10px;">C<sub>guarded</sub> = 0.5 + 0.5 × C<sub>raw</sub> · maps [0, 1] → [0.5, 1.0]</div>
+        <div style="font-size:0.74rem;color:${_C.muted};margin-bottom:10px;">C<sub>raw</sub> = mean(Q4, Q7) · context items (situational/environmental)</div>
+        <svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;background:rgba(255,255,255,0.02);border-radius:5px;overflow:hidden;">
+          <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}" stroke="${_C.border}" stroke-width="1"/>
+          <line x1="${padL}" y1="${padT+plotH}" x2="${padL+plotW}" y2="${padT+plotH}" stroke="${_C.border}" stroke-width="1"/>
+          ${ticks.map(v=>`<line x1="${toX(v).toFixed(1)}" y1="${padT}" x2="${toX(v).toFixed(1)}" y2="${padT+plotH}" stroke="${_C.border}" stroke-width="0.6"/>`).join('')}
+          <polyline points="${curvePts}" fill="none" stroke="${_C.green}" stroke-width="2.2"/>
+          <line x1="${padL}" y1="${toYg(0.5).toFixed(1)}" x2="${padL+plotW}" y2="${toYg(0.5).toFixed(1)}" stroke="${_C.amber}" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.7"/>
+          <text x="${padL+4}" y="${toYg(0.5).toFixed(1)-3}" fill="${_C.amber}" font-size="9" font-family="IBM Plex Mono">floor = 0.500</text>
+          ${axX}${axY}
+          <text x="${padL+plotW/2}" y="${H-2}" fill="${_C.dim}" font-size="9" text-anchor="middle" font-family="IBM Plex Mono">C_raw · mean(Q4, Q7)</text>
+          <text x="9" y="${padT+plotH/2}" fill="${_C.dim}" font-size="9" text-anchor="middle" font-family="IBM Plex Mono" transform="rotate(-90,9,${padT+plotH/2})">C_guarded</text>
+        </svg>
+      </div>
+      <div>
+        <div class="sa-panel" style="margin-bottom:14px;">
+          <div style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:12px;">C_raw Distribution — MAP Cohort (n=${nTotal.toLocaleString()})</div>
+          <div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:8px;">
+            ${binsRaw.map((cnt,i)=>{const h=Math.max(2,(cnt/maxBin)*80);const pct=(nTotal>0?(cnt/nTotal*100):0).toFixed(1);return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div title="C_raw ${(i/nBins).toFixed(1)}–${((i+1)/nBins).toFixed(1)}: ${cnt} (${pct}%)" style="width:100%;height:${h}px;background:${_C.green};border-radius:2px 2px 0 0;opacity:0.75;cursor:default;"></div></div>`;}).join('')}
+          </div>
+          <div style="display:flex;gap:4px;">
+            ${Array.from({length:nBins+1},(_,i)=>`<div style="flex:1;text-align:center;font-size:0.62rem;color:${_C.dim};">${(i/nBins).toFixed(1)}</div>`).join('')}
+          </div>
+        </div>
+        <div class="sa-panel">
+          <div style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:12px;">Guard Impact</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            ${_psyKpi('Near-zero C_raw',(nWithZeroRaw/nTotal*100).toFixed(1)+'%',_C.amber,`${nWithZeroRaw} of ${nTotal} records`)}
+            ${_psyKpi('PE Floor Protected',nWithZeroRaw.toLocaleString(),_C.green,'Records preserved from PE = 0')}
+          </div>
+          <div style="font-size:0.78rem;color:${_C.dim};line-height:1.65;">
+            Without the Context Guard, any record with C_raw = 0 (both Q4 and Q7 absent) would produce PE = 0 — even with high Architecture and Execution. The guard applies a 0.5 floor, limiting context's maximum downward impact on PE to ~21%.
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
 // PEACS — EXISTING RENDERS  (unchanged)
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -2424,7 +2507,6 @@ function _saPsyPeacsValidation(container, sub) {
     case 'confusion':   _saPsyPeacsValidConfusion(container);   break;
     case 'roc':         _saPsyPeacsValidRoc(container);         break;
     case 'calibration': _saPsyPeacsValidCalibration(container); break;
-    case 'guard':       _saPsyPeacsValidGuard(container);       break;
     default:            _saPsyPeacsValidCross(container);
   }
 }

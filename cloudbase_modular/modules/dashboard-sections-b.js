@@ -14,6 +14,7 @@
   const MAX_ITEMS = 40;
   const tickerEl  = document.getElementById('live-activity-ticker');
   const trackEl   = document.getElementById('lat-track');
+  const _esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   let items = [];
   let tickerAnim = null;
   let isRunning = false;
@@ -53,7 +54,7 @@
   }
 
   function rebuildTrack() {
-    if (!items.length) return;
+    if (!trackEl || !items.length) return;
     // Double the items for seamless loop
     const html = items.map(buildItem).join('') + items.map(buildItem).join('');
     trackEl.innerHTML = html;

@@ -32,6 +32,7 @@ function _alInjectStyles() {
     .al-badge-DELETE{color:#ef4444;border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.07);}
     .al-badge-ESIGN{color:#4e9cf5;border-color:rgba(78,156,245,0.35);background:rgba(78,156,245,0.07);}
     .al-badge-LOGIN_FAILURE{color:#ef4444;border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.10);}
+    .al-badge-LOGIN_SUCCESS{color:#2ec98a;border-color:rgba(46,201,138,0.35);background:rgba(46,201,138,0.07);}
     .al-badge-SESSION_TIMEOUT{color:#d4a843;border-color:rgba(212,168,67,0.35);background:rgba(212,168,67,0.10);}
     .al-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
     .al-select{background:var(--mc-bg2);border:1px solid var(--mc-border);color:var(--mc-text);font-family:'IBM Plex Mono',monospace;font-size:0.80rem;padding:6px 10px;border-radius:6px;outline:none;}
@@ -81,6 +82,7 @@ function _saRenderAuditLog(container) {
         <option value="UPDATE">UPDATE</option>
         <option value="DELETE">DELETE</option>
         <option value="ESIGN">ESIGN</option>
+        <option value="LOGIN_SUCCESS">LOGIN_SUCCESS</option>
         <option value="LOGIN_FAILURE">LOGIN_FAILURE</option>
         <option value="SESSION_TIMEOUT">SESSION_TIMEOUT</option>
       </select>
@@ -207,7 +209,7 @@ function _alRenderTable() {
   }
 
   const badgeClass = a => {
-    const map = { CREATE:'CREATE', UPDATE:'UPDATE', DELETE:'DELETE', ESIGN:'ESIGN', LOGIN_FAILURE:'LOGIN_FAILURE', SESSION_TIMEOUT:'SESSION_TIMEOUT' };
+    const map = { CREATE:'CREATE', UPDATE:'UPDATE', DELETE:'DELETE', ESIGN:'ESIGN', LOGIN_SUCCESS:'LOGIN_SUCCESS', LOGIN_FAILURE:'LOGIN_FAILURE', SESSION_TIMEOUT:'SESSION_TIMEOUT' };
     return 'al-badge al-badge-' + (map[a] || 'UPDATE');
   };
 
@@ -215,7 +217,7 @@ function _alRenderTable() {
     const absIdx = start + i;
     const ts     = e.timestamp_utc ? new Date(e.timestamp_utc).toLocaleString('en-GB', { timeZone:'UTC', hour12:false }) : '—';
     const hash   = e.payload_hash ? e.payload_hash.substring(0, 12) : '—';
-    const actor  = _saEsc(e.actor_email || e.actor_uid || '—');
+    const actor  = _saEsc(e.actor_email || e.actor_uid || e.uid || '—');
     const ws     = _saEsc(e.workspace || '—');
     const tbl    = _saEsc(e.table || '—');
     const rid    = _saEsc(e.record_id || '—');
@@ -232,7 +234,7 @@ function _alRenderTable() {
       </tr>
       <tr id="${drawerIdVal}" class="al-drawer-row" style="display:none;">
         <td colspan="7" style="padding:14px 18px;">
-          <pre style="margin:0;font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:${_C.muted};white-space:pre-wrap;word-break:break-all;background:rgba(0,0,0,0.25);border-radius:6px;padding:10px 14px;">${_saEsc(JSON.stringify(e, null, 2))}</pre>
+          <pre style="margin:0;font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:#1a2535;white-space:pre-wrap;word-break:break-all;background:#f0ede7;border:1px solid rgba(0,0,0,0.08);border-radius:6px;padding:10px 14px;">${_saEsc(JSON.stringify(e, null, 2))}</pre>
         </td>
       </tr>
     `;

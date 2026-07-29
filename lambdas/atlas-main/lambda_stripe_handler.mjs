@@ -18,12 +18,14 @@ import crypto from 'crypto';
 import { SendEmailCommand } from '@aws-sdk/client-ses';
 import {
   ssm, ses, SES_FROM_EMAIL, FIREBASE_DB_URL, VERIFY_BASE_URL, LETTER_TIERS,
-  mintFirebaseToken, exchangeCustomTokenForIdToken, firebaseRestPut,
+  mintFirebaseToken, exchangeCustomTokenForIdToken, firebaseRestPut, firebaseRestGet, firebaseRestPost,
   readPermissionRegistry, writePermissionRegistry, generateCertNum,
   generatePermissionLetter, findByStripeCustomer, findByStripeSubscription,
   updateWorkspaceProfile, revokeWorkspaceCertRegistry, sendLetterEmailStandalone,
   respond, corsHeaders, handleIssueKey,
 } from './index.mjs';
+
+const TESSERA_TIER_MAP = { 1:'institutional', 2:'validation', 3:'affiliate', 4:'student', 5:'industry' };
 
 // ── Stripe config ─────────────────────────────────────────────────────────────
 const STRIPE_SECRET_KEY     = process.env.STRIPE_SECRET_KEY     || '';
@@ -213,19 +215,20 @@ async function handleSendMagicLink(rawBody, headers) {
 
 // ── Webhook: checkout.session.completed → issue workspace key ─────────────────
 async function onCheckoutComplete(session) {
-  const meta        = session.metadata || {};
-  const name        = meta.name         || 'Researcher';
-  const email       = session.customer_email || meta.email || '';
-  const institution = meta.institution  || name;
-  const study_title = meta.study_title  || null;
-  const intended_use= meta.intended_use || null;
-  const role        = meta.role         || 'researcher';
-  const plan_type   = meta.plan_type    || 'monthly';
-  const inst_type   = meta.inst_type    || null;  // 'academic' | 'health' | 'amc' — only present for institution checkouts
+  const meta             = session.metadata || {};
+  const name             = meta.name         || 'Researcher';
+  const email            = session.customer_email || meta.email || '';
+  const institution      = meta.institution  || name;
+  const study_title      = meta.study_title  || null;
+  const intended_use     = meta.intended_use || null;
+  const role             = meta.role         || 'researcher';
+  const plan_type        = meta.plan_type    || 'monthly';
+  const inst_type        = meta.inst_type    || null;
+  const tessera_app_key = meta.tessera_app_key || null;
 
   if (!email) { console.warn('[checkout.complete] No email on session', session.id); return; }
 
-  await handleIssueKey({
+  const result = await handleIssueKey({
     name, email, institution, role, study_title, intended_use,
     stripe_session_id:       session.id,
     stripe_customer_id:      session.customer        || null,
@@ -233,6 +236,112 @@ async function onCheckoutComplete(session) {
     plan_type,
     inst_type,
   }, 'https://atlas.adherence.cc');
+
+  // If this was a TESSERA paid application, create member record/letter/tile from staging
+  if (tessera_app_key) {
+    try {
+      const resultBody = JSON.parse(result.body || '{}');
+      const issuedKey  = resultBody.key;
+
+      const token   = await mintFirebaseToken('system_registry', { role: 'superadmin' });
+      const idToken = await exchangeCustomTokenForIdToken(token);
+
+      // Read staging record written by Mission Control on approval
+      const staging = await firebaseRestGet(
+        `${FIREBASE_DB_URL}/consortium_pending_members/${tessera_app_key}.json?auth=${idToken}`
+      );
+      if (!staging || staging.error) {
+        console.warn(`[checkout.complete] No staging record for app ${tessera_app_key}`);
+        return;
+      }
+
+      const tierStr   = TESSERA_TIER_MAP[staging.tier] || 'affiliate';
+      const instruments = (staging.instruments && staging.instruments.length)
+        ? staging.instruments.join(', ') : 'MAP, MMAS-8';
+      const now = Date.now();
+
+      // 1. Create member record
+      const memberData = {
+        name:          staging.name          || '',
+        contact_email: staging.contact_email || staging.email || '',
+        email:         staging.email         || staging.contact_email || '',
+        institution:   staging.institution   || '',
+        department:    staging.department    || '',
+        country:       staging.country       || '',
+        role:          staging.role          || '',
+        tier:          staging.tier          || 3,
+        study_title:   staging.study_title   || '',
+        disease_areas: staging.disease_areas || [],
+        instruments:   staging.instruments   || [],
+        irb_status:    staging.irb_status    || '',
+        description:   staging.description   || '',
+        open_science:  staging.open_science  || false,
+        lmic_eligible: staging.lmic_eligible || false,
+        orcid:         staging.orcid         || '',
+        linkedin:      staging.linkedin      || '',
+        applied_at:    staging.applied_at    || now,
+        approved_at:   now,
+        application_ref: staging.application_ref || '',
+        workspace_key: issuedKey || null,
+        status:        'active',
+        source:        'tessera-signup-form-v1',
+      };
+      const memberResp  = await firebaseRestPost(`${FIREBASE_DB_URL}/consortium_members.json?auth=${idToken}`, memberData);
+      const newMemberKey = memberResp?.name;
+
+      // 2. Create consortium letter
+      await firebaseRestPost(`${FIREBASE_DB_URL}/consortium_letters.json?auth=${idToken}`, {
+        recipient_name:   staging.name        || '',
+        country:          staging.country     || '',
+        institution:      staging.institution || '',
+        study_title:      staging.study_title || '',
+        instrument:       instruments,
+        purpose:          staging.description || 'Research use within the TESSERA GRC consortium',
+        grant_agency:     staging.grant_agency    || '',
+        grant_mechanism:  staging.grant_mechanism || '',
+        status:           'issued',
+        issued_at:        now,
+        auto_issued:      true,
+        member_key:       newMemberKey || null,
+      });
+
+      // 3. Create mosaic tile
+      const tileData = {
+        name:        staging.name        || '',
+        country:     staging.country     || '',
+        countryFlag: staging.country_flag || '',
+        tier:        tierStr,
+        joinedAt:    now,
+      };
+      if (staging.role)        tileData.role        = staging.role;
+      if (staging.institution) tileData.affiliation = staging.institution;
+      if (staging.orcid)       tileData.orcid       = staging.orcid;
+      if (staging.linkedin)    tileData.linkedin    = staging.linkedin;
+      const tileResp = await firebaseRestPost(`${FIREBASE_DB_URL}/tessera_tiles.json?auth=${idToken}`, tileData);
+      const tileKey  = tileResp?.name;
+
+      // 4. Link tile back to member record
+      if (newMemberKey && tileKey) {
+        await firebaseRestPut(`${FIREBASE_DB_URL}/consortium_members/${newMemberKey}/tessera_tile_key.json?auth=${idToken}`, tileKey);
+      }
+
+      // 5. Update application: approved + member key
+      await firebaseRestPut(`${FIREBASE_DB_URL}/consortium_applications/${tessera_app_key}/status.json?auth=${idToken}`, 'approved');
+      if (newMemberKey) {
+        await firebaseRestPut(`${FIREBASE_DB_URL}/consortium_applications/${tessera_app_key}/member_key.json?auth=${idToken}`, newMemberKey);
+      }
+      if (issuedKey) {
+        await firebaseRestPut(`${FIREBASE_DB_URL}/consortium_applications/${tessera_app_key}/workspace_key.json?auth=${idToken}`, issuedKey);
+      }
+
+      // 6. Remove staging record
+      await firebaseRestPut(`${FIREBASE_DB_URL}/consortium_pending_members/${tessera_app_key}.json?auth=${idToken}`, null);
+
+      console.log(`[checkout.complete] TESSERA app ${tessera_app_key} → member ${newMemberKey} → workspace ${issuedKey}`);
+    } catch(e) {
+      console.error('[checkout.complete] TESSERA post-payment provisioning failed:', e.message);
+    }
+  }
 }
 
 // ── Webhook: invoice.payment_succeeded ───────────────────────────────────────
@@ -619,6 +728,121 @@ async function handleSeatCheckout(rawBody, headers) {
   }
 }
 
+// ── ROUTE: POST /tessera-payment-link ─────────────────────────────────────────
+// Creates a Stripe Checkout session for a TESSERA applicant who was approved but
+// needs to pay before receiving their workspace key. Emails the payment link.
+// Body: { member_key, name, email, institution, study_title?, role? }
+async function handleTesseraPaymentLink(rawBody, headers) {
+  const origin = headers?.origin || headers?.Origin || '';
+  let body = {};
+  try { body = typeof rawBody === 'string' ? JSON.parse(rawBody) : (rawBody || {}); } catch(_) {}
+
+  const { app_key, name, email, institution, study_title, role } = body;
+  if (!app_key || !email || !name || !institution) {
+    return respond(400, { error: 'app_key, name, email, and institution are required' }, origin);
+  }
+
+  const priceId = process.env.STRIPE_PRICE_STUDENT_ANNUAL;
+  if (!priceId) {
+    return respond(500, { error: 'STRIPE_PRICE_STUDENT_ANNUAL not configured' }, origin);
+  }
+
+  const resolvedRole = role || 'student';
+  const params = {
+    'mode':                                              'subscription',
+    'payment_method_types[]':                            'card',
+    'line_items[0][price]':                              priceId,
+    'line_items[0][quantity]':                           '1',
+    'customer_email':                                    email,
+    'success_url':                                       `https://atlas.adherence.cc?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+    'cancel_url':                                        `https://scalacartafoundation.org?checkout=cancel`,
+    'metadata[name]':                                    name,
+    'metadata[email]':                                   email,
+    'metadata[institution]':                             institution,
+    'metadata[study_title]':                             study_title || '',
+    'metadata[role]':                                    resolvedRole,
+    'metadata[plan_type]':                               'annual',
+    'metadata[tessera_app_key]':                         app_key,
+    'subscription_data[metadata][role]':                 resolvedRole,
+    'subscription_data[metadata][plan_type]':            'annual',
+    'subscription_data[metadata][institution]':          institution,
+    'subscription_data[metadata][study_title]':          study_title || '',
+    'subscription_data[metadata][tessera_app_key]':      app_key,
+  };
+
+  let session;
+  try {
+    session = await stripeRequest('/v1/checkout/sessions', 'POST', params);
+    if (session.error) return respond(400, { error: session.error.message }, origin);
+  } catch(e) {
+    console.error('[tessera-payment-link] Stripe error:', e.message);
+    return respond(500, { error: 'Stripe error: ' + e.message }, origin);
+  }
+
+  // Email the payment link to the applicant
+  try {
+    const studyLine = study_title
+      ? `<p style="font-size:0.84rem;line-height:1.7;color:rgba(200,220,240,0.6);margin:0 0 20px;">Study: <em style="color:rgba(200,220,240,0.88);">${study_title}</em></p>`
+      : '';
+    await ses.send(new SendEmailCommand({
+      Source:      `TESSERA GRC <${SES_FROM_EMAIL}>`,
+      Destination: { ToAddresses: [email] },
+      Message: {
+        Subject: { Data: 'TESSERA GRC — Complete your membership', Charset: 'UTF-8' },
+        Body: {
+          Html: { Data: `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/></head>
+<body style="margin:0;padding:32px 20px;background:#060e1e;font-family:'IBM Plex Mono',Courier,monospace;color:#c8d8ea;">
+<div style="max-width:540px;margin:0 auto;border:1px solid rgba(212,168,67,0.22);border-top:3px solid rgba(212,168,67,0.75);border-radius:4px;padding:36px;">
+  <div style="font-size:0.78rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(212,168,67,0.7);margin-bottom:24px;">TESSERA GRC · Scala Carta Foundation</div>
+  <h1 style="font-family:Georgia,serif;font-size:1.6rem;font-weight:300;color:#fff;margin:0 0 16px;">Your application has been approved.</h1>
+  <p style="font-size:0.88rem;line-height:1.8;color:rgba(200,220,240,0.8);margin:0 0 14px;">
+    Hi ${name}, your application to join TESSERA GRC as a Student Affiliate has been reviewed and approved by the Scala Carta Foundation.
+  </p>
+  ${studyLine}
+  <p style="font-size:0.84rem;line-height:1.8;color:rgba(200,220,240,0.7);margin:0 0 28px;">
+    To activate your membership and receive your ATLAS workspace key and Letter of Permission, complete the $199/year Student Affiliate membership payment using the secure link below. Your key and letter will be issued automatically once payment is confirmed.
+  </p>
+  <a href="${session.url}" style="display:inline-block;padding:14px 32px;background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.48);border-radius:8px;color:#e8c96a;font-size:0.88rem;text-decoration:none;letter-spacing:0.06em;font-family:'IBM Plex Mono',monospace;">Complete Membership Payment — $199/yr →</a>
+  <p style="margin-top:32px;font-size:0.76rem;color:rgba(200,220,240,0.35);line-height:1.7;">
+    Questions? <a href="mailto:info@adherence.cc" style="color:rgba(212,168,67,0.5);">info@adherence.cc</a>
+  </p>
+  <hr style="border:none;border-top:1px solid rgba(212,168,67,0.12);margin:20px 0;"/>
+  <p style="font-size:0.76rem;color:rgba(200,220,240,0.3);margin:0;line-height:1.8;">
+    Philip Morisky, MBA<br/>
+    Founder, Scala Carta Foundation &middot; CEO, Adherence Cartography<br/>
+    <a href="https://adherence.cc" style="color:rgba(212,168,67,0.4);text-decoration:none;">adherence.cc</a> &middot; <a href="https://scalacartafoundation.org" style="color:rgba(212,168,67,0.4);text-decoration:none;">scalacartafoundation.org</a>
+  </p>
+</div>
+</body></html>`, Charset: 'UTF-8' },
+          Text: { Data: [
+            `Hi ${name},`,
+            ``,
+            `Your TESSERA GRC application has been approved by the Scala Carta Foundation.`,
+            study_title ? `Study: ${study_title}\n` : '',
+            `Complete your $199/year Student Affiliate membership payment here:`,
+            ``,
+            session.url,
+            ``,
+            `Your ATLAS workspace key and Letter of Permission will be issued automatically once payment is confirmed.`,
+            ``,
+            `Questions? info@adherence.cc`,
+            ``,
+            `Philip Morisky, MBA`,
+            `Founder, Scala Carta Foundation · CEO, Adherence Cartography`,
+            `adherence.cc · scalacartafoundation.org`,
+          ].filter(l => l !== null).join('\n'), Charset: 'UTF-8' },
+        },
+      },
+    }));
+    console.log(`[tessera-payment-link] Payment email sent to ${email} for app ${app_key}`);
+  } catch(e) {
+    console.error('[tessera-payment-link] Email failed:', e.message);
+  }
+
+  return respond(200, { url: session.url, session_id: session.id, sent: true }, origin);
+}
+
 // ── Main router ───────────────────────────────────────────────────────────────
 export async function handleStripeRoutes(path, method, rawBody, headers) {
   if (path.startsWith('/stripe-webhook'))           return handleStripeWebhook(rawBody, headers);
@@ -626,6 +850,7 @@ export async function handleStripeRoutes(path, method, rawBody, headers) {
   if (path.startsWith('/institution-checkout'))     return handleInstCheckout(rawBody, headers);
   if (path.startsWith('/seat-checkout'))            return handleSeatCheckout(rawBody, headers);
   if (path.startsWith('/gai-checkout'))             return handleGAICheckout(rawBody, headers);
+  if (path.startsWith('/tessera-payment-link'))     return handleTesseraPaymentLink(rawBody, headers);
   if (path.startsWith('/send-magic-link'))          return handleSendMagicLink(rawBody, headers);
 
   const origin = headers?.origin || headers?.Origin || '';

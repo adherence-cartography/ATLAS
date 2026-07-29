@@ -255,7 +255,16 @@ function loadPharmacyStats(workspaceKey, containerId) {
     });
 
   }).catch(err => {
-    container.innerHTML = _errorHTML('Could not load pharmacy data: ' + err.message);
+    const _isPerm = err && (err.code === 'PERMISSION_DENIED' || (err.message && err.message.indexOf('permission_denied') !== -1));
+    if (_isPerm) {
+      container.innerHTML = `<div style="padding:32px;text-align:center;font-family:${PG_FONT_MONO};font-size:0.82rem;color:var(--dim);line-height:1.8;">
+        <div style="font-size:1.5rem;margin-bottom:10px;opacity:0.35;">⊛</div>
+        <div style="font-size:0.88rem;color:var(--muted);margin-bottom:8px;">Pharmacy Network Not Enabled</div>
+        <div>Pharmacy Gateway access requires a partnership agreement.<br>Contact <span style="color:var(--base);">support@adherence.cc</span> to activate for your workspace.</div>
+      </div>`;
+    } else {
+      container.innerHTML = _errorHTML('Could not load pharmacy data: ' + err.message);
+    }
   });
 }
 
@@ -391,7 +400,7 @@ function _buildStatsHTML({ total, monthLabel, dist, means, dominantFailure, cond
 // ═══════════════════════════════════════════════════════════════════════
 
 /**
- * Renders an aggregate FOFI network view (de-identified, all pharmacies)
+ * Renders an aggregate network view (de-identified, all participating pharmacies)
  * into the specified container. Shows:
  *   - Italy SVG map placeholder with pharmacy dots
  *   - Network-wide risk distribution
@@ -487,7 +496,7 @@ function renderPharmacyNetworkStats(containerId) {
       <!-- Header -->
       <div style="margin-bottom:24px;">
         <div style="font-family:${PG_FONT_MONO};font-size:0.72rem;letter-spacing:0.24em;text-transform:uppercase;color:${PG_COLORS.muted};margin-bottom:6px;">
-          FOFI Network View &middot; All Participating Pharmacies
+          Pharmacy Network &middot; All Participating Sites
         </div>
         <div style="font-family:${PG_FONT_DISP};font-size:1.9rem;font-weight:300;color:#fff;">
           Network Overview
@@ -500,12 +509,12 @@ function renderPharmacyNetworkStats(containerId) {
       <!-- Italy map placeholder + network donut row -->
       <div style="display:flex;gap:20px;margin-bottom:24px;flex-wrap:wrap;align-items:flex-start;">
 
-        <!-- Italy SVG map placeholder -->
+        <!-- Active sites panel -->
         <div style="background:${PG_COLORS.card};border:1px solid ${PG_COLORS.border};
           border-radius:14px;padding:20px;flex-shrink:0;min-width:200px;">
           <div style="font-family:${PG_FONT_MONO};font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;
-            color:${PG_COLORS.muted};margin-bottom:12px;text-align:center;">Participating Pharmacies</div>
-          ${_italySVG(pharmKeys.length)}
+            color:${PG_COLORS.muted};margin-bottom:12px;text-align:center;">Active Pharmacy Sites</div>
+          ${_networkSitesSVG(pharmKeys.length)}
           <div style="font-family:${PG_FONT_MONO};font-size:0.7rem;color:${PG_COLORS.muted};text-align:center;margin-top:8px;">
             ${pharmKeys.length} active site${pharmKeys.length !== 1 ? 's' : ''}
           </div>
@@ -557,43 +566,47 @@ function renderPharmacyNetworkStats(containerId) {
     });
 
   }).catch(err => {
-    _pgStats.innerHTML = _errorHTML('Could not load network data: ' + err.message);
+    const _isPerm = err && (err.code === 'PERMISSION_DENIED' || (err.message && err.message.indexOf('permission_denied') !== -1));
+    if (_isPerm) {
+      _pgStats.innerHTML = `<div style="padding:24px 0;text-align:center;font-family:${PG_FONT_MONO};font-size:0.82rem;color:var(--dim);line-height:1.8;">
+        <div style="font-size:1.5rem;margin-bottom:10px;opacity:0.35;">⊛</div>
+        <div style="font-size:0.88rem;color:var(--muted);margin-bottom:8px;">Pharmacy Network Not Enabled</div>
+        <div>Pharmacy Gateway access requires a partnership agreement.<br>Contact <span style="color:var(--base);">support@adherence.cc</span> to activate for your workspace.</div>
+      </div>`;
+    } else {
+      _pgStats.innerHTML = _errorHTML('Could not load network data: ' + err.message);
+    }
   });
 }
 
 /**
- * Renders a simple Italy SVG outline with scattered pharmacy dots.
- * @param {number} n  Number of dots to plot
+ * Renders a generic global network SVG showing active pharmacy site count.
+ * Used in the network overview panel. Replaces a country-specific map.
+ * @param {number} n  Number of active sites
  * @returns {string} SVG HTML
  */
-function _italySVG(n) {
-  // Simplified Italy boot silhouette (stylised path)
+function _networkSitesSVG(n) {
+  const displayed = Math.min(n, 24);
+  const cols = 6;
+  const rows = Math.ceil(displayed / cols);
   const dots = [];
-  // Fixed plausible Italian coordinates (normalised to SVG viewport 0-120 x 0-180)
-  const positions = [
-    [55,30],[48,45],[50,60],[52,75],[60,85],[65,100],[58,118],[56,130],
-    [62,140],[70,150],[80,145],[85,130],[88,115],[80,100],[75,85],[70,70],
-    [72,55],[66,40],[80,35],[95,40],[105,50],[108,65],[100,78],[90,80]
-  ];
-  const count = Math.min(n, positions.length);
-  for(let i=0;i<count;i++){
-    const [x,y] = positions[i];
+  for (let i = 0; i < displayed; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = 14 + col * 20;
+    const y = 20 + row * 20;
     dots.push(`<circle cx="${x}" cy="${y}" r="5" fill="${PG_COLORS.optimal}"
-      opacity="0.8" style="filter:drop-shadow(0 0 3px ${PG_COLORS.optimal});"/>`);
+      opacity="0.8" style="filter:drop-shadow(0 0 4px ${PG_COLORS.optimal});"/>`);
   }
+  const svgH = Math.max(60, rows * 20 + 20);
   return `
-  <svg width="130" height="180" viewBox="0 0 130 180" style="display:block;margin:0 auto;">
-    <!-- Italy boot outline (stylised) -->
-    <path d="M60 10 C55 20 48 35 46 50 C44 65 48 80 52 90
-             C56 100 58 115 55 128 C52 138 54 148 60 155
-             C66 162 75 160 82 155 C88 150 90 140 88 128
-             C86 115 80 105 76 92 C72 78 74 62 72 48
-             C70 34 80 22 88 18 C96 14 108 22 112 35
-             C116 48 110 65 106 78 C102 88 96 95 92 102
-             C100 100 108 95 112 88 C118 78 118 62 114 50
-             C110 38 100 28 90 22 C80 16 68 8 60 10Z"
-      fill="rgba(78,156,245,0.08)" stroke="rgba(78,156,245,0.25)" stroke-width="1.5"/>
+  <svg width="130" height="${svgH}" viewBox="0 0 130 ${svgH}" style="display:block;margin:0 auto;">
+    <rect x="1" y="1" width="128" height="${svgH - 2}" rx="8"
+      fill="rgba(78,156,245,0.05)" stroke="rgba(78,156,245,0.18)" stroke-width="1"/>
     ${dots.join('\n    ')}
+    ${n > 24 ? `<text x="65" y="${svgH - 6}" text-anchor="middle"
+      font-family="'IBM Plex Mono',monospace" font-size="9"
+      fill="${PG_COLORS.muted}">+${n - 24} more</text>` : ''}
   </svg>`;
 }
 
@@ -602,8 +615,8 @@ function _italySVG(n) {
 // ═══════════════════════════════════════════════════════════════════════
 
 /**
- * Generates a plain-language text report for the Order of Pharmacists of Rome
- * quarterly submission. Includes all key statistics in readable format.
+ * Generates a plain-language text report for any pharmacy partner.
+ * Includes all key statistics in readable format suitable for regulatory or internal submission.
  *
  * @param {string} workspaceKey   Pharmacy workspace identifier
  * @returns {Promise<string>}     Resolves with formatted report text
@@ -699,7 +712,7 @@ function generatePharmacyReport(workspaceKey) {
       const report = [
         '================================================================',
         'ATLAS MAP PHARMACY ADHERENCE REPORT',
-        'Order of Pharmacists of Rome / FOFI',
+        workspaceKey || 'Adherence Cartography / TESSERA GRC',
         '================================================================',
         '',
         `Report Generated:     ${reportDate}`,
@@ -825,7 +838,9 @@ function _errorHTML(msg) {
   </div>`;
 }
 
-// ── Exports (for module-aware environments) ──────────────────────────────────
+// ── Exports ───────────────────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { loadPharmacyStats, renderPharmacyNetworkStats, generatePharmacyReport };
 }
+// Browser global — required by student-workspace.js tab handler
+window.renderPharmacyNetworkStats = renderPharmacyNetworkStats;

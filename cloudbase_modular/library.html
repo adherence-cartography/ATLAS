@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ATLAS · Translation Library · Adherence Cartography</title>
+<meta name="description" content="Free download: MMAS-8, MAP, and PEACS assessment translations in 40+ languages. Open-access clinical tools from the ATLAS platform."/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://atlas.adherence.cc/library.html"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&family=Noto+Sans+Arabic:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#080e1a;--surface:#0d1525;--card:#111d30;--card2:#162238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --dim:#607898;--muted:#8aa0b8;--text:#cdd8e8;--bright:#e8f0f8;
+  --base:#4e9cf5;--mvmt:#8b6ff5;--strata:#2ec98a;--pe:#d4a843;
+  --font-display:'Cormorant Garamond',Georgia,serif;
+  --font-body:'IBM Plex Sans','Noto Sans Arabic',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --r:10px;--rl:18px;
+}
+[data-theme="light"]{
+  --ink:#f7f5f0;--surface:#eeece7;--card:#ffffff;--card2:#f4f2ed;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.13);
+  --dim:#a09880;--muted:#6b7a8d;--text:#2c3a4a;--bright:#1a2535;
+  --base:#1d5fa5;--mvmt:#5b3fa8;--strata:#0d7a52;--pe:#a07020;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--ink);color:var(--text);font-family:var(--font-body);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background 0.3s,color 0.3s;}
+
+/* ── Header ── */
+.lib-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 32px 16px;
+  border-bottom:1px solid rgba(212,168,67,0.18);
+  background:rgba(8,14,26,0.92);
+  backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:10;
+}
+[data-theme="light"] .lib-header{background:rgba(240,237,230,0.95);}
+.header-brand{display:flex;flex-direction:column;gap:3px;}
+.header-badge{
+  font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.28em;text-transform:uppercase;
+  color:rgba(212,168,67,0.6);display:flex;align-items:center;gap:8px;
+}
+.header-dot{width:5px;height:5px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;animation:blink 2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.35;}}
+.header-title{font-family:var(--font-display);font-size:1.55rem;font-weight:300;color:var(--bright);letter-spacing:0.04em;line-height:1.1;}
+.header-title em{font-style:italic;color:rgba(212,168,67,0.85);}
+.header-sub{font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:12px;}
+.header-home{
+  font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;
+  border:1px solid var(--border2);border-radius:6px;padding:5px 11px;
+  transition:color 0.2s,border-color 0.2s;
+}
+.header-home:hover{color:var(--bright);border-color:rgba(255,255,255,0.25);}
+.theme-btn{
+  font-family:var(--font-mono);font-size:0.78rem;letter-spacing:0.08em;
+  background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);
+  border-radius:20px;padding:5px 13px;cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:all 0.2s;
+}
+.theme-btn:hover{background:rgba(255,255,255,0.1);color:var(--bright);}
+
+/* ── Hero ── */
+.lib-hero{
+  padding:52px 32px 36px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(212,168,67,0.04) 0%,transparent 100%);
+}
+.hero-eyebrow{
+  font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.3em;text-transform:uppercase;
+  color:rgba(212,168,67,0.55);margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.hero-eyebrow::after{content:'';flex:1;max-width:80px;height:1px;background:rgba(212,168,67,0.2);}
+.hero-title{
+  font-family:var(--font-display);font-size:2.8rem;font-weight:300;
+  color:var(--bright);letter-spacing:0.03em;line-height:1.15;margin-bottom:12px;
+}
+.hero-title em{font-style:italic;color:rgba(212,168,67,0.8);}
+.hero-desc{
+  font-size:0.97rem;color:var(--muted);max-width:620px;line-height:1.65;margin-bottom:22px;
+}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap;}
+.hero-stat{display:flex;flex-direction:column;gap:2px;}
+.hero-stat-num{font-family:var(--font-mono);font-size:1.45rem;color:var(--bright);letter-spacing:0.02em;}
+.hero-stat-label{font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);}
+
+/* ── Controls ── */
+.lib-controls{
+  padding:24px 32px 0;
+  display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;
+}
+.lib-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.tab-btn{
+  font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;
+  padding:8px 18px;border-radius:8px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;gap:7px;
+}
+.tab-btn:hover{border-color:rgba(255,255,255,0.25);color:var(--text);}
+.tab-btn.active{background:rgba(78,156,245,0.12);border-color:rgba(78,156,245,0.4);color:var(--base);}
+.tab-btn.soon{opacity:0.45;cursor:default;}
+.tab-count{
+  font-size:0.64rem;background:rgba(78,156,245,0.18);color:rgba(78,156,245,0.85);
+  border-radius:10px;padding:1px 7px;min-width:22px;text-align:center;
+}
+.tab-btn.active .tab-count{background:rgba(78,156,245,0.25);color:var(--base);}
+.tab-btn.soon .tab-count{background:rgba(255,255,255,0.06);color:var(--dim);}
+.search-wrap{flex:1;min-width:220px;max-width:380px;position:relative;}
+.search-input{
+  width:100%;background:var(--card);border:1px solid var(--border2);color:var(--text);
+  border-radius:8px;padding:9px 14px 9px 38px;font-family:var(--font-body);font-size:0.92rem;
+  outline:none;transition:border-color 0.2s;
+}
+.search-input::placeholder{color:var(--dim);}
+.search-input:focus{border-color:rgba(78,156,245,0.4);}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:0.9rem;pointer-events:none;}
+
+/* ── Grid ── */
+.lib-grid-wrap{padding:24px 32px 64px;}
+.results-meta{
+  font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:16px;
+}
+.lib-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:14px;
+}
+.lang-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;
+  transition:border-color 0.2s,transform 0.15s;
+}
+.lang-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.lang-code{
+  font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;
+  background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--dim);
+  border-radius:5px;padding:3px 8px;flex-shrink:0;
+}
+.rtl-badge{
+  font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:rgba(212,168,67,0.7);border:1px solid rgba(212,168,67,0.2);
+  border-radius:4px;padding:2px 6px;flex-shrink:0;
+}
+.card-names{flex:1;}
+.lang-en{font-size:0.95rem;color:var(--bright);font-weight:500;line-height:1.2;margin-bottom:3px;}
+.lang-native{font-size:0.9rem;color:var(--muted);line-height:1.3;}
+.lang-native[dir="rtl"]{text-align:right;}
+.dl-btn{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  background:rgba(78,156,245,0.09);border:1px solid rgba(78,156,245,0.25);
+  color:var(--base);border-radius:7px;padding:8px 14px;
+  font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;
+  text-decoration:none;cursor:pointer;transition:all 0.2s;width:100%;
+}
+.dl-btn:hover{background:rgba(78,156,245,0.18);border-color:rgba(78,156,245,0.45);}
+.dl-btn svg{flex-shrink:0;}
+
+/* ── Coming soon panel ── */
+.soon-panel{
+  display:none;padding:64px 32px;text-align:center;
+}
+.soon-panel.visible{display:block;}
+.soon-icon{font-size:2.2rem;margin-bottom:14px;}
+.soon-title{font-family:var(--font-display);font-size:1.6rem;font-weight:300;color:var(--bright);margin-bottom:8px;}
+.soon-sub{font-size:0.9rem;color:var(--muted);max-width:420px;margin:0 auto;}
+
+/* ── Footer ── */
+.lib-footer{
+  border-top:1px solid var(--border);padding:24px 32px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  background:rgba(0,0,0,0.15);
+}
+.footer-note{font-size:0.8rem;color:var(--dim);max-width:520px;line-height:1.5;}
+.footer-brand{font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.45);}
+
+/* ── Empty state ── */
+.empty-state{
+  grid-column:1/-1;padding:48px;text-align:center;
+  color:var(--muted);font-size:0.92rem;
+}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .lib-header{padding:14px 18px;}
+  .lib-hero{padding:36px 18px 28px;}
+  .hero-title{font-size:2rem;}
+  .lib-controls{padding:18px 18px 0;}
+  .lib-grid-wrap{padding:18px 18px 48px;}
+  .lib-footer{padding:18px;}
+  .header-right .header-home{display:none;}
+}
+</style>
+</head>
+<body>
+
+<header class="lib-header">
+  <div class="header-brand">
+    <div class="header-badge"><div class="header-dot"></div>ATLAS · Adherence Cartography</div>
+    <div class="header-title">Translation <em>Library</em></div>
+    <div class="header-sub">Open-Access Clinical Instruments</div>
+  </div>
+  <div class="header-right">
+    <a class="header-home" href="/">Return to ATLAS</a>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">
+      <span id="theme-icon">☀</span>
+      <span id="theme-label">Daylight</span>
+    </button>
+  </div>
+</header>
+
+<section class="lib-hero">
+  <div class="hero-eyebrow">Open Access · Adherence Cartography</div>
+  <h1 class="hero-title">Clinical Instrument <em>Translations</em></h1>
+  <p class="hero-desc">Download validated translations of ATLAS assessment instruments for face-to-face and paper-based administration. All translations are freely available with no login required, in support of equitable access to adherence measurement globally.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="hero-stat-num" id="stat-langs">42</span><span class="hero-stat-label">Languages</span></div>
+    <div class="hero-stat"><span class="hero-stat-num" id="stat-instruments">3</span><span class="hero-stat-label">Instruments</span></div>
+    <div class="hero-stat"><span class="hero-stat-num">PDF</span><span class="hero-stat-label">Format</span></div>
+  </div>
+</section>
+
+<div class="lib-controls">
+  <div class="lib-tabs" role="tablist">
+    <button class="tab-btn active" role="tab" aria-selected="true" data-tab="mmas" onclick="switchTab('mmas')">
+      MMAS-8 <span class="tab-count" id="mmas-count">42</span>
+    </button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="map" onclick="switchTab('map')">
+      MAP <span class="tab-count" id="map-count">42</span>
+    </button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="peacs" onclick="switchTab('peacs')">
+      PEACS <span class="tab-count" id="peacs-count">42</span>
+    </button>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input class="search-input" type="search" placeholder="Filter by language…" id="search-input" oninput="filterCards()" autocomplete="off"/>
+  </div>
+</div>
+
+<main class="lib-grid-wrap">
+  <div class="results-meta" id="results-meta">42 languages available</div>
+  <div class="lib-grid" id="lib-grid"></div>
+  <div class="soon-panel" id="soon-panel">
+    <div class="soon-icon">⧗</div>
+    <div class="soon-title">Coming Soon</div>
+    <p class="soon-sub">Translations for this instrument are being prepared. Check back soon.</p>
+  </div>
+</main>
+
+<footer class="lib-footer">
+  <p class="footer-note">MMAS-8 translations are used under license from Donald E. Morisky, ScD, ScM, MSPH. Clinical use requires appropriate licensing. These resources are provided to support global adherence research and clinical practice.</p>
+  <div class="footer-brand">ATLAS · Adherence Cartography</div>
+</footer>
+
+<script>
+const LANGUAGES = [
+  { slug:'Arabic',              en:'Arabic',                native:'العربية',          code:'ar',    rtl:true  },
+  { slug:'Indonesian',          en:'Indonesian',            native:'Bahasa Indonesia',  code:'id',    rtl:false },
+  { slug:'Malay',               en:'Malay',                 native:'Bahasa Melayu',     code:'ms',    rtl:false },
+  { slug:'Danish',              en:'Danish',                native:'Dansk',             code:'da',    rtl:false },
+  { slug:'German',              en:'German',                native:'Deutsch',           code:'de',    rtl:false },
+  { slug:'English',             en:'English',               native:'English',           code:'en',    rtl:false },
+  { slug:'Spanish',             en:'Spanish',               native:'Español',           code:'es',    rtl:false },
+  { slug:'French',              en:'French',                native:'Français',          code:'fr',    rtl:false },
+  { slug:'Gujarati',            en:'Gujarati',              native:'ગુજરાતી',           code:'gu',    rtl:false },
+  { slug:'HaitianCreole',       en:'Haitian Creole',        native:'Kreyòl Ayisyen',    code:'ht',    rtl:false },
+  { slug:'Hindi',               en:'Hindi',                 native:'हिन्दी',            code:'hi',    rtl:false },
+  { slug:'Croatian',            en:'Croatian',              native:'Hrvatski',          code:'hr',    rtl:false },
+  { slug:'Hungarian',           en:'Hungarian',             native:'Magyar',            code:'hu',    rtl:false },
+  { slug:'Icelandic',           en:'Icelandic',             native:'Íslenska',          code:'is',    rtl:false },
+  { slug:'Italian',             en:'Italian',               native:'Italiano',          code:'it',    rtl:false },
+  { slug:'Japanese',            en:'Japanese',              native:'日本語',             code:'ja',    rtl:false },
+  { slug:'Kannada',             en:'Kannada',               native:'ಕನ್ನಡ',             code:'kn',    rtl:false },
+  { slug:'Korean',              en:'Korean',                native:'한국어',             code:'ko',    rtl:false },
+  { slug:'Kurdish',             en:'Kurdish',               native:'Kurdî',             code:'ku',    rtl:false },
+  { slug:'Latvian',             en:'Latvian',               native:'Latviešu',          code:'lv',    rtl:false },
+  { slug:'Nepalese',            en:'Nepalese',              native:'नेपाली',            code:'ne',    rtl:false },
+  { slug:'Norwegian',           en:'Norwegian',             native:'Norsk',             code:'no',    rtl:false },
+  { slug:'Persian',             en:'Persian',               native:'فارسی',             code:'fa',    rtl:true  },
+  { slug:'Polish',              en:'Polish',                native:'Polski',            code:'pl',    rtl:false },
+  { slug:'BrazilianPortuguese', en:'Brazilian Portuguese',  native:'Português Brasileiro', code:'pt-BR', rtl:false },
+  { slug:'PortugueseEU',        en:'European Portuguese',   native:'Português Europeu', code:'pt',    rtl:false },
+  { slug:'Romanian',            en:'Romanian',              native:'Română',            code:'ro',    rtl:false },
+  { slug:'Runyankole-Rukiga',   en:'Runyankole-Rukiga',     native:'Runyankole-Rukiga', code:'nyn',   rtl:false },
+  { slug:'Somali',              en:'Somali',                native:'Soomaali',          code:'so',    rtl:false },
+  { slug:'Serbian',             en:'Serbian',               native:'Srpski',            code:'sr',    rtl:false },
+  { slug:'Swedish',             en:'Swedish',               native:'Svenska',           code:'sv',    rtl:false },
+  { slug:'Swahili',             en:'Swahili',               native:'Kiswahili',         code:'sw',    rtl:false },
+  { slug:'Telugu',              en:'Telugu',                native:'Telugu',            code:'te',    rtl:false },
+  { slug:'Thai',                en:'Thai',                  native:'ภาษาไทย',           code:'th',    rtl:false },
+  { slug:'TraditionalChinese',  en:'Traditional Chinese',   native:'傳統中文',           code:'zh-TW', rtl:false },
+  { slug:'Turkish',             en:'Turkish',               native:'Türkçe',            code:'tr',    rtl:false },
+  { slug:'Ukrainian',           en:'Ukrainian',             native:'Українська',        code:'uk',    rtl:false },
+  { slug:'Urdu',                en:'Urdu',                  native:'اردو',              code:'ur',    rtl:true  },
+  { slug:'Vietnamese',          en:'Vietnamese',            native:'Tiếng Việt',        code:'vi',    rtl:false },
+  { slug:'Greek',               en:'Greek',                 native:'Ελληνικά',          code:'el',    rtl:false },
+  { slug:'SimplifiedChinese',   en:'Simplified Chinese',    native:'简体中文',           code:'zh-CN', rtl:false },
+  { slug:'Dutch',               en:'Dutch',                 native:'Nederlands',        code:'nl',    rtl:false },
+];
+
+const INSTRUMENTS = {
+  mmas:  { dir:'library/mmas',  prefix:'MMAS-8', ext:'.pdf',  btnLabel:'Download PDF' },
+  map:   { dir:'library/map',   prefix:'MAP',    ext:'.html', btnLabel:'View & Print' },
+  peacs: { dir:'library/peacs', prefix:'PEACS',  ext:'.html', btnLabel:'View & Print' },
+};
+
+let currentTab = 'mmas';
+
+function filePath(tab, slug) {
+  const inst = INSTRUMENTS[tab];
+  return `${inst.dir}/${inst.prefix}_${slug}${inst.ext}`;
+}
+
+function renderCards(langs) {
+  const grid = document.getElementById('lib-grid');
+  const meta = document.getElementById('results-meta');
+  const soon = document.getElementById('soon-panel');
+  const isSoon = false;
+  const inst = INSTRUMENTS[currentTab];
+
+  grid.style.display = isSoon ? 'none' : 'grid';
+  soon.classList.toggle('visible', isSoon);
+
+  if (isSoon) { meta.textContent = ''; return; }
+
+  if (!langs.length) {
+    grid.innerHTML = '<div class="empty-state">No languages match your search.</div>';
+    meta.textContent = 'No results';
+    return;
+  }
+
+  meta.textContent = `${langs.length} language${langs.length !== 1 ? 's' : ''} available`;
+  const dlIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+  const viewIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+  const btnIcon = inst.ext === '.html' ? viewIcon : dlIcon;
+  grid.innerHTML = langs.map(l => {
+    const url = filePath(currentTab, l.slug);
+    return `
+    <div class="lang-card">
+      <div class="card-top">
+        <span class="lang-code">${l.code}</span>
+        ${l.rtl ? '<span class="rtl-badge">RTL</span>' : ''}
+      </div>
+      <div class="card-names">
+        <div class="lang-en">${l.en}</div>
+        <div class="lang-native"${l.rtl ? ' dir="rtl"' : ''}>${l.native}</div>
+      </div>
+      <a class="dl-btn" href="${url}" target="_blank" rel="noopener" aria-label="${inst.btnLabel} ${l.en}">
+        ${btnIcon}
+        ${inst.btnLabel}
+      </a>
+    </div>`;
+  }).join('');
+}
+
+function filterCards() {
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  const filtered = q
+    ? LANGUAGES.filter(l => l.en.toLowerCase().includes(q) || l.native.toLowerCase().includes(q) || l.code.toLowerCase().includes(q))
+    : LANGUAGES;
+  renderCards(filtered);
+  const countEl = document.getElementById(`${currentTab}-count`);
+  if (countEl) countEl.textContent = filtered.length;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const isActive = btn.dataset.tab === tab;
+    const isSoon = btn.classList.contains('soon');
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    if (!isSoon) btn.classList.toggle('active', isActive);
+  });
+  filterCards();
+}
+
+function toggleTheme() {
+  const light = document.documentElement.dataset.theme === 'light';
+  document.documentElement.dataset.theme = light ? '' : 'light';
+  const icon = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (light) { icon.textContent = '☀'; label.textContent = 'Daylight'; }
+  else        { icon.textContent = '☾'; label.textContent = 'Night'; }
+}
+
+renderCards(LANGUAGES);
+</script>
+</body>
+</html>

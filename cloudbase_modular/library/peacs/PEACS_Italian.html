@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="it" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PEACS | Italian</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,Helvetica,"Noto Sans Arabic",sans-serif;font-size:9.8pt;color:#1a1a1a;background:#e8eaf0;}
+.page{width:8.5in;min-height:11in;margin:0.3in auto;background:white;padding:0.5in 0.65in 0.45in;box-shadow:0 4px 18px rgba(0,0,0,0.18);}
+.header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1B3A6B;padding-bottom:8px;margin-bottom:10px;}
+.header-left h1{font-size:24pt;font-weight:900;color:#1B3A6B;letter-spacing:2px;line-height:1;}
+.header-left h2{font-size:7.5pt;font-weight:400;color:#555;margin-top:2px;}
+.lang-badge{display:inline-block;background:#1B3A6B;color:white;padding:3px 11px;border-radius:20px;font-size:7.5pt;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}
+.ver-info{font-size:6.5pt;color:#999;margin-top:4px;text-align:right;}
+.pt-info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px 10px;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:5px;padding:8px 11px;margin-bottom:9px;}
+.fw{grid-column:1/-1;}
+.pt-info label{display:block;font-size:6pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px;}
+.info-line{border-bottom:1px solid #999;min-height:14px;}
+.placeholder-notice{background:#fff8e1;border:1px solid #f59e0b;border-left:4px solid #f59e0b;border-radius:4px;padding:7px 10px;margin-bottom:9px;font-size:8.5pt;color:#78350f;}
+.dim-hdr{border-radius:4px;padding:5px 9px;margin:9px 0 5px;display:flex;justify-content:space-between;align-items:center;}
+.dim-hdr.bh{background:#e8edf8;border-left:4px solid #4e9cf5;}
+.dim-hdr.mh{background:#ede8f8;border-left:4px solid #8b6ff5;}
+.dim-hdr.sh{background:#e8f5ef;border-left:4px solid #2ec98a;}
+.dim-title{font-size:8.5pt;font-weight:700;color:#1B3A6B;}
+.dim-period{font-size:6.5pt;color:#777;}
+.preamble{border-left:3px solid #cdd4e3;background:#f9fafb;padding:6px 9px;margin-bottom:7px;border-radius:0 4px 4px 0;}
+.preamble p{font-size:8.5pt;line-height:1.4;}
+.sec-title{font-size:7pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.9px;border-bottom:1px solid #cdd4e3;padding-bottom:2px;margin-bottom:6px;}
+.q-row{display:flex;align-items:flex-start;gap:7px;padding:3px 0;}
+.q-num{font-size:9.5pt;font-weight:700;color:#1B3A6B;min-width:18px;flex-shrink:0;padding-top:1px;}
+.q-body{flex:1;font-size:9pt;line-height:1.35;}
+.dtag{display:inline-block;font-size:5.5pt;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:1px 4px;border-radius:3px;margin-bottom:2px;margin-right:4px;white-space:nowrap;}
+.base-tag{background:#dce8f8;color:#1d5fa5;}
+.mvmt-tag{background:#e8dff8;color:#5b3fa8;}
+.strata-tag{background:#d8f5ea;color:#0d7a52;}
+.q-resp{display:flex;gap:8px;align-items:flex-start;flex-shrink:0;padding-top:2px;}
+.cbox-opt{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.cbox-lbl{font-size:6pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;white-space:nowrap;}
+.checkbox{width:12px;height:12px;border:1.5px solid #1B3A6B;border-radius:2px;display:inline-block;flex-shrink:0;}
+.q-rule{border:none;border-top:1px solid #ececec;}
+.sq-row{padding:3px 0;}
+.sq-hdr{display:flex;align-items:flex-start;gap:7px;margin-bottom:4px;}
+.sq-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-left:25px;}
+.sq-opt{display:flex;flex-direction:column;align-items:center;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:3px;padding:3px 2px;text-align:center;gap:2px;}
+.sq-val{font-size:7pt;font-weight:700;}
+.sq-cb{width:11px;height:11px;border:1.5px solid #2ec98a;border-radius:2px;display:inline-block;}
+.sq-lbl{font-size:6pt;color:#444;line-height:1.2;}
+.clin-zone{border-top:2px dashed #bbb;padding-top:8px;margin-top:9px;}
+.score-wrap{border:1px solid #cdd4e3;border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.score-bar{color:white;padding:3px 9px;font-size:6.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+.bbar{background:#1d5fa5;}.mbar{background:#5b3fa8;}.sbar{background:#0d7a52;}
+.st{width:100%;border-collapse:collapse;font-size:7.5pt;}
+.st thead th{background:#e8ecf5;color:#1B3A6B;padding:3px 7px;text-align:center;font-size:6.5pt;text-transform:uppercase;border-bottom:1px solid #cdd4e3;}
+.st thead th:first-child{text-align:left;}
+.st tbody td{padding:2px 7px;border-bottom:1px solid #eee;text-align:center;}
+.st tbody td:first-child{text-align:left;font-weight:600;}
+.st tbody tr:nth-child(even) td{background:#f8f9fc;}
+.score-cell{min-width:38px;border-bottom:1px solid #888 !important;background:white !important;}
+.sp{display:inline-block;padding:1px 5px;border-radius:7px;font-size:7pt;font-weight:700;min-width:28px;text-align:center;margin:1px;}
+.sp1{background:#e6f4ea;color:#276228;}.spH2{background:#e8f5ef;color:#0d7a52;}
+.spH{background:#fff4e2;color:#9a5000;}.sp0{background:#fdecea;color:#922323;}
+.totals{display:flex;gap:7px;margin-bottom:6px;}
+.tbox{flex:1;border-radius:4px;padding:4px 7px;}
+.tbox label{font-size:6pt;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:3px;}
+.tbox .sl{border-bottom:1px solid #888;height:15px;}
+.tbox.bb{border:1.5px solid #4e9cf5;}.tbox.bb label{color:#1d5fa5;}
+.tbox.mb{border:1.5px solid #8b6ff5;}.tbox.mb label{color:#5b3fa8;}
+.tbox.sb{border:1.5px solid #2ec98a;}.tbox.sb label{color:#0d7a52;}
+.pe-box{border:1px solid #1B3A6B;border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.pe-hdr{background:#0d2744;color:white;padding:3px 9px;font-size:6.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+.pe-formula{background:#0d2744;color:white;padding:4px 9px;text-align:center;font-size:9.5pt;font-weight:700;letter-spacing:0.5px;}
+.pe-zones{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid #cdd4e3;}
+.pe-zone{padding:3px;text-align:center;border-right:1px solid #cdd4e3;font-size:6.5pt;}
+.pe-zone:last-child{border-right:none;}
+.pzl{font-weight:700;font-size:6.5pt;}
+.pzr{color:#666;font-size:6pt;}
+.pe-note{font-size:6.5pt;color:#555;padding:3px 9px;background:#f5f7fb;border-top:1px solid #cdd4e3;}
+.sig-row{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:6px;}
+.sig-field label{font-size:6pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:2px;}
+.sig-line{border-bottom:1px solid #888;height:15px;}
+.footer{border-top:1px solid #cdd4e3;padding-top:5px;display:flex;justify-content:space-between;align-items:flex-end;margin-top:7px;}
+.footer-left{font-size:6pt;color:#999;line-height:1.5;}
+.footer-right{font-size:6pt;color:#999;text-align:right;line-height:1.5;}
+@media print{body{background:white;}.page{box-shadow:none;margin:0;width:100%;padding:0.45in 0.6in;}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div class="header-left">
+    <h1>PEACS</h1>
+    <h2>Predictive Emergence Assessment for Clinical Services &nbsp;|&nbsp; 22-Item Instrument &nbsp;|&nbsp; Adherence Cartography</h2>
+  </div>
+  <div class="header-right">
+    <div class="lang-badge">Italian</div>
+    <div class="ver-info">Form No. PEACS-IT-001 &nbsp;|&nbsp; Version 1.0 &nbsp;|&nbsp; adherence.cc</div>
+  </div>
+</div>
+
+<div class="pt-info">
+  <div class="fw"><label>Patient Name</label><div class="info-line"></div></div>
+  <div><label>Date</label><div class="info-line"></div></div>
+  <div><label>Date of Birth</label><div class="info-line"></div></div>
+  <div><label>Patient ID</label><div class="info-line"></div></div>
+  <div class="fw"><label>Provider Name</label><div class="info-line"></div></div>
+</div>
+
+
+
+<!-- BASE -->
+<div class="dim-hdr bh">
+  <div class="dim-title">BASE — Valutazione dell&#39;Architettura e della Stabilità Comportamentale</div>
+  <div class="dim-period">Ultimi 30 giorni · 7 domande · Struttura delle abitudini</div>
+</div>
+<div class="preamble"><p>Le farò ora alcune domande sulle abitudini e le routine che segue generalmente quando assume questo farmaco. Pensi a ciò che è tipicamente vero per lei (nell&#39;ultimo mese). Non esistono risposte giuste o sbagliate; risponda con sincerità.</p></div>
+<div class="sec-title">BASE — Questions 1–7</div>
+<div class="q-row"><span class="q-num">1.</span><span class="q-body"><span class="dtag base-tag">Architettura della Memoria</span>Riesce a ricordare in modo affidabile di assumere il farmaco come previsto, anche nelle giornate stressanti?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Sì</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">A volte</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">2.</span><span class="q-body"><span class="dtag base-tag">Stabilità della Routine</span>Mantiene una routine coerente per l&#39;assunzione del farmaco quando il suo programma quotidiano cambia?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Sì</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">A volte</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">3.</span><span class="q-body"><span class="dtag base-tag">Resilienza ai Sintomi</span>Se comincia a sentirsi meglio, continua ad assumere il farmaco esattamente come prescritto?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Sì</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">A volte</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">4.</span><span class="q-body"><span class="dtag base-tag">Flessibilità Adattiva</span>Riesce ad adattare la sua routine quotidiana per assicurarsi di assumere il farmaco quando il programma cambia?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Sì</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">A volte</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">5.</span><span class="q-body"><span class="dtag base-tag">Tolleranza agli Effetti Collaterali</span>Se sperimenta effetti collaterali, riesce a continuare il trattamento gestendoli?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Sì</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">A volte</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">6.</span><span class="q-body"><span class="dtag base-tag">Integrazione Comportamentale</span>L&#39;assunzione del farmaco si inserisce naturalmente nella sua vita quotidiana?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Sì</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">A volte</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">7.</span><span class="q-body"><span class="dtag base-tag">Struttura di Preparazione</span>Mantiene abitualmente una scorta di riserva del farmaco per non rimanerne sprovvisto?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Sì</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">A volte</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+
+<!-- MVMT -->
+<div class="dim-hdr mh">
+  <div class="dim-title">MVMT — Varianza Minima Misurabile</div>
+  <div class="dim-period">Ultimi 7 giorni · 7 domande · Fedeltà temporale</div>
+</div>
+<div class="preamble"><p>Le domande seguenti riguardano la sua esperienza nell&#39;assunzione del farmaco negli ultimi 7 giorni…</p></div>
+<div class="sec-title">MVMT — Questions 8–14</div>
+<div class="q-row"><span class="q-num">8.</span><span class="q-body"><span class="dtag mvmt-tag">Coerenza degli Orari</span>Negli ultimi 7 giorni, ha avuto difficoltà ad assumere il farmaco alla stessa ora ogni giorno?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, una volta</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, più di una volta</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">9.</span><span class="q-body"><span class="dtag mvmt-tag">Completamento delle Dosi</span>Negli ultimi 7 giorni, ha saltato qualche dose?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, una volta</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, più di una volta</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">10.</span><span class="q-body"><span class="dtag mvmt-tag">Omissione per Sintomi</span>Negli ultimi 7 giorni, ha smesso o saltato il farmaco perché si sentiva meglio?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, una volta</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, più di una volta</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">11.</span><span class="q-body"><span class="dtag mvmt-tag">Risposta agli Effetti Collaterali</span>Negli ultimi 7 giorni, ha interrotto o saltato il farmaco a causa di effetti collaterali?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, una volta</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, più di una volta</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">12.</span><span class="q-body"><span class="dtag mvmt-tag">Interferenza Ambientale</span>Negli ultimi 7 giorni, un viaggio, un&#39;assenza o l&#39;ambiente le ha fatto saltare qualche dose?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, una volta</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, più di una volta</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">13.</span><span class="q-body"><span class="dtag mvmt-tag">Adattamento del Programma</span>Negli ultimi 7 giorni, ha avuto difficoltà ad adattare la sua routine per assumere il farmaco quando il programma è cambiato?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, una volta</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, più di una volta</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">14.</span><span class="q-body"><span class="dtag mvmt-tag">Integrazione Quotidiana</span>Negli ultimi 7 giorni, l&#39;assunzione del farmaco le è sembrata un fastidio o non si è inserita naturalmente nella vita quotidiana?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">No</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, una volta</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Sì, più di una volta</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+
+<!-- STRATA -->
+<div class="dim-hdr sh">
+  <div class="dim-title">STRATA — Accesso Sociale, Relazionale e Contestuale al Trattamento</div>
+  <div class="dim-period">Trimestre corrente · 8 domande · Ancoraggio a quattro livelli</div>
+</div>
+<div class="preamble"><p>Di seguito, le faremo domande sul suo supporto, la situazione abitativa, i trasporti, le finanze e la comprensione del suo trattamento.</p></div>
+<div class="sec-title">STRATA — Questions 15–22</div>
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">15.</span><span class="q-body"><span class="dtag strata-tag">Persona di Supporto Principale</span>Chi la aiuta a ricordare o gestire i suoi farmaci?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Coniuge o partner</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Figlio adulto o altro familiare</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Amico, vicino o caregiver</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Gestisco in modo indipendente</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">16.</span><span class="q-body"><span class="dtag strata-tag">Frequenza dei Contatti</span>Con quale frequenza ha contatti significativi con familiari o amici?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Quotidianamente o più volte a settimana</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Una volta a settimana</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Alcune volte al mese</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Raramente o quasi mai</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">17.</span><span class="q-body"><span class="dtag strata-tag">Situazione Abitativa</span>Qual è la sua attuale sistemazione abitativa?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Vivo con coniuge o familiari</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Vivo da solo/a con famiglia o supporto vicino</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Struttura di vita assistita o supportata</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Vivo da solo/a con famiglia lontana o in alloggio temporaneo</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">18.</span><span class="q-body"><span class="dtag strata-tag">Rete di Contatti di Emergenza</span>In caso di emergenza medica, chi ne sarebbe a conoscenza e potrebbe aiutarla?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Più persone che risponderebbero rapidamente</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Almeno una persona che risponderebbe</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Qualcuno che potrebbe eventualmente accorgersene</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Probabilmente nessuno o definitivamente nessuno</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">19.</span><span class="q-body"><span class="dtag strata-tag">Accesso ai Trasporti</span>Come raggiunge solitamente gli appuntamenti medici o la farmacia?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Guido o ho trasporto affidabile e flessibile</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Familiari o amici mi accompagnano, o è disponibile il trasporto pubblico</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Trasporto medico, taxi o ottenuto con difficoltà</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Non riesco ad arrivare in modo affidabile agli appuntamenti o in farmacia</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">20.</span><span class="q-body"><span class="dtag strata-tag">Continuità del Trattamento</span>Quanto affidabilmente riesce a ottenere i farmaci e a partecipare agli appuntamenti di follow-up?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Farmaci e appuntamenti sempre disponibili quando necessario</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Generalmente disponibili con ritardi o difficoltà occasionali</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Spesso in ritardo o difficili da ottenere</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Inaffidabili; lacune significative nell&#39;accesso ai farmaci o al follow-up</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">21.</span><span class="q-body"><span class="dtag strata-tag">Informazione e Alfabetizzazione</span>Quanto bene comprende le istruzioni per assumere i suoi farmaci?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Li comprendo completamente e posso spiegarli ad altri</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Comprendo la maggior parte delle istruzioni</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Ne comprendo alcune ma ho incertezze in alcune parti</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Spesso sono confuso/a o incerto/a su come assumerli</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">22.</span><span class="q-body"><span class="dtag strata-tag">Credenze sull&#39;Aderenza</span>Quanto crede che il suo farmaco sia necessario e la aiuterà?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Sono fermamente convinto/a che sia necessario ed efficace</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">In genere credo che aiuti</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Non sono sicuro/a che stia aiutando</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Spesso dubito della sua necessità o efficacia</span></div></div></div><hr class="q-rule">
+
+<!-- CLINICIAN -->
+<div class="clin-zone">
+<div class="sec-title" style="color:#888;">For Clinician Use Only</div>
+
+<div class="score-wrap">
+  <div class="score-bar bbar">BASE Scoring Key — Q1–7 · Yes=1.00 · Sometimes=0.50 · No=0.00 · sum ÷ 7</div>
+  <table class="st"><thead><tr><th>Item</th><th>Sì</th><th>A volte</th><th>No</th><th>Score</th></tr></thead><tbody><tr><td>B1</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B2</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B3</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B4</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B5</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B6</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B7</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr></tbody></table>
+</div>
+
+<div class="score-wrap">
+  <div class="score-bar mbar">MVMT Scoring Key — Q8–14 · No=1.00 · Yes once=0.50 · Yes more=0.00 · sum ÷ 7</div>
+  <table class="st"><thead><tr><th>Item</th><th>No</th><th>Sì, una volta</th><th>Sì, più di una volta</th><th>Score</th></tr></thead><tbody><tr><td>M1</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M2</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M3</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M4</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M5</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M6</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M7</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr></tbody></table>
+</div>
+
+<div class="score-wrap">
+  <div class="score-bar sbar">STRATA Scoring Key — Q15–22 · Anchored 1.00 / 0.67 / 0.33 / 0.00 · sum ÷ 8</div>
+  <table class="st"><thead><tr><th>Item</th><th>Anchor Values (Best → Worst)</th><th>Score</th></tr></thead><tbody><tr><td>S1</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S2</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S3</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S4</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S5</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S6</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S7</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S8</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr></tbody></table>
+</div>
+
+<div class="totals">
+  <div class="tbox bb"><label>BASE Score (0–1)</label><div class="sl"></div></div>
+  <div class="tbox mb"><label>MVMT Score (0–1)</label><div class="sl"></div></div>
+  <div class="tbox sb"><label>STRATA Score (0–1)</label><div class="sl"></div></div>
+</div>
+
+<div class="pe-box">
+  <div class="pe-hdr">PE Composite Score (PEACS)</div>
+  <div class="pe-formula">PE &nbsp;=&nbsp; (BASE &times; MVMT &times; STRATA)&#x00B9;&#x141B;&#x00B3; &nbsp;=&nbsp; ______</div>
+  <div class="pe-zones">
+    <div class="pe-zone"><div class="pzl" style="color:#10b981;">Optimal</div><div class="pzr">&ge;&nbsp;0.85</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#3b82f6;">Good</div><div class="pzr">&ge;&nbsp;0.70</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#f59e0b;">Moderate</div><div class="pzr">&ge;&nbsp;0.55</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#ef4444;">Poor</div><div class="pzr">&ge;&nbsp;0.40</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#991b1b;">Critical</div><div class="pzr">&lt;&nbsp;0.40</div></div>
+  </div>
+  <div class="pe-note">PE is the geometric mean of the three domain scores. All three dimensions required. Computed automatically in ATLAS.</div>
+</div>
+
+<div class="sig-row">
+  <div class="sig-field"><label>Clinician Signature</label><div class="sig-line"></div></div>
+  <div class="sig-field"><label>Date Administered</label><div class="sig-line"></div></div>
+</div>
+</div>
+
+<div class="footer">
+  <div class="footer-left">PEACS &copy; Adherence Cartography &middot; adherence.cc &middot; All rights reserved. Unauthorized reproduction without institutional license is prohibited.</div>
+  <div class="footer-right">Italian<br/>Form PEACS-IT-001 &nbsp;|&nbsp; v1.0</div>
+</div>
+
+</div>
+</body>
+</html>

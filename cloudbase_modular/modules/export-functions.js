@@ -232,9 +232,20 @@ function openCommandCenter() {
       if (btn) btn.remove();
       const div = document.getElementById('acc-open-divider');
       if (div) div.remove();
+      // Stale session: cached profile claimed superadmin but live token disagrees.
+      // Clear the session so the user can enter a fresh workspace key.
+      sessionStorage.removeItem('atlas_workspace');
+      sessionStorage.removeItem('atlas_workspace_profile');
+      sessionStorage.removeItem('atlas_ws_mode');
+      if (typeof workspaceProfile !== 'undefined') {
+        try { workspaceProfile = null; } catch(e) {}
+      }
+      setTimeout(function() {
+        if (typeof openWorkspaceModal === 'function') openWorkspaceModal();
+      }, 1200);
       return;
     }
-    atlasAuditLog('admin_access', { screen: 'MISSION_CONTROL' });
+    if (typeof atlasAuditLog === 'function') atlasAuditLog('admin_access', { screen: 'MISSION_CONTROL' });
     _saOpenMissionControl({ role: 'superadmin', institutionCode: null });
   }).catch(() => {
     showToast('Could not verify access. Please try again.', 2500);
@@ -263,7 +274,7 @@ function openInstitutionControl() {
   }
 
   const logRole = adminOk ? 'superadmin' : 'pi';
-  atlasAuditLog('pi_access', { screen: 'INSTITUTION_CONTROL', institutionCode });
+  if (typeof atlasAuditLog === 'function') atlasAuditLog('pi_access', { screen: 'INSTITUTION_CONTROL', institutionCode });
   if (typeof _saOpenMissionControl === 'function') {
     _saOpenMissionControl({ role: logRole, institutionCode });
   }
@@ -322,7 +333,7 @@ function accNav(section) {
 async function _accGetToken() {
   const user = firebase.auth().currentUser;
   if (!user) throw new Error('Not authenticated');
-  const result = await user.getIdTokenResult(false);
+  const result = await user.getIdTokenResult(true);
   if (result.claims?.role !== 'superadmin') throw new Error('Superadmin token required');
   return await user.getIdToken(false);
 }

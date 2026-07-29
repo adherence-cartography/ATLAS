@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="sr" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PEACS | Serbian</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,Helvetica,"Noto Sans Arabic",sans-serif;font-size:9.8pt;color:#1a1a1a;background:#e8eaf0;}
+.page{width:8.5in;min-height:11in;margin:0.3in auto;background:white;padding:0.5in 0.65in 0.45in;box-shadow:0 4px 18px rgba(0,0,0,0.18);}
+.header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1B3A6B;padding-bottom:8px;margin-bottom:10px;}
+.header-left h1{font-size:24pt;font-weight:900;color:#1B3A6B;letter-spacing:2px;line-height:1;}
+.header-left h2{font-size:7.5pt;font-weight:400;color:#555;margin-top:2px;}
+.lang-badge{display:inline-block;background:#1B3A6B;color:white;padding:3px 11px;border-radius:20px;font-size:7.5pt;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}
+.ver-info{font-size:6.5pt;color:#999;margin-top:4px;text-align:right;}
+.pt-info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px 10px;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:5px;padding:8px 11px;margin-bottom:9px;}
+.fw{grid-column:1/-1;}
+.pt-info label{display:block;font-size:6pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px;}
+.info-line{border-bottom:1px solid #999;min-height:14px;}
+.placeholder-notice{background:#fff8e1;border:1px solid #f59e0b;border-left:4px solid #f59e0b;border-radius:4px;padding:7px 10px;margin-bottom:9px;font-size:8.5pt;color:#78350f;}
+.dim-hdr{border-radius:4px;padding:5px 9px;margin:9px 0 5px;display:flex;justify-content:space-between;align-items:center;}
+.dim-hdr.bh{background:#e8edf8;border-left:4px solid #4e9cf5;}
+.dim-hdr.mh{background:#ede8f8;border-left:4px solid #8b6ff5;}
+.dim-hdr.sh{background:#e8f5ef;border-left:4px solid #2ec98a;}
+.dim-title{font-size:8.5pt;font-weight:700;color:#1B3A6B;}
+.dim-period{font-size:6.5pt;color:#777;}
+.preamble{border-left:3px solid #cdd4e3;background:#f9fafb;padding:6px 9px;margin-bottom:7px;border-radius:0 4px 4px 0;}
+.preamble p{font-size:8.5pt;line-height:1.4;}
+.sec-title{font-size:7pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.9px;border-bottom:1px solid #cdd4e3;padding-bottom:2px;margin-bottom:6px;}
+.q-row{display:flex;align-items:flex-start;gap:7px;padding:3px 0;}
+.q-num{font-size:9.5pt;font-weight:700;color:#1B3A6B;min-width:18px;flex-shrink:0;padding-top:1px;}
+.q-body{flex:1;font-size:9pt;line-height:1.35;}
+.dtag{display:inline-block;font-size:5.5pt;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:1px 4px;border-radius:3px;margin-bottom:2px;margin-right:4px;white-space:nowrap;}
+.base-tag{background:#dce8f8;color:#1d5fa5;}
+.mvmt-tag{background:#e8dff8;color:#5b3fa8;}
+.strata-tag{background:#d8f5ea;color:#0d7a52;}
+.q-resp{display:flex;gap:8px;align-items:flex-start;flex-shrink:0;padding-top:2px;}
+.cbox-opt{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.cbox-lbl{font-size:6pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;white-space:nowrap;}
+.checkbox{width:12px;height:12px;border:1.5px solid #1B3A6B;border-radius:2px;display:inline-block;flex-shrink:0;}
+.q-rule{border:none;border-top:1px solid #ececec;}
+.sq-row{padding:3px 0;}
+.sq-hdr{display:flex;align-items:flex-start;gap:7px;margin-bottom:4px;}
+.sq-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-left:25px;}
+.sq-opt{display:flex;flex-direction:column;align-items:center;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:3px;padding:3px 2px;text-align:center;gap:2px;}
+.sq-val{font-size:7pt;font-weight:700;}
+.sq-cb{width:11px;height:11px;border:1.5px solid #2ec98a;border-radius:2px;display:inline-block;}
+.sq-lbl{font-size:6pt;color:#444;line-height:1.2;}
+.clin-zone{border-top:2px dashed #bbb;padding-top:8px;margin-top:9px;}
+.score-wrap{border:1px solid #cdd4e3;border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.score-bar{color:white;padding:3px 9px;font-size:6.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+.bbar{background:#1d5fa5;}.mbar{background:#5b3fa8;}.sbar{background:#0d7a52;}
+.st{width:100%;border-collapse:collapse;font-size:7.5pt;}
+.st thead th{background:#e8ecf5;color:#1B3A6B;padding:3px 7px;text-align:center;font-size:6.5pt;text-transform:uppercase;border-bottom:1px solid #cdd4e3;}
+.st thead th:first-child{text-align:left;}
+.st tbody td{padding:2px 7px;border-bottom:1px solid #eee;text-align:center;}
+.st tbody td:first-child{text-align:left;font-weight:600;}
+.st tbody tr:nth-child(even) td{background:#f8f9fc;}
+.score-cell{min-width:38px;border-bottom:1px solid #888 !important;background:white !important;}
+.sp{display:inline-block;padding:1px 5px;border-radius:7px;font-size:7pt;font-weight:700;min-width:28px;text-align:center;margin:1px;}
+.sp1{background:#e6f4ea;color:#276228;}.spH2{background:#e8f5ef;color:#0d7a52;}
+.spH{background:#fff4e2;color:#9a5000;}.sp0{background:#fdecea;color:#922323;}
+.totals{display:flex;gap:7px;margin-bottom:6px;}
+.tbox{flex:1;border-radius:4px;padding:4px 7px;}
+.tbox label{font-size:6pt;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:3px;}
+.tbox .sl{border-bottom:1px solid #888;height:15px;}
+.tbox.bb{border:1.5px solid #4e9cf5;}.tbox.bb label{color:#1d5fa5;}
+.tbox.mb{border:1.5px solid #8b6ff5;}.tbox.mb label{color:#5b3fa8;}
+.tbox.sb{border:1.5px solid #2ec98a;}.tbox.sb label{color:#0d7a52;}
+.pe-box{border:1px solid #1B3A6B;border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.pe-hdr{background:#0d2744;color:white;padding:3px 9px;font-size:6.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+.pe-formula{background:#0d2744;color:white;padding:4px 9px;text-align:center;font-size:9.5pt;font-weight:700;letter-spacing:0.5px;}
+.pe-zones{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid #cdd4e3;}
+.pe-zone{padding:3px;text-align:center;border-right:1px solid #cdd4e3;font-size:6.5pt;}
+.pe-zone:last-child{border-right:none;}
+.pzl{font-weight:700;font-size:6.5pt;}
+.pzr{color:#666;font-size:6pt;}
+.pe-note{font-size:6.5pt;color:#555;padding:3px 9px;background:#f5f7fb;border-top:1px solid #cdd4e3;}
+.sig-row{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:6px;}
+.sig-field label{font-size:6pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:2px;}
+.sig-line{border-bottom:1px solid #888;height:15px;}
+.footer{border-top:1px solid #cdd4e3;padding-top:5px;display:flex;justify-content:space-between;align-items:flex-end;margin-top:7px;}
+.footer-left{font-size:6pt;color:#999;line-height:1.5;}
+.footer-right{font-size:6pt;color:#999;text-align:right;line-height:1.5;}
+@media print{body{background:white;}.page{box-shadow:none;margin:0;width:100%;padding:0.45in 0.6in;}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div class="header-left">
+    <h1>PEACS</h1>
+    <h2>Predictive Emergence Assessment for Clinical Services &nbsp;|&nbsp; 22-Item Instrument &nbsp;|&nbsp; Adherence Cartography</h2>
+  </div>
+  <div class="header-right">
+    <div class="lang-badge">Serbian</div>
+    <div class="ver-info">Form No. PEACS-SR-001 &nbsp;|&nbsp; Version 1.0 &nbsp;|&nbsp; adherence.cc</div>
+  </div>
+</div>
+
+<div class="pt-info">
+  <div class="fw"><label>Patient Name</label><div class="info-line"></div></div>
+  <div><label>Date</label><div class="info-line"></div></div>
+  <div><label>Date of Birth</label><div class="info-line"></div></div>
+  <div><label>Patient ID</label><div class="info-line"></div></div>
+  <div class="fw"><label>Provider Name</label><div class="info-line"></div></div>
+</div>
+
+
+
+<!-- BASE -->
+<div class="dim-hdr bh">
+  <div class="dim-title">BASE — Procena Bihevioralne Arhitekture i Stabilnosti</div>
+  <div class="dim-period">Poslednjih 30 dana · 7 pitanja · Struktura navika</div>
+</div>
+<div class="preamble"><p>Sada ću vam postaviti nekoliko pitanja o navikama i rutinama koje generalno pratite kada uzimate ovaj lek. Razmislite o onome što je tipično za vas (tokom prošlog meseca). Nema tačnih ili netačnih odgovora; molimo odgovorite iskreno.</p></div>
+<div class="sec-title">BASE — Questions 1–7</div>
+<div class="q-row"><span class="q-num">1.</span><span class="q-body"><span class="dtag base-tag">Arhitektura Memorije</span>Da li pouzdano pamtite da uzimate lek prema rasporedu, čak i u stresnim danima?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Da</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ponekad</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">2.</span><span class="q-body"><span class="dtag base-tag">Stabilnost Rutine</span>Da li održavate doslednu rutinu uzimanja leka kada se vaš dnevni raspored promeni?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Da</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ponekad</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">3.</span><span class="q-body"><span class="dtag base-tag">Otpornost na Simptome</span>Ako počnete da se osećate bolje, da li nastavljate da uzimate lek tačno onako kako vam je propisan?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Da</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ponekad</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">4.</span><span class="q-body"><span class="dtag base-tag">Adaptivna Fleksibilnost</span>Da li možete prilagoditi svoju dnevnu rutinu kako biste bili sigurni da uzimate lek kada se raspored promeni?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Da</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ponekad</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">5.</span><span class="q-body"><span class="dtag base-tag">Tolerancija na Nuspojave</span>Ako doživljavate nuspojave, da li možete nastaviti lečenje dok ih savladate?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Da</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ponekad</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">6.</span><span class="q-body"><span class="dtag base-tag">Bihevioralna Integracija</span>Da li uzimanje leka prirodno se uklapa u vaš svakodnevni život?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Da</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ponekad</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">7.</span><span class="q-body"><span class="dtag base-tag">Struktura Pripravnosti</span>Da li rutinski čuvate rezervnu zalihu da ne ostanete bez leka?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Da</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ponekad</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+
+<!-- MVMT -->
+<div class="dim-hdr mh">
+  <div class="dim-title">MVMT — Minimalna Merljiva Varijansa</div>
+  <div class="dim-period">Poslednjih 7 dana · 7 pitanja · Temporalna doslednost</div>
+</div>
+<div class="preamble"><p>Sledeća pitanja se odnose na vaše iskustvo uzimanja leka tokom proteklih 7 dana…</p></div>
+<div class="sec-title">MVMT — Questions 8–14</div>
+<div class="q-row"><span class="q-num">8.</span><span class="q-body"><span class="dtag mvmt-tag">Doslednost Vremena</span>U poslednjih 7 dana, da li ste imali poteškoća s uzimanjem leka u isto vreme svaki dan?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, jednom</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, više od jednom</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">9.</span><span class="q-body"><span class="dtag mvmt-tag">Kompletiranje Doze</span>U poslednjih 7 dana, da li ste propustili neke doze?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, jednom</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, više od jednom</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">10.</span><span class="q-body"><span class="dtag mvmt-tag">Preskakanje zbog Simptoma</span>U poslednjih 7 dana, da li ste prestali ili preskočili lek jer ste se osećali bolje?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, jednom</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, više od jednom</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">11.</span><span class="q-body"><span class="dtag mvmt-tag">Reakcija na Nuspojave</span>U poslednjih 7 dana, da li ste prestali ili preskočili lek zbog nuspojava?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, jednom</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, više od jednom</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">12.</span><span class="q-body"><span class="dtag mvmt-tag">Ometanje Okoline</span>U poslednjih 7 dana, da li su putovanje, odsustvo ili okruženje uzrokovali da propustite lek?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, jednom</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, više od jednom</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">13.</span><span class="q-body"><span class="dtag mvmt-tag">Prilagođavanje Rasporeda</span>U poslednjih 7 dana, da li ste imali poteškoća s prilagođavanjem rutine za uzimanje leka kada se raspored promenio?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, jednom</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, više od jednom</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">14.</span><span class="q-body"><span class="dtag mvmt-tag">Dnevna Integracija</span>U poslednjih 7 dana, da li vam je uzimanje leka izgledalo naporno ili se nije prirodno uklapalo u svakodnevni život?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">Ne</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, jednom</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">Da, više od jednom</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+
+<!-- STRATA -->
+<div class="dim-hdr sh">
+  <div class="dim-title">STRATA — Socijalni i Relacioni Pristup Tretmanu i Okruženju</div>
+  <div class="dim-period">Tekući kvartal · 8 pitanja · Četvorostepeno sidrenje</div>
+</div>
+<div class="preamble"><p>Zatim ćemo vam postaviti pitanja o vašoj podršci, stambenim uslovima, transportu, finansijama i razumevanju vašeg lečenja.</p></div>
+<div class="sec-title">STRATA — Questions 15–22</div>
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">15.</span><span class="q-body"><span class="dtag strata-tag">Primarna Osoba Podrške</span>Ko vam pomaže da zapamtite ili upravljate lekovima?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Supružnik ili partner</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Odraslo dete ili drugi član porodice</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Prijatelj, komšija ili negovatelj</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Upravljam samostalno</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">16.</span><span class="q-body"><span class="dtag strata-tag">Učestalost Kontakta</span>Koliko često imate smisleni kontakt s porodicom ili prijateljima?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Svakodnevno ili nekoliko puta nedeljno</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Jednom nedeljno</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Nekoliko puta mesečno</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Retko ili gotovo nikad</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">17.</span><span class="q-body"><span class="dtag strata-tag">Uslovi Stanovanja</span>Kakva je vaša trenutna stambena situacija?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Živim sa supružnikom ili članovima porodice</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Živim sam/a s porodicom ili podrškom u blizini</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Organizovano ili podržano stanovanje</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Živim sam/a s porodicom daleko ili u privremenom smeštaju</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">18.</span><span class="q-body"><span class="dtag strata-tag">Mreža Kontakata za Hitne Slučajeve</span>U slučaju medicinske hitnosti, ko bi znao i mogao da pomogne?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Više osoba koje bi brzo reagovale</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Najmanje jedna osoba koja bi reagovala</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Neko ko bi eventualno primetio</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Verovatno niko ili sigurno niko</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">19.</span><span class="q-body"><span class="dtag strata-tag">Pristup Transportu</span>Kako obično dolazite do medicinskih pregleda ili apoteke?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Vozim se sam/a ili imam pouzdan, fleksibilan prevoz</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Porodica ili prijatelji me prevoze, ili je dostupan javni prevoz</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Medicinski prevoz, taksi ili prevoz dobijen s teškoćama</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Ne mogu pouzdano da dođem do pregleda ili apoteke</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">20.</span><span class="q-body"><span class="dtag strata-tag">Kontinuitet Lečenja</span>Koliko pouzdano možete dobiti lekove i prisustvovati kontrolnim pregledima?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Lekovi i pregledi su pouzdano dostupni kada je potrebno</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Obično dostupni s povremenim kašnjenjima ili teškoćama</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Često kasni ili teško dostupni</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Nepouzdano; značajni propusti u pristupu lekovima ili kontroli</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">21.</span><span class="q-body"><span class="dtag strata-tag">Informisanost i Pismenost</span>Koliko dobro razumete uputstva za uzimanje lekova?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Potpuno razumem i mogu objasniti drugima</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Razumem većinu uputstava</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Razumem nešto, ali sam nesiguran/a u nekim delovima</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Često sam zbunjen/a ili nesiguran/a kako uzimati lek</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">22.</span><span class="q-body"><span class="dtag strata-tag">Uverenja o Adherenciji</span>Koliko snažno verujete da je vaš lek neophodan i da će vam pomoći?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Snažno verujem da je neophodan i efikasan</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Generalno verujem da pomaže</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Nisam siguran/a da li pomaže</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">Često sumnjam u njegovu neophodnost ili efikasnost</span></div></div></div><hr class="q-rule">
+
+<!-- CLINICIAN -->
+<div class="clin-zone">
+<div class="sec-title" style="color:#888;">For Clinician Use Only</div>
+
+<div class="score-wrap">
+  <div class="score-bar bbar">BASE Scoring Key — Q1–7 · Yes=1.00 · Sometimes=0.50 · No=0.00 · sum ÷ 7</div>
+  <table class="st"><thead><tr><th>Item</th><th>Da</th><th>Ponekad</th><th>Ne</th><th>Score</th></tr></thead><tbody><tr><td>B1</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B2</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B3</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B4</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B5</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B6</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B7</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr></tbody></table>
+</div>
+
+<div class="score-wrap">
+  <div class="score-bar mbar">MVMT Scoring Key — Q8–14 · No=1.00 · Yes once=0.50 · Yes more=0.00 · sum ÷ 7</div>
+  <table class="st"><thead><tr><th>Item</th><th>Ne</th><th>Da, jednom</th><th>Da, više od jednom</th><th>Score</th></tr></thead><tbody><tr><td>M1</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M2</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M3</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M4</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M5</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M6</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M7</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr></tbody></table>
+</div>
+
+<div class="score-wrap">
+  <div class="score-bar sbar">STRATA Scoring Key — Q15–22 · Anchored 1.00 / 0.67 / 0.33 / 0.00 · sum ÷ 8</div>
+  <table class="st"><thead><tr><th>Item</th><th>Anchor Values (Best → Worst)</th><th>Score</th></tr></thead><tbody><tr><td>S1</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S2</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S3</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S4</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S5</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S6</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S7</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S8</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr></tbody></table>
+</div>
+
+<div class="totals">
+  <div class="tbox bb"><label>BASE Score (0–1)</label><div class="sl"></div></div>
+  <div class="tbox mb"><label>MVMT Score (0–1)</label><div class="sl"></div></div>
+  <div class="tbox sb"><label>STRATA Score (0–1)</label><div class="sl"></div></div>
+</div>
+
+<div class="pe-box">
+  <div class="pe-hdr">PE Composite Score (PEACS)</div>
+  <div class="pe-formula">PE &nbsp;=&nbsp; (BASE &times; MVMT &times; STRATA)&#x00B9;&#x141B;&#x00B3; &nbsp;=&nbsp; ______</div>
+  <div class="pe-zones">
+    <div class="pe-zone"><div class="pzl" style="color:#10b981;">Optimal</div><div class="pzr">&ge;&nbsp;0.85</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#3b82f6;">Good</div><div class="pzr">&ge;&nbsp;0.70</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#f59e0b;">Moderate</div><div class="pzr">&ge;&nbsp;0.55</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#ef4444;">Poor</div><div class="pzr">&ge;&nbsp;0.40</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#991b1b;">Critical</div><div class="pzr">&lt;&nbsp;0.40</div></div>
+  </div>
+  <div class="pe-note">PE is the geometric mean of the three domain scores. All three dimensions required. Computed automatically in ATLAS.</div>
+</div>
+
+<div class="sig-row">
+  <div class="sig-field"><label>Clinician Signature</label><div class="sig-line"></div></div>
+  <div class="sig-field"><label>Date Administered</label><div class="sig-line"></div></div>
+</div>
+</div>
+
+<div class="footer">
+  <div class="footer-left">PEACS &copy; Adherence Cartography &middot; adherence.cc &middot; All rights reserved. Unauthorized reproduction without institutional license is prohibited.</div>
+  <div class="footer-right">Serbian<br/>Form PEACS-SR-001 &nbsp;|&nbsp; v1.0</div>
+</div>
+
+</div>
+</body>
+</html>

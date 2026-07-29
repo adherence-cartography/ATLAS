@@ -9,31 +9,66 @@ if (!admin.apps.length) {
 const ses = new AWS.SES({ region: process.env.AWS_REGION || 'us-east-1' });
 const db = admin.database();
 
+const _mapPE = r => {
+  const a = ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3;
+  const e = ((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3;
+  const c = 0.5 + 0.5*((+r.map_q4||0)+(+r.map_q7||0))/2;
+  return Math.pow(Math.max(0, a*e*c), 1/3);
+};
+
+const _geomMean = arr => arr.length
+  ? Math.exp(arr.reduce((s,v) => s + Math.log(Math.max(0.001, Math.min(1, v))), 0) / arr.length)
+  : null;
+
+const _computeGAI = (assessArr, peacsArr) => {
+  const mmasOnly = assessArr.filter(r => r.map_q1 === undefined);
+  const mapRecs  = assessArr.filter(r => r.map_q1 !== undefined);
+  const mmasNorm  = mmasOnly.length ? mmasOnly.reduce((s,r) => s + parseFloat(r.mmas_score || r.score || 0), 0) / mmasOnly.length / 8 : null;
+  const mapNorm   = _geomMean(mapRecs.map(r => _mapPE(r)));
+  const peacsNorm = _geomMean(peacsArr.filter(r => r.pe != null).map(r => +r.pe));
+  const comps = [mmasNorm, mapNorm, peacsNorm].filter(v => v != null);
+  return comps.length ? _geomMean(comps) : null;
+};
+
+const _atRisk = (assessArr, peacsArr) => {
+  const scores = [
+    ...assessArr.filter(r => r.map_q1 === undefined).map(r => parseFloat(r.mmas_score || r.score || 0) / 8),
+    ...assessArr.filter(r => r.map_q1 !== undefined).map(r => _mapPE(r)),
+    ...peacsArr.filter(r => r.pe != null).map(r => +r.pe)
+  ];
+  return scores.filter(v => v < 0.55).length;
+};
+
 async function getWeeklyMetrics(workspaceKey) {
   const now = Date.now();
   const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
   const thisWeekStart = now - oneWeekMs;
   const lastWeekStart = now - (2 * oneWeekMs);
 
-  const snap = await db.ref('assessments').orderByChild('institution_code').equalTo(workspaceKey).once('value');
-  const records = snap.val() ? Object.values(snap.val()) : [];
+  const [assessSnap, peacsSnap] = await Promise.all([
+    db.ref('assessments').orderByChild('institution_code').equalTo(workspaceKey).once('value'),
+    db.ref('peacs').orderByChild('institution_code').equalTo(workspaceKey).once('value')
+  ]);
+  const records    = assessSnap.val() ? Object.values(assessSnap.val()) : [];
+  const peacsRecs  = peacsSnap.val()  ? Object.values(peacsSnap.val())  : [];
 
-  const thisWeek = records.filter(r => (r.timestamp || r.created_at || 0) >= thisWeekStart);
-  const lastWeek = records.filter(r => (r.timestamp || r.created_at || 0) >= lastWeekStart && (r.timestamp || r.created_at || 0) < thisWeekStart);
+  const thisWeekA = records.filter(r => (r.timestamp || r.created_at || 0) >= thisWeekStart);
+  const lastWeekA = records.filter(r => (r.timestamp || r.created_at || 0) >= lastWeekStart && (r.timestamp || r.created_at || 0) < thisWeekStart);
+  const thisWeekP = peacsRecs.filter(r => (r.timestamp || r.created_at || 0) >= thisWeekStart);
+  const lastWeekP = peacsRecs.filter(r => (r.timestamp || r.created_at || 0) >= lastWeekStart && (r.timestamp || r.created_at || 0) < thisWeekStart);
 
-  const gai = (arr) => arr.length ? (arr.reduce((s, r) => s + parseFloat(r.mmas_score || r.score || 0) / 8, 0) / arr.length) : null;
-  const atRisk = (arr) => arr.filter(r => parseFloat(r.mmas_score || r.score || 0) < 6).length;
-
-  const thisGAI = gai(thisWeek);
-  const lastGAI = gai(lastWeek);
+  const thisGAI = _computeGAI(thisWeekA, thisWeekP);
+  const lastGAI = _computeGAI(lastWeekA, lastWeekP);
   const delta = (thisGAI !== null && lastGAI !== null) ? (thisGAI - lastGAI) : null;
 
   return {
-    newSubmissions: thisWeek.length,
+    newSubmissions: thisWeekA.length + thisWeekP.length,
     currentGAI: thisGAI,
     gaoDelta: delta,
-    atRiskCount: atRisk(thisWeek),
-    atRiskDelta: lastWeek.length > 0 ? atRisk(thisWeek) - atRisk(lastWeek) : null
+    atRiskCount: _atRisk(thisWeekA, thisWeekP),
+    atRiskDelta: (lastWeekA.length + lastWeekP.length) > 0
+      ? _atRisk(thisWeekA, thisWeekP) - _atRisk(lastWeekA, lastWeekP)
+      : null
   };
 }
 
@@ -63,7 +98,7 @@ async function sendPulseEmail(toEmail, workspaceKey, metrics) {
         <strong style="float:right;color:#1a1a2e;">${metrics.newSubmissions}</strong>
       </td></tr>
       <tr><td style="padding:0.75rem 0;">
-        <span style="color:#555;font-size:0.875rem;">⚠ At-risk patients (MMAS &lt; 6)</span>
+        <span style="color:#555;font-size:0.875rem;">⚠ At-risk patients (GAI &lt; 0.55)</span>
         <strong style="float:right;color:#f44336;">${metrics.atRiskCount}</strong>
       </td></tr>
     </table>

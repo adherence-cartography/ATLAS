@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PEACS | Korean</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,Helvetica,"Noto Sans Arabic",sans-serif;font-size:9.8pt;color:#1a1a1a;background:#e8eaf0;}
+.page{width:8.5in;min-height:11in;margin:0.3in auto;background:white;padding:0.5in 0.65in 0.45in;box-shadow:0 4px 18px rgba(0,0,0,0.18);}
+.header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1B3A6B;padding-bottom:8px;margin-bottom:10px;}
+.header-left h1{font-size:24pt;font-weight:900;color:#1B3A6B;letter-spacing:2px;line-height:1;}
+.header-left h2{font-size:7.5pt;font-weight:400;color:#555;margin-top:2px;}
+.lang-badge{display:inline-block;background:#1B3A6B;color:white;padding:3px 11px;border-radius:20px;font-size:7.5pt;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}
+.ver-info{font-size:6.5pt;color:#999;margin-top:4px;text-align:right;}
+.pt-info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px 10px;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:5px;padding:8px 11px;margin-bottom:9px;}
+.fw{grid-column:1/-1;}
+.pt-info label{display:block;font-size:6pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px;}
+.info-line{border-bottom:1px solid #999;min-height:14px;}
+.placeholder-notice{background:#fff8e1;border:1px solid #f59e0b;border-left:4px solid #f59e0b;border-radius:4px;padding:7px 10px;margin-bottom:9px;font-size:8.5pt;color:#78350f;}
+.dim-hdr{border-radius:4px;padding:5px 9px;margin:9px 0 5px;display:flex;justify-content:space-between;align-items:center;}
+.dim-hdr.bh{background:#e8edf8;border-left:4px solid #4e9cf5;}
+.dim-hdr.mh{background:#ede8f8;border-left:4px solid #8b6ff5;}
+.dim-hdr.sh{background:#e8f5ef;border-left:4px solid #2ec98a;}
+.dim-title{font-size:8.5pt;font-weight:700;color:#1B3A6B;}
+.dim-period{font-size:6.5pt;color:#777;}
+.preamble{border-left:3px solid #cdd4e3;background:#f9fafb;padding:6px 9px;margin-bottom:7px;border-radius:0 4px 4px 0;}
+.preamble p{font-size:8.5pt;line-height:1.4;}
+.sec-title{font-size:7pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.9px;border-bottom:1px solid #cdd4e3;padding-bottom:2px;margin-bottom:6px;}
+.q-row{display:flex;align-items:flex-start;gap:7px;padding:3px 0;}
+.q-num{font-size:9.5pt;font-weight:700;color:#1B3A6B;min-width:18px;flex-shrink:0;padding-top:1px;}
+.q-body{flex:1;font-size:9pt;line-height:1.35;}
+.dtag{display:inline-block;font-size:5.5pt;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:1px 4px;border-radius:3px;margin-bottom:2px;margin-right:4px;white-space:nowrap;}
+.base-tag{background:#dce8f8;color:#1d5fa5;}
+.mvmt-tag{background:#e8dff8;color:#5b3fa8;}
+.strata-tag{background:#d8f5ea;color:#0d7a52;}
+.q-resp{display:flex;gap:8px;align-items:flex-start;flex-shrink:0;padding-top:2px;}
+.cbox-opt{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.cbox-lbl{font-size:6pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;white-space:nowrap;}
+.checkbox{width:12px;height:12px;border:1.5px solid #1B3A6B;border-radius:2px;display:inline-block;flex-shrink:0;}
+.q-rule{border:none;border-top:1px solid #ececec;}
+.sq-row{padding:3px 0;}
+.sq-hdr{display:flex;align-items:flex-start;gap:7px;margin-bottom:4px;}
+.sq-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-left:25px;}
+.sq-opt{display:flex;flex-direction:column;align-items:center;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:3px;padding:3px 2px;text-align:center;gap:2px;}
+.sq-val{font-size:7pt;font-weight:700;}
+.sq-cb{width:11px;height:11px;border:1.5px solid #2ec98a;border-radius:2px;display:inline-block;}
+.sq-lbl{font-size:6pt;color:#444;line-height:1.2;}
+.clin-zone{border-top:2px dashed #bbb;padding-top:8px;margin-top:9px;}
+.score-wrap{border:1px solid #cdd4e3;border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.score-bar{color:white;padding:3px 9px;font-size:6.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+.bbar{background:#1d5fa5;}.mbar{background:#5b3fa8;}.sbar{background:#0d7a52;}
+.st{width:100%;border-collapse:collapse;font-size:7.5pt;}
+.st thead th{background:#e8ecf5;color:#1B3A6B;padding:3px 7px;text-align:center;font-size:6.5pt;text-transform:uppercase;border-bottom:1px solid #cdd4e3;}
+.st thead th:first-child{text-align:left;}
+.st tbody td{padding:2px 7px;border-bottom:1px solid #eee;text-align:center;}
+.st tbody td:first-child{text-align:left;font-weight:600;}
+.st tbody tr:nth-child(even) td{background:#f8f9fc;}
+.score-cell{min-width:38px;border-bottom:1px solid #888 !important;background:white !important;}
+.sp{display:inline-block;padding:1px 5px;border-radius:7px;font-size:7pt;font-weight:700;min-width:28px;text-align:center;margin:1px;}
+.sp1{background:#e6f4ea;color:#276228;}.spH2{background:#e8f5ef;color:#0d7a52;}
+.spH{background:#fff4e2;color:#9a5000;}.sp0{background:#fdecea;color:#922323;}
+.totals{display:flex;gap:7px;margin-bottom:6px;}
+.tbox{flex:1;border-radius:4px;padding:4px 7px;}
+.tbox label{font-size:6pt;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:3px;}
+.tbox .sl{border-bottom:1px solid #888;height:15px;}
+.tbox.bb{border:1.5px solid #4e9cf5;}.tbox.bb label{color:#1d5fa5;}
+.tbox.mb{border:1.5px solid #8b6ff5;}.tbox.mb label{color:#5b3fa8;}
+.tbox.sb{border:1.5px solid #2ec98a;}.tbox.sb label{color:#0d7a52;}
+.pe-box{border:1px solid #1B3A6B;border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.pe-hdr{background:#0d2744;color:white;padding:3px 9px;font-size:6.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+.pe-formula{background:#0d2744;color:white;padding:4px 9px;text-align:center;font-size:9.5pt;font-weight:700;letter-spacing:0.5px;}
+.pe-zones{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid #cdd4e3;}
+.pe-zone{padding:3px;text-align:center;border-right:1px solid #cdd4e3;font-size:6.5pt;}
+.pe-zone:last-child{border-right:none;}
+.pzl{font-weight:700;font-size:6.5pt;}
+.pzr{color:#666;font-size:6pt;}
+.pe-note{font-size:6.5pt;color:#555;padding:3px 9px;background:#f5f7fb;border-top:1px solid #cdd4e3;}
+.sig-row{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:6px;}
+.sig-field label{font-size:6pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:2px;}
+.sig-line{border-bottom:1px solid #888;height:15px;}
+.footer{border-top:1px solid #cdd4e3;padding-top:5px;display:flex;justify-content:space-between;align-items:flex-end;margin-top:7px;}
+.footer-left{font-size:6pt;color:#999;line-height:1.5;}
+.footer-right{font-size:6pt;color:#999;text-align:right;line-height:1.5;}
+@media print{body{background:white;}.page{box-shadow:none;margin:0;width:100%;padding:0.45in 0.6in;}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div class="header-left">
+    <h1>PEACS</h1>
+    <h2>Predictive Emergence Assessment for Clinical Services &nbsp;|&nbsp; 22-Item Instrument &nbsp;|&nbsp; Adherence Cartography</h2>
+  </div>
+  <div class="header-right">
+    <div class="lang-badge">Korean</div>
+    <div class="ver-info">Form No. PEACS-KO-001 &nbsp;|&nbsp; Version 1.0 &nbsp;|&nbsp; adherence.cc</div>
+  </div>
+</div>
+
+<div class="pt-info">
+  <div class="fw"><label>Patient Name</label><div class="info-line"></div></div>
+  <div><label>Date</label><div class="info-line"></div></div>
+  <div><label>Date of Birth</label><div class="info-line"></div></div>
+  <div><label>Patient ID</label><div class="info-line"></div></div>
+  <div class="fw"><label>Provider Name</label><div class="info-line"></div></div>
+</div>
+
+
+
+<!-- BASE -->
+<div class="dim-hdr bh">
+  <div class="dim-title">BASE — 아키텍처 및 행동 안정성 평가</div>
+  <div class="dim-period">지난 30일 · 7문항 · 습관 구조</div>
+</div>
+<div class="preamble"><p>이제 이 약을 복용할 때 일반적으로 따르는 습관과 루틴에 대해 몇 가지 질문을 드리겠습니다. 지난 한 달 동안 당신에게 전형적인 것이 무엇인지 생각해보세요. 옳고 그른 답은 없습니다. 가능한 한 솔직하게 답해주세요.</p></div>
+<div class="sec-title">BASE — Questions 1–7</div>
+<div class="q-row"><span class="q-num">1.</span><span class="q-body"><span class="dtag base-tag">기억 구조</span>바쁜 날에도 일정에 따라 약을 복용하는 것을 확실히 기억할 수 있습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">예</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">가끔</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">2.</span><span class="q-body"><span class="dtag base-tag">루틴 안정성</span>일상 일정이 변경되어도 일관된 복약 루틴을 유지합니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">예</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">가끔</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">3.</span><span class="q-body"><span class="dtag base-tag">증상 저항력</span>기분이 좋아지기 시작하더라도 처방된 대로 약을 계속 복용합니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">예</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">가끔</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">4.</span><span class="q-body"><span class="dtag base-tag">적응적 유연성</span>일정이 변경될 때 약을 복용할 수 있도록 일상 루틴을 조정할 수 있습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">예</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">가끔</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">5.</span><span class="q-body"><span class="dtag base-tag">부작용 내성</span>부작용이 있어도 이를 관리하면서 치료를 계속할 수 있습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">예</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">가끔</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">6.</span><span class="q-body"><span class="dtag base-tag">행동적 통합</span>약 복용이 일상생활에 자연스럽게 맞습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">예</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">가끔</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">7.</span><span class="q-body"><span class="dtag base-tag">준비 구조</span>약이 떨어지지 않도록 정기적으로 비축합니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">예</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">가끔</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+
+<!-- MVMT -->
+<div class="dim-hdr mh">
+  <div class="dim-title">MVMT — 측정 가능한 최소 분산</div>
+  <div class="dim-period">지난 7일 · 7문항 · 시간적 정확성</div>
+</div>
+<div class="preamble"><p>다음 질문들은 지난 7일 동안의 복약 경험에 관한 것입니다...</p></div>
+<div class="sec-title">MVMT — Questions 8–14</div>
+<div class="q-row"><span class="q-num">8.</span><span class="q-body"><span class="dtag mvmt-tag">시간적 일관성</span>지난 7일 동안 매일 같은 시간에 약을 복용하는 데 어려움이 있었습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 한 번</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 두 번 이상</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">9.</span><span class="q-body"><span class="dtag mvmt-tag">용량 준수</span>지난 7일 동안 약을 빠뜨린 적이 있습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 한 번</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 두 번 이상</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">10.</span><span class="q-body"><span class="dtag mvmt-tag">증상으로 인한 건너뜀</span>지난 7일 동안 기분이 좋아졌기 때문에 약을 중단하거나 빠뜨린 적이 있습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 한 번</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 두 번 이상</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">11.</span><span class="q-body"><span class="dtag mvmt-tag">부작용 반응</span>지난 7일 동안 부작용으로 인해 약을 중단하거나 빠뜨린 적이 있습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 한 번</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 두 번 이상</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">12.</span><span class="q-body"><span class="dtag mvmt-tag">환경적 방해</span>지난 7일 동안 여행, 부재 또는 환경으로 인해 용량을 빠뜨린 적이 있습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 한 번</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 두 번 이상</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">13.</span><span class="q-body"><span class="dtag mvmt-tag">일정 적응</span>지난 7일 동안 일정이 변경될 때 약을 복용하기 위해 루틴을 조정하는 데 어려움이 있었습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 한 번</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 두 번 이상</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+<div class="q-row"><span class="q-num">14.</span><span class="q-body"><span class="dtag mvmt-tag">일상적 통합</span>지난 7일 동안 약 복용이 부담처럼 느껴지거나 일상생활에 자연스럽게 맞지 않았습니까?</span><span class="q-resp"><div class="cbox-opt"><span class="cbox-lbl">아니오</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 한 번</span><span class="checkbox"></span></div><div class="cbox-opt"><span class="cbox-lbl">예, 두 번 이상</span><span class="checkbox"></span></div></span></div><hr class="q-rule">
+
+<!-- STRATA -->
+<div class="dim-hdr sh">
+  <div class="dim-title">STRATA — 치료에 대한 사회적, 관계적, 맥락적 접근</div>
+  <div class="dim-period">현재 분기 · 8문항 · 4단계 앵커링</div>
+</div>
+<div class="preamble"><p>이후 지원, 주거 상황, 교통, 재정, 치료 이해에 관한 질문을 드리겠습니다.</p></div>
+<div class="sec-title">STRATA — Questions 15–22</div>
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">15.</span><span class="q-body"><span class="dtag strata-tag">주요 지원자</span>약을 기억하거나 관리하는 데 누가 도움을 줍니까?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">배우자 또는 파트너</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">성인 자녀 또는 다른 가족 구성원</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">친구, 이웃 또는 돌봄 제공자</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">독립적으로 처리함</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">16.</span><span class="q-body"><span class="dtag strata-tag">연락 빈도</span>가족이나 친구들과 얼마나 자주 의미 있는 접촉을 합니까?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">매일 또는 주 여러 번</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">주 1회</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">월 여러 번</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">드물게 또는 거의 없음</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">17.</span><span class="q-body"><span class="dtag strata-tag">주거 상황</span>현재 주거 상황은 어떻습니까?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">배우자나 가족과 함께 거주</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">혼자 살지만 가족이나 지원이 가까이 있음</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">보호된 또는 관리 돌봄 주거</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">혼자 살며 가족이 멀리 있거나 임시 주거</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">18.</span><span class="q-body"><span class="dtag strata-tag">응급 네트워크</span>의료 응급 상황이 발생하면 누가 알고 도움을 줄 수 있습니까?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">빠르게 반응할 여러 사람</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">반응할 사람이 적어도 한 명</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">결국 알아차릴 사람</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">아마도 아무도 없거나 확실히 아무도 없음</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">19.</span><span class="q-body"><span class="dtag strata-tag">교통수단 접근성</span>일반적으로 의사 예약이나 약국에 어떻게 갑니까?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">직접 운전하거나 신뢰할 수 있고 유연한 교통수단이 있음</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">가족이나 친구가 데려다주거나 대중교통 이용 가능</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">의료 이송, 택시 또는 어렵게</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">예약이나 약국에 신뢰할 수 있게 갈 수 없음</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">20.</span><span class="q-body"><span class="dtag strata-tag">치료 연속성</span>약을 얼마나 신뢰할 수 있게 구할 수 있고 후속 예약에 참석할 수 있습니까?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">약과 예약은 필요할 때 항상 이용 가능</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">일반적으로 이용 가능하나 가끔 지연 또는 어려움</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">자주 지연되거나 구하기 어려움</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">신뢰할 수 없음; 약이나 후속 치료 접근에 상당한 차이</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">21.</span><span class="q-body"><span class="dtag strata-tag">정보 및 건강 리터러시</span>약 복용 지침을 얼마나 잘 이해합니까?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">완전히 이해하고 다른 사람에게 설명할 수 있음</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">대부분의 지침을 이해함</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">일부 이해하지만 일부 부분에 대해 질문이 있음</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">어떻게 복용해야 하는지 자주 혼란스럽거나 불확실함</span></div></div></div><hr class="q-rule">
+<div class="sq-row"><div class="sq-hdr"><span class="q-num">22.</span><span class="q-body"><span class="dtag strata-tag">복약 준수 신념</span>약이 필요하고 도움이 될 것이라고 얼마나 믿습니까?</span></div><div class="sq-opts"><div class="sq-opt"><span class="sq-val" style="color:#276228">1.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">필요하고 효과적이라고 강하게 믿음</span></div><div class="sq-opt"><span class="sq-val" style="color:#0d7a52">0.67</span><span class="checkbox sq-cb"></span><span class="sq-lbl">일반적으로 도움이 된다고 생각함</span></div><div class="sq-opt"><span class="sq-val" style="color:#9a5000">0.33</span><span class="checkbox sq-cb"></span><span class="sq-lbl">도움이 되는지 확신이 없음</span></div><div class="sq-opt"><span class="sq-val" style="color:#922323">0.00</span><span class="checkbox sq-cb"></span><span class="sq-lbl">필요성이나 효과에 대해 자주 의심함</span></div></div></div><hr class="q-rule">
+
+<!-- CLINICIAN -->
+<div class="clin-zone">
+<div class="sec-title" style="color:#888;">For Clinician Use Only</div>
+
+<div class="score-wrap">
+  <div class="score-bar bbar">BASE Scoring Key — Q1–7 · Yes=1.00 · Sometimes=0.50 · No=0.00 · sum ÷ 7</div>
+  <table class="st"><thead><tr><th>Item</th><th>예</th><th>가끔</th><th>아니오</th><th>Score</th></tr></thead><tbody><tr><td>B1</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B2</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B3</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B4</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B5</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B6</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>B7</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr></tbody></table>
+</div>
+
+<div class="score-wrap">
+  <div class="score-bar mbar">MVMT Scoring Key — Q8–14 · No=1.00 · Yes once=0.50 · Yes more=0.00 · sum ÷ 7</div>
+  <table class="st"><thead><tr><th>Item</th><th>아니오</th><th>예, 한 번</th><th>예, 두 번 이상</th><th>Score</th></tr></thead><tbody><tr><td>M1</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M2</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M3</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M4</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M5</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M6</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>M7</td><td><span class="sp sp1">1.00</span></td><td><span class="sp spH">0.50</span></td><td><span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr></tbody></table>
+</div>
+
+<div class="score-wrap">
+  <div class="score-bar sbar">STRATA Scoring Key — Q15–22 · Anchored 1.00 / 0.67 / 0.33 / 0.00 · sum ÷ 8</div>
+  <table class="st"><thead><tr><th>Item</th><th>Anchor Values (Best → Worst)</th><th>Score</th></tr></thead><tbody><tr><td>S1</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S2</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S3</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S4</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S5</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S6</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S7</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr>
+<tr><td>S8</td><td><span class="sp sp1">1.00</span> <span class="sp spH2">0.67</span> <span class="sp spH">0.33</span> <span class="sp sp0">0.00</span></td><td class="score-cell"></td></tr></tbody></table>
+</div>
+
+<div class="totals">
+  <div class="tbox bb"><label>BASE Score (0–1)</label><div class="sl"></div></div>
+  <div class="tbox mb"><label>MVMT Score (0–1)</label><div class="sl"></div></div>
+  <div class="tbox sb"><label>STRATA Score (0–1)</label><div class="sl"></div></div>
+</div>
+
+<div class="pe-box">
+  <div class="pe-hdr">PE Composite Score (PEACS)</div>
+  <div class="pe-formula">PE &nbsp;=&nbsp; (BASE &times; MVMT &times; STRATA)&#x00B9;&#x141B;&#x00B3; &nbsp;=&nbsp; ______</div>
+  <div class="pe-zones">
+    <div class="pe-zone"><div class="pzl" style="color:#10b981;">Optimal</div><div class="pzr">&ge;&nbsp;0.85</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#3b82f6;">Good</div><div class="pzr">&ge;&nbsp;0.70</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#f59e0b;">Moderate</div><div class="pzr">&ge;&nbsp;0.55</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#ef4444;">Poor</div><div class="pzr">&ge;&nbsp;0.40</div></div>
+    <div class="pe-zone"><div class="pzl" style="color:#991b1b;">Critical</div><div class="pzr">&lt;&nbsp;0.40</div></div>
+  </div>
+  <div class="pe-note">PE is the geometric mean of the three domain scores. All three dimensions required. Computed automatically in ATLAS.</div>
+</div>
+
+<div class="sig-row">
+  <div class="sig-field"><label>Clinician Signature</label><div class="sig-line"></div></div>
+  <div class="sig-field"><label>Date Administered</label><div class="sig-line"></div></div>
+</div>
+</div>
+
+<div class="footer">
+  <div class="footer-left">PEACS &copy; Adherence Cartography &middot; adherence.cc &middot; All rights reserved. Unauthorized reproduction without institutional license is prohibited.</div>
+  <div class="footer-right">Korean<br/>Form PEACS-KO-001 &nbsp;|&nbsp; v1.0</div>
+</div>
+
+</div>
+</body>
+</html>

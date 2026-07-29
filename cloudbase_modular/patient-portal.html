@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="My Adherence"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400&family=Noto+Sans+Arabic:wght@300;400;600&display=swap" rel="stylesheet"/>
 
 <!-- Firebase compat SDKs (same versions as index.html) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous"></script>
@@ -27,7 +27,7 @@
   --base:#4e9cf5;--mvmt:#8b6ff5;--strata:#2ec98a;--pe:#d4a843;
   --optimal:#10b981;--good:#3b82f6;--moderate:#f59e0b;--poor:#ef4444;
   --font-display:'Cormorant Garamond',Georgia,serif;
-  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-body:'IBM Plex Sans','Noto Sans Arabic',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',monospace;
   --r:10px;
 }
@@ -420,30 +420,68 @@ body{
 ════════════════════════════════════════════════════════════════ -->
 <div id="screen-login" class="active">
   <div class="login-card">
-    <div class="login-eyebrow">Patient Portal · ATLAS</div>
-    <h1 class="login-title">Check Your<br>Adherence Score</h1>
-    <p class="login-subtitle">Sign in to see how well you have been taking your medicine and get tips to help.</p>
+    <div class="login-eyebrow" id="pp-login-eyebrow">Patient Portal · ATLAS</div>
+    <h1 class="login-title" id="pp-login-title">Check Your<br>Adherence Score</h1>
+    <p class="login-subtitle" id="pp-login-subtitle">Sign in to see how well you have been taking your medicine and get tips to help.</p>
+
+    <div style="text-align:right;margin-bottom:18px;">
+      <select id="pp-lang-select"
+        onchange="setPPLang(this.value)"
+        style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:7px;color:var(--muted);font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.08em;padding:5px 10px;cursor:pointer;outline:none;">
+        <option value="en">English</option>
+        <option value="af">Afrikaans</option>
+        <option value="sq">Shqip</option>
+        <option value="ar">العربية</option>
+        <option value="bn">বাংলা</option>
+        <option value="hr">Hrvatski</option>
+        <option value="da">Dansk</option>
+        <option value="nl">Nederlands</option>
+        <option value="fi">Suomi</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="el">Ελληνικά</option>
+        <option value="hi">हिन्दी</option>
+        <option value="id">Bahasa Indonesia</option>
+        <option value="it">Italiano</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+        <option value="ms">Bahasa Melayu</option>
+        <option value="pl">Polski</option>
+        <option value="pt">Português</option>
+        <option value="ru">Русский</option>
+        <option value="es">Español</option>
+        <option value="sw">Kiswahili</option>
+        <option value="sv">Svenska</option>
+        <option value="tl">Filipino</option>
+        <option value="tr">Türkçe</option>
+        <option value="uk">Українська</option>
+        <option value="ur">اردو</option>
+        <option value="vi">Tiếng Việt</option>
+        <option value="zh">中文</option>
+        <option value="zh-TW">繁體中文</option>
+      </select>
+    </div>
 
     <div id="login-error" class="login-error">
       That patient number or PIN is not correct. Please check and try again, or ask your care team for help.
     </div>
 
-    <label class="field-label" for="input-patient-number">Your Patient Number</label>
+    <label class="field-label" id="pp-lbl-patient-number" for="input-patient-number">Your Patient Number</label>
     <input id="input-patient-number" class="field-input" type="text"
       placeholder="e.g. PT-001" autocomplete="username" autocapitalize="characters"
       aria-label="Patient number" inputmode="text"/>
 
-    <label class="field-label" for="input-pin">Your 6-Digit PIN</label>
+    <label class="field-label" id="pp-lbl-pin" for="input-pin">Your 6-Digit PIN</label>
     <input id="input-pin" class="field-input pin-input" type="password"
       placeholder="••••••" maxlength="6" autocomplete="current-password"
       aria-label="6-digit PIN" inputmode="numeric"
       onkeydown="if(event.key==='Enter')portalLogin()"/>
 
     <button class="btn-primary" id="login-btn" onclick="portalLogin()">
-      Sign In →
+      <span id="pp-login-btn-text">Sign In →</span>
     </button>
 
-    <p class="login-divider">
+    <p class="login-divider" id="pp-login-divider">
       Forgot your PIN? Ask your pharmacist or doctor for help.<br>
       <span style="color:rgba(255,255,255,0.18);">·</span>
       <a href="https://adherence.cc" target="_blank" rel="noopener"
@@ -458,10 +496,10 @@ body{
 <div id="screen-portal">
   <header class="portal-header">
     <div class="portal-logo">
-      <span>My Adherence</span>
-      ATLAS Portal
+      <span id="pp-portal-logo-eyebrow">My Adherence</span>
+      <span id="pp-portal-logo-title">ATLAS Portal</span>
     </div>
-    <button class="btn-logout" onclick="portalLogout()">Sign Out</button>
+    <button class="btn-logout" id="pp-logout-btn" onclick="portalLogout()">Sign Out</button>
   </header>
 
   <main class="portal-body" id="portal-body" role="main" aria-live="polite">
@@ -478,13 +516,13 @@ body{
 // PLACEHOLDER: Replace these values with your project's Firebase config.
 // Find these in: Firebase Console → Project Settings → Your Apps → SDK setup
 const FIREBASE_CONFIG = {
-  apiKey:            "REPLACE_WITH_YOUR_API_KEY",
-  authDomain:        "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
-  databaseURL:       "https://REPLACE_WITH_YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId:         "REPLACE_WITH_YOUR_PROJECT",
-  storageBucket:     "REPLACE_WITH_YOUR_PROJECT.appspot.com",
-  messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
-  appId:             "REPLACE_WITH_YOUR_APP_ID"
+  apiKey:            "AIzaSyBRUEGRPaIWHMlzn0lT9otbJQEYZs4Br1A",
+  authDomain:        "adherence-project-2026.firebaseapp.com",
+  databaseURL:       "https://adherence-project-2026-default-rtdb.firebaseio.com",
+  projectId:         "adherence-project-2026",
+  storageBucket:     "adherence-project-2026.firebasestorage.app",
+  messagingSenderId: "550673289",
+  appId:             "adherence-project-2026"
 };
 
 // ── Initialise Firebase ───────────────────────────────────────────────────────
@@ -501,6 +539,7 @@ const _db = (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.l
 // ── State ─────────────────────────────────────────────────────────────────────
 let _portalPatientNumber = null;
 let _portalWorkspace     = null;
+let _ppCurrentLang       = 'en';
 
 // ── Phenotype data ────────────────────────────────────────────────────────────
 const PHENOTYPE_DATA = {
@@ -557,9 +596,10 @@ function _classifyPhenotype(records) {
     const score = r.score || 0;
     if (score === 8) return 'A';
     if (score >= 6)  return 'PA';
-    // Try to read MAP phenotype or classify from questions
-    if (r.map_phenotype) {
-      const ph = String(r.map_phenotype).toUpperCase();
+    // Try to read MAP/PEACS phenotype field (stored as peacs_phenotype)
+    const phenoField = r.peacs_phenotype || r.map_phenotype;
+    if (phenoField) {
+      const ph = String(phenoField).toUpperCase();
       if (ph === 'INA' || ph === 'UNA' || ph === 'PA' || ph === 'A') return ph;
     }
     if (score >= 4) return 'UNA';
@@ -598,18 +638,20 @@ async function portalLogin() {
   errEl.style.display = 'none';
 
   if (!patNum || !pin) {
-    errEl.textContent = 'Please enter both your patient number and your PIN.';
+    const _ppS = PP_STRINGS[_ppCurrentLang] || PP_STRINGS.en;
+    errEl.textContent = _ppS.err_both_required || 'Please enter both your patient number and your PIN.';
     errEl.style.display = 'block';
     return;
   }
   if (pin.length !== 6 || !/^\d{6}$/.test(pin)) {
-    errEl.textContent = 'Your PIN must be exactly 6 numbers.';
+    const _ppS = PP_STRINGS[_ppCurrentLang] || PP_STRINGS.en;
+    errEl.textContent = _ppS.err_pin_length || 'Your PIN must be exactly 6 numbers.';
     errEl.style.display = 'block';
     return;
   }
 
   btnEl.disabled = true;
-  btnEl.textContent = 'Checking…';
+  { const _ppS = PP_STRINGS[_ppCurrentLang] || PP_STRINGS.en; btnEl.textContent = _ppS.btn_checking || 'Checking…'; }
 
   try {
     if (!_db) {
@@ -618,12 +660,14 @@ async function portalLogin() {
       return;
     }
 
-    // Read all workspaces/assessments for this patient_number
-    // Data path: assessments/{workspace}/{record_key}
-    const allSnap = await _db.ref('assessments').once('value');
-    const allWS   = allSnap.val();
+    // Query by patient_number (flat structure: assessments/{record_id})
+    const snap = await _db.ref('assessments')
+      .orderByChild('patient_number')
+      .equalTo(patNum)
+      .once('value');
+    const rawData = snap.val();
 
-    if (!allWS) {
+    if (!rawData) {
       _portalShowError('No records found. Please check your patient number or ask your care team.');
       return;
     }
@@ -631,21 +675,15 @@ async function portalLogin() {
     let matchedRecords  = [];
     let matchedWorkspace = null;
 
-    // Search across all workspace nodes
-    Object.entries(allWS).forEach(([wsKey, wsRecords]) => {
-      if (!wsRecords || typeof wsRecords !== 'object') return;
-      Object.values(wsRecords).forEach(record => {
-        if (!record) return;
-        const recPatNum = String(record.patient_number || '').trim().toUpperCase();
-        if (recPatNum === patNum) {
-          // Verify PIN: stored as patient_pin field (6-digit numeric string)
-          const storedPin = String(record.patient_pin || '').trim();
-          if (storedPin && storedPin === pin) {
-            matchedRecords.push(record);
-            if (!matchedWorkspace) matchedWorkspace = wsKey;
-          }
-        }
-      });
+    // Records are flat objects keyed by Firebase push ID
+    Object.values(rawData).forEach(record => {
+      if (!record || typeof record !== 'object') return;
+      // Verify PIN: stored as patient_pin field (6-digit numeric string)
+      const storedPin = String(record.patient_pin || '').trim();
+      if (storedPin && storedPin === pin) {
+        matchedRecords.push(record);
+        if (!matchedWorkspace) matchedWorkspace = record.user_id || record.workspace_key || 'portal';
+      }
     });
 
     if (!matchedRecords.length) {
@@ -669,7 +707,7 @@ function _portalShowError(msg) {
   errEl.textContent = msg;
   errEl.style.display = 'block';
   btnEl.disabled = false;
-  btnEl.textContent = 'Sign In →';
+  { const _ppS = PP_STRINGS[_ppCurrentLang] || PP_STRINGS.en; btnEl.textContent = _ppS.login_btn || 'Sign In →'; }
 }
 
 // ── Demo mode (no Firebase) ───────────────────────────────────────────────────
@@ -712,9 +750,10 @@ function _portalShowDashboard(patNum, records) {
   const last4     = records.slice(-4);
   const nextDate  = _nextAssessmentDate(records);
 
-  const latestBase   = latest.base_score   ?? (latest.a ?? null);
-  const latestMvmt   = latest.mvmt_score   ?? (latest.e ?? null);
-  const latestStrata = latest.strata_score ?? (latest.c ?? null);
+  // Domain scores: MAP stores as arch_score/exec_score/ctx_score; PEACS legacy used base/mvmt/strata
+  const latestBase   = latest.arch_score   ?? latest.base_score   ?? (latest.a ?? null);
+  const latestMvmt   = latest.exec_score   ?? latest.mvmt_score   ?? (latest.e ?? null);
+  const latestStrata = latest.ctx_score    ?? latest.strata_score ?? (latest.c ?? null);
 
   const haspeacs = latestBase !== null && latestMvmt !== null && latestStrata !== null;
 
@@ -734,7 +773,7 @@ function _portalShowDashboard(patNum, records) {
       <div class="p-card-eyebrow">Your Adherence Type</div>
       <div class="phenotype-badge ${phData.badgeClass}">
         <span style="width:7px;height:7px;border-radius:50%;background:${phData.dot};flex-shrink:0;display:inline-block;"></span>
-        ${_esc(phData.label)}
+        ${(()=>{ const _ppS = PP_STRINGS[_ppCurrentLang] || PP_STRINGS.en; if (phenotype==='INA') return _esc(_ppS.chart_intentional || phData.label); if (phenotype==='UNA') return _esc(_ppS.chart_unintentional || phData.label); return _esc(phData.label); })()}
       </div>
       <p class="phenotype-explain">${phData.explain}</p>
     </div>
@@ -749,8 +788,9 @@ function _portalShowDashboard(patNum, records) {
             const sc    = r.score || 0;
             const pct   = Math.round((sc / 8) * 100);
             const color = _scoreColor(sc);
-            const label = _scoreLabel(sc);
-            const date  = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '—';
+            const label = _ppLevel(_scoreLabel(sc));
+            const _ppLocale = document.getElementById('pp-lang-select')?.value || 'en';
+            const date  = r.timestamp ? new Date(r.timestamp).toLocaleDateString(_ppLocale,{month:'short',year:'numeric'}) : '—';
             const isLatest = i === last4.length - 1;
             return `
               <div class="history-item" style="${isLatest ? 'border-color:rgba(46,201,138,0.3);background:rgba(46,201,138,0.04);' : ''}">
@@ -821,7 +861,7 @@ function _portalShowDashboard(patNum, records) {
         <div class="p-card-eyebrow">Your Next Check-In</div>
         <div class="reminder-date">
           ${nextDate
-            ? nextDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
+            ? nextDate.toLocaleDateString(document.getElementById('pp-lang-select')?.value || 'en',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
             : 'Ask your care team for your next appointment date'}
         </div>
         <div class="reminder-sub">Your care team will review your score with you at this visit.</div>
@@ -851,7 +891,731 @@ function portalLogout() {
   document.getElementById('input-pin').value = '';
   document.getElementById('login-error').style.display = 'none';
   document.getElementById('login-btn').disabled = false;
-  document.getElementById('login-btn').textContent = 'Sign In →';
+  const _lang = document.getElementById('pp-lang-select')?.value || 'en';
+  const _s = PP_STRINGS[_lang] || PP_STRINGS.en;
+  document.getElementById('pp-login-btn-text').textContent = _s.login_btn;
+}
+
+// ── Arabic / RTL i18n ─────────────────────────────────────────────────────────
+const PP_STRINGS = {
+  en: {
+    login_eyebrow:  'Patient Portal · ATLAS',
+    login_title:    'Check Your Adherence Score',
+    login_subtitle: 'Sign in to see how well you have been taking your medicine and get tips to help.',
+    lbl_patient_number: 'Your Patient Number',
+    lbl_pin:        'Your 6-Digit PIN',
+    login_btn:      'Sign In →',
+    login_forgot:   'Forgot your PIN? Ask your pharmacist or doctor for help.',
+    portal_eyebrow: 'My Adherence',
+    portal_title:   'ATLAS Portal',
+    logout_btn:     'Sign Out',
+    loading_text:   'Loading your results…',
+    login_error:    'That patient number or PIN is not correct. Please check and try again, or ask your care team for help.',
+    chart_intentional:   'Intentional Non-Adherence',
+    chart_unintentional: 'Unintentional Non-Adherence',
+    level_high:          'High',
+    level_medium:        'Medium',
+    level_low:           'Low',
+    err_both_required:   'Please enter both your patient number and your PIN.',
+    err_pin_length:      'Your PIN must be exactly 6 numbers.',
+    btn_checking:        'Checking…',
+  },
+  ar: {
+    login_eyebrow:  'بوابة المريض · ATLAS',
+    login_title:    'تحقق من درجة التزامك',
+    login_subtitle: 'سجّل الدخول لمعرفة مدى انتظامك في تناول دوائك والحصول على نصائح مفيدة.',
+    lbl_patient_number: 'رقم مريضك',
+    lbl_pin:        'رمز PIN المكوّن من 6 أرقام',
+    login_btn:      'تسجيل الدخول ←',
+    login_forgot:   'هل نسيت رمز PIN؟ اسأل صيدلانيك أو طبيبك للمساعدة.',
+    portal_eyebrow: 'التزامي',
+    portal_title:   'بوابة ATLAS',
+    logout_btn:     'تسجيل الخروج',
+    loading_text:   '…جارٍ تحميل نتائجك',
+    login_error:    'رقم المريض أو رمز PIN غير صحيح. يرجى التحقق والمحاولة مرة أخرى، أو اسأل فريق رعايتك للمساعدة.',
+    chart_intentional:   'عدم الالتزام المتعمد',
+    chart_unintentional: 'عدم الالتزام غير المتعمد',
+    level_high:          'مرتفع',
+    level_medium:        'متوسط',
+    level_low:           'منخفض',
+    err_both_required:   'يرجى إدخال رقم المريض ورمز PIN.',
+    err_pin_length:      'يجب أن يتكون رمز PIN من 6 أرقام بالضبط.',
+    btn_checking:        'جارٍ التحقق…',
+  },
+  el: {
+    login_eyebrow:  'Πύλη Ασθενή · ATLAS',
+    login_title:    'Δείτε τη Βαθμολογία Τήρησης Αγωγής σας',
+    login_subtitle: 'Συνδεθείτε για να δείτε πόσο καλά παίρνετε τα φάρμακά σας και να λάβετε χρήσιμες συμβουλές.',
+    lbl_patient_number: 'Αριθμός Ασθενή σας',
+    lbl_pin:        'Ο 6ψήφιος κωδικός PIN σας',
+    login_btn:      'Σύνδεση →',
+    login_forgot:   'Ξεχάσατε το PIN σας; Ζητήστε βοήθεια από τον φαρμακοποιό ή τον γιατρό σας.',
+    portal_eyebrow: 'Η Τήρηση Αγωγής μου',
+    portal_title:   'Πύλη ATLAS',
+    logout_btn:     'Αποσύνδεση',
+    loading_text:   'Φόρτωση αποτελεσμάτων σας…',
+    login_error:    'Ο αριθμός ασθενή ή ο κωδικός PIN δεν είναι σωστός. Παρακαλώ ελέγξτε και δοκιμάστε ξανά, ή ζητήστε βοήθεια από την ομάδα φροντίδας σας.',
+    chart_intentional:   'Σκόπιμη Μη-Τήρηση Αγωγής',
+    chart_unintentional: 'Ακούσια Μη-Τήρηση Αγωγής',
+    level_high:          'Υψηλή',
+    level_medium:        'Μέτρια',
+    level_low:           'Χαμηλή',
+    err_both_required:   'Παρακαλώ εισάγετε τον αριθμό ασθενή και τον κωδικό PIN.',
+    err_pin_length:      'Ο κωδικός PIN πρέπει να αποτελείται από ακριβώς 6 αριθμούς.',
+    btn_checking:        'Έλεγχος…',
+  },
+  pl: {
+    login_eyebrow:  'Portal Pacjenta · ATLAS',
+    login_title:    'Sprawdź swój wynik adherencji',
+    login_subtitle: 'Zaloguj się, aby sprawdzić, jak regularnie przyjmujesz leki, i uzyskać pomocne wskazówki.',
+    lbl_patient_number: 'Twój numer pacjenta',
+    lbl_pin:        'Twój 6-cyfrowy PIN',
+    login_btn:      'Zaloguj się →',
+    login_forgot:   'Zapomniałeś(-aś) PIN? Poproś farmaceutę lub lekarza o pomoc.',
+    portal_eyebrow: 'Moja adherencja',
+    portal_title:   'Portal ATLAS',
+    logout_btn:     'Wyloguj się',
+    loading_text:   'Ładowanie wyników…',
+    login_error:    'Numer pacjenta lub PIN jest nieprawidłowy. Sprawdź i spróbuj ponownie lub poproś swój zespół opieki o pomoc.',
+    chart_intentional:   'Celowe Nieprzyjmowanie Leków',
+    chart_unintentional: 'Niecelowe Nieprzyjmowanie Leków',
+    level_high:          'Wysoka',
+    level_medium:        'Średnia',
+    level_low:           'Niska',
+    err_both_required:   'Proszę podać numer pacjenta i kod PIN.',
+    err_pin_length:      'Kod PIN musi składać się z dokładnie 6 cyfr.',
+    btn_checking:        'Sprawdzanie…',
+  },
+  fr: {
+    login_eyebrow:       'Portail Patient · ATLAS',
+    login_title:         'Consultez votre score d\'observance',
+    login_subtitle:      'Connectez-vous pour voir à quel point vous prenez bien vos médicaments et recevoir des conseils utiles.',
+    lbl_patient_number:  'Votre numéro de patient',
+    lbl_pin:             'Votre code PIN à 6 chiffres',
+    login_btn:           'Se connecter →',
+    login_forgot:        'Vous avez oublié votre code PIN? Demandez de l\'aide à votre pharmacien ou médecin.',
+    portal_eyebrow:      'Mon observance',
+    portal_title:        'Portail ATLAS',
+    logout_btn:          'Se déconnecter',
+    loading_text:        'Chargement de vos résultats…',
+    login_error:         'Ce numéro de patient ou code PIN est incorrect. Veuillez vérifier et réessayer, ou contacter votre équipe soignante.',
+    chart_intentional:   'Non-observance Intentionnelle',
+    chart_unintentional: 'Non-observance Non Intentionnelle',
+    level_high:          'Élevée',
+    level_medium:        'Moyenne',
+    level_low:           'Faible',
+    err_both_required:   'Veuillez saisir votre numéro de patient et votre code PIN.',
+    err_pin_length:      'Votre code PIN doit comporter exactement 6 chiffres.',
+    btn_checking:        'Vérification…',
+  },
+  es: {
+    login_eyebrow:       'Portal del Paciente · ATLAS',
+    login_title:         'Consulte su puntuación de adherencia',
+    login_subtitle:      'Inicie sesión para ver qué tan bien está tomando sus medicamentos y obtener consejos útiles.',
+    lbl_patient_number:  'Su número de paciente',
+    lbl_pin:             'Su PIN de 6 dígitos',
+    login_btn:           'Iniciar sesión →',
+    login_forgot:        '¿Olvidó su PIN? Pida ayuda a su farmacéutico o médico.',
+    portal_eyebrow:      'Mi adherencia',
+    portal_title:        'Portal ATLAS',
+    logout_btn:          'Cerrar sesión',
+    loading_text:        'Cargando sus resultados…',
+    login_error:         'El número de paciente o PIN no es correcto. Verifique e intente de nuevo, o contacte a su equipo de atención.',
+    chart_intentional:   'No Adherencia Intencional',
+    chart_unintentional: 'No Adherencia No Intencional',
+    level_high:          'Alta',
+    level_medium:        'Media',
+    level_low:           'Baja',
+    err_both_required:   'Por favor ingrese su número de paciente y su PIN.',
+    err_pin_length:      'Su PIN debe tener exactamente 6 dígitos.',
+    btn_checking:        'Verificando…',
+  },
+  de: {
+    login_eyebrow:       'Patientenportal · ATLAS',
+    login_title:         'Ihre Adhärenz-Punktzahl anzeigen',
+    login_subtitle:      'Melden Sie sich an, um zu sehen, wie gut Sie Ihre Medikamente einnehmen, und erhalten Sie hilfreiche Tipps.',
+    lbl_patient_number:  'Ihre Patientennummer',
+    lbl_pin:             'Ihre 6-stellige PIN',
+    login_btn:           'Anmelden →',
+    login_forgot:        'PIN vergessen? Fragen Sie Ihren Apotheker oder Arzt um Hilfe.',
+    portal_eyebrow:      'Meine Adhärenz',
+    portal_title:        'ATLAS-Portal',
+    logout_btn:          'Abmelden',
+    loading_text:        'Ihre Ergebnisse werden geladen…',
+    login_error:         'Diese Patientennummer oder PIN ist nicht korrekt. Bitte überprüfen und erneut versuchen oder Ihr Betreuungsteam kontaktieren.',
+    chart_intentional:   'Absichtliche Nicht-Adhärenz',
+    chart_unintentional: 'Unbeabsichtigte Nicht-Adhärenz',
+    level_high:          'Hoch',
+    level_medium:        'Mittel',
+    level_low:           'Niedrig',
+    err_both_required:   'Bitte geben Sie Ihre Patientennummer und Ihre PIN ein.',
+    err_pin_length:      'Ihre PIN muss genau 6 Ziffern haben.',
+    btn_checking:        'Wird geprüft…',
+  },
+  it: {
+    login_eyebrow:       'Portale Paziente · ATLAS',
+    login_title:         'Visualizza il tuo punteggio di aderenza',
+    login_subtitle:      'Accedi per vedere quanto stai assumendo correttamente i tuoi farmaci e ricevere consigli utili.',
+    lbl_patient_number:  'Il tuo numero paziente',
+    lbl_pin:             'Il tuo PIN a 6 cifre',
+    login_btn:           'Accedi →',
+    login_forgot:        'Hai dimenticato il tuo PIN? Chiedi aiuto al tuo farmacista o medico.',
+    portal_eyebrow:      'La mia aderenza',
+    portal_title:        'Portale ATLAS',
+    logout_btn:          'Esci',
+    loading_text:        'Caricamento dei risultati…',
+    login_error:         'Il numero paziente o il PIN non è corretto. Controlla e riprova, oppure contatta il tuo team di cura.',
+    chart_intentional:   'Non-aderenza Intenzionale',
+    chart_unintentional: 'Non-aderenza Non Intenzionale',
+    level_high:          'Alta',
+    level_medium:        'Media',
+    level_low:           'Bassa',
+    err_both_required:   'Inserisci il numero paziente e il PIN.',
+    err_pin_length:      'Il PIN deve essere esattamente di 6 cifre.',
+    btn_checking:        'Verifica in corso…',
+  },
+  pt: {
+    login_eyebrow:       'Portal do Paciente · ATLAS',
+    login_title:         'Consulte a sua pontuação de adesão',
+    login_subtitle:      'Faça login para ver como está a tomar os seus medicamentos e obter dicas úteis.',
+    lbl_patient_number:  'O seu número de paciente',
+    lbl_pin:             'O seu PIN de 6 dígitos',
+    login_btn:           'Entrar →',
+    login_forgot:        'Esqueceu o seu PIN? Peça ajuda ao seu farmacêutico ou médico.',
+    portal_eyebrow:      'A minha adesão',
+    portal_title:        'Portal ATLAS',
+    logout_btn:          'Sair',
+    loading_text:        'A carregar os seus resultados…',
+    login_error:         'O número de paciente ou PIN não está correto. Verifique e tente novamente, ou contacte a sua equipa de cuidados.',
+    chart_intentional:   'Não Adesão Intencional',
+    chart_unintentional: 'Não Adesão Não Intencional',
+    level_high:          'Alta',
+    level_medium:        'Média',
+    level_low:           'Baixa',
+    err_both_required:   'Por favor introduza o seu número de paciente e o PIN.',
+    err_pin_length:      'O PIN deve ter exatamente 6 dígitos.',
+    btn_checking:        'A verificar…',
+  },
+  zh: {
+    login_eyebrow:       '患者门户 · ATLAS',
+    login_title:         '查看您的服药依从性评分',
+    login_subtitle:      '登录以了解您服药的情况，并获取有用的建议。',
+    lbl_patient_number:  '您的患者编号',
+    lbl_pin:             '您的6位数PIN码',
+    login_btn:           '登录 →',
+    login_forgot:        '忘记PIN码？请向您的药剂师或医生寻求帮助。',
+    portal_eyebrow:      '我的依从性',
+    portal_title:        'ATLAS 门户',
+    logout_btn:          '退出登录',
+    loading_text:        '正在加载您的结果…',
+    login_error:         '患者编号或PIN码不正确。请检查后重试，或联系您的医疗团队寻求帮助。',
+    chart_intentional:   '主动不依从',
+    chart_unintentional: '被动不依从',
+    level_high:          '高',
+    level_medium:        '中',
+    level_low:           '低',
+    err_both_required:   '请输入您的患者编号和PIN码。',
+    err_pin_length:      'PIN码必须恰好为6位数字。',
+    btn_checking:        '验证中…',
+  },
+  'zh-TW': {
+    login_eyebrow:       '病患入口網站 · ATLAS',
+    login_title:         '查看您的服藥依從性評分',
+    login_subtitle:      '登入以了解您服藥的情況，並獲取有用的建議。',
+    lbl_patient_number:  '您的病患編號',
+    lbl_pin:             '您的6位數PIN碼',
+    login_btn:           '登入 →',
+    login_forgot:        '忘記PIN碼？請向您的藥師或醫生尋求幫助。',
+    portal_eyebrow:      '我的依從性',
+    portal_title:        'ATLAS 入口網站',
+    logout_btn:          '登出',
+    loading_text:        '正在載入您的結果…',
+    login_error:         '病患編號或PIN碼不正確。請檢查後重試，或聯絡您的醫療團隊尋求幫助。',
+    chart_intentional:   '主動不依從',
+    chart_unintentional: '被動不依從',
+    level_high:          '高',
+    level_medium:        '中',
+    level_low:           '低',
+    err_both_required:   '請輸入您的病患編號和PIN碼。',
+    err_pin_length:      'PIN碼必須恰好為6位數字。',
+    btn_checking:        '驗證中…',
+  },
+  ja: {
+    login_eyebrow:       '患者ポータル · ATLAS',
+    login_title:         '服薬アドヒアランススコアを確認する',
+    login_subtitle:      'ログインして服薬状況を確認し、役立つアドバイスを受け取りましょう。',
+    lbl_patient_number:  '患者番号',
+    lbl_pin:             '6桁のPINコード',
+    login_btn:           'ログイン →',
+    login_forgot:        'PINをお忘れですか？薬剤師または医師にご相談ください。',
+    portal_eyebrow:      '私のアドヒアランス',
+    portal_title:        'ATLASポータル',
+    logout_btn:          'ログアウト',
+    loading_text:        '結果を読み込み中…',
+    login_error:         '患者番号またはPINが正しくありません。確認のうえ再試行するか、医療チームにご相談ください。',
+    chart_intentional:   '意図的な服薬不履行',
+    chart_unintentional: '非意図的な服薬不履行',
+    level_high:          '高',
+    level_medium:        '中',
+    level_low:           '低',
+    err_both_required:   '患者番号とPINを入力してください。',
+    err_pin_length:      'PINは正確に6桁の数字でなければなりません。',
+    btn_checking:        '確認中…',
+  },
+  ko: {
+    login_eyebrow:       '환자 포털 · ATLAS',
+    login_title:         '복약 순응도 점수 확인',
+    login_subtitle:      '로그인하여 복약 상태를 확인하고 유용한 조언을 받아보세요.',
+    lbl_patient_number:  '환자 번호',
+    lbl_pin:             '6자리 PIN 번호',
+    login_btn:           '로그인 →',
+    login_forgot:        'PIN을 잊으셨나요? 약사 또는 의사에게 도움을 요청하세요.',
+    portal_eyebrow:      '나의 순응도',
+    portal_title:        'ATLAS 포털',
+    logout_btn:          '로그아웃',
+    loading_text:        '결과를 불러오는 중…',
+    login_error:         '환자 번호 또는 PIN이 올바르지 않습니다. 확인 후 다시 시도하거나 의료팀에 문의하세요.',
+    chart_intentional:   '의도적 복약 불이행',
+    chart_unintentional: '비의도적 복약 불이행',
+    level_high:          '높음',
+    level_medium:        '보통',
+    level_low:           '낮음',
+    err_both_required:   '환자 번호와 PIN을 모두 입력해 주세요.',
+    err_pin_length:      'PIN은 정확히 6자리 숫자여야 합니다.',
+    btn_checking:        '확인 중…',
+  },
+  ru: {
+    login_eyebrow:       'Портал пациента · ATLAS',
+    login_title:         'Проверьте свой показатель приверженности',
+    login_subtitle:      'Войдите, чтобы узнать, насколько хорошо вы принимаете лекарства, и получить полезные советы.',
+    lbl_patient_number:  'Ваш номер пациента',
+    lbl_pin:             'Ваш PIN-код из 6 цифр',
+    login_btn:           'Войти →',
+    login_forgot:        'Забыли PIN? Обратитесь за помощью к фармацевту или врачу.',
+    portal_eyebrow:      'Моя приверженность',
+    portal_title:        'Портал ATLAS',
+    logout_btn:          'Выйти',
+    loading_text:        'Загрузка ваших результатов…',
+    login_error:         'Номер пациента или PIN-код неверен. Проверьте и попробуйте снова или обратитесь к вашей команде по уходу.',
+    chart_intentional:   'Намеренное несоблюдение режима',
+    chart_unintentional: 'Ненамеренное несоблюдение режима',
+    level_high:          'Высокая',
+    level_medium:        'Средняя',
+    level_low:           'Низкая',
+    err_both_required:   'Пожалуйста, введите номер пациента и PIN-код.',
+    err_pin_length:      'PIN-код должен состоять ровно из 6 цифр.',
+    btn_checking:        'Проверка…',
+  },
+  tr: {
+    login_eyebrow:       'Hasta Portalı · ATLAS',
+    login_title:         'İlaç uyum puanınızı görüntüleyin',
+    login_subtitle:      'İlaçlarınızı ne kadar düzenli aldığınızı görmek ve faydalı ipuçları almak için giriş yapın.',
+    lbl_patient_number:  'Hasta numaranız',
+    lbl_pin:             '6 haneli PIN kodunuz',
+    login_btn:           'Giriş yap →',
+    login_forgot:        'PIN\'inizi mi unuttunuz? Eczacınızdan veya doktorunuzdan yardım isteyin.',
+    portal_eyebrow:      'Uyumum',
+    portal_title:        'ATLAS Portalı',
+    logout_btn:          'Çıkış yap',
+    loading_text:        'Sonuçlarınız yükleniyor…',
+    login_error:         'Hasta numarası veya PIN doğru değil. Lütfen kontrol edip tekrar deneyin veya bakım ekibinizle iletişime geçin.',
+    chart_intentional:   'Kasıtlı İlaç Almama',
+    chart_unintentional: 'Kasıtsız İlaç Almama',
+    level_high:          'Yüksek',
+    level_medium:        'Orta',
+    level_low:           'Düşük',
+    err_both_required:   'Lütfen hasta numaranızı ve PIN kodunuzu girin.',
+    err_pin_length:      'PIN kodunuz tam olarak 6 rakamdan oluşmalıdır.',
+    btn_checking:        'Kontrol ediliyor…',
+  },
+  hi: {
+    login_eyebrow:       'रोगी पोर्टल · ATLAS',
+    login_title:         'अपना दवा अनुपालन स्कोर देखें',
+    login_subtitle:      'यह जानने के लिए लॉगिन करें कि आप कितनी अच्छी तरह से दवा ले रहे हैं और उपयोगी सुझाव प्राप्त करें।',
+    lbl_patient_number:  'आपका रोगी नंबर',
+    lbl_pin:             'आपका 6 अंकों का PIN',
+    login_btn:           'साइन इन करें →',
+    login_forgot:        'PIN भूल गए? अपने फार्मासिस्ट या डॉक्टर से मदद मांगें।',
+    portal_eyebrow:      'मेरा अनुपालन',
+    portal_title:        'ATLAS पोर्टल',
+    logout_btn:          'साइन आउट',
+    loading_text:        'आपके परिणाम लोड हो रहे हैं…',
+    login_error:         'रोगी नंबर या PIN सही नहीं है। कृपया जांचें और पुनः प्रयास करें, या अपनी देखभाल टीम से संपर्क करें।',
+    chart_intentional:   'जानबूझकर दवा न लेना',
+    chart_unintentional: 'अनजाने में दवा न लेना',
+    level_high:          'उच्च',
+    level_medium:        'मध्यम',
+    level_low:           'निम्न',
+    err_both_required:   'कृपया अपना रोगी नंबर और PIN दर्ज करें।',
+    err_pin_length:      'PIN में ठीक 6 अंक होने चाहिए।',
+    btn_checking:        'जांच हो रही है…',
+  },
+  id: {
+    login_eyebrow:       'Portal Pasien · ATLAS',
+    login_title:         'Lihat skor kepatuhan Anda',
+    login_subtitle:      'Masuk untuk melihat seberapa baik Anda minum obat dan mendapatkan tips yang berguna.',
+    lbl_patient_number:  'Nomor pasien Anda',
+    lbl_pin:             'PIN 6 digit Anda',
+    login_btn:           'Masuk →',
+    login_forgot:        'Lupa PIN? Minta bantuan apoteker atau dokter Anda.',
+    portal_eyebrow:      'Kepatuhan saya',
+    portal_title:        'Portal ATLAS',
+    logout_btn:          'Keluar',
+    loading_text:        'Memuat hasil Anda…',
+    login_error:         'Nomor pasien atau PIN tidak benar. Harap periksa dan coba lagi, atau hubungi tim perawatan Anda.',
+    chart_intentional:   'Ketidakpatuhan Disengaja',
+    chart_unintentional: 'Ketidakpatuhan Tidak Disengaja',
+    level_high:          'Tinggi',
+    level_medium:        'Sedang',
+    level_low:           'Rendah',
+    err_both_required:   'Masukkan nomor pasien dan PIN Anda.',
+    err_pin_length:      'PIN harus terdiri dari tepat 6 angka.',
+    btn_checking:        'Memeriksa…',
+  },
+  tl: {
+    login_eyebrow:       'Portal ng Pasyente · ATLAS',
+    login_title:         'Tingnan ang iyong marka sa pagsunod sa gamot',
+    login_subtitle:      'Mag-sign in upang makita kung gaano mo kagaling na iniinom ang iyong gamot at makakuha ng mga kapaki-pakinabang na tip.',
+    lbl_patient_number:  'Ang iyong numero ng pasyente',
+    lbl_pin:             'Ang iyong 6-digit na PIN',
+    login_btn:           'Mag-sign in →',
+    login_forgot:        'Nakalimutan ang PIN? Humingi ng tulong sa iyong parmaseutiko o doktor.',
+    portal_eyebrow:      'Ang aking pagsunod',
+    portal_title:        'Portal ng ATLAS',
+    logout_btn:          'Mag-sign out',
+    loading_text:        'Ino-load ang iyong mga resulta…',
+    login_error:         'Ang numero ng pasyente o PIN ay hindi tama. Mangyaring suriin at subukang muli, o makipag-ugnayan sa iyong koponan ng pangangalaga.',
+    chart_intentional:   'Sinadyang Hindi Pagsunod',
+    chart_unintentional: 'Hindi Sinadyang Hindi Pagsunod',
+    level_high:          'Mataas',
+    level_medium:        'Katamtaman',
+    level_low:           'Mababa',
+    err_both_required:   'Pakiusap ilagay ang iyong numero ng pasyente at PIN.',
+    err_pin_length:      'Ang PIN ay dapat na eksaktong 6 na digit.',
+    btn_checking:        'Sinusuri…',
+  },
+  sw: {
+    login_eyebrow:       'Lango la Mgonjwa · ATLAS',
+    login_title:         'Angalia alama yako ya kufuata dawa',
+    login_subtitle:      'Ingia ili uone jinsi unavyofuata vizuri dawa zako na kupata vidokezo vya kusaidia.',
+    lbl_patient_number:  'Nambari yako ya mgonjwa',
+    lbl_pin:             'PIN yako ya tarakimu 6',
+    login_btn:           'Ingia →',
+    login_forgot:        'Umesahau PIN yako? Omba msaada kwa daktari wako wa dawa au daktari.',
+    portal_eyebrow:      'Ufuataji wangu',
+    portal_title:        'Lango la ATLAS',
+    logout_btn:          'Toka',
+    loading_text:        'Inapakia matokeo yako…',
+    login_error:         'Nambari ya mgonjwa au PIN si sahihi. Tafadhali angalia na ujaribu tena, au wasiliana na timu yako ya huduma.',
+    chart_intentional:   'Kutofuata Dawa kwa Makusudi',
+    chart_unintentional: 'Kutofuata Dawa bila Makusudi',
+    level_high:          'Juu',
+    level_medium:        'Kati',
+    level_low:           'Chini',
+    err_both_required:   'Tafadhali ingiza nambari yako ya mgonjwa na PIN.',
+    err_pin_length:      'PIN lazima iwe na tarakimu 6 hasa.',
+    btn_checking:        'Inakagua…',
+  },
+  af: {
+    login_eyebrow:       'Pasiëntportaal · ATLAS',
+    login_title:         'Bekyk u nakoming-telling',
+    login_subtitle:      'Teken in om te sien hoe goed u u medikasie inneem en nuttige wenke te ontvang.',
+    lbl_patient_number:  'U pasiëntnommer',
+    lbl_pin:             'U 6-syfer-PIN',
+    login_btn:           'Teken in →',
+    login_forgot:        'PIN vergeet? Vra u apteker of dokter vir hulp.',
+    portal_eyebrow:      'My nakoming',
+    portal_title:        'ATLAS-portaal',
+    logout_btn:          'Teken uit',
+    loading_text:        'Laai u resultate tans…',
+    login_error:         'Die pasiëntnommer of PIN is nie korrek nie. Kontroleer asseblief en probeer weer, of kontak u sorgspan.',
+    chart_intentional:   'Opsetlike Nie-nakoming',
+    chart_unintentional: 'Onopsetlike Nie-nakoming',
+    level_high:          'Hoog',
+    level_medium:        'Gemiddeld',
+    level_low:           'Laag',
+    err_both_required:   'Voer asseblief u pasiëntnommer en PIN in.',
+    err_pin_length:      'U PIN moet presies 6 syfers wees.',
+    btn_checking:        'Nagaan…',
+  },
+  sq: {
+    login_eyebrow:       'Portali i Pacientit · ATLAS',
+    login_title:         'Shikoni rezultatin tuaj të respektimit të terapisë',
+    login_subtitle:      'Identifikohuni për të parë sa mirë po merrni ilaçet tuaja dhe për të marrë këshilla të dobishme.',
+    lbl_patient_number:  'Numri juaj i pacientit',
+    lbl_pin:             'PIN-i juaj 6-shifror',
+    login_btn:           'Hyni →',
+    login_forgot:        'Keni harruar PIN-in? Kërkoni ndihmë nga farmacisti ose mjeku juaj.',
+    portal_eyebrow:      'Respektimi im',
+    portal_title:        'Portali ATLAS',
+    logout_btn:          'Dilni',
+    loading_text:        'Po ngarkon rezultatet tuaja…',
+    login_error:         'Numri i pacientit ose PIN-i është i pasaktë. Kontrolloni dhe provoni sërish, ose kontaktoni ekipin tuaj të kujdesit.',
+    chart_intentional:   'Mosrespektim i Qëllimshëm',
+    chart_unintentional: 'Mosrespektim i Paqëllimshëm',
+    level_high:          'E lartë',
+    level_medium:        'Mesatare',
+    level_low:           'E ulët',
+    err_both_required:   'Ju lutem vendosni numrin e pacientit dhe PIN-in tuaj.',
+    err_pin_length:      'PIN-i duhet të jetë saktësisht 6 shifra.',
+    btn_checking:        'Po kontrollon…',
+  },
+  bn: {
+    login_eyebrow:       'রোগী পোর্টাল · ATLAS',
+    login_title:         'আপনার ওষুধ গ্রহণের স্কোর দেখুন',
+    login_subtitle:      'লগইন করুন আপনি কতটা ভালোভাবে ওষুধ খাচ্ছেন তা দেখতে এবং সহায়ক পরামর্শ পেতে।',
+    lbl_patient_number:  'আপনার রোগী নম্বর',
+    lbl_pin:             'আপনার ৬ সংখ্যার PIN',
+    login_btn:           'সাইন ইন করুন →',
+    login_forgot:        'PIN ভুলে গেছেন? আপনার ফার্মাসিস্ট বা ডাক্তারের কাছে সাহায্য চাইুন।',
+    portal_eyebrow:      'আমার অনুসরণ',
+    portal_title:        'ATLAS পোর্টাল',
+    logout_btn:          'সাইন আউট',
+    loading_text:        'আপনার ফলাফল লোড হচ্ছে…',
+    login_error:         'রোগী নম্বর বা PIN সঠিক নয়। অনুগ্রহ করে যাচাই করুন এবং আবার চেষ্টা করুন, অথবা আপনার যত্ন দলের সাথে যোগাযোগ করুন।',
+    chart_intentional:   'ইচ্ছাকৃত ওষুধ না খাওয়া',
+    chart_unintentional: 'অনিচ্ছাকৃত ওষুধ না খাওয়া',
+    level_high:          'উচ্চ',
+    level_medium:        'মধ্যম',
+    level_low:           'নিম্ন',
+    err_both_required:   'অনুগ্রহ করে আপনার রোগী নম্বর এবং PIN লিখুন।',
+    err_pin_length:      'PIN অবশ্যই ঠিক ৬টি সংখ্যা হতে হবে।',
+    btn_checking:        'যাচাই হচ্ছে…',
+  },
+  hr: {
+    login_eyebrow:       'Portal za pacijente · ATLAS',
+    login_title:         'Pogledajte svoju ocjenu suradljivosti',
+    login_subtitle:      'Prijavite se kako biste vidjeli koliko dobro uzimate lijekove i dobili korisne savjete.',
+    lbl_patient_number:  'Vaš broj pacijenta',
+    lbl_pin:             'Vaš 6-znamenkasti PIN',
+    login_btn:           'Prijavi se →',
+    login_forgot:        'Zaboravili ste PIN? Zatražite pomoć od ljekarnika ili liječnika.',
+    portal_eyebrow:      'Moja suradljivost',
+    portal_title:        'ATLAS portal',
+    logout_btn:          'Odjavi se',
+    loading_text:        'Učitavam vaše rezultate…',
+    login_error:         'Broj pacijenta ili PIN nije ispravan. Provjerite i pokušajte ponovo ili kontaktirajte vaš tim za skrb.',
+    chart_intentional:   'Namjerno Neuzimanje Lijekova',
+    chart_unintentional: 'Nenamjerno Neuzimanje Lijekova',
+    level_high:          'Visoka',
+    level_medium:        'Srednja',
+    level_low:           'Niska',
+    err_both_required:   'Unesite broj pacijenta i PIN.',
+    err_pin_length:      'PIN mora imati točno 6 znamenki.',
+    btn_checking:        'Provjera…',
+  },
+  da: {
+    login_eyebrow:       'Patientportal · ATLAS',
+    login_title:         'Se din medicinsk compliance-score',
+    login_subtitle:      'Log ind for at se, hvor godt du tager din medicin, og få nyttige råd.',
+    lbl_patient_number:  'Dit patientnummer',
+    lbl_pin:             'Din 6-cifrede PIN',
+    login_btn:           'Log ind →',
+    login_forgot:        'Glemt din PIN? Bed din apoteker eller læge om hjælp.',
+    portal_eyebrow:      'Min compliance',
+    portal_title:        'ATLAS-portal',
+    logout_btn:          'Log ud',
+    loading_text:        'Indlæser dine resultater…',
+    login_error:         'Patientnummeret eller PIN er ikke korrekt. Tjek venligst og prøv igen, eller kontakt dit plejeteam.',
+    chart_intentional:   'Tilsigtet Manglende Compliance',
+    chart_unintentional: 'Utilsigtet Manglende Compliance',
+    level_high:          'Høj',
+    level_medium:        'Middel',
+    level_low:           'Lav',
+    err_both_required:   'Indtast venligst dit patientnummer og din PIN.',
+    err_pin_length:      'Din PIN skal bestå af præcis 6 cifre.',
+    btn_checking:        'Kontrollerer…',
+  },
+  nl: {
+    login_eyebrow:       'Patiëntenportaal · ATLAS',
+    login_title:         'Bekijk uw therapietrouw-score',
+    login_subtitle:      'Log in om te zien hoe goed u uw medicijnen inneemt en ontvang nuttige tips.',
+    lbl_patient_number:  'Uw patiëntnummer',
+    lbl_pin:             'Uw 6-cijferige PIN',
+    login_btn:           'Inloggen →',
+    login_forgot:        'PIN vergeten? Vraag uw apotheker of arts om hulp.',
+    portal_eyebrow:      'Mijn therapietrouw',
+    portal_title:        'ATLAS-portaal',
+    logout_btn:          'Uitloggen',
+    loading_text:        'Uw resultaten worden geladen…',
+    login_error:         'Het patiëntnummer of de PIN is niet correct. Controleer en probeer opnieuw, of neem contact op met uw zorgteam.',
+    chart_intentional:   'Opzettelijke Niet-therapietrouw',
+    chart_unintentional: 'Niet-opzettelijke Niet-therapietrouw',
+    level_high:          'Hoog',
+    level_medium:        'Gemiddeld',
+    level_low:           'Laag',
+    err_both_required:   'Voer uw patiëntnummer en PIN in.',
+    err_pin_length:      'Uw PIN moet precies 6 cijfers bevatten.',
+    btn_checking:        'Controleren…',
+  },
+  fi: {
+    login_eyebrow:       'Potilasportaali · ATLAS',
+    login_title:         'Tarkista hoitoon sitoutumispisteesi',
+    login_subtitle:      'Kirjaudu sisään nähdäksesi, kuinka hyvin otat lääkkeesi, ja saa hyödyllisiä vinkkejä.',
+    lbl_patient_number:  'Potilasnumerosi',
+    lbl_pin:             '6-numeroinen PIN-koodisi',
+    login_btn:           'Kirjaudu sisään →',
+    login_forgot:        'Unohditko PIN-koodin? Pyydä apua apteekistasi tai lääkäriltäsi.',
+    portal_eyebrow:      'Sitoutumiseni',
+    portal_title:        'ATLAS-portaali',
+    logout_btn:          'Kirjaudu ulos',
+    loading_text:        'Ladataan tuloksiasi…',
+    login_error:         'Potilasnumero tai PIN ei ole oikein. Tarkista ja yritä uudelleen tai ota yhteyttä hoitotiimiisi.',
+    chart_intentional:   'Tahallinen Lääkityksen Laiminlyönti',
+    chart_unintentional: 'Tahaton Lääkityksen Laiminlyönti',
+    level_high:          'Korkea',
+    level_medium:        'Keskitaso',
+    level_low:           'Matala',
+    err_both_required:   'Anna potilasnumerosi ja PIN-koodisi.',
+    err_pin_length:      'PIN-koodin tulee olla täsmälleen 6 numeroa.',
+    btn_checking:        'Tarkistetaan…',
+  },
+  ms: {
+    login_eyebrow:       'Portal Pesakit · ATLAS',
+    login_title:         'Semak skor pematuhan ubat anda',
+    login_subtitle:      'Log masuk untuk melihat sejauh mana anda mengambil ubat anda dengan betul dan dapatkan tips berguna.',
+    lbl_patient_number:  'Nombor pesakit anda',
+    lbl_pin:             'PIN 6 digit anda',
+    login_btn:           'Log masuk →',
+    login_forgot:        'Terlupa PIN? Minta bantuan doktor farmasi atau doktor anda.',
+    portal_eyebrow:      'Pematuhan saya',
+    portal_title:        'Portal ATLAS',
+    logout_btn:          'Log keluar',
+    loading_text:        'Memuatkan keputusan anda…',
+    login_error:         'Nombor pesakit atau PIN tidak betul. Sila semak dan cuba lagi, atau hubungi pasukan penjagaan anda.',
+    chart_intentional:   'Ketidakpatuhan Disengaja',
+    chart_unintentional: 'Ketidakpatuhan Tidak Disengaja',
+    level_high:          'Tinggi',
+    level_medium:        'Sederhana',
+    level_low:           'Rendah',
+    err_both_required:   'Sila masukkan nombor pesakit dan PIN anda.',
+    err_pin_length:      'PIN mesti terdiri daripada tepat 6 digit.',
+    btn_checking:        'Menyemak…',
+  },
+  sv: {
+    login_eyebrow:       'Patientportal · ATLAS',
+    login_title:         'Se ditt följsamhetsresultat',
+    login_subtitle:      'Logga in för att se hur väl du tar dina mediciner och få användbara tips.',
+    lbl_patient_number:  'Ditt patientnummer',
+    lbl_pin:             'Din 6-siffriga PIN',
+    login_btn:           'Logga in →',
+    login_forgot:        'Glömt PIN? Be din apotekare eller läkare om hjälp.',
+    portal_eyebrow:      'Min följsamhet',
+    portal_title:        'ATLAS-portal',
+    logout_btn:          'Logga ut',
+    loading_text:        'Laddar dina resultat…',
+    login_error:         'Patientnummer eller PIN är inte korrekt. Kontrollera och försök igen, eller kontakta ditt vårdteam.',
+    chart_intentional:   'Avsiktlig Bristande Följsamhet',
+    chart_unintentional: 'Oavsiktlig Bristande Följsamhet',
+    level_high:          'Hög',
+    level_medium:        'Medel',
+    level_low:           'Låg',
+    err_both_required:   'Ange ditt patientnummer och din PIN.',
+    err_pin_length:      'Din PIN måste bestå av exakt 6 siffror.',
+    btn_checking:        'Kontrollerar…',
+  },
+  uk: {
+    login_eyebrow:       'Портал пацієнта · ATLAS',
+    login_title:         'Перевірте свій показник прихильності',
+    login_subtitle:      'Увійдіть, щоб дізнатись, наскільки добре ви приймаєте ліки, та отримати корисні поради.',
+    lbl_patient_number:  'Ваш номер пацієнта',
+    lbl_pin:             'Ваш PIN-код із 6 цифр',
+    login_btn:           'Увійти →',
+    login_forgot:        'Забули PIN? Зверніться за допомогою до фармацевта або лікаря.',
+    portal_eyebrow:      'Моя прихильність',
+    portal_title:        'Портал ATLAS',
+    logout_btn:          'Вийти',
+    loading_text:        'Завантаження ваших результатів…',
+    login_error:         'Номер пацієнта або PIN-код неправильний. Перевірте і спробуйте ще раз або зверніться до вашої команди з догляду.',
+    chart_intentional:   'Навмисне Недотримання Режиму',
+    chart_unintentional: 'Ненавмисне Недотримання Режиму',
+    level_high:          'Висока',
+    level_medium:        'Середня',
+    level_low:           'Низька',
+    err_both_required:   'Будь ласка, введіть номер пацієнта та PIN-код.',
+    err_pin_length:      'PIN-код повинен складатися рівно з 6 цифр.',
+    btn_checking:        'Перевірка…',
+  },
+  ur: {
+    login_eyebrow:       'مریض پورٹل · ATLAS',
+    login_title:         'اپنا دوا لینے کا اسکور دیکھیں',
+    login_subtitle:      'لاگ ان کریں تاکہ آپ دیکھ سکیں کہ آپ اپنی دوائیں کتنی اچھی طرح لے رہے ہیں اور مفید مشورے حاصل کریں۔',
+    lbl_patient_number:  'آپ کا مریض نمبر',
+    lbl_pin:             'آپ کا 6 ہندسوں کا PIN',
+    login_btn:           'سائن ان کریں ←',
+    login_forgot:        'PIN بھول گئے؟ اپنے فارماسسٹ یا ڈاکٹر سے مدد مانگیں۔',
+    portal_eyebrow:      'میری تعمیل',
+    portal_title:        'ATLAS پورٹل',
+    logout_btn:          'سائن آؤٹ',
+    loading_text:        'آپ کے نتائج لوڈ ہو رہے ہیں…',
+    login_error:         'مریض نمبر یا PIN درست نہیں ہے۔ براہ کرم جانچیں اور دوبارہ کوشش کریں، یا اپنی نگہداشت ٹیم سے رابطہ کریں۔',
+    chart_intentional:   'جان بوجھ کر دوا نہ لینا',
+    chart_unintentional: 'لاعلمی میں دوا نہ لینا',
+    level_high:          'زیادہ',
+    level_medium:        'درمیانی',
+    level_low:           'کم',
+    err_both_required:   'براہ کرم اپنا مریض نمبر اور PIN درج کریں۔',
+    err_pin_length:      'PIN میں بالکل 6 ہندسے ہونے چاہئیں۔',
+    btn_checking:        'تصدیق ہو رہی ہے…',
+  },
+  vi: {
+    login_eyebrow:       'Cổng thông tin bệnh nhân · ATLAS',
+    login_title:         'Xem điểm tuân thủ điều trị của bạn',
+    login_subtitle:      'Đăng nhập để xem bạn đang dùng thuốc tốt như thế nào và nhận các lời khuyên hữu ích.',
+    lbl_patient_number:  'Mã số bệnh nhân của bạn',
+    lbl_pin:             'Mã PIN 6 chữ số của bạn',
+    login_btn:           'Đăng nhập →',
+    login_forgot:        'Quên mã PIN? Hãy nhờ dược sĩ hoặc bác sĩ của bạn giúp đỡ.',
+    portal_eyebrow:      'Sự tuân thủ của tôi',
+    portal_title:        'Cổng ATLAS',
+    logout_btn:          'Đăng xuất',
+    loading_text:        'Đang tải kết quả của bạn…',
+    login_error:         'Mã số bệnh nhân hoặc mã PIN không đúng. Vui lòng kiểm tra và thử lại, hoặc liên hệ đội ngũ chăm sóc của bạn.',
+    chart_intentional:   'Không Tuân Thủ Có Chủ Ý',
+    chart_unintentional: 'Không Tuân Thủ Vô Ý',
+    level_high:          'Cao',
+    level_medium:        'Trung bình',
+    level_low:           'Thấp',
+    err_both_required:   'Vui lòng nhập mã số bệnh nhân và mã PIN của bạn.',
+    err_pin_length:      'Mã PIN phải có đúng 6 chữ số.',
+    btn_checking:        'Đang kiểm tra…',
+  },
+};
+
+function setPPLang(lang) {
+  _ppCurrentLang = lang;
+  const s = PP_STRINGS[lang] || PP_STRINGS.en;
+  document.documentElement.lang = lang;
+  document.documentElement.dir  = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
+
+  const _t  = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const _th = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML   = val; };
+
+  _t('pp-login-eyebrow',      s.login_eyebrow);
+  _t('pp-login-title',        s.login_title);
+  _t('pp-login-subtitle',     s.login_subtitle);
+  _t('pp-lbl-patient-number', s.lbl_patient_number);
+  _t('pp-lbl-pin',            s.lbl_pin);
+  _t('pp-login-btn-text',     s.login_btn);
+  _t('pp-portal-logo-eyebrow',s.portal_eyebrow);
+  _t('pp-portal-logo-title',  s.portal_title);
+  _t('pp-logout-btn',         s.logout_btn);
+  _t('portal-loading-text',   s.loading_text);
+  _t('login-error',           s.login_error || PP_STRINGS.en.login_error);
+
+  // Rebuild login-divider preserving the adherence.cc link
+  const dividerEl = document.getElementById('pp-login-divider');
+  if (dividerEl) {
+    dividerEl.innerHTML = `${_esc(s.login_forgot)}<br>
+      <span style="color:rgba(255,255,255,0.18);">·</span>
+      <a href="https://adherence.cc" target="_blank" rel="noopener"
+        style="color:var(--dim);text-decoration:none;">adherence.cc</a>`;
+  }
+}
+
+function _ppLevel(key) {
+  const s = PP_STRINGS[_ppCurrentLang] || PP_STRINGS.en;
+  return { High: s.level_high, Medium: s.level_medium, Low: s.level_low }[key] || key;
 }
 </script>
 </body>

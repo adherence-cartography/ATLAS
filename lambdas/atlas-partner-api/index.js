@@ -208,7 +208,7 @@ const INTERVENTIONS = {
 // Webhook delivery (fire-and-forget)
 // ---------------------------------------------------------------------------
 function deliverWebhook(partner, payload) {
-  if (!partner.webhook_url) return;
+  if (!partner.webhook_url) return Promise.resolve();
 
   const body      = JSON.stringify(payload);
   const secret    = partner.webhook_secret || '';
@@ -222,12 +222,15 @@ function deliverWebhook(partner, payload) {
     url = new URL(partner.webhook_url);
   } catch (_) {
     console.error(JSON.stringify({ event: 'webhook_invalid_url', partner: partner.api_key, url: partner.webhook_url }));
-    return;
+    return Promise.resolve();
   }
 
+  const mod = url.protocol === 'https:' ? https : require('http');
+
+  return new Promise((resolve) => {
   const options = {
     hostname: url.hostname,
-    port:     url.port || 443,
+    port:     url.port || (url.protocol === 'https:' ? 443 : 80),
     path:     url.pathname + url.search,
     method:   'POST',
     timeout:  5000,
@@ -238,18 +241,22 @@ function deliverWebhook(partner, payload) {
     }
   };
 
-  const req = https.request(options, res => {
-    console.log(JSON.stringify({
-      event:      'webhook_delivered',
-      partner:    partner.api_key,
-      status:     res.statusCode,
-      timestamp:  Date.now()
-    }));
-    // persist last delivery status
-    getDb()
-      .ref(`partner_keys/${partner.api_key}/webhook_last_status`)
-      .set(res.statusCode)
-      .catch(() => {});
+  const req = mod.request(options, res => {
+    const chunks = [];
+    res.on('data', c => chunks.push(c));
+    res.on('end', () => {
+      console.log(JSON.stringify({
+        event:      'webhook_delivered',
+        partner:    partner.api_key,
+        status:     res.statusCode,
+        timestamp:  Date.now()
+      }));
+      getDb()
+        .ref(`partner_keys/${partner.api_key}/webhook_last_status`)
+        .set(res.statusCode)
+        .catch(() => {});
+      resolve();
+    });
   });
 
   req.on('error', err => {
@@ -263,6 +270,7 @@ function deliverWebhook(partner, payload) {
       .ref(`partner_keys/${partner.api_key}/webhook_last_status`)
       .set('error')
       .catch(() => {});
+    resolve();
   });
 
   req.on('timeout', () => {
@@ -272,10 +280,12 @@ function deliverWebhook(partner, payload) {
       partner:   partner.api_key,
       timestamp: Date.now()
     }));
+    resolve();
   });
 
   req.write(body);
   req.end();
+  }); // end Promise
 }
 
 // ---------------------------------------------------------------------------
@@ -285,7 +295,10 @@ function parseBody(event) {
   try {
     if (!event.body) return {};
     if (typeof event.body === 'object') return event.body;
-    return JSON.parse(event.body);
+    const raw = event.isBase64Encoded
+      ? Buffer.from(event.body, 'base64').toString('utf8')
+      : event.body;
+    return JSON.parse(raw);
   } catch (_) {
     return null;
   }
@@ -298,7 +311,7 @@ async function handleMapSubmit(event, partner) {
   const body = parseBody(event);
   if (!body) return errResp(400, 'Invalid JSON body');
 
-  const { patient_ref, responses, condition, drug, age_range, gender, city, country, metadata } = body;
+  const { patient_ref, study_id, responses, condition, drug, age_range, gender, city, country, metadata } = body;
 
   if (!Array.isArray(responses) || responses.length !== 8) {
     return errResp(400, 'responses must be an array of exactly 8 values (0-1)');
@@ -317,6 +330,7 @@ async function handleMapSubmit(event, partner) {
     workspace:        partner.workspace,
     institution_code: partner.workspace,
     patient_ref:      patient_ref || null,
+    study_id:         study_id    || null,
     condition:        condition   || null,
     drug:             drug        || null,
     age_range:        age_range   || null,
@@ -342,17 +356,19 @@ async function handleMapSubmit(event, partner) {
     partner_name:   partner.name,
     assessment_id:  assessmentId,
     instrument:     'map',
+    study_id:       study_id || null,
     pe:             scores.pe,
     additive:       scores.additive,
     country:        record.country,
     timestamp
   }));
 
-  deliverWebhook(partner, {
+  await deliverWebhook(partner, {
     event:         'assessment.completed',
     instrument:    'map',
     assessment_id: assessmentId,
     patient_ref:   patient_ref || null,
+    study_id:      study_id    || null,
     result:        {
       pe:            scores.pe,
       architecture:  scores.architecture,
@@ -385,7 +401,7 @@ async function handleMmasSubmit(event, partner) {
   const body = parseBody(event);
   if (!body) return errResp(400, 'Invalid JSON body');
 
-  const { patient_ref, responses, condition, drug, age_range, gender, city, country, metadata } = body;
+  const { patient_ref, study_id, responses, condition, drug, age_range, gender, city, country, metadata } = body;
 
   if (!Array.isArray(responses) || responses.length !== 8) {
     return errResp(400, 'responses must be an array of exactly 8 values (q1-q7 boolean, q8 1-5)');
@@ -403,6 +419,7 @@ async function handleMmasSubmit(event, partner) {
     workspace:        partner.workspace,
     institution_code: partner.workspace,
     patient_ref:      patient_ref || null,
+    study_id:         study_id    || null,
     condition:        condition   || null,
     drug:             drug        || null,
     age_range:        age_range   || null,
@@ -425,16 +442,18 @@ async function handleMmasSubmit(event, partner) {
     partner_name:  partner.name,
     assessment_id: assessmentId,
     instrument:    'mmas',
+    study_id:      study_id || null,
     pe_or_score:   scores.score,
     country:       record.country,
     timestamp
   }));
 
-  deliverWebhook(partner, {
+  await deliverWebhook(partner, {
     event:         'assessment.completed',
     instrument:    'mmas',
     assessment_id: assessmentId,
     patient_ref:   patient_ref || null,
+    study_id:      study_id    || null,
     result:        scores,
     timestamp:     new Date(timestamp).toISOString()
   });
@@ -518,7 +537,7 @@ async function handlePeacsSubmit(event, partner) {
     timestamp
   }));
 
-  deliverWebhook(partner, {
+  await deliverWebhook(partner, {
     event:         'assessment.completed',
     instrument:    'peacs',
     assessment_id: assessmentId,
@@ -615,6 +634,44 @@ async function handlePatientResults(patientRef, partner, queryParams) {
   return jsonResp(200, {
     patient_ref:  patientRef,
     total:        results.length,
+    results
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Route: GET /v1/study/{study_id}/results
+// ---------------------------------------------------------------------------
+async function handleStudyResults(studyId, partner, queryParams) {
+  if (!studyId) return errResp(400, 'study_id is required');
+
+  const instrumentFilter = queryParams && queryParams.instrument
+    ? queryParams.instrument.toLowerCase()
+    : null;
+
+  const results = [];
+
+  if (!instrumentFilter || instrumentFilter === 'map' || instrumentFilter === 'mmas') {
+    const snap = await getDb()
+      .ref('assessments')
+      .orderByChild('study_id')
+      .equalTo(studyId)
+      .once('value');
+
+    snap.forEach(child => {
+      const r = child.val();
+      if (r.partner_key === partner.api_key) {
+        if (!instrumentFilter || r.tool === instrumentFilter) {
+          results.push(r);
+        }
+      }
+    });
+  }
+
+  results.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+  return jsonResp(200, {
+    study_id,
+    total:   results.length,
     results
   });
 }
@@ -814,6 +871,17 @@ exports.handler = async (event) => {
     }
   }
 
+  // GET /v1/study/{study_id}/results
+  const studyMatch = path.match(/^\/v1\/study\/([^/]+)\/results$/);
+  if (studyMatch && method === 'GET') {
+    try {
+      return await handleStudyResults(decodeURIComponent(studyMatch[1]), partner, queryParams);
+    } catch (err) {
+      console.error(JSON.stringify({ event: 'study_results_error', message: err.message }));
+      return errResp(502, 'Error retrieving study results', err.message);
+    }
+  }
+
   // GET /v1/stats
   if (path === '/v1/stats' && method === 'GET') {
     try {
@@ -833,6 +901,7 @@ exports.handler = async (event) => {
       'POST /v1/peacs/submit',
       'GET  /v1/results/{assessment_id}',
       'GET  /v1/patient/{patient_ref}/results',
+      'GET  /v1/study/{study_id}/results',
       'GET  /v1/stats'
     ]
   });

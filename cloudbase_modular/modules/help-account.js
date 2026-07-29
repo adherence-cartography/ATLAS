@@ -19,6 +19,12 @@ function openUserAccount() {
   overlay.style.display = 'block';
   panel.style.display   = 'flex';
   _uaPopulate();
+  // Sync Data-Lite toggle state with current mode
+  const _liteActive = typeof window.atlasIsLiteMode === 'function' && window.atlasIsLiteMode();
+  const _onBtn  = document.getElementById('ua-lite-on-btn');
+  const _offBtn = document.getElementById('ua-lite-off-btn');
+  if (_onBtn)  _onBtn.style.display  = _liteActive ? 'none' : '';
+  if (_offBtn) _offBtn.style.display = _liteActive ? ''     : 'none';
 }
 
 /**

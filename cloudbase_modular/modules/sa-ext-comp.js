@@ -31,10 +31,10 @@ function _saExtParseCSV(text) {
 
 // ── Aggregate device data into per-patient scores aligned to ATLAS records ───
 function _saExtAggregate() {
-  const mmasRaw  = (_saCache.mmas||[]).filter(r => r.tool !== 'map' && r.map_q1 === undefined && r.patient_number);
-  const mapRaw   = (_saCache.mmas||[]).filter(r => (r.tool === 'map' || r.map_q1 !== undefined) && r.patient_number);
+  const mmasRaw  = (_saCache.mmas||[]).filter(r => r.map_q1 === undefined && r.patient_number);
+  const mapRaw   = (_saCache.mmas||[]).filter(r => r.map_q1 !== undefined && r.patient_number);
   const crit     = _saExtInst === 'map' ? mapRaw : mmasRaw;
-  const cutoff   = _saExtInst === 'map' ? 0.50 : 6;
+  const cutoff   = _saExtInst === 'map' ? 0.50 : 0.75;
   const scoreKey = _saExtInst === 'map' ? 'pe_score' : null;
 
   const parseMMAS = r => { let s=0; for(let j=1;j<=8;j++){const v=r['q'+j];s+=(typeof v==='number'?v:(v===true||v==='yes'||v==='Yes'||v===1||v==='1')?1:0);} return s/8; };
@@ -368,7 +368,7 @@ function _saExtRenderResults(container) {
     </div>
     <div class="sa-panel">
       <div style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:10px;">Publication-Ready Summary</div>
-      <div style="font-size:0.84rem;color:${_C.muted};line-height:1.75;font-style:italic;">"${pubText}"</div>
+      <div class="sa-ext-pub-text" style="font-size:0.84rem;color:${_C.muted};line-height:1.75;font-style:italic;">"${pubText}"</div>
       <div style="margin-top:12px;display:flex;gap:8px;">
         <button onclick="navigator.clipboard.writeText(document.querySelector('.sa-ext-pub-text')?.textContent||'')"
           style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;padding:5px 14px;border-radius:5px;border:1px solid ${_C.border};background:transparent;color:${_C.muted};cursor:pointer;">Copy Text</button>
@@ -380,7 +380,7 @@ function _saExtRenderResults(container) {
 function _saRenderExtComp(container) {
   _saExtResults = null;
   const instOpts = [
-    { val:'mmas', label:'MMAS-8 (score 0–8, cutoff < 6)' },
+    { val:'mmas', label:'MMAS-8 (score 0–8, cutoff < 6; normalized < 0.75)' },
     { val:'map',  label:'MAP PE (0–1, cutoff < 0.50)' },
   ];
   const formatCards = [

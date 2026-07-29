@@ -548,7 +548,7 @@ async function _puLaunch() {
   try {
     await ensureSheetJS();
     const buffer   = await _PU.file.arrayBuffer();
-    const workbook = XLSX.read(new Uint8Array(buffer), { type:'array' });
+    const workbook = XLSX.read(new Uint8Array(buffer), { type:'array', cellDates: true });
 
     const sheetName = workbook.SheetNames.find(n =>
       n.includes('Data Entry') || n.includes('📊') || n.includes('data')
@@ -566,21 +566,27 @@ async function _puLaunch() {
       study_phase:       String(rows[6]?.[1] || '').trim() || null,
     };
 
-    // Locate header row (row where col[0] starts with "country")
+    // Locate header row — find the row that contains a "country" header in any column.
+    // Supports non-standard column orders (e.g. files where "Date" precedes "Country").
     let headerRowIdx = 8;
     for (let i = 0; i < Math.min(rows.length, 20); i++) {
-      if (String(rows[i]?.[0] || '').trim().toLowerCase().startsWith('country')) {
-        headerRowIdx = i; break;
-      }
+      const anyColIsCountry = (rows[i] || []).some(
+        cell => String(cell || '').trim().toLowerCase().startsWith('country')
+      );
+      if (anyColIsCountry) { headerRowIdx = i; break; }
     }
 
-    const _isExample = row =>
-      String(row[0]||'').toUpperCase().includes('EXAMPLE') ||
-      String(row[2]||'').toUpperCase().includes('EXAMPLE');
+    // Detect v2 template (Date-first): col 0 of header row starts with "date"
+    const hasDateCol = String(rows[headerRowIdx]?.[0] || '').trim().toLowerCase().startsWith('date');
+    const _dc = hasDateCol ? 1 : 0; // column offset: v2 shifts all data cols right by 1
 
-    // Require at least 19 columns (through Q8 at index 18)
+    const _isExample = row =>
+      String(row[_dc+0]||'').toUpperCase().includes('EXAMPLE') ||
+      String(row[_dc+2]||'').toUpperCase().includes('EXAMPLE');
+
+    // Country must be present (at _dc offset); require enough columns to reach Q8
     const dataRows = rows.slice(headerRowIdx + 1).filter(row =>
-      row && row.length >= 12 && row[0] && !_isExample(row)
+      row && row.length >= 12 && row[_dc] && !_isExample(row)
     );
 
     if (!dataRows.length) {
@@ -611,6 +617,7 @@ async function _puLaunch() {
       }
       return -1;
     };
+    const cDate      = findCol('date','assessmentdate');
     const cCountry   = findCol('country');
     const cCity      = findCol('city','town');
     const cPatient   = findCol('patient','participantid','patientid','id');
@@ -733,8 +740,23 @@ async function _puLaunch() {
     }
 
     for (const { row, q1, q2, q3, q4, q5, q6, q7, q8 } of validRows) {
-      const country = String(cCountry >= 0 ? row[cCountry] : row[0] || '').trim();
-      const city    = String(cCity    >= 0 ? row[cCity]    : row[1] || '').trim();
+      const country        = String(cCountry >= 0 ? row[cCountry] : row[_dc]   || '').trim();
+      const city           = String(cCity    >= 0 ? row[cCity]    : row[_dc+1] || '').trim();
+      const assessmentDate = cDate >= 0 ? (() => {
+        const raw = row[cDate];
+        if (!raw) return null;
+        // cellDates:true → JS Date object
+        if (raw instanceof Date) return raw.toISOString().slice(0,10);
+        // Already a YYYY-MM-DD string
+        const s = String(raw).trim();
+        if (s.match(/^\d{4}-\d{2}-\d{2}$/)) return s;
+        // Excel serial number fallback (cellDates not applied for some cells)
+        if (typeof raw === 'number' && raw > 1000) {
+          const d = new Date(Math.round((raw - 25569) * 86400 * 1000));
+          return d.toISOString().slice(0,10);
+        }
+        return null;
+      })() : null;
 
       const { lat, lng } = await _geocode(country, city);
 
@@ -772,6 +794,7 @@ async function _puLaunch() {
           education_level:  String(cEduc      >= 0 ? row[cEduc]      : ''),
           role:             'researcher',
           data_tier:        'clinical',
+          assessment_date:  assessmentDate,
           ...studyMeta,
           upload_source:    'proxy_bulk',
           uploaded_by:      'superadmin',
@@ -802,6 +825,7 @@ async function _puLaunch() {
           education_level:  String(cEduc      >= 0 ? row[cEduc]      : ''),
           role:             'researcher',
           data_tier:        'clinical',
+          assessment_date:  assessmentDate,
           q1, q2, q3, q4, q5, q6, q7, q8,
           ...studyMeta,
           upload_source:    'proxy_bulk',
@@ -839,12 +863,25 @@ async function _puLaunch() {
 
     _prog(100, 'Complete');
     const skippedTotal = rowErrors.length + writeFailed;
+
+    let skippedDetail = '';
+    if (rowErrors.length > 0) {
+      const rows = rowErrors.slice(0, 10).map(e => {
+        const pat = String(cPatient >= 0 ? e.row[cPatient] : '').trim() || `row ${e.rowNum}`;
+        return `<div style="margin-top:3px;"><strong>Row ${e.rowNum}${pat ? ' ('+_saEsc(pat)+')' : ''}</strong>: ${_saEsc(e.errors.join(', '))}</div>`;
+      }).join('');
+      const more = rowErrors.length > 10
+        ? `<div style="color:${_C.dim};font-size:0.76rem;margin-top:2px;">…and ${rowErrors.length - 10} more (see browser console for full list)</div>`
+        : '';
+      skippedDetail = `<div style="margin-top:8px;padding:8px;background:rgba(255,180,0,0.06);border-left:2px solid ${_C.amber};font-size:0.78rem;">${rows}${more}</div>`;
+    }
+
     _puResult(
       skippedTotal === 0 ? 'success' : 'partial',
       `✓ Upload complete. <strong>${uploaded}</strong> record${uploaded !== 1 ? 's' : ''} written to workspace <strong>${_saEsc(_PU.targetKey)}</strong>.` +
-      (rowErrors.length ? ` · <span style="color:${_C.amber};">${rowErrors.length} rows skipped</span> (validation errors).` : '') +
-      (writeFailed     ? ` · <span style="color:${_C.red};">${writeFailed} write failures</span> (check console).` : '') +
-      ` Records appear in the student's dashboard immediately.`
+      (rowErrors.length ? ` · <span style="color:${_C.amber};">${rowErrors.length} rows skipped</span> (validation errors):${skippedDetail}` : '') +
+      (writeFailed      ? ` · <span style="color:${_C.red};">${writeFailed} write failures</span> (check console).` : '') +
+      (rowErrors.length === 0 ? ` Records appear in the student's dashboard immediately.` : '')
     );
 
   } catch (e) {
@@ -1037,12 +1074,18 @@ function _rlRenderTable() {
 function _rlRowHTML(r) {
   const checked  = _RL.selected.has(r._key);
   const expanded = _RL.expandedKey === r._key;
-  const ts       = r.timestamp ? new Date(r.timestamp) : null;
-  const date     = ts ? ts.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '—';
-  const time     = ts ? ts.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) : '';
+  const ts         = r.timestamp ? new Date(r.timestamp) : null;
+  const uploadDate = ts ? ts.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '—';
+  const uploadTime = ts ? ts.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) : '';
+  // assessment_date is the date recorded on the instrument (from Excel col A or manual entry)
+  const aDate      = r.assessment_date
+    ? new Date(r.assessment_date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})
+    : null;
+  const date = aDate || uploadDate;
+  const time = aDate ? '' : uploadTime;
   const score    = _rlScore(r);
   const ws       = _saEsc(r.workspace_key || r.institution_code || '—');
-  const patient  = _saEsc(r.patient_number || '—');
+  const patient  = _saEsc(r.patient_number || r.patient_ref || '—');
   const country  = _saEsc(r.country || '—');
   const session  = _saEsc((r.session_id || r._key || '').slice(0, 14));
   const badge    = `<span class="rl-badge rl-badge-${r._type}">${r._type === 'mmas' ? 'MMAS-8' : r._type.toUpperCase()}</span>`;
@@ -1057,8 +1100,10 @@ function _rlRowHTML(r) {
       </td>
       <td>${badge}</td>
       <td style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">
-        <div>${date}</div>
-        <div style="color:${_C.dim};font-size:0.72rem;">${time}</div>
+        <div title="${aDate ? `Uploaded: ${uploadDate} ${uploadTime}` : ''}">${date}</div>
+        ${aDate
+          ? `<div style="color:${_C.dim};font-size:0.62rem;letter-spacing:0.05em;">assessment</div>`
+          : `<div style="color:${_C.dim};font-size:0.72rem;">${time}</div>`}
       </td>
       <td style="font-family:'IBM Plex Mono',monospace;font-weight:600;">${score}</td>
       <td>${country}</td>
@@ -1098,7 +1143,8 @@ function _rlScore(r) {
       const _c=0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2;
       return `<span style="color:${_C.green};">${Math.pow(Math.max(0,_a*_e*_c),1/3).toFixed(3)}</span>`;
     }
-    return r.mapScore !== undefined ? `<span style="color:${_C.green};">${Number(r.mapScore).toFixed(3)}</span>` : '—';
+    const _mapPE = r.mapScore ?? r.pe;
+    return _mapPE !== undefined ? `<span style="color:${_C.green};">${Number(_mapPE).toFixed(3)}</span>` : '—';
   }
   if (r._type === 'peacs') return r.pe !== undefined ? `<span style="color:${_C.purple};">${Number(r.pe).toFixed(3)}</span>` : '—';
   return '—';
@@ -1133,38 +1179,45 @@ function _rlDrawerHTML(r) {
     } else if (typeof v === 'object' && v !== null) {
       val = JSON.stringify(v);
     }
-    const strVal = String(val ?? '');
-    const wide   = strVal.length > 40 ? ' rl-field-wide' : '';
+    const strVal  = String(val ?? '');
+    const isUuid  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(strVal);
+    const dispVal = isUuid ? `<span title="${_saEsc(strVal)}" style="cursor:default;">${_saEsc(strVal.slice(0,8))}…</span>` : _saEsc(strVal);
+    const wide    = (!isUuid && strVal.length > 40) ? ' rl-field-wide' : '';
     return `
       <div class="rl-field${wide}">
         <div class="rl-field-lbl">${_saEsc(k)}</div>
-        <div class="rl-field-val">${_saEsc(strVal)}</div>
+        <div class="rl-field-val">${dispVal}</div>
       </div>`;
   }).join('');
 
   // ── Trajectory chart — all assessments for this patient_number ──────────────
   const pid = r.patient_number || r.patient_id || null;
-  const trajHTML = pid ? _rlTrajChart(r._key, pid, r._type) : '';
+  const wsKey = r.workspace_key || r.institution_code || null;
+  const trajHTML = pid ? _rlTrajChart(r._key, pid, r._type, wsKey) : '';
 
   // ── Intervention log ────────────────────────────────────────────────────────
   const intvHTML = pid ? _rlIntvHTML(r._key, pid) : '';
 
   const _rlMapKey = _RL.mapKeyIndex[r._key] || null;
   return `
-    <tr class="rl-expand-drawer">
+    <tr class="rl-expand-drawer" id="rl-drawer-row-${_saEsc(r._key)}">
       <td colspan="9">
-        <div style="padding:4px 0 8px;">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.20em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:10px;">
-            Assessment key: ${_saEsc(r._key)}
-            ${_rlMapKey ? `<span style="margin-left:18px;color:rgba(120,200,255,0.7);">Map key: ${_saEsc(_rlMapKey)}</span>` : '<span style="margin-left:18px;color:rgba(180,180,180,0.35);font-size:0.62rem;">no map pin</span>'}
+        <div id="rl-drawer-inner-${_saEsc(r._key)}" style="padding:4px 0 8px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.20em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+            <span>Assessment key: ${_saEsc(r._key)}</span>
+            ${_rlMapKey ? `<span style="margin-left:8px;color:rgba(120,200,255,0.7);">Map key: ${_saEsc(_rlMapKey)}</span>` : '<span style="margin-left:8px;color:rgba(180,180,180,0.35);font-size:0.62rem;">no map pin</span>'}
             <button onclick="event.stopPropagation();_rlDeleteOne('${_saEsc(r._key)}')"
-              style="margin-left:16px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;padding:2px 10px;border-radius:4px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.06);color:#ef4444;cursor:pointer;">
+              style="margin-left:8px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;padding:2px 10px;border-radius:4px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.06);color:#ef4444;cursor:pointer;">
               Delete this record
+            </button>
+            <button onclick="event.stopPropagation();_rlOpenEditPanel('${_saEsc(r._key)}')"
+              style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;padding:2px 10px;border-radius:4px;border:1px solid rgba(212,168,67,0.4);background:rgba(212,168,67,0.06);color:rgba(212,168,67,0.85);cursor:pointer;">
+              ✎ Edit Fields
             </button>
           </div>
           ${trajHTML}
           ${intvHTML}
-          <div class="rl-field-grid">${cells}</div>
+          <div class="rl-field-grid" id="rl-field-grid-${_saEsc(r._key)}">${cells}</div>
         </div>
       </td>
     </tr>`;
@@ -1173,10 +1226,11 @@ function _rlDrawerHTML(r) {
 // ── Score trajectory sparkline ──────────────────────────────────────────────────
 // Renders a linked SVG line chart of all MMAS/MAP assessments for a patient_number.
 // MMAS scores shown on 0–8 scale. MAP PE scores shown on 0–1 scale (right axis).
-function _rlTrajChart(currentKey, pid, type) {
-  // Gather all records for this patient across both MMAS and MAP types
+function _rlTrajChart(currentKey, pid, type, wsKey) {
+  // Gather all records for this patient within the same workspace
   const records = (_RL.raw || [])
     .filter(rec => (rec.patient_number === pid || rec.patient_id === pid))
+    .filter(rec => !wsKey || (rec.workspace_key || rec.institution_code) === wsKey)
     .filter(rec => typeof rec.score === 'number' || typeof rec.mmas_pe === 'number' || typeof rec.pe === 'number')
     .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
@@ -1455,7 +1509,7 @@ function _rlConfirmDelete() {
     if (delBtn) delBtn.disabled = true;
     _eSign({
       title:       'Authorise Record Deletion',
-      meaning:     'I authorise the permanent deletion of the selected patient record(s). This action is irreversible.',
+      operation:   'DELETE_RECORD',
       actionLabel: 'Delete Records',
       recordRef:   'data_ledger_delete',
       onConfirm:   function(sigId) { _rlExecuteDelete(sigId); },
@@ -1496,7 +1550,10 @@ async function _rlExecuteDelete(sigId) {
   const pathMap = {};
   _RL.raw.forEach(r => { if (keys.includes(r._key)) pathMap[r._key] = r._type; });
 
-  const dbPath = { mmas:'assessments', map:'mapData', peacs:'peacs_assessments' };
+  // MAP records are stored in 'assessments' (flagged by tool:'map' / map_q1),
+  // not in 'mapData' (which is the geographic pin table). Both mmas and map
+  // primary records live in 'assessments'; mapData pins are cleaned up below.
+  const dbPath = { mmas:'assessments', map:'assessments', peacs:'peacs_assessments' };
   const errors = [];
 
   await Promise.all(keys.map(async key => {
@@ -1574,4 +1631,295 @@ function _rlShowError(msg) {
 
 function _saEsc(str) {
   return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUPERADMIN INLINE RECORD EDITOR
+// Allows editing key fields on any record directly in the data ledger drawer.
+// Writes back to assessments/{key} and syncs lat/lng to mapData/{mapKey}.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const _RL_EDIT_FIELDS = [
+  { key: 'patient_number',         label: 'Patient #',         type: 'text'   },
+  { key: 'country',                label: 'Country',           type: 'text'   },
+  { key: 'city',                   label: 'City',              type: 'text'   },
+  { key: 'latitude',               label: 'Latitude',          type: 'number' },
+  { key: 'longitude',              label: 'Longitude',         type: 'number' },
+  { key: 'condition',              label: 'Medical Condition', type: 'text'   },
+  { key: 'drug_name',              label: 'Drug Name',         type: 'text'   },
+  { key: 'drug_type',              label: 'Drug Type',         type: 'text'   },
+  { key: 'drug_strength',          label: 'Drug Strength',     type: 'text'   },
+  { key: 'route_of_administration',label: 'Route',             type: 'text'   },
+  { key: 'gender',                 label: 'Gender',            type: 'text'   },
+  { key: 'age_range',              label: 'Age Range',         type: 'text'   },
+  { key: 'education_level',        label: 'Education Level',   type: 'text'   },
+  { key: 'assessment_date',        label: 'Assessment Date',   type: 'date'   },
+];
+
+function _rlOpenEditPanel(key) {
+  if (event) event.stopPropagation();
+  const rec = _RL.raw.find(r => r._key === key);
+  if (!rec) return;
+
+  const panelId = 'rl-edit-panel-' + key;
+  const existing = document.getElementById(panelId);
+  if (existing) { existing.remove(); return; } // toggle off
+
+  const inner = document.getElementById('rl-drawer-inner-' + key);
+  if (!inner) return;
+
+  const fields = _RL_EDIT_FIELDS.map(f => {
+    const rawVal = rec[f.key];
+    const val = (rawVal !== undefined && rawVal !== null) ? String(rawVal) : '';
+    const isGeo = f.key === 'latitude' || f.key === 'longitude';
+    const extraStyle = isGeo ? 'color:rgba(120,200,255,0.85);' : '';
+    return `
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <label style="font-family:'IBM Plex Mono',monospace;font-size:0.64rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--mc-dim);">${_saEsc(f.label)}</label>
+        <input id="rl-edit-${_saEsc(key)}-${f.key}"
+          type="${f.type}"
+          ${f.type === 'number' ? 'step="any"' : ''}
+          value="${_saEsc(val)}"
+          style="background:var(--mc-bg);border:1px solid var(--mc-border);color:var(--mc-text);font-family:'IBM Plex Mono',monospace;font-size:0.81rem;padding:6px 9px;border-radius:5px;outline:none;width:100%;box-sizing:border-box;${extraStyle}"
+          onfocus="this.style.borderColor='rgba(212,168,67,0.5)'"
+          onblur="this.style.borderColor='var(--mc-border)'"
+          onclick="event.stopPropagation()"/>
+      </div>`;
+  }).join('');
+
+  const panel = document.createElement('div');
+  panel.id = panelId;
+  panel.style.cssText = 'margin-top:16px;padding:16px 18px;background:rgba(212,168,67,0.03);border:1px solid rgba(212,168,67,0.2);border-radius:8px;';
+  panel.innerHTML = `
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.64rem;letter-spacing:0.20em;text-transform:uppercase;color:rgba(212,168,67,0.55);margin-bottom:12px;">
+      Edit Record Fields · Superadmin · Changes are permanent
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:10px 18px;margin-bottom:16px;">
+      ${fields}
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button onclick="event.stopPropagation();_rlSaveRecord('${_saEsc(key)}')"
+        style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.10em;text-transform:uppercase;padding:7px 18px;border-radius:6px;border:1px solid rgba(46,201,138,0.5);background:rgba(46,201,138,0.08);color:rgba(46,201,138,0.9);cursor:pointer;transition:background 0.15s;"
+        onmouseover="this.style.background='rgba(46,201,138,0.18)'" onmouseout="this.style.background='rgba(46,201,138,0.08)'">
+        ✓ Save Changes
+      </button>
+      <button onclick="event.stopPropagation();_rlReGeocode('${_saEsc(key)}')"
+        style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.10em;text-transform:uppercase;padding:7px 18px;border-radius:6px;border:1px solid rgba(78,156,245,0.4);background:rgba(78,156,245,0.06);color:rgba(78,156,245,0.8);cursor:pointer;transition:background 0.15s;"
+        onmouseover="this.style.background='rgba(78,156,245,0.15)'" onmouseout="this.style.background='rgba(78,156,245,0.06)'">
+        ⊕ Re-geocode from City / Country
+      </button>
+      <button onclick="event.stopPropagation();document.getElementById('${_saEsc(panelId)}').remove()"
+        style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;padding:7px 14px;border-radius:6px;border:1px solid var(--mc-border);background:transparent;color:var(--mc-dim);cursor:pointer;">
+        Cancel
+      </button>
+      <span id="rl-edit-status-${_saEsc(key)}" style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;"></span>
+    </div>
+  `;
+
+  inner.appendChild(panel);
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function _rlSaveRecord(key) {
+  if (event) event.stopPropagation();
+  const rec = _RL.raw.find(r => r._key === key);
+  if (!rec) return;
+
+  const statusEl = document.getElementById('rl-edit-status-' + key);
+  if (statusEl) statusEl.innerHTML = `<span style="color:var(--mc-dim);">Saving…</span>`;
+
+  const db = window.firebase?.database ? window.firebase.database()
+           : (typeof database !== 'undefined' ? database : null);
+  if (!db) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">Firebase unavailable.</span>`;
+    return;
+  }
+
+  // Collect changed fields only
+  const updates = {};
+  _RL_EDIT_FIELDS.forEach(f => {
+    const el = document.getElementById('rl-edit-' + key + '-' + f.key);
+    if (!el) return;
+    let newVal = el.value.trim();
+    if (f.type === 'number') {
+      newVal = newVal === '' ? null : parseFloat(newVal);
+      if (isNaN(newVal)) newVal = null;
+    } else {
+      newVal = newVal === '' ? null : newVal;
+    }
+    const oldVal = (rec[f.key] !== undefined && rec[f.key] !== null && rec[f.key] !== '') ? rec[f.key] : null;
+    const oldNorm = oldVal !== null && f.type === 'number' ? Number(oldVal) : oldVal;
+    if (JSON.stringify(oldNorm) !== JSON.stringify(newVal)) {
+      updates[f.key] = newVal;
+    }
+  });
+
+  if (Object.keys(updates).length === 0) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--mc-dim);">No changes to save.</span>`;
+    return;
+  }
+
+  const dbPath = rec._type === 'peacs' ? 'peacs_assessments' : 'assessments';
+
+  try {
+    await db.ref(`${dbPath}/${key}`).update(updates);
+
+    // Sync geographic fields to mapData — update existing pin or create one if absent
+    const mapNode = rec._type === 'peacs' ? 'peacs_mapData' : 'mapData';
+    const mapKey  = _RL.mapKeyIndex[key];
+    const lat = updates.latitude  ?? rec.latitude;
+    const lng = updates.longitude ?? rec.longitude;
+    if (mapKey) {
+      const geoUpdates = {};
+      if (updates.latitude  !== undefined) geoUpdates.latitude  = updates.latitude;
+      if (updates.longitude !== undefined) geoUpdates.longitude = updates.longitude;
+      if (updates.country   !== undefined) geoUpdates.country   = updates.country;
+      if (updates.city      !== undefined) geoUpdates.city      = updates.city;
+      if (Object.keys(geoUpdates).length > 0) {
+        await db.ref(`${mapNode}/${mapKey}`).update(geoUpdates).catch(() => {});
+      }
+    } else if (lat && lng) {
+      // No pin exists yet — create one so this record appears on the map
+      const newPin = {
+        assessment_ref:   key,
+        latitude:         lat,
+        longitude:        lng,
+        country:          updates.country  ?? rec.country  ?? '',
+        city:             updates.city     ?? rec.city     ?? '',
+        institution_code: rec.institution_code ?? rec.workspace_key ?? '',
+        tool:             rec.tool ?? rec._type ?? 'map',
+        timestamp:        rec.timestamp ?? Date.now(),
+      };
+      const pinRef = await db.ref(mapNode).push(newPin);
+      _RL.mapKeyIndex[key] = pinRef.key;
+    }
+
+    // Update in-memory record so re-renders are correct
+    Object.assign(rec, updates);
+
+    // CFR-11 audit entry
+    const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+    db.ref('audit_log').push({
+      cfr11:         true,
+      action:        'UPDATE',
+      table:         dbPath,
+      record_id:     key,
+      fields_changed:Object.keys(updates),
+      actor_uid:     user ? user.uid   : 'unknown',
+      actor_email:   user ? user.email : 'unknown',
+      workspace:     (typeof currentWorkspace !== 'undefined') ? currentWorkspace : null,
+      timestamp_utc: new Date().toISOString(),
+      client_ts:     Date.now(),
+    }).catch(() => {});
+
+    const n = Object.keys(updates).length;
+    if (statusEl) statusEl.innerHTML = `<span style="color:rgba(46,201,138,0.9);">✓ Saved ${n} field${n !== 1 ? 's' : ''}.</span>`;
+    if (typeof showToast === 'function') showToast('Record updated.', 2500);
+
+    // Refresh the read-only field grid in the drawer without re-rendering the whole table
+    const fieldGrid = document.getElementById('rl-field-grid-' + key);
+    if (fieldGrid) {
+      const skip = new Set(['_key','_type']);
+      const cells = Object.entries(rec)
+        .filter(([k]) => !skip.has(k))
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => {
+          let val = v;
+          if (k === 'timestamp' && typeof v === 'number') {
+            val = new Date(v).toLocaleString('en-US', {
+              month:'short', day:'numeric', year:'numeric',
+              hour:'2-digit', minute:'2-digit', second:'2-digit'
+            });
+          } else if (typeof v === 'object' && v !== null) {
+            val = JSON.stringify(v);
+          }
+          const strVal  = String(val ?? '');
+          const isUuid  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(strVal);
+          const dispVal = isUuid ? `<span title="${_saEsc(strVal)}" style="cursor:default;">${_saEsc(strVal.slice(0,8))}…</span>` : _saEsc(strVal);
+          const wide    = (!isUuid && strVal.length > 40) ? ' rl-field-wide' : '';
+          return `<div class="rl-field${wide}"><div class="rl-field-lbl">${_saEsc(k)}</div><div class="rl-field-val">${dispVal}</div></div>`;
+        }).join('');
+      fieldGrid.innerHTML = cells;
+    }
+
+  } catch (e) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">Error: ${_saEsc(e.message)}</span>`;
+  }
+}
+
+async function _rlReGeocode(key) {
+  if (event) event.stopPropagation();
+  const statusEl = document.getElementById('rl-edit-status-' + key);
+  const cityEl   = document.getElementById('rl-edit-' + key + '-city');
+  const cntryEl  = document.getElementById('rl-edit-' + key + '-country');
+  const latEl    = document.getElementById('rl-edit-' + key + '-latitude');
+  const lngEl    = document.getElementById('rl-edit-' + key + '-longitude');
+  if (!cityEl || !cntryEl || !latEl || !lngEl) return;
+
+  const city    = cityEl.value.trim();
+  const country = cntryEl.value.trim();
+  if (!country) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">Country is required for geocoding.</span>`;
+    return;
+  }
+
+  if (statusEl) statusEl.innerHTML = `<span style="color:var(--mc-dim);">Geocoding via Nominatim…</span>`;
+
+  try {
+    const url = city
+      ? `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&format=json&limit=1`
+      : `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(country)}&featuretype=country&format=json&limit=1`;
+
+    const resp = await fetch(url, { headers: { 'User-Agent': 'ATLAS-Platform/1.0' } });
+    const data = await resp.json();
+
+    if (data && data[0]) {
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
+      latEl.value = lat;
+      lngEl.value = lng;
+      latEl.style.borderColor = 'rgba(46,201,138,0.5)';
+      lngEl.style.borderColor = 'rgba(46,201,138,0.5)';
+      if (statusEl) statusEl.innerHTML =
+        `<span style="color:rgba(46,201,138,0.9);">✓ ${lat.toFixed(5)}, ${lng.toFixed(5)} — click Save Changes to write.</span>`;
+      return;
+    }
+
+    // Country centroid fallback
+    const _CENTROIDS = {
+      'Nepal':[28.39,84.12],'India':[20.59,78.96],'Bangladesh':[23.68,90.35],
+      'Pakistan':[30.37,69.34],'Sri Lanka':[7.87,80.77],'Afghanistan':[33.93,67.71],
+      'Nigeria':[9.08,8.67],'Kenya':[0.02,37.90],'Ethiopia':[9.14,40.49],
+      'Ghana':[7.95,-1.02],'Tanzania':[6.37,34.89],'Uganda':[1.37,32.29],
+      'Rwanda':[1.94,29.87],'Mozambique':[-18.67,35.53],'Zambia':[-13.13,27.85],
+      'Zimbabwe':[-19.02,29.15],'Malawi':[-13.25,34.30],'Senegal':[14.50,-14.44],
+      'Cameroon':[3.85,11.50],'Ivory Coast':[7.54,-5.55],'Egypt':[26.82,30.80],
+      'South Africa':[-30.56,22.94],'Indonesia':[-0.79,113.92],'Philippines':[12.88,121.77],
+      'Vietnam':[14.06,108.28],'Thailand':[15.87,100.99],'Myanmar':[16.87,96.19],
+      'Cambodia':[12.57,104.99],'Laos':[17.97,102.62],'Malaysia':[4.21,101.98],
+      'Brazil':[-14.24,-51.93],'Colombia':[4.57,-74.30],'Peru':[-9.19,-75.02],
+      'Bolivia':[-16.29,-63.59],'Ecuador':[-1.83,-78.18],'Paraguay':[-23.44,-58.44],
+      'Mexico':[23.63,-102.55],'Haiti':[18.97,-72.28],'Guatemala':[15.78,-90.23],
+      'Honduras':[15.20,-86.24],'Nicaragua':[12.87,-85.21],'El Salvador':[13.79,-88.90],
+      'United States':[37.09,-95.71],'United Kingdom':[55.38,-3.44],
+      'Canada':[56.13,-106.35],'Australia':[-25.27,133.78],
+      'Germany':[51.17,10.45],'France':[46.23,2.21],'Italy':[41.87,12.57],
+      'Spain':[40.46,-3.75],'Portugal':[39.40,-8.22],'Netherlands':[52.13,5.29],
+      'China':[35.86,104.19],'Japan':[36.20,138.25],'South Korea':[35.91,127.77],
+    };
+    const ctr = _CENTROIDS[country];
+    if (ctr) {
+      latEl.value = ctr[0];
+      lngEl.value = ctr[1];
+      latEl.style.borderColor = 'rgba(212,168,67,0.5)';
+      lngEl.style.borderColor = 'rgba(212,168,67,0.5)';
+      if (statusEl) statusEl.innerHTML =
+        `<span style="color:rgba(212,168,67,0.9);">⚠ City not found — used country centroid (${ctr[0]}, ${ctr[1]}). Click Save Changes.</span>`;
+    } else {
+      if (statusEl) statusEl.innerHTML =
+        `<span style="color:#ef4444;">No coordinates found for "${_saEsc(city ? city + ', ' + country : country)}". Enter latitude/longitude manually.</span>`;
+    }
+  } catch (e) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">Geocode error: ${_saEsc(e.message)}</span>`;
+  }
 }

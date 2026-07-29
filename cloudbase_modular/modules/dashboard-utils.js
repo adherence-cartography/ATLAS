@@ -71,7 +71,7 @@ function deriveMAPPhenotype(record) {
   // Use stored phenotype if available
   if (record.map_phenotype && MAP_PHENOTYPE[record.map_phenotype]) return record.map_phenotype;
   // Derive from score and item patterns
-  const intentional = (record.q3 === 1 || record.q4 === 1);
+  const intentional = (record.q3 === 1 || record.q6 === 1);
   const forgetful = (record.q1 === 1 || record.q2 === 1) && !intentional;
   if (score >= 8) return 'A';
   if (intentional) return 'INA';

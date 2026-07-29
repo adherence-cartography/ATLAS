@@ -1,4 +1,4 @@
-// sa-grant-resources.js: Grant Resource Center - templates, funding board, letter of support, AIRC membership
+// sa-grant-resources.js: Grant Resource Center - templates, funding board, letter of support, TESSERA GRC membership
 // Entry point: window.saGrantResourcesInit(container)
 // Firebase paths: consortium_support_requests/{timestamp}, consortium_members/{uid}
 // All functions prefixed window.saGrant* or _sgr*
@@ -18,8 +18,41 @@ const _CGR = window._ATLAS_COLORS || {
   dim:'rgba(96,120,152,0.65)', navy:'rgba(212,168,67,0.06)',
 };
 
+// ── TESSERA hex logo helper ───────────────────────────────────────────────────
+// Returns the 19-hex diamond SVG at the requested pixel size.
+// Each call gets a unique filter ID so multiple instances on the same page don't collide.
+let _sgrLogoSeq = 0;
+function _sgrTesseraLogo(w, h, extraStyle) {
+  const id = 'sgr-hglow-' + (++_sgrLogoSeq);
+  return `<svg width="${w}" height="${h}" viewBox="0 0 104 96" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;${extraStyle||''}" aria-label="TESSERA GRC">
+    <defs><filter id="${id}" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter></defs>
+    <polygon points="31.17,0 41.56,6 41.56,18 31.17,24 20.78,18 20.78,6"    fill="none"                   stroke="rgba(212,168,67,0.28)"  stroke-width="0.85"/>
+    <polygon points="51.95,0 62.34,6 62.34,18 51.95,24 41.56,18 41.56,6"    fill="rgba(212,168,67,0.20)"  stroke="rgba(212,168,67,0.42)"  stroke-width="0.85"/>
+    <polygon points="72.73,0 83.12,6 83.12,18 72.73,24 62.34,18 62.34,6"    fill="none"                   stroke="rgba(16,185,129,0.25)"  stroke-width="0.85"/>
+    <polygon points="20.78,18 31.17,24 31.17,36 20.78,42 10.39,36 10.39,24" fill="rgba(139,111,245,0.22)" stroke="rgba(139,111,245,0.40)" stroke-width="0.85"/>
+    <polygon points="41.56,18 51.95,24 51.95,36 41.56,42 31.17,36 31.17,24" fill="rgba(212,168,67,0.52)"  stroke="rgba(212,168,67,0.65)"  stroke-width="0.85"/>
+    <polygon points="62.34,18 72.73,24 72.73,36 62.34,42 51.95,36 51.95,24" fill="rgba(6,182,212,0.48)"   stroke="rgba(6,182,212,0.62)"   stroke-width="0.85"/>
+    <polygon points="83.12,18 93.51,24 93.51,36 83.12,42 72.73,36 72.73,24" fill="rgba(16,185,129,0.20)"  stroke="rgba(16,185,129,0.38)"  stroke-width="0.85"/>
+    <polygon points="10.39,36 20.78,42 20.78,54 10.39,60 0,54 0,42"         fill="none"                   stroke="rgba(6,182,212,0.22)"   stroke-width="0.85"/>
+    <polygon points="31.17,36 41.56,42 41.56,54 31.17,60 20.78,54 20.78,42" fill="rgba(6,182,212,0.68)"   stroke="rgba(6,182,212,0.80)"   stroke-width="0.85"/>
+    <polygon points="51.95,36 62.34,42 62.34,54 51.95,60 41.56,54 41.56,42" fill="#D4A843"                stroke="rgba(212,168,67,0.88)"  stroke-width="1.1" filter="url(#${id})" opacity="0.92"/>
+    <polygon points="72.73,36 83.12,42 83.12,54 72.73,60 62.34,54 62.34,42" fill="rgba(16,185,129,0.68)"  stroke="rgba(16,185,129,0.80)"  stroke-width="0.85"/>
+    <polygon points="93.51,36 103.9,42 103.9,54 93.51,60 83.12,54 83.12,42" fill="none"                   stroke="rgba(245,158,11,0.22)"  stroke-width="0.85"/>
+    <polygon points="20.78,54 31.17,60 31.17,72 20.78,78 10.39,72 10.39,60" fill="rgba(16,185,129,0.20)"  stroke="rgba(16,185,129,0.38)"  stroke-width="0.85"/>
+    <polygon points="41.56,54 51.95,60 51.95,72 41.56,78 31.17,72 31.17,60" fill="rgba(139,111,245,0.50)" stroke="rgba(139,111,245,0.64)" stroke-width="0.85"/>
+    <polygon points="62.34,54 72.73,60 72.73,72 62.34,78 51.95,72 51.95,60" fill="rgba(16,185,129,0.48)"  stroke="rgba(16,185,129,0.62)"  stroke-width="0.85"/>
+    <polygon points="83.12,54 93.51,60 93.51,72 83.12,78 72.73,72 72.73,60" fill="rgba(212,168,67,0.18)"  stroke="rgba(212,168,67,0.36)"  stroke-width="0.85"/>
+    <polygon points="31.17,72 41.56,78 41.56,90 31.17,96 20.78,90 20.78,78" fill="none"                   stroke="rgba(212,168,67,0.25)"  stroke-width="0.85"/>
+    <polygon points="51.95,72 62.34,78 62.34,90 51.95,96 41.56,90 41.56,78" fill="rgba(245,158,11,0.20)"  stroke="rgba(245,158,11,0.40)"  stroke-width="0.85"/>
+    <polygon points="72.73,72 83.12,78 83.12,90 72.73,96 62.34,90 62.34,78" fill="none"                   stroke="rgba(139,111,245,0.22)" stroke-width="0.85"/>
+  </svg>`;
+}
+
 // ── Module-level state ────────────────────────────────────────────────────────
-let _sgrActiveTab = 'templates';
+let _sgrActiveTab = 'exchange';
 let _sgrFundingFilter = 'all';
 let _sgrMemberCache = null;
 let _sgrRequestsCache = [];
@@ -117,12 +150,29 @@ function _sgrInjectStyles() {
     .sgr-study-card:hover{border-color:rgba(212,168,67,0.26);}
     .sgr-study-title{font-family:'IBM Plex Mono',monospace;font-size:0.82rem;font-weight:600;color:rgba(205,216,232,0.92);}
     .sgr-study-meta{font-family:'IBM Plex Mono',monospace;font-size:0.67rem;color:rgba(96,120,152,0.65);line-height:1.6;}
-    .sgr-airc-id-box{display:flex;align-items:center;gap:8px;background:rgba(46,201,138,0.05);border:1px solid rgba(46,201,138,0.22);border-radius:6px;padding:8px 12px;margin-top:4px;}
-    .sgr-airc-id-val{font-family:'IBM Plex Mono',monospace;font-size:0.90rem;font-weight:700;color:#2ec98a;letter-spacing:0.06em;flex:1;}
+    .sgr-tessera-id-box{display:flex;align-items:center;gap:8px;background:rgba(46,201,138,0.05);border:1px solid rgba(46,201,138,0.22);border-radius:6px;padding:8px 12px;margin-top:4px;}
+    .sgr-tessera-id-val{font-family:'IBM Plex Mono',monospace;font-size:0.90rem;font-weight:700;color:#2ec98a;letter-spacing:0.06em;flex:1;}
     .sgr-badge-status-pending{color:#d4a843;border-color:rgba(212,168,67,0.30);background:rgba(212,168,67,0.06);}
     .sgr-badge-status-approved{color:#2ec98a;border-color:rgba(46,201,138,0.35);background:rgba(46,201,138,0.07);}
     .sgr-badge-status-rejected{color:#ef4444;border-color:rgba(239,68,68,0.30);background:rgba(239,68,68,0.06);}
     .sgr-phase-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid rgba(56,189,248,0.30);background:rgba(56,189,248,0.06);color:#38bdf8;white-space:nowrap;}
+    .rex-feed{display:flex;flex-direction:column;gap:10px;}
+    .rex-card{background:#0d1b2e;border:1px solid rgba(212,168,67,0.12);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;transition:border-color 0.18s;}
+    .rex-card:hover{border-color:rgba(212,168,67,0.28);}
+    .rex-type-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;padding:2px 7px;border-radius:10px;border:1px solid;font-weight:500;white-space:nowrap;}
+    .rex-title{font-size:0.90rem;font-weight:700;color:rgba(205,216,232,0.92);line-height:1.35;margin:2px 0;}
+    .rex-meta{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:rgba(96,120,152,0.65);}
+    .rex-desc{font-size:0.79rem;color:rgba(138,160,184,0.8);line-height:1.55;}
+    .rex-countries{font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:#38bdf8;}
+    .rex-contact-btn{align-self:flex-start;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.10em;text-transform:uppercase;padding:5px 12px;border-radius:5px;border:1px solid rgba(212,168,67,0.28);background:rgba(212,168,67,0.07);color:#d4a843;cursor:pointer;transition:all 0.12s;text-decoration:none;display:inline-block;}
+    .rex-contact-btn:hover{background:rgba(212,168,67,0.15);}
+    .rex-empty{text-align:center;padding:48px 24px;color:rgba(96,120,152,0.65);font-size:0.83rem;line-height:1.9;}
+    .rex-action-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+    .rex-count{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:rgba(96,120,152,0.65);margin-left:auto;}
+    .rex-post-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+    .rex-back-btn{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;background:transparent;border:none;color:rgba(96,120,152,0.65);cursor:pointer;padding:0;transition:color 0.12s;}
+    .rex-back-btn:hover{color:rgba(205,216,232,0.92);}
+    .rex-my-card{background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.2);border-radius:8px;padding:10px 14px;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:rgba(212,168,67,0.8);margin-bottom:14px;}
   `;
   document.head.appendChild(s);
 }
@@ -133,7 +183,7 @@ const _SGR_TEMPLATES = [
     id: 'platform-desc',
     title: 'ATLAS Platform Description',
     desc: 'For any grant application: general platform introduction',
-    text: 'This study will utilize the ATLAS (Adherence Tracking and Longitudinal Assessment System) platform (atlas.adherence.cc), developed by Philip Morisky, MBA, Chief Optimus, Adherence Cartography. ATLAS is built on the scientific foundation of the Morisky Medication Adherence Scale (MMAS), originally developed by Dr. Donald E. Morisky, ScD, MS, MPH, Professor Emeritus, UCLA Fielding School of Public Health. ATLAS provides IRB-grade data management, validated adherence instruments (MMAS-8, MAP, PEACS), real-time analytics, and export capabilities compliant with HIPAA and GDPR requirements. The platform is used by researchers in 150+ countries and serves as infrastructure for the ATLAS International Research Consortium (AIRC).'
+    text: 'This study will utilize the ATLAS (Adherence Tracking and Longitudinal Assessment System) platform (atlas.adherence.cc), developed by Philip Morisky, MBA, Chief Optimus, Adherence Cartography. ATLAS is built on the scientific foundation of the Morisky Medication Adherence Scale (MMAS), originally developed by Dr. Donald E. Morisky, ScD, MS, MPH, Professor Emeritus, UCLA Fielding School of Public Health. ATLAS provides IRB-grade data management, validated adherence instruments (MMAS-8, MAP, PEACS), real-time analytics, and export capabilities compliant with HIPAA and GDPR requirements. The platform is used by researchers in 150+ countries and serves as infrastructure for TESSERA GRC (Global Research Consortium).'
   },
   {
     id: 'data-mgmt',
@@ -157,13 +207,13 @@ const _SGR_TEMPLATES = [
     id: 'budget-atlas',
     title: 'Budget Justification: ATLAS',
     desc: 'For NIH budget narrative sections covering platform costs',
-    text: 'ATLAS Platform Access (Year 1-3): $[AMOUNT]/year. The ATLAS platform provides validated adherence assessment instruments (MMAS-8, MAP, PEACS), secure cloud-based data collection and storage, real-time analytics, IRB-compliant audit logging, CONSORT participant flow tracking, and publication-ready data export. Platform access includes instrument licensing fees for MMAS-8 and MAP, unlimited participant assessments, researcher workspace provisioning, and technical support. ATLAS is used by investigators in 150+ countries and is the recommended infrastructure platform for multi-site adherence studies by the ATLAS International Research Consortium.'
+    text: 'ATLAS Platform Access (Year 1-3): $[AMOUNT]/year. The ATLAS platform provides validated adherence assessment instruments (MMAS-8, MAP, PEACS), secure cloud-based data collection and storage, real-time analytics, IRB-compliant audit logging, CONSORT participant flow tracking, and publication-ready data export. Platform access includes instrument licensing fees for MMAS-8 and MAP, unlimited participant assessments, researcher workspace provisioning, and technical support. ATLAS is used by investigators in 150+ countries and is the recommended infrastructure platform for multi-site adherence studies by TESSERA GRC (Global Research Consortium).'
   },
   {
-    id: 'airc-statement',
-    title: 'AIRC Consortium Membership Statement',
+    id: 'tessera-statement',
+    title: 'TESSERA GRC Consortium Membership Statement',
     desc: 'For collaboration and team science sections demonstrating global network',
-    text: 'The investigators are members of the ATLAS International Research Consortium (AIRC), a global network of adherence researchers coordinated by Philip Morisky, MBA, Chief Optimus, Adherence Cartography. AIRC membership provides access to the global ATLAS normative dataset, co-authorship pathways on consortium publications, and cross-site data harmonization infrastructure. The consortium currently includes member institutions across [X] countries and [Y] active studies.'
+    text: 'The investigators are members of TESSERA GRC (Global Research Consortium), a global network of adherence researchers coordinated by Philip Morisky, MBA, Chief Optimus, Adherence Cartography. TESSERA GRC membership provides access to the global ATLAS normative dataset, co-authorship pathways on consortium publications, and cross-site data harmonization infrastructure. The consortium currently includes member institutions across [X] countries and [Y] active studies.'
   }
 ];
 
@@ -195,7 +245,7 @@ const _SGR_FUNDING = [
     mechanism: 'D43',
     region: 'global',
     deadline: 'Nov 26 (annual)',
-    desc: 'International Training Grant supporting capacity building for LMIC researchers. Strong alignment with AIRC cross-site training goals and ATLAS platform deployment.',
+    desc: 'International Training Grant supporting capacity building for LMIC researchers. Strong alignment with TESSERA GRC cross-site training goals and ATLAS platform deployment.',
     url: 'https://www.fic.nih.gov/Grants/Pages/InternationalTraining.aspx',
     bestFit: true
   },
@@ -235,7 +285,7 @@ const _SGR_FUNDING = [
     mechanism: 'Science Grant',
     region: 'global',
     deadline: 'Rolling (Expression of Interest)',
-    desc: 'Global funding for science that improves health. Supports adherence science in LMICs, implementation research, and cross-country validation studies via AIRC infrastructure.',
+    desc: 'Global funding for science that improves health. Supports adherence science in LMICs, implementation research, and cross-country validation studies via TESSERA GRC infrastructure.',
     url: 'https://wellcome.org/grant-funding',
     bestFit: true
   },
@@ -350,9 +400,9 @@ const _SGR_TIERS = [
     benefits: [
       'Free ATLAS platform access for active study',
       'Letter of Support from Philip Morisky, MBA',
-      'Co-authorship pathway on AIRC normative database paper',
+      'Co-authorship pathway on TESSERA GRC normative database paper',
       'Full grant template library access',
-      'AIRC consortium directory listing',
+      'TESSERA GRC consortium directory listing',
       'Cross-site data harmonization support',
       'Priority instrument licensing (MAP, MMAS-8, PEACS)'
     ]
@@ -364,9 +414,9 @@ const _SGR_TIERS = [
     benefits: [
       'Subsidized ATLAS platform access',
       'Full grant template library access',
-      'AIRC consortium network listing',
-      'Invitation to AIRC annual convening',
-      'Access to AIRC normative dataset (read-only)',
+      'TESSERA GRC consortium network listing',
+      'Invitation to TESSERA GRC annual convening',
+      'Access to TESSERA GRC normative dataset (read-only)',
       'Newsletter and early access to consortium publications'
     ]
   },
@@ -578,30 +628,30 @@ function _sgrRenderSupport(container) {
         const pendingBox = _sgrEl('div', { style:'background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.22);border-radius:10px;padding:20px 22px;max-width:580px;' });
         pendingBox.appendChild(_sgrEl('div', { style:'font-family:"IBM Plex Mono",monospace;font-size:0.80rem;font-weight:600;color:#d4a843;margin-bottom:8px;' }, 'Membership Application Pending'));
         pendingBox.appendChild(_sgrEl('div', { style:'font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.7;' },
-          'Your AIRC membership application is currently under review. Letter of Support requests become available once your membership is approved. ' +
+          'Your TESSERA GRC membership application is currently under review. Letter of Support requests become available once your membership is approved. ' +
           'Applications are typically reviewed within 5 to 7 business days.'
         ));
         container.appendChild(pendingBox);
       } else {
         const gateBox = _sgrEl('div', { style:'background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.18);border-radius:10px;padding:24px 26px;max-width:600px;' });
-        gateBox.appendChild(_sgrEl('div', { style:'font-family:"IBM Plex Mono",monospace;font-size:0.80rem;font-weight:600;color:#d4a843;margin-bottom:10px;' }, 'AIRC Membership Required'));
+        gateBox.appendChild(_sgrEl('div', { style:'font-family:"IBM Plex Mono",monospace;font-size:0.80rem;font-weight:600;color:#d4a843;margin-bottom:10px;' }, 'TESSERA GRC Membership Required'));
         gateBox.appendChild(_sgrEl('div', { style:'font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.75;margin-bottom:18px;' },
-          'Letters of support are issued to active AIRC members. Join the consortium to request a letter for your IRB, grant application, or ethics board.'
+          'Letters of support are issued to active TESSERA GRC members. Join the consortium to request a letter for your IRB, grant application, or ethics board.'
         ));
         const btnRow = _sgrEl('div', { style:'display:flex;gap:10px;flex-wrap:wrap;' });
 
         const stdBtn = _sgrEl('a', {
-          href: 'https://adherence.cc/consortium/',
+          href: 'https://scalacartafoundation.org',
           target: '_blank',
           rel: 'noopener noreferrer',
           style: 'font-family:"IBM Plex Mono",monospace;font-size:0.72rem;letter-spacing:0.11em;text-transform:uppercase;' +
                  'padding:9px 20px;border-radius:7px;border:1px solid rgba(212,168,67,0.40);' +
                  'background:rgba(212,168,67,0.09);color:#d4a843;text-decoration:none;display:inline-block;transition:background 0.14s;'
-        }, 'Apply for AIRC Membership &#8599;');
+        }, 'Apply for TESSERA GRC Membership &#8599;');
         btnRow.appendChild(stdBtn);
 
         const fellowBtn = _sgrEl('a', {
-          href: 'https://adherence.cc/consortium/#fellowship',
+          href: 'https://scalacartafoundation.org#fellowship',
           target: '_blank',
           rel: 'noopener noreferrer',
           style: 'font-family:"IBM Plex Mono",monospace;font-size:0.72rem;letter-spacing:0.11em;text-transform:uppercase;' +
@@ -871,45 +921,49 @@ function _sgrLoadPastRequests(wrap, user) {
     });
 }
 
-// ── Tab: MY AIRC ──────────────────────────────────────────────────────────────
-function _sgrRenderMyAIRC(container) {
+// ── Tab: MY TESSERA ──────────────────────────────────────────────────────────────
+function _sgrRenderMyTESSERA(container) {
   container.innerHTML = '<div style="color:rgba(96,120,152,0.65);font-size:0.80rem;padding:14px 0;"><span class="sgr-spinner"></span>Checking membership status...</div>';
 
-  const user = _sgrCurrentUser();
-  const db   = _sgrDb();
+  const db = _sgrDb();
 
-  if (!user || !user.email) {
-    container.innerHTML = '';
-    const msg = _sgrEl('div', { style:'color:rgba(138,160,184,0.8);font-size:0.84rem;line-height:1.7;padding:10px 0;' },
-      'You must be signed in to view or apply for AIRC membership. Please log in and return to this section.'
-    );
-    container.appendChild(msg);
-    return;
-  }
+  // onAuthStateChanged instead of currentUser to avoid race with Firebase auth restore on page load
+  const _unsubscribe = firebase.auth().onAuthStateChanged(function(user) {
+    _unsubscribe();
 
-  if (!db) {
-    container.innerHTML = '';
-    container.appendChild(_sgrEl('div', { class:'sgr-error-box' }, 'Database connection unavailable.'));
-    return;
-  }
-
-  const uid = user.uid;
-  db.ref('consortium_members/' + uid).once('value')
-    .then(snap => {
+    if (!user || !user.email) {
       container.innerHTML = '';
-      const data = snap.val();
-      if (data && data.status && data.status !== 'pending') {
-        _sgrRenderMemberProfile(container, data, user);
-      } else if (data && data.status === 'pending') {
-        _sgrRenderPendingStatus(container, data);
-      } else {
-        _sgrRenderApplySection(container, user, db);
-      }
-    })
-    .catch(err => {
+      const msg = _sgrEl('div', { style:'color:rgba(138,160,184,0.8);font-size:0.84rem;line-height:1.7;padding:10px 0;' },
+        'You must be signed in to view or apply for TESSERA GRC membership. Please log in and return to this section.'
+      );
+      container.appendChild(msg);
+      return;
+    }
+
+    if (!db) {
       container.innerHTML = '';
-      container.appendChild(_sgrEl('div', { class:'sgr-error-box' }, 'Could not load membership data: ' + (err.message || 'Unknown error')));
-    });
+      container.appendChild(_sgrEl('div', { class:'sgr-error-box' }, 'Database connection unavailable.'));
+      return;
+    }
+
+    const uid = user.uid;
+    db.ref('consortium_members/' + uid).once('value')
+      .then(snap => {
+        container.innerHTML = '';
+        const data = snap.val();
+        if (data && data.status && data.status !== 'pending') {
+          _sgrRenderMemberProfile(container, data, user);
+        } else if (data && data.status === 'pending') {
+          _sgrRenderPendingStatus(container, data);
+        } else {
+          _sgrRenderApplySection(container, user, db);
+        }
+      })
+      .catch(err => {
+        container.innerHTML = '';
+        container.appendChild(_sgrEl('div', { class:'sgr-error-box' }, 'Could not load membership data: ' + (err.message || 'Unknown error')));
+      });
+  });
 }
 
 function _sgrRenderMemberProfile(container, data, user) {
@@ -922,8 +976,10 @@ function _sgrRenderMemberProfile(container, data, user) {
   nameBlock.appendChild(_sgrEl('div', { class:'sgr-tier-name', style:'color:' + tier.color + ';' }, _sgrEscHtml(tier.name)));
   nameBlock.appendChild(_sgrEl('div', { class:'sgr-tier-sub' }, 'Member since ' + _sgrFmtDate(data.joinedTs || Date.now())));
   topRow.appendChild(nameBlock);
-  const activeBadge = _sgrEl('span', { class:'sgr-badge', style:'color:#2ec98a;border-color:rgba(46,201,138,0.35);background:rgba(46,201,138,0.07);' }, 'Active');
-  topRow.appendChild(activeBadge);
+  const badgeCol = _sgrEl('div', { style:'display:flex;flex-direction:column;align-items:flex-end;gap:6px;' });
+  badgeCol.innerHTML = _sgrTesseraLogo(44, 40, 'opacity:0.82;');
+  badgeCol.appendChild(_sgrEl('span', { class:'sgr-badge', style:'color:#2ec98a;border-color:rgba(46,201,138,0.35);background:rgba(46,201,138,0.07);' }, 'Active'));
+  topRow.appendChild(badgeCol);
   card.appendChild(topRow);
 
   const statsRow = _sgrEl('div', { style:'margin-bottom:14px;' });
@@ -958,7 +1014,7 @@ function _sgrRenderPendingStatus(container, data) {
   const pendingBox = _sgrEl('div', { style:'background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.22);border-radius:10px;padding:20px 22px;max-width:580px;' });
   pendingBox.appendChild(_sgrEl('div', { style:'font-family:"IBM Plex Mono",monospace;font-size:0.80rem;font-weight:600;color:#d4a843;margin-bottom:8px;' }, 'Application Pending Review'));
   pendingBox.appendChild(_sgrEl('div', { style:'font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.7;' },
-    'Your AIRC membership application for ' +
+    'Your TESSERA GRC membership application for ' +
     _sgrEscHtml((data.tier ? _SGR_TIERS.find(t => t.id === data.tier)?.name : 'Tier 3') || 'Tier 3') +
     ' is under review. You will receive an email confirmation once approved. Applications are typically reviewed within 5 to 7 business days.'
   ));
@@ -966,12 +1022,27 @@ function _sgrRenderPendingStatus(container, data) {
 }
 
 function _sgrRenderApplySection(container, user, db) {
-  const header = _sgrEl('div', { style:'font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.7;max-width:660px;margin-bottom:20px;' },
-    'You are not yet a member of the ATLAS International Research Consortium (AIRC). ' +
-    'Review the tier benefits below and submit an application. Membership provides access to the global ATLAS normative dataset, ' +
-    'letter of support eligibility, co-authorship pathways, and the global researcher network.'
-  );
-  container.appendChild(header);
+  const introBox = _sgrEl('div', { style:'background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.18);border-radius:10px;padding:16px 18px;max-width:700px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start;' });
+  introBox.innerHTML =
+    _sgrTesseraLogo(40, 37, 'margin-top:2px;opacity:0.85;') +
+    '<div>' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.54rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.65);margin-bottom:6px;">TESSERA GRC &middot; Scala Carta Foundation</div>' +
+      '<div style="font-size:0.84rem;color:rgba(205,216,232,0.88);line-height:1.65;margin-bottom:8px;">' +
+        '<strong>TESSERA GRC</strong> (Global Research Consortium) is the international adherence science network of the Scala Carta Foundation — ' +
+        'uniting universities, teaching hospitals, and research institutions across six continents under shared scientific instruments, ' +
+        'governance standards, and a common framework for adherence cartography.' +
+      '</div>' +
+      '<div style="font-size:0.80rem;color:rgba(138,160,184,0.75);line-height:1.62;margin-bottom:10px;">' +
+        'Membership provides access to the global ATLAS normative dataset, co-authorship pathways on consortium publications, ' +
+        'letter of support eligibility, TESSERA Study ID registration, and the global researcher network.' +
+      '</div>' +
+      '<a href="https://scalacartafoundation.org" target="_blank" rel="noopener" ' +
+        'style="display:inline-block;font-family:\'IBM Plex Mono\',monospace;font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;' +
+        'color:rgba(212,168,67,0.8);text-decoration:none;border-bottom:1px solid rgba(212,168,67,0.3);padding-bottom:1px;">' +
+        'Visit Consortium Page &#8599;' +
+      '</a>' +
+    '</div>';
+  container.appendChild(introBox);
 
   container.appendChild(_sgrEl('div', { class:'sgr-section-title' }, 'Membership Tiers'));
 
@@ -993,20 +1064,20 @@ function _sgrRenderApplySection(container, user, db) {
 
   // Name
   const nameRow = _sgrEl('div', { class:'sgr-form-row' });
-  nameRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-airc-name' }, 'Full Name'));
-  nameRow.appendChild(_sgrEl('input', { class:'sgr-input', id:'sgr-airc-name', type:'text', placeholder:'As it appears on publications' }));
+  nameRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-tessera-name' }, 'Full Name'));
+  nameRow.appendChild(_sgrEl('input', { class:'sgr-input', id:'sgr-tessera-name', type:'text', placeholder:'As it appears on publications' }));
   formWrap.appendChild(nameRow);
 
   // Institution
   const instRow = _sgrEl('div', { class:'sgr-form-row' });
-  instRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-airc-inst' }, 'Institution'));
-  instRow.appendChild(_sgrEl('input', { class:'sgr-input', id:'sgr-airc-inst', type:'text', placeholder:'University, hospital, or research center' }));
+  instRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-tessera-inst' }, 'Institution'));
+  instRow.appendChild(_sgrEl('input', { class:'sgr-input', id:'sgr-tessera-inst', type:'text', placeholder:'University, hospital, or research center' }));
   formWrap.appendChild(instRow);
 
   // Country
   const countryRow = _sgrEl('div', { class:'sgr-form-row' });
-  countryRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-airc-country' }, 'Country'));
-  const csel = _sgrEl('select', { class:'sgr-select', id:'sgr-airc-country' });
+  countryRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-tessera-country' }, 'Country'));
+  const csel = _sgrEl('select', { class:'sgr-select', id:'sgr-tessera-country' });
   csel.appendChild(_sgrEl('option', { value:'' }, '-- Select Country --'));
   _SGR_COUNTRIES.forEach(c => csel.appendChild(_sgrEl('option', { value:c }, c)));
   countryRow.appendChild(csel);
@@ -1014,35 +1085,35 @@ function _sgrRenderApplySection(container, user, db) {
 
   // Tier selection
   const tierRow = _sgrEl('div', { class:'sgr-form-row' });
-  tierRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-airc-tier' }, 'Membership Tier'));
-  const tsel = _sgrEl('select', { class:'sgr-select', id:'sgr-airc-tier' });
+  tierRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-tessera-tier' }, 'Membership Tier'));
+  const tsel = _sgrEl('select', { class:'sgr-select', id:'sgr-tessera-tier' });
   _SGR_TIERS.forEach(t => tsel.appendChild(_sgrEl('option', { value: t.id }, t.name)));
   tierRow.appendChild(tsel);
   formWrap.appendChild(tierRow);
 
   // Research focus
   const focusRow = _sgrEl('div', { class:'sgr-form-row' });
-  focusRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-airc-focus' }, 'Research Focus (brief)'));
-  const focusTa = _sgrEl('textarea', { class:'sgr-textarea', id:'sgr-airc-focus', maxlength:'300', placeholder:'Describe your primary research area and how it relates to medication adherence...' });
+  focusRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'sgr-tessera-focus' }, 'Research Focus (brief)'));
+  const focusTa = _sgrEl('textarea', { class:'sgr-textarea', id:'sgr-tessera-focus', maxlength:'300', placeholder:'Describe your primary research area and how it relates to medication adherence...' });
   focusRow.appendChild(focusTa);
   formWrap.appendChild(focusRow);
 
-  const applyMsg = _sgrEl('div', { id:'sgr-airc-msg', style:'display:none;' });
+  const applyMsg = _sgrEl('div', { id:'sgr-tessera-msg', style:'display:none;' });
 
-  const applyBtn = _sgrEl('button', { class:'sgr-apply-btn', id:'sgr-airc-apply-btn' }, 'Apply for AIRC Membership');
-  applyBtn.addEventListener('click', () => _sgrSubmitAIRCApplication(db, user, applyMsg, applyBtn));
+  const applyBtn = _sgrEl('button', { class:'sgr-apply-btn', id:'sgr-tessera-apply-btn' }, 'Apply for TESSERA GRC Membership');
+  applyBtn.addEventListener('click', () => _sgrSubmitTESSERAApplication(db, user, applyMsg, applyBtn));
   formWrap.appendChild(applyBtn);
   formWrap.appendChild(applyMsg);
 
   container.appendChild(formWrap);
 }
 
-function _sgrSubmitAIRCApplication(db, user, msgEl, btn) {
-  const name    = document.getElementById('sgr-airc-name')?.value.trim();
-  const inst    = document.getElementById('sgr-airc-inst')?.value.trim();
-  const country = document.getElementById('sgr-airc-country')?.value;
-  const tier    = document.getElementById('sgr-airc-tier')?.value;
-  const focus   = document.getElementById('sgr-airc-focus')?.value.trim();
+function _sgrSubmitTESSERAApplication(db, user, msgEl, btn) {
+  const name    = document.getElementById('sgr-tessera-name')?.value.trim();
+  const inst    = document.getElementById('sgr-tessera-inst')?.value.trim();
+  const country = document.getElementById('sgr-tessera-country')?.value;
+  const tier    = document.getElementById('sgr-tessera-tier')?.value;
+  const focus   = document.getElementById('sgr-tessera-focus')?.value.trim();
 
   msgEl.style.display = 'none';
 
@@ -1056,6 +1127,9 @@ function _sgrSubmitAIRCApplication(db, user, msgEl, btn) {
   btn.disabled = true;
   btn.innerHTML = '<span class="sgr-spinner"></span>Submitting...';
 
+  // Check LMIC eligibility at application time so SA approval flow can surface it
+  const _isLMICApplicant = typeof isLMICCountry === 'function' ? isLMICCountry(country) : false;
+
   const payload = {
     name,
     institution: inst,
@@ -1068,21 +1142,27 @@ function _sgrSubmitAIRCApplication(db, user, msgEl, btn) {
     appliedTs: Date.now(),
     joinedTs: null,
     contributions: 0,
-    studies: 0
+    studies: 0,
+    lmic_eligible: _isLMICApplicant,  // pre-flagged for SA review
   };
 
   db.ref('consortium_members/' + user.uid).set(payload)
     .then(() => {
-      btn.innerHTML = 'Apply for AIRC Membership';
+      btn.innerHTML = 'Apply for TESSERA GRC Membership';
       btn.disabled = true;
       msgEl.className = 'sgr-success-box';
       msgEl.style.display = 'block';
+      const _lmicNote = _isLMICApplicant
+        ? ' Because your institution is in an LMIC country, your application is flagged for expedited review and '
+          + '<strong>LMIC researcher access (all fees waived)</strong> will be activated upon approval.'
+        : '';
       msgEl.innerHTML =
-        '<strong>Application submitted.</strong> Your AIRC membership application has been received. ' +
-        'You will be notified by email once reviewed (typically 5 to 7 business days).';
+        '<strong>Application submitted.</strong> Your TESSERA GRC membership application has been received. '
+        + 'You will be notified by email once reviewed (typically 5 to 7 business days).'
+        + _lmicNote;
     })
     .catch(err => {
-      btn.innerHTML = 'Apply for AIRC Membership';
+      btn.innerHTML = 'Apply for TESSERA GRC Membership';
       btn.disabled = false;
       msgEl.className = 'sgr-error-box';
       msgEl.style.display = 'block';
@@ -1247,20 +1327,26 @@ window.saGrantResourcesInit = function(container) {
   container.style.cssText = 'box-sizing:border-box;';
 
   // Page header
-  const pageHeader = _sgrEl('div', { style:'margin-bottom:20px;' });
+  const pageHeader = _sgrEl('div', { style:'margin-bottom:20px;display:flex;align-items:flex-start;gap:14px;' });
   pageHeader.innerHTML =
-    '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.60rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.55);margin-bottom:4px;">ATLAS · Grant Resource Center</div>' +
-    '<div style="font-size:1.08rem;font-weight:600;color:rgba(205,216,232,0.92);margin-bottom:4px;">Grant Resources &amp; AIRC Tools</div>' +
-    '<div style="font-size:0.80rem;color:rgba(96,120,152,0.65);max-width:600px;line-height:1.6;">Templates, funding opportunities, letter of support requests, and AIRC membership for ATLAS-affiliated researchers worldwide.</div>';
+    _sgrTesseraLogo(38, 35, 'margin-top:2px;opacity:0.88;') +
+    '<div>' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.60rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.55);margin-bottom:4px;">ATLAS · Grant Resource Center</div>' +
+      '<div style="font-size:1.08rem;font-weight:600;color:rgba(205,216,232,0.92);margin-bottom:4px;">Grant Resources &amp; TESSERA GRC Tools</div>' +
+      '<div style="font-size:0.80rem;color:rgba(96,120,152,0.65);max-width:600px;line-height:1.6;">Templates, funding opportunities, letter of support requests, and TESSERA GRC membership for ATLAS-affiliated researchers worldwide.</div>' +
+    '</div>';
   container.appendChild(pageHeader);
 
   // Tab bar
   const tabs = [
-    { key:'templates', label:'Templates' },
-    { key:'funding',   label:'Funding Board' },
-    { key:'support',   label:'Request Support' },
-    { key:'airc',      label:'My AIRC' },
-    { key:'registry',  label:'Registry' }
+    { key:'exchange',     label:'◎ Exchange'    },
+    { key:'directory',    label:'◉ Directory'   },
+    { key:'templates',    label:'Templates'     },
+    { key:'funding',      label:'Funding Board' },
+    { key:'support',      label:'Request Support' },
+    { key:'tessera',      label:'My TESSERA'    },
+    { key:'registry',     label:'Registry'      },
+    { key:'lmic-network', label:'🌍 LMIC Network' }
   ];
 
   const tabBar = _sgrEl('div', { class:'sgr-tabs' });
@@ -1288,12 +1374,15 @@ window.saGrantResourcesInit = function(container) {
 function _sgrRenderTab(contentWrap, key) {
   contentWrap.innerHTML = '';
   switch (key) {
-    case 'templates': _sgrRenderTemplates(contentWrap); break;
-    case 'funding':   _sgrRenderFunding(contentWrap);   break;
-    case 'support':   _sgrRenderSupport(contentWrap);   break;
-    case 'airc':      _sgrRenderMyAIRC(contentWrap);    break;
-    case 'registry':  _sgrRenderRegistry(contentWrap);  break;
-    default:          _sgrRenderTemplates(contentWrap);
+    case 'exchange':     _sgrRenderExchange(contentWrap);     break;
+    case 'directory':    _sgrRenderDirectory(contentWrap);    break;
+    case 'templates':    _sgrRenderTemplates(contentWrap);    break;
+    case 'funding':      _sgrRenderFunding(contentWrap);      break;
+    case 'support':      _sgrRenderSupport(contentWrap);      break;
+    case 'tessera':      _sgrRenderMyTESSERA(contentWrap);    break;
+    case 'registry':     _sgrRenderRegistry(contentWrap);     break;
+    case 'lmic-network': _sgrRenderLMICNetwork(contentWrap);  break;
+    default:             _sgrRenderTemplates(contentWrap);
   }
 }
 
@@ -1329,30 +1418,33 @@ function _sgrRenderRegistry(container) {
         const pendingBox = _sgrEl('div', { style:'background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.22);border-radius:10px;padding:20px 22px;max-width:580px;' });
         pendingBox.appendChild(_sgrEl('div', { style:'font-family:"IBM Plex Mono",monospace;font-size:0.80rem;font-weight:600;color:#d4a843;margin-bottom:8px;' }, 'Membership Application Pending'));
         pendingBox.appendChild(_sgrEl('div', { style:'font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.7;' },
-          'Your AIRC membership application is under review. Study registration becomes available once membership is approved. ' +
+          'Your TESSERA GRC membership application is under review. Study registration becomes available once membership is approved. ' +
           'Applications are typically reviewed within 5 to 7 business days.'
         ));
         container.appendChild(pendingBox);
       } else {
         const gateBox = _sgrEl('div', { style:'background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.18);border-radius:10px;padding:24px 26px;max-width:600px;' });
-        gateBox.appendChild(_sgrEl('div', { style:'font-family:"IBM Plex Mono",monospace;font-size:0.80rem;font-weight:600;color:#d4a843;margin-bottom:10px;' }, 'AIRC Membership Required'));
+        const gateTop = _sgrEl('div', { style:'display:flex;align-items:center;gap:12px;margin-bottom:12px;' });
+        gateTop.innerHTML = _sgrTesseraLogo(40, 37, 'opacity:0.75;');
+        gateTop.appendChild(_sgrEl('div', { style:'font-family:"IBM Plex Mono",monospace;font-size:0.80rem;font-weight:600;color:#d4a843;' }, 'TESSERA GRC Membership Required'));
+        gateBox.appendChild(gateTop);
         gateBox.appendChild(_sgrEl('div', { style:'font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.75;margin-bottom:18px;' },
-          'Study registration and AIRC Study ID assignment is available to active AIRC members. Join the consortium to register your study protocol.'
+          'Study registration and TESSERA Study ID assignment is available to active TESSERA GRC members. Join the consortium to register your study protocol.'
         ));
         const btnRow = _sgrEl('div', { style:'display:flex;gap:10px;flex-wrap:wrap;' });
 
         const stdBtn = _sgrEl('a', {
-          href: 'https://adherence.cc/consortium/',
+          href: 'https://scalacartafoundation.org',
           target: '_blank',
           rel: 'noopener noreferrer',
           style: 'font-family:"IBM Plex Mono",monospace;font-size:0.72rem;letter-spacing:0.11em;text-transform:uppercase;' +
                  'padding:9px 20px;border-radius:7px;border:1px solid rgba(212,168,67,0.40);' +
                  'background:rgba(212,168,67,0.09);color:#d4a843;text-decoration:none;display:inline-block;transition:background 0.14s;'
-        }, 'Apply for AIRC Membership &#8599;');
+        }, 'Apply for TESSERA GRC Membership &#8599;');
         btnRow.appendChild(stdBtn);
 
         const fellowBtn = _sgrEl('a', {
-          href: 'https://adherence.cc/consortium/#fellowship',
+          href: 'https://scalacartafoundation.org#fellowship',
           target: '_blank',
           rel: 'noopener noreferrer',
           style: 'font-family:"IBM Plex Mono",monospace;font-size:0.72rem;letter-spacing:0.11em;text-transform:uppercase;' +
@@ -1377,7 +1469,7 @@ function _sgrRenderRegistryFull(container, user, db) {
   container.appendChild(secAHdr);
 
   const intro = _sgrEl('div', { style:'font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.7;max-width:680px;margin-bottom:18px;' },
-    'Register your study protocol with the ATLAS International Research Consortium. Upon review, an AIRC Study ID will be issued within 5 business days.'
+    'Register your study protocol with TESSERA GRC (Global Research Consortium). Upon review, a TESSERA Study ID will be issued within 5 business days.'
   );
   container.appendChild(intro);
 
@@ -1531,16 +1623,16 @@ function _sgrSubmitStudyRegistration(formWrap, msgEl, submitBtn, user, db) {
     ethics_ref:  ethics || '',
     submitted_at: Date.now(),
     status:      'pending',
-    airc_study_id: null
+    tessera_study_id: null
   };
 
-  db.ref('airc_study_registry').push(payload)
+  db.ref('tessera_study_registry').push(payload)
     .then(function() {
       submitBtn.innerHTML = 'Submit Study Protocol';
       submitBtn.disabled = false;
       msgEl.className = 'sgr-success-box';
       msgEl.style.display = 'block';
-      msgEl.textContent = 'Study submitted. Your AIRC Study ID will be assigned within 5 business days.';
+      msgEl.textContent = 'Study submitted. Your TESSERA Study ID will be assigned within 5 business days.';
 
       // Reset form
       ['sgr-reg-title','sgr-reg-disease','sgr-reg-inst','sgr-reg-n','sgr-reg-fu','sgr-reg-ethics'].forEach(function(id) {
@@ -1576,7 +1668,7 @@ function _sgrLoadMyStudies(wrap, user, db) {
 
   wrap.innerHTML = '<div style="color:rgba(96,120,152,0.65);font-size:0.80rem;padding:8px 0;"><span class="sgr-spinner"></span>Loading...</div>';
 
-  db.ref('airc_study_registry').orderByChild('uid').equalTo(user.uid).once('value')
+  db.ref('tessera_study_registry').orderByChild('uid').equalTo(user.uid).once('value')
     .then(function(snap) {
       const studies = [];
       snap.forEach(function(child) {
@@ -1635,11 +1727,11 @@ function _sgrLoadMyStudies(wrap, user, db) {
           card.appendChild(chips);
         }
 
-        if (s.status === 'approved' && s.airc_study_id) {
-          const idBox = _sgrEl('div', { class:'sgr-airc-id-box' });
-          idBox.appendChild(_sgrEl('div', { class:'sgr-airc-id-val' }, _sgrEscHtml(s.airc_study_id)));
+        if (s.status === 'approved' && s.tessera_study_id) {
+          const idBox = _sgrEl('div', { class:'sgr-tessera-id-box' });
+          idBox.appendChild(_sgrEl('div', { class:'sgr-tessera-id-val' }, _sgrEscHtml(s.tessera_study_id)));
           const copyBtn = _sgrEl('button', { class:'sgr-copy-btn', style:'margin:0;padding:4px 10px;' }, '&#8856; Copy ID');
-          copyBtn.addEventListener('click', function() { _sgrCopyText(s.airc_study_id, copyBtn); });
+          copyBtn.addEventListener('click', function() { _sgrCopyText(s.tessera_study_id, copyBtn); });
           idBox.appendChild(copyBtn);
           card.appendChild(idBox);
         }
@@ -1652,9 +1744,1184 @@ function _sgrLoadMyStudies(wrap, user, db) {
     });
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// TAB: LMIC RESEARCH NETWORK
+// Pre-built LMIC study protocols, LMIC funding filter, Fogarty letter generator
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Pre-built LMIC study protocols ───────────────────────────────────────────
+const _SGR_LMIC_PROTOCOLS = [
+  {
+    id: 'lmic-htn',
+    icon: '❤',
+    title: 'Hypertension Adherence Validation',
+    region: 'Sub-Saharan Africa',
+    disease: 'Hypertension',
+    instruments: ['MAP', 'MMAS-8'],
+    n: 300,
+    followUp: 'Cross-sectional (single visit)',
+    color: '#ef4444',
+    colorFaint: 'rgba(239,68,68,0.07)',
+    colorBorder: 'rgba(239,68,68,0.22)',
+    summary: 'Normative validation of MAP against MMAS-8 in a hypertensive population at a primary care facility. Target: 300 participants, single cross-sectional assessment, convergent validity analysis.',
+    fullTitle: 'Normative Validation of the Multidimensional Adherence Parameters (MAP) Instrument in Hypertensive Patients: A Cross-Sectional Study',
+    fogartyMechanism: 'R21 TW',
+    fogartyFit: 'Instrument validation in LMIC primary care settings — strong fit for R21 TW pilot data.',
+  },
+  {
+    id: 'lmic-hiv',
+    icon: '⊕',
+    title: 'HIV Antiretroviral Adherence Trajectory',
+    region: 'East Africa',
+    disease: 'HIV / ART Adherence',
+    instruments: ['MAP', 'PEACS'],
+    n: 150,
+    followUp: '12 months longitudinal (MAP at baseline; PEACS monthly/weekly/quarterly)',
+    color: '#f97316',
+    colorFaint: 'rgba(249,115,22,0.07)',
+    colorBorder: 'rgba(249,115,22,0.22)',
+    summary: 'Longitudinal phenotype trajectory study in HIV-positive patients on ART. MAP at baseline; PEACS BASE, MVMT, and STRATA administered at respective intervals for 12 months. Primary outcome: phenotype stability classification.',
+    fullTitle: 'Phenotype Trajectory Classification of Antiretroviral Adherence Using PEACS: A 12-Month Longitudinal Study in East Africa',
+    fogartyMechanism: 'D43',
+    fogartyFit: 'Capacity building grant with in-country training component — ideal for D43 with LMIC co-investigator mentorship.',
+  },
+  {
+    id: 'lmic-diabetes',
+    icon: '◈',
+    title: 'Diabetes Medication Adherence in South Asia',
+    region: 'India / Bangladesh / Pakistan',
+    disease: 'Type 2 Diabetes',
+    instruments: ['MAP'],
+    n: 500,
+    followUp: 'Cross-sectional with 3-month follow-up subsample',
+    color: '#8b6ff5',
+    colorFaint: 'rgba(139,111,245,0.07)',
+    colorBorder: 'rgba(139,111,245,0.22)',
+    summary: 'Cross-sectional MAP normative data collection in T2DM patients across 3 South Asian countries. Establishes regional PE score norms, domain profiles, and sociodemographic correlates of adherence architecture.',
+    fullTitle: 'Regional Normative Data for the MAP Adherence Instrument in South Asian Type 2 Diabetes Patients: A Multicenter Cross-Sectional Study',
+    fogartyMechanism: 'R21 TW',
+    fogartyFit: 'Multi-country pilot with cross-cultural adaptation focus — fits R21 TW scope and budget.',
+  },
+  {
+    id: 'lmic-tb',
+    icon: '≋',
+    title: 'TB Treatment Adherence',
+    region: 'Southeast Asia',
+    disease: 'Tuberculosis',
+    instruments: ['MAP', 'MMAS-8'],
+    n: 250,
+    followUp: '6 months (aligned to standard TB treatment course)',
+    color: '#38bdf8',
+    colorFaint: 'rgba(56,189,248,0.07)',
+    colorBorder: 'rgba(56,189,248,0.22)',
+    summary: 'MAP and MMAS-8 dual-instrument validation and comparative psychometric study in TB patients during treatment. Convergent and discriminant validity analysis; domain profile comparison across treatment phases.',
+    fullTitle: 'Comparative Psychometric Validation of MAP vs MMAS-8 in Tuberculosis Treatment Adherence: A 6-Month Prospective Study in Southeast Asia',
+    fogartyMechanism: 'R21 TW',
+    fogartyFit: 'Infectious disease adherence with global burden relevance — strong fit for Fogarty and EDCTP funding.',
+  },
+  {
+    id: 'lmic-ncd-norm',
+    icon: '∿',
+    title: 'NCD Adherence Normative Dataset',
+    region: 'Any LMIC Country',
+    disease: 'Mixed NCD (hypertension, diabetes, asthma)',
+    instruments: ['MAP'],
+    n: 200,
+    followUp: 'Cross-sectional (single visit)',
+    color: '#2ec98a',
+    colorFaint: 'rgba(46,201,138,0.07)',
+    colorBorder: 'rgba(46,201,138,0.22)',
+    summary: 'General-purpose normative MAP data collection for the TESSERA GRC global normative database. 200+ participants, any NCD population, any LMIC country. Contributes to global PE norms and co-authorship eligibility on the TESSERA GRC normative database paper.',
+    fullTitle: 'Contribution to the TESSERA GRC Global MAP Normative Database: [Country] NCD Population Cross-Sectional Survey',
+    fogartyMechanism: 'D43',
+    fogartyFit: 'Consortium contribution study — best funded as part of a D43 training grant deliverable.',
+  },
+];
+
+// ── Fogarty letter pre-generator ──────────────────────────────────────────────
+function _sgrRenderFogartyGenerator(container, user, memberData) {
+  const isLMIC   = typeof isLMICTier === 'function' ? isLMICTier() : false;
+  const isMember = memberData && memberData.status === 'active';
+
+  const hdr = _sgrEl('div', { class:'sgr-reg-section-hdr', style:'margin-top:24px;' }, 'Fogarty Grant Letter Pre-Generator');
+  container.appendChild(hdr);
+
+  container.appendChild(_sgrEl('div', { style:'font-size:0.80rem;color:rgba(138,160,184,0.8);line-height:1.6;max-width:620px;margin-bottom:16px;' },
+    'Generate a pre-filled Fogarty D43 or R21 TW cover letter / letter of support. '
+    + 'Fill in the fields below and copy the generated text into your application. '
+    + (isMember ? '' : 'TESSERA GRC membership is recommended for the strongest Fogarty fit statement.')
+  ));
+
+  const formWrap = _sgrEl('div', { class:'sgr-form-wrap' });
+
+  // PI Name
+  const piRow = _sgrEl('div', { class:'sgr-form-row' });
+  piRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'fg-pi-name' }, 'PI Name *'));
+  const piInput = _sgrEl('input', { class:'sgr-input', id:'fg-pi-name', type:'text',
+    placeholder:'Dr. Jane Smith' });
+  if (user && user.displayName) piInput.value = user.displayName;
+  piRow.appendChild(piInput);
+  formWrap.appendChild(piRow);
+
+  // Institution
+  const instRow2 = _sgrEl('div', { class:'sgr-form-row' });
+  instRow2.appendChild(_sgrEl('label', { class:'sgr-label', for:'fg-inst' }, 'Institution *'));
+  const instInput = _sgrEl('input', { class:'sgr-input', id:'fg-inst', type:'text',
+    placeholder:'University of [City], [Country]' });
+  if (memberData && memberData.institution) instInput.value = memberData.institution;
+  instRow2.appendChild(instInput);
+  formWrap.appendChild(instRow2);
+
+  // Country
+  const cRow = _sgrEl('div', { class:'sgr-form-row' });
+  cRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'fg-country' }, 'Country'));
+  const csel = _sgrEl('select', { class:'sgr-select', id:'fg-country' });
+  csel.appendChild(_sgrEl('option', { value:'' }, '-- Select Country --'));
+  _SGR_COUNTRIES.forEach(function(c) {
+    const opt = _sgrEl('option', { value:c }, c);
+    if (memberData && memberData.country === c) opt.selected = true;
+    csel.appendChild(opt);
+  });
+  cRow.appendChild(csel);
+  formWrap.appendChild(cRow);
+
+  // Mechanism
+  const mechRow = _sgrEl('div', { class:'sgr-form-row' });
+  mechRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'fg-mech' }, 'Fogarty Mechanism'));
+  const msel = _sgrEl('select', { class:'sgr-select', id:'fg-mech' });
+  ['D43 — International Research Training Grant', 'R21 TW — International Collaborative Research']
+    .forEach(function(m) { msel.appendChild(_sgrEl('option', { value:m }, m)); });
+  mechRow.appendChild(msel);
+  formWrap.appendChild(mechRow);
+
+  // Study Topic
+  const topicRow = _sgrEl('div', { class:'sgr-form-row' });
+  topicRow.appendChild(_sgrEl('label', { class:'sgr-label', for:'fg-topic' }, 'Study Topic / Disease'));
+  topicRow.appendChild(_sgrEl('input', { class:'sgr-input', id:'fg-topic', type:'text',
+    placeholder:'e.g. HIV antiretroviral adherence' }));
+  formWrap.appendChild(topicRow);
+
+  const genBtn = _sgrEl('button', { class:'sgr-submit-btn', id:'fg-gen-btn' }, 'Generate Letter Draft');
+  const outWrap = _sgrEl('div', { id:'fg-output-wrap', style:'display:none;margin-top:18px;' });
+
+  genBtn.addEventListener('click', function() {
+    const pi      = (document.getElementById('fg-pi-name')?.value || '').trim();
+    const inst    = (document.getElementById('fg-inst')?.value    || '').trim();
+    const country = document.getElementById('fg-country')?.value  || '[Country]';
+    const mech    = document.getElementById('fg-mech')?.value     || 'D43';
+    const topic   = (document.getElementById('fg-topic')?.value   || '').trim() || 'medication adherence';
+    const tesseraId = (memberData && memberData.tessera_id) || (isLMIC && typeof workspaceProfile !== 'undefined' && workspaceProfile.features && workspaceProfile.features.lmic_tessera_grc_id) || '[TESSERA-ID]';
+    const mechShort = mech.startsWith('D43') ? 'D43' : 'R21 TW';
+    const mechFull  = mech.startsWith('D43')
+      ? 'D43 International Research Training Grant (NIH Fogarty International Center)'
+      : 'R21 TW International Collaborative Research Grant (NIH Fogarty International Center)';
+
+    if (!pi || !inst) {
+      outWrap.style.display = 'block';
+      outWrap.innerHTML = '<div style="color:#ef4444;font-size:0.80rem;padding:8px 0;">Please enter PI name and institution.</div>';
+      return;
+    }
+
+    const letterText = [
+      '[DATE]',
+      '',
+      'Dear Fogarty International Center Review Panel,',
+      '',
+      'I am writing to document institutional support for the ' + mechFull + ' application submitted by '
+        + pi + ', ' + inst + ', ' + country + '.',
+      '',
+      'The proposed study on ' + topic + ' in ' + country + ' represents a scientifically rigorous '
+        + 'contribution to the global medication adherence evidence base. The research team has been '
+        + 'granted authorization to use the Multidimensional Adherence Parameters (MAP) instrument '
+        + 'and, where applicable, the PEACS (Predictive Emergence Assessment for Clinical Services) '
+        + 'longitudinal framework within the ATLAS platform (atlas.adherence.cc).',
+      '',
+      'TESSERA GRC (Global Research Consortium) actively supports validated, multicenter '
+        + 'research using MAP, MMAS-8, and PEACS. ' + (tesseraId !== '[TESSERA-ID]' ? 'This investigator holds TESSERA GRC membership (ID: ' + tesseraId + '), confirming '
+        + 'methodological oversight, psychometric integrity review, and access to the global TESSERA GRC '
+        + 'normative dataset. ' : '')
+        + 'The ' + mechShort + ' mechanism is an excellent fit: the proposed work contributes directly '
+        + 'to the TESSERA GRC\'s mission of building sustainable adherence research capacity in low- and '
+        + 'middle-income countries.',
+      '',
+      'The proposed study will: (1) generate normative MAP adherence data from a previously '
+        + 'unstudied ' + country + ' population; (2) contribute this dataset to the TESSERA GRC global '
+        + 'normative database; and (3) train in-country investigators in psychometrically rigorous '
+        + 'adherence measurement methodology using the validated ATLAS platform infrastructure.',
+      '',
+      'I am pleased to confirm that TESSERA GRC provides full platform access, methodological mentorship, '
+        + 'co-authorship pathways on consortium publications, and letters of support to all consortium '
+        + 'members undertaking ' + mechShort + '-funded studies. This proposal has been reviewed and '
+        + 'is endorsed by the TESSERA GRC scientific leadership.',
+      '',
+      'Sincerely,',
+      '',
+      'Philip Morisky, MBA',
+      'Chief Optimus, Adherence Cartography',
+      'Director, TESSERA GRC',
+      'Creator, MMAS-8 and MAP Adherence Instruments',
+      'Email: info@adherence.cc | Web: adherence.cc',
+    ].join('\n');
+
+    outWrap.style.display = 'block';
+    outWrap.innerHTML = '';
+
+    outWrap.appendChild(_sgrEl('div', { class:'sgr-section-title', style:'margin-bottom:10px;' }, 'Generated Letter Draft'));
+    outWrap.appendChild(_sgrEl('div', { class:'sgr-text-block', style:'max-height:320px;white-space:pre-wrap;' }, _sgrEscHtml(letterText)));
+
+    const copyBtn2 = _sgrEl('button', { class:'sgr-copy-btn', style:'margin-top:8px;' }, 'Copy Letter Text');
+    copyBtn2.addEventListener('click', function() { _sgrCopyText(letterText, copyBtn2); });
+    outWrap.appendChild(copyBtn2);
+
+    outWrap.appendChild(_sgrEl('div', { style:'font-size:0.72rem;color:rgba(96,120,152,0.55);margin-top:8px;line-height:1.5;' },
+      'Replace [DATE] and bracketed fields before submission. '
+      + 'This letter is for preparation purposes; the official signed letter must be requested '
+      + 'through the TESSERA GRC Letters of Support form (Request Support tab).'
+    ));
+  });
+
+  formWrap.appendChild(genBtn);
+  formWrap.appendChild(outWrap);
+  container.appendChild(formWrap);
+}
+
+// ── Main LMIC Network render ──────────────────────────────────────────────────
+function _sgrRenderLMICNetwork(container) {
+  container.innerHTML = '<div style="color:rgba(96,120,152,0.65);font-size:0.80rem;padding:14px 0;"><span class="sgr-spinner"></span>Loading LMIC Network...</div>';
+
+  const user = _sgrCurrentUser();
+  const db   = _sgrDb();
+
+  const render = function(memberData) {
+    container.innerHTML = '';
+
+    // Header
+    const hdrBlock = _sgrEl('div', { style:'margin-bottom:22px;' });
+    hdrBlock.innerHTML =
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:#f97316;margin-bottom:5px;">TESSERA GRC · LMIC Research Network</div>' +
+      '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.45rem;font-weight:300;color:rgba(205,216,232,0.92);line-height:1.25;margin-bottom:6px;">LMIC Study Protocols &amp; Grant Pipeline</div>' +
+      '<div style="font-size:0.81rem;color:rgba(138,160,184,0.8);line-height:1.6;max-width:640px;">' +
+        'Pre-built study protocols for common LMIC disease contexts. Click any protocol to pre-fill the study registry form. ' +
+        'LMIC funding opportunities and a Fogarty letter pre-generator are included below.' +
+      '</div>';
+    container.appendChild(hdrBlock);
+
+    // ── Protocol Cards ─────────────────────────────────────────────────────
+    const protHdr = _sgrEl('div', { class:'sgr-reg-section-hdr' }, 'Pre-Built LMIC Study Protocols');
+    container.appendChild(protHdr);
+
+    container.appendChild(_sgrEl('div', { style:'font-size:0.79rem;color:rgba(138,160,184,0.8);margin-bottom:14px;line-height:1.55;' },
+      'Click "Use This Protocol" to pre-fill the study registry form with the protocol details. Edit as needed before submitting.'
+    ));
+
+    const protGrid = _sgrEl('div', { class:'sgr-card-grid' });
+
+    _SGR_LMIC_PROTOCOLS.forEach(function(proto) {
+      const card = _sgrEl('div', { class:'sgr-card', style:'border-left:3px solid ' + proto.color + ';cursor:default;' });
+      card.innerHTML =
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:' + _sgrEscHtml(proto.color) + ';margin-bottom:4px;">'
+          + _sgrEscHtml(proto.region) + '</div>' +
+        '<div class="sgr-template-title" style="color:' + _sgrEscHtml(proto.color) + ';">' + _sgrEscHtml(proto.title) + '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;">'
+          + proto.instruments.map(function(i) {
+              return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.62rem;letter-spacing:0.08em;padding:2px 7px;border-radius:3px;border:1px solid ' + _sgrEscHtml(proto.colorBorder) + ';background:' + _sgrEscHtml(proto.colorFaint) + ';color:' + _sgrEscHtml(proto.color) + ';">' + _sgrEscHtml(i) + '</span>';
+            }).join('') +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.62rem;color:rgba(96,120,152,0.65);">N=' + proto.n + '</span>' +
+        '</div>' +
+        '<div class="sgr-template-desc">' + _sgrEscHtml(proto.summary) + '</div>' +
+        '<div style="margin-top:8px;font-family:\'IBM Plex Mono\',monospace;font-size:0.68rem;color:rgba(96,120,152,0.65);">Follow-up: ' + _sgrEscHtml(proto.followUp) + '</div>' +
+        '<div style="margin-top:5px;padding:7px 10px;background:rgba(249,115,22,0.05);border:1px solid rgba(249,115,22,0.15);border-radius:5px;font-size:0.73rem;color:rgba(138,160,184,0.7);line-height:1.5;">Fogarty: ' + _sgrEscHtml(proto.fogartyFit) + '</div>';
+
+      const useBtn = _sgrEl('button', { class:'sgr-copy-btn', style:'margin-top:10px;align-self:flex-start;' }, 'Use This Protocol');
+      useBtn.addEventListener('click', function() {
+        _sgrApplyProtocol(proto);
+      });
+      card.appendChild(useBtn);
+      protGrid.appendChild(card);
+    });
+
+    container.appendChild(protGrid);
+
+    // ── LMIC Funding Board ─────────────────────────────────────────────────
+    const fundHdr = _sgrEl('div', { class:'sgr-reg-section-hdr', style:'margin-top:28px;' }, 'LMIC Funding Opportunities');
+    container.appendChild(fundHdr);
+
+    const lmicFunding = _SGR_FUNDING.filter(function(f) {
+      return f.region === 'lmic' || f.region === 'global' || f.id === 'nih-d43';
+    });
+
+    const fundGrid = _sgrEl('div', { class:'sgr-fund-grid' });
+    lmicFunding.forEach(function(f) {
+      const card = _sgrEl('div', { class:'sgr-fund-card' });
+      card.innerHTML =
+        '<div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;">' +
+          '<div class="sgr-fund-agency">' + _sgrEscHtml(f.agency) + '</div>' +
+          '<div class="sgr-fund-mech">' + _sgrEscHtml(f.mechanism) + '</div>' +
+        '</div>' +
+        '<div class="sgr-fund-desc">' + _sgrEscHtml(f.desc) + '</div>' +
+        '<div class="sgr-fund-deadline">Deadline: ' + _sgrEscHtml(f.deadline) + '</div>' +
+        '<a href="' + _sgrEscHtml(f.url) + '" target="_blank" rel="noopener" class="sgr-learn-btn">Learn More &#8599;</a>';
+      fundGrid.appendChild(card);
+    });
+    container.appendChild(fundGrid);
+
+    // ── Fogarty letter generator ───────────────────────────────────────────
+    container.appendChild(_sgrEl('div', { class:'sgr-divider', style:'margin-top:22px;' }));
+    _sgrRenderFogartyGenerator(container, user, memberData);
+  };
+
+  if (db && user && user.uid) {
+    db.ref('consortium_members/' + user.uid).once('value')
+      .then(function(snap) { render(snap.val()); })
+      .catch(function()    { render(null);       });
+  } else {
+    render(null);
+  }
+}
+
+// ── Apply protocol to registry form ──────────────────────────────────────────
+function _sgrApplyProtocol(proto) {
+  // Switch to Registry tab first
+  _sgrActiveTab = 'registry';
+  const tabBar = document.querySelector('#sgr-content-wrap')?.previousElementSibling;
+  if (tabBar) {
+    tabBar.querySelectorAll('.sgr-tab').forEach(function(b) {
+      b.classList.toggle('active', b.dataset && b.dataset.tab === 'registry');
+    });
+  }
+  const wrap = document.getElementById('sgr-content-wrap');
+  if (wrap) _sgrRenderRegistry(wrap);
+
+  // Wait for the form to render, then pre-fill
+  setTimeout(function() {
+    const titleEl   = document.getElementById('sgr-reg-title');
+    const diseaseEl = document.getElementById('sgr-reg-disease');
+    const nEl       = document.getElementById('sgr-reg-n');
+    const fuEl      = document.getElementById('sgr-reg-fu');
+
+    if (titleEl)   titleEl.value   = proto.fullTitle;
+    if (diseaseEl) diseaseEl.value = proto.disease;
+    if (nEl)       nEl.value       = proto.n;
+    if (fuEl)      fuEl.value      = proto.followUp;
+
+    // Instruments
+    if (document.getElementById('sgr-reg-cb-map'))   document.getElementById('sgr-reg-cb-map').checked   = proto.instruments.includes('MAP');
+    if (document.getElementById('sgr-reg-cb-mmas'))  document.getElementById('sgr-reg-cb-mmas').checked  = proto.instruments.includes('MMAS-8');
+    if (document.getElementById('sgr-reg-cb-peacs')) document.getElementById('sgr-reg-cb-peacs').checked = proto.instruments.includes('PEACS');
+
+    if (typeof showToast === 'function') showToast('✓ Protocol pre-filled. Edit as needed, then submit.', 3000);
+
+    // Scroll to the form
+    const formWrap = document.querySelector('.sgr-form-wrap');
+    if (formWrap) formWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 350);
+}
+
 // Expose sub-renderers for external call if needed
-window.saGrantRenderTemplates = _sgrRenderTemplates;
-window.saGrantRenderFunding   = _sgrRenderFunding;
-window.saGrantRenderSupport   = _sgrRenderSupport;
-window.saGrantRenderMyAIRC    = _sgrRenderMyAIRC;
-window.saGrantRenderRegistry  = _sgrRenderRegistry;
+window.saGrantRenderTemplates   = _sgrRenderTemplates;
+window.saGrantRenderFunding     = _sgrRenderFunding;
+window.saGrantRenderSupport     = _sgrRenderSupport;
+window.saGrantRenderMyTESSERA   = _sgrRenderMyTESSERA;
+window.saGrantRenderRegistry    = _sgrRenderRegistry;
+window.saGrantRenderLMICNetwork = _sgrRenderLMICNetwork;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TAB: RESEARCH EXCHANGE
+// Community board where all ATLAS users can post and browse research cards.
+// Firebase path: research_exchange/{pushKey}
+// Card schema: { uid, memberId, name, institution, country, role, type, title,
+//               description, countries_seeking, contact_email, posted, expires, status }
+// ══════════════════════════════════════════════════════════════════════════════
+
+const _REX_TYPES = {
+  study_seeking_collaborator: { label:'Seeking Collaborator', color:'#d4a843' },
+  grant_announcement:         { label:'Grant Opportunity',    color:'#38bdf8' },
+  publication:                { label:'Publication',          color:'#2ec98a' },
+  job_posting:                { label:'Position Available',   color:'#8b6ff5' },
+};
+
+let _rexTypeFilter = 'all';
+
+function _sgrRenderExchange(container) {
+  container.innerHTML =
+    '<div style="padding:24px 0;color:rgba(96,120,152,0.65);font-size:0.80rem;display:flex;align-items:center;gap:8px;">' +
+    '<span class="sgr-spinner"></span>Loading Research Exchange…</div>';
+
+  const db = _sgrDb();
+  if (!db) {
+    container.innerHTML = '';
+    container.appendChild(_sgrEl('div', { class:'sgr-error-box' }, 'Database unavailable. Please try again.'));
+    return;
+  }
+
+  Promise.all([
+    db.ref('research_exchange').once('value'),
+    db.ref('researcher_profiles').once('value').catch(() => null)
+  ]).then(([exchSnap, profSnap]) => {
+    container.innerHTML = '';
+    const raw        = exchSnap.val() || {};
+    const profileMap = (profSnap && profSnap.val()) || {};
+    const now        = Date.now();
+    const all        = Object.entries(raw)
+      .filter(([, c]) => c.status !== 'closed' && (!c.expires || c.expires > now))
+      .map(([id, c]) => ({ id, ...c }))
+      .sort((a, b) => (b.posted || 0) - (a.posted || 0));
+
+    _sgrRenderExchangeView(container, all, profileMap);
+  }).catch(err => {
+    container.innerHTML = '';
+    container.appendChild(_sgrEl('div', { class:'sgr-error-box' },
+      'Could not load Research Exchange: ' + (err.message || 'Unknown error')));
+  });
+}
+
+function _sgrRenderExchangeView(container, allCards, profileMap) {
+  profileMap = profileMap || {};
+  container.innerHTML = '';
+
+  // Description
+  container.appendChild(_sgrEl('div', { style:'font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.7;max-width:680px;margin-bottom:18px;' },
+    'Post open studies, collaboration requests, grant announcements, publications, and positions. ' +
+    'Every ATLAS user can browse and post. Cards expire automatically.'
+  ));
+
+  // Action row: Post button + type filters + count
+  const actionRow = _sgrEl('div', { class:'rex-action-row' });
+
+  const postBtn = _sgrEl('button', { class:'sgr-submit-btn', style:'padding:7px 18px;flex-shrink:0;' }, '+ Post Card');
+  postBtn.addEventListener('click', () => _sgrRenderPostCardForm(container));
+  actionRow.appendChild(postBtn);
+
+  const typeFilters = [
+    { key:'all',                        label:'All'         },
+    { key:'study_seeking_collaborator', label:'Collab'      },
+    { key:'grant_announcement',         label:'Grants'      },
+    { key:'publication',                label:'Publications'},
+    { key:'job_posting',                label:'Positions'   },
+  ];
+  typeFilters.forEach(f => {
+    const btn = _sgrEl('button', {
+      class: 'sgr-filter-btn' + (_rexTypeFilter === f.key ? ' active' : '')
+    }, f.label);
+    btn.addEventListener('click', () => {
+      _rexTypeFilter = f.key;
+      actionRow.querySelectorAll('.sgr-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _sgrRefreshExchangeFeed(feedEl, allCards);
+    });
+    actionRow.appendChild(btn);
+  });
+
+  const countEl = _sgrEl('span', { class:'rex-count' }, allCards.length + ' card' + (allCards.length !== 1 ? 's' : ''));
+  actionRow.appendChild(countEl);
+
+  container.appendChild(actionRow);
+
+  const feedEl = _sgrEl('div', { class:'rex-feed' });
+  container.appendChild(feedEl);
+  _sgrRefreshExchangeFeed(feedEl, allCards);
+}
+
+function _sgrRefreshExchangeFeed(feedEl, allCards) {
+  feedEl.innerHTML = '';
+  const filtered = _rexTypeFilter === 'all'
+    ? allCards
+    : allCards.filter(c => c.type === _rexTypeFilter);
+
+  if (filtered.length === 0) {
+    feedEl.innerHTML =
+      '<div class="rex-empty">No cards match this filter.<br/>' +
+      (_rexTypeFilter === 'all'
+        ? 'Be the first to post and connect with the global network.'
+        : 'Try another filter or post a card in this category.') +
+      '</div>';
+    return;
+  }
+  filtered.forEach(card => feedEl.appendChild(_sgrBuildExchangeCard(card, profileMap)));
+}
+
+function _sgrBuildExchangeCard(card, profileMap) {
+  const tDef = _REX_TYPES[card.type] || { label: card.type || 'Post', color:'#8b6ff5' };
+  const now  = Date.now();
+  const daysLeft = card.expires ? Math.max(0, Math.ceil((card.expires - now) / 86400000)) : null;
+  const metaParts = [card.name, card.institution, card.country].filter(Boolean);
+
+  const el = _sgrEl('div', { class:'rex-card' });
+
+  // Top row: type badge + expiry
+  const topRow = _sgrEl('div', { style:'display:flex;align-items:center;justify-content:space-between;gap:8px;' });
+  topRow.appendChild(_sgrEl('span', { class:'rex-type-badge',
+    style:'background:' + tDef.color + '18;border-color:' + tDef.color + '40;color:' + tDef.color + ';'
+  }, _sgrEscHtml(tDef.label)));
+  if (daysLeft !== null) {
+    topRow.appendChild(_sgrEl('span', { class:'rex-meta' }, daysLeft + 'd left'));
+  }
+  el.appendChild(topRow);
+
+  el.appendChild(_sgrEl('div', { class:'rex-title' }, _sgrEscHtml(card.title || '—')));
+
+  if (metaParts.length) {
+    el.appendChild(_sgrEl('div', { class:'rex-meta', style:'margin-top:1px;' },
+      _sgrEscHtml(metaParts.join(' · '))));
+  }
+
+  if (card.description) {
+    const d = card.description.length > 220 ? card.description.slice(0, 220) + '…' : card.description;
+    el.appendChild(_sgrEl('div', { class:'rex-desc' }, _sgrEscHtml(d)));
+  }
+
+  if (card.countries_seeking && card.countries_seeking.length) {
+    const list = Array.isArray(card.countries_seeking) ? card.countries_seeking : [card.countries_seeking];
+    el.appendChild(_sgrEl('div', { class:'rex-countries' },
+      'Seeking: ' + _sgrEscHtml(list.join(', '))));
+  }
+
+  if (card.contact_email) {
+    const a = _sgrEl('a', { class:'rex-contact-btn',
+      href:'mailto:' + card.contact_email }, 'Contact →');
+    el.appendChild(a);
+  }
+
+  // Author strip: shown when poster has a researcher profile
+  const prof = profileMap && card.uid ? profileMap[card.uid] : null;
+  if (prof && prof.visible !== false) {
+    const initials = (prof.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const instruments = Array.isArray(prof.instruments) ? prof.instruments : [];
+    const instrBadges = instruments.map(i => {
+      const cfg = { map:['MAP','#d4a843'], peacs:['PEACS','#4e9cf5'], mmas8:['MMAS-8','#10b981'] }[i];
+      return cfg ? '<span style="font-size:0.58rem;padding:1px 5px;border-radius:3px;background:' + cfg[1] + '18;border:1px solid ' + cfg[1] + '40;color:' + cfg[1] + ';margin-left:3px;">' + cfg[0] + '</span>' : '';
+    }).join('');
+
+    const strip = _sgrEl('div', {
+      style:'margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:8px;'
+    });
+    const avatar = _sgrEl('div', {
+      style:'width:24px;height:24px;border-radius:50%;background:rgba(212,168,67,0.15);border:1px solid rgba(212,168,67,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:0.55rem;color:#d4a843;flex-shrink:0;letter-spacing:0;'
+    }, initials);
+    const info = _sgrEl('div', { style:'flex:1;min-width:0;' });
+    info.innerHTML =
+      '<span style="font-size:0.72rem;color:rgba(205,216,232,0.8);">' + _sgrEscHtml(prof.name) +
+      (prof.credentials ? '<span style="color:rgba(96,120,152,0.7);"> · ' + _sgrEscHtml(prof.credentials) + '</span>' : '') +
+      '</span>' + instrBadges +
+      (prof.institution ? '<div style="font-size:0.66rem;color:rgba(96,120,152,0.65);margin-top:1px;">' + _sgrEscHtml(prof.institution) + '</div>' : '');
+
+    strip.appendChild(avatar);
+    strip.appendChild(info);
+    el.appendChild(strip);
+  }
+
+  return el;
+}
+
+function _sgrRenderPostCardForm(container) {
+  const user = _sgrCurrentUser();
+  const db   = _sgrDb();
+
+  container.innerHTML = '';
+
+  const hdr = _sgrEl('div', { class:'rex-post-hdr' });
+  hdr.appendChild(_sgrEl('div', {
+    style:'font-size:0.96rem;font-weight:600;color:rgba(205,216,232,0.92);'
+  }, 'Post Research Card'));
+  const backBtn = _sgrEl('button', { class:'rex-back-btn' }, '← Back to Exchange');
+  backBtn.addEventListener('click', () => _sgrRenderExchange(container));
+  hdr.appendChild(backBtn);
+  container.appendChild(hdr);
+
+  if (!user) {
+    container.appendChild(_sgrEl('div', { class:'sgr-error-box' },
+      'You must be signed in to post a research card.'));
+    return;
+  }
+  if (!db) {
+    container.appendChild(_sgrEl('div', { class:'sgr-error-box' }, 'Database unavailable.'));
+    return;
+  }
+
+  // Show who they're posting as
+  const wp = (typeof workspaceProfile !== 'undefined' && workspaceProfile) ? workspaceProfile : {};
+  const posterName = wp.name || user.displayName || user.email || '';
+  if (posterName) {
+    container.appendChild(_sgrEl('div', { class:'rex-my-card' },
+      'Posting as: ' + _sgrEscHtml(posterName) +
+      (wp.institution ? '  ·  ' + _sgrEscHtml(wp.institution) : '')));
+  }
+
+  const form = _sgrEl('div', { class:'sgr-form-wrap' });
+
+  // Type
+  const typeRow = _sgrEl('div', { class:'sgr-form-row' });
+  typeRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Card Type'));
+  const typeSelect = _sgrEl('select', { class:'sgr-select', id:'rex-uf-type' });
+  [
+    ['study_seeking_collaborator', 'Seeking Collaborator'],
+    ['grant_announcement',         'Grant Opportunity'],
+    ['publication',                'Publication'],
+    ['job_posting',                'Position Available'],
+  ].forEach(([v, l]) => typeSelect.appendChild(_sgrEl('option', { value:v }, l)));
+  typeRow.appendChild(typeSelect);
+  form.appendChild(typeRow);
+
+  // Title
+  const titleRow = _sgrEl('div', { class:'sgr-form-row' });
+  titleRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Title *'));
+  titleRow.appendChild(_sgrEl('input', {
+    class:'sgr-input', id:'rex-uf-title', type:'text',
+    placeholder:'e.g. Seeking EU site PI for multi-country adherence study'
+  }));
+  form.appendChild(titleRow);
+
+  // Description
+  const descRow = _sgrEl('div', { class:'sgr-form-row' });
+  descRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Description'));
+  descRow.appendChild(_sgrEl('textarea', {
+    class:'sgr-textarea', id:'rex-uf-desc',
+    placeholder:'Brief description (2–3 sentences, 280 chars max)', rows:'3'
+  }));
+  const charCount = _sgrEl('div', { class:'sgr-char-count', id:'rex-uf-char' }, '0 / 280');
+  descRow.appendChild(charCount);
+  form.appendChild(descRow);
+
+  // Countries seeking
+  const countriesRow = _sgrEl('div', { class:'sgr-form-row' });
+  countriesRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Countries Seeking (comma-separated)'));
+  countriesRow.appendChild(_sgrEl('input', {
+    class:'sgr-input', id:'rex-uf-countries', type:'text',
+    placeholder:'e.g. Germany, Italy, Spain  (leave blank if open globally)'
+  }));
+  form.appendChild(countriesRow);
+
+  // Contact email
+  const emailRow = _sgrEl('div', { class:'sgr-form-row' });
+  emailRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Contact Email *'));
+  const emailInput = _sgrEl('input', {
+    class:'sgr-input', id:'rex-uf-email', type:'email',
+    placeholder:'your@institution.edu'
+  });
+  emailInput.value = user.email || '';
+  emailRow.appendChild(emailInput);
+  form.appendChild(emailRow);
+
+  // Expires
+  const expiresRow = _sgrEl('div', { class:'sgr-form-row' });
+  expiresRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Card Expires After'));
+  const daysSelect = _sgrEl('select', { class:'sgr-select', id:'rex-uf-days' });
+  [['30','30 days'],['60','60 days'],['90','90 days (recommended)'],['180','180 days']].forEach(([v,l]) => {
+    const opt = _sgrEl('option', { value:v }, l);
+    if (v === '90') opt.selected = true;
+    daysSelect.appendChild(opt);
+  });
+  expiresRow.appendChild(daysSelect);
+  form.appendChild(expiresRow);
+
+  const msgEl = _sgrEl('div', { style:'display:none;margin-top:8px;' });
+  const submitBtn = _sgrEl('button', { class:'sgr-submit-btn', style:'margin-top:8px;' }, 'Post Card →');
+  submitBtn.addEventListener('click', () => _sgrSubmitExchangeCard(container, submitBtn, msgEl, user, db));
+  form.appendChild(submitBtn);
+  form.appendChild(msgEl);
+  container.appendChild(form);
+
+  // Live char counter
+  const descEl = form.querySelector('#rex-uf-desc');
+  if (descEl) {
+    descEl.addEventListener('input', () => {
+      const n = descEl.value.length;
+      charCount.textContent = n + ' / 280';
+      charCount.style.color = n > 280 ? '#ef4444' : 'rgba(96,120,152,0.65)';
+    });
+  }
+}
+
+function _sgrSubmitExchangeCard(container, submitBtn, msgEl, user, db) {
+  const type      = (document.getElementById('rex-uf-type')?.value)    || 'study_seeking_collaborator';
+  const title     = (document.getElementById('rex-uf-title')?.value    || '').trim();
+  const desc      = (document.getElementById('rex-uf-desc')?.value     || '').trim();
+  const countries = (document.getElementById('rex-uf-countries')?.value|| '').split(',').map(s=>s.trim()).filter(Boolean);
+  const email     = (document.getElementById('rex-uf-email')?.value    || '').trim();
+  const days      = parseInt(document.getElementById('rex-uf-days')?.value) || 90;
+
+  if (!title) { _rexShowMsg(msgEl, 'error', 'Title is required.'); return; }
+  if (!email) { _rexShowMsg(msgEl, 'error', 'Contact email is required.'); return; }
+  if (desc.length > 280) { _rexShowMsg(msgEl, 'error', 'Description must be 280 characters or fewer.'); return; }
+
+  const wp = (typeof workspaceProfile !== 'undefined' && workspaceProfile) ? workspaceProfile : {};
+
+  const card = {
+    uid:               user.uid,
+    memberId:          user.uid,
+    name:              wp.name || user.displayName || '',
+    institution:       wp.institution || wp.display_name || '',
+    country:           wp.country || '',
+    role:              wp.role || '',
+    type,
+    title,
+    description:       desc   || null,
+    countries_seeking: countries.length ? countries : null,
+    contact_email:     email,
+    posted:            Date.now(),
+    expires:           Date.now() + days * 86400000,
+    status:            'active',
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="sgr-spinner"></span>Posting…';
+
+  db.ref('research_exchange').push(card)
+    .then(() => {
+      if (typeof showToast === 'function') showToast('Card posted to Research Exchange.', 3000);
+      _rexTypeFilter = 'all';
+      // Check if user already has a profile; if not, surface the profile creation prompt
+      db.ref('researcher_profiles/' + user.uid).once('value').then(profSnap => {
+        if (!profSnap.exists()) {
+          _sgrRenderExchangeWithProfilePrompt(container, user, db);
+        } else {
+          _sgrRenderExchange(container);
+        }
+      }).catch(() => _sgrRenderExchange(container));
+    })
+    .catch(err => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Post Card →';
+      _rexShowMsg(msgEl, 'error', 'Post failed: ' + (err.message || 'Unknown error'));
+    });
+}
+
+function _rexShowMsg(el, type, text) {
+  el.className = type === 'error' ? 'sgr-error-box' : 'sgr-success-box';
+  el.textContent = text;
+  el.style.display = 'block';
+}
+
+window.saGrantRenderExchange = _sgrRenderExchange;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TAB: RESEARCHER DIRECTORY
+// Community profiles for ATLAS researchers. Opt-in. Stored at
+// Firebase path: researcher_profiles/{uid}
+// Schema: { name, credentials, institution, country, bio, instruments:[],
+//           specialties:[], contact_email, visible, updated }
+// ══════════════════════════════════════════════════════════════════════════════
+
+const _DIR_INSTRUMENTS = [
+  { key:'map',   label:'MAP',    color:'#d4a843' },
+  { key:'peacs', label:'PEACS',  color:'#4e9cf5' },
+  { key:'mmas8', label:'MMAS-8', color:'#10b981' },
+];
+
+const _DIR_SPECIALTIES = [
+  'SDoH','CHW','LMIC','Global Health','Pediatric','Geriatric',
+  'Pharmacy','Oncology','HIV/AIDS','Mental Health','Cardiology',
+  'Diabetes','Chronic Disease','Telehealth','Community Health',
+  'Implementation Science',
+];
+
+let _dirSpecFilter = '';
+
+function _sgrRenderDirectory(container) {
+  container.innerHTML =
+    '<div style="padding:24px 0;color:rgba(96,120,152,0.65);font-size:0.80rem;display:flex;align-items:center;gap:8px;">' +
+    '<span class="sgr-spinner"></span>Loading Researcher Directory…</div>';
+
+  const db   = _sgrDb();
+  const user = _sgrCurrentUser();
+
+  if (!db) {
+    container.innerHTML = '';
+    container.appendChild(_sgrEl('div', { class:'sgr-error-box' }, 'Database unavailable. Please try again.'));
+    return;
+  }
+
+  db.ref('researcher_profiles').once('value').then(snap => {
+    container.innerHTML = '';
+    const raw  = snap.val() || {};
+    const list = Object.entries(raw)
+      .filter(([, p]) => p.visible !== false)
+      .map(([uid, p]) => ({ uid, ...p }))
+      .sort((a, b) => (b.updated || 0) - (a.updated || 0));
+
+    _sgrRenderDirectoryView(container, list, user, db);
+  }).catch(err => {
+    container.innerHTML = '';
+    container.appendChild(_sgrEl('div', { class:'sgr-error-box' },
+      'Could not load directory: ' + (err.message || 'Unknown error')));
+  });
+}
+
+function _sgrRenderDirectoryView(container, profiles, user, db) {
+  // Header row
+  const hdr = _sgrEl('div', { style:'display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;' });
+  const desc = _sgrEl('div', { style:'font-size:0.82rem;color:rgba(138,160,184,0.8);line-height:1.7;max-width:580px;' });
+  desc.textContent = 'Verified ATLAS researchers who have opted in to share their profile. Browse by specialty or instrument to find collaborators.';
+  hdr.appendChild(desc);
+
+  if (user) {
+    const myBtn = _sgrEl('button', { class:'sgr-submit-btn', style:'flex-shrink:0;padding:7px 16px;white-space:nowrap;' }, '+ My Profile');
+    myBtn.addEventListener('click', () => {
+      db.ref('researcher_profiles/' + user.uid).once('value').then(snap => {
+        _sgrRenderProfileForm(container, snap.val(), user, db, () => _sgrRenderDirectory(container));
+      });
+    });
+    hdr.appendChild(myBtn);
+  }
+  container.appendChild(hdr);
+
+  // Specialty filter pills
+  const filterRow = _sgrEl('div', { style:'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;' });
+  const allPill = _sgrEl('button', {
+    class:'sgr-filter-btn' + (_dirSpecFilter === '' ? ' active' : ''),
+    style:'font-size:0.66rem;padding:3px 10px;'
+  }, 'All');
+  allPill.addEventListener('click', () => { _dirSpecFilter = ''; _sgrRefreshDirectoryGrid(grid, profiles); filterRow.querySelectorAll('.sgr-filter-btn').forEach(b => b.classList.remove('active')); allPill.classList.add('active'); });
+  filterRow.appendChild(allPill);
+
+  _DIR_SPECIALTIES.forEach(spec => {
+    const pill = _sgrEl('button', {
+      class:'sgr-filter-btn' + (_dirSpecFilter === spec ? ' active' : ''),
+      style:'font-size:0.66rem;padding:3px 10px;'
+    }, spec);
+    pill.addEventListener('click', () => {
+      _dirSpecFilter = spec;
+      filterRow.querySelectorAll('.sgr-filter-btn').forEach(b => b.classList.remove('active'));
+      pill.classList.add('active');
+      _sgrRefreshDirectoryGrid(grid, profiles);
+    });
+    filterRow.appendChild(pill);
+  });
+  container.appendChild(filterRow);
+
+  // Profile grid
+  const grid = _sgrEl('div', {
+    style:'display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;'
+  });
+  container.appendChild(grid);
+  _sgrRefreshDirectoryGrid(grid, profiles);
+
+  // Empty state with CTA
+  if (profiles.length === 0 && user) {
+    const empty = _sgrEl('div', {
+      style:'padding:32px 0;text-align:center;color:rgba(96,120,152,0.65);font-size:0.82rem;line-height:1.8;'
+    });
+    empty.innerHTML = 'No researcher profiles yet.<br>Be the first to add yours and help build the ATLAS research network.';
+    grid.appendChild(empty);
+  }
+}
+
+function _sgrRefreshDirectoryGrid(grid, profiles) {
+  grid.innerHTML = '';
+  const filtered = _dirSpecFilter
+    ? profiles.filter(p => Array.isArray(p.specialties) && p.specialties.includes(_dirSpecFilter))
+    : profiles;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;padding:24px 0;color:rgba(96,120,152,0.65);font-size:0.82rem;text-align:center;">No profiles match this filter.</div>';
+    return;
+  }
+  filtered.forEach(p => grid.appendChild(_sgrBuildProfileCard(p)));
+}
+
+function _sgrBuildProfileCard(profile) {
+  const initials  = (profile.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const instruments = Array.isArray(profile.instruments) ? profile.instruments : [];
+  const specialties = Array.isArray(profile.specialties) ? profile.specialties : [];
+
+  const card = _sgrEl('div', {
+    style:'background:var(--card,#111d30);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px;transition:border-color 0.2s;'
+  });
+
+  // Avatar + name row
+  const topRow = _sgrEl('div', { style:'display:flex;align-items:center;gap:12px;' });
+  topRow.appendChild(_sgrEl('div', {
+    style:'width:40px;height:40px;border-radius:50%;background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.28);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono,monospace);font-size:0.78rem;color:#d4a843;flex-shrink:0;letter-spacing:0;font-weight:500;'
+  }, initials));
+
+  const nameBlock = _sgrEl('div', { style:'min-width:0;' });
+  nameBlock.appendChild(_sgrEl('div', {
+    style:'font-size:0.88rem;font-weight:600;color:rgba(205,216,232,0.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+  }, _sgrEscHtml(profile.name || '—')));
+  if (profile.credentials) {
+    nameBlock.appendChild(_sgrEl('div', {
+      style:'font-size:0.70rem;color:rgba(96,120,152,0.75);margin-top:1px;'
+    }, _sgrEscHtml(profile.credentials)));
+  }
+  topRow.appendChild(nameBlock);
+  card.appendChild(topRow);
+
+  // Institution + country
+  if (profile.institution || profile.country) {
+    card.appendChild(_sgrEl('div', {
+      style:'font-size:0.72rem;color:rgba(96,120,152,0.7);line-height:1.4;'
+    }, _sgrEscHtml([profile.institution, profile.country].filter(Boolean).join(' · '))));
+  }
+
+  // Instrument badges
+  if (instruments.length) {
+    const row = _sgrEl('div', { style:'display:flex;gap:5px;flex-wrap:wrap;' });
+    instruments.forEach(key => {
+      const cfg = _DIR_INSTRUMENTS.find(i => i.key === key);
+      if (!cfg) return;
+      row.appendChild(_sgrEl('span', {
+        style:'font-size:0.60rem;padding:2px 7px;border-radius:4px;background:' + cfg.color + '18;border:1px solid ' + cfg.color + '40;color:' + cfg.color + ';font-family:var(--font-mono,monospace);letter-spacing:0.04em;'
+      }, cfg.label));
+    });
+    card.appendChild(row);
+  }
+
+  // Specialty pills (first 4)
+  if (specialties.length) {
+    const row = _sgrEl('div', { style:'display:flex;gap:4px;flex-wrap:wrap;' });
+    specialties.slice(0, 4).forEach(spec => {
+      row.appendChild(_sgrEl('span', {
+        style:'font-size:0.60rem;padding:2px 7px;border-radius:4px;background:rgba(139,111,245,0.10);border:1px solid rgba(139,111,245,0.22);color:rgba(139,111,245,0.85);'
+      }, _sgrEscHtml(spec)));
+    });
+    if (specialties.length > 4) {
+      row.appendChild(_sgrEl('span', { style:'font-size:0.60rem;color:rgba(96,120,152,0.55);' }, '+' + (specialties.length - 4) + ' more'));
+    }
+    card.appendChild(row);
+  }
+
+  // Bio snippet
+  if (profile.bio) {
+    const bio = profile.bio.length > 120 ? profile.bio.slice(0, 120) + '…' : profile.bio;
+    card.appendChild(_sgrEl('div', {
+      style:'font-size:0.74rem;color:rgba(138,160,184,0.7);line-height:1.6;flex:1;'
+    }, _sgrEscHtml(bio)));
+  }
+
+  // Connect button
+  if (profile.contact_email) {
+    const connect = _sgrEl('a', {
+      href: 'mailto:' + profile.contact_email,
+      style:'display:inline-block;margin-top:4px;font-family:var(--font-mono,monospace);font-size:0.64rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(78,156,245,0.85);text-decoration:none;border:1px solid rgba(78,156,245,0.25);border-radius:6px;padding:5px 12px;background:rgba(78,156,245,0.07);transition:all 0.15s;align-self:flex-start;'
+    }, 'Connect →');
+    card.appendChild(connect);
+  }
+
+  return card;
+}
+
+function _sgrRenderProfileForm(container, existingProfile, user, db, afterSave) {
+  container.innerHTML = '';
+  const ep = existingProfile || {};
+  const isNew = !existingProfile;
+
+  const hdr = _sgrEl('div', { class:'rex-post-hdr' });
+  hdr.appendChild(_sgrEl('div', {
+    style:'font-size:0.96rem;font-weight:600;color:rgba(205,216,232,0.92);'
+  }, isNew ? 'Create Researcher Profile' : 'Edit My Profile'));
+  const backBtn = _sgrEl('button', { class:'rex-back-btn' }, '← Back');
+  backBtn.addEventListener('click', () => _sgrRenderDirectory(container));
+  hdr.appendChild(backBtn);
+  container.appendChild(hdr);
+
+  container.appendChild(_sgrEl('div', {
+    style:'font-size:0.78rem;color:rgba(96,120,152,0.7);line-height:1.6;margin-bottom:16px;max-width:560px;'
+  }, 'Your profile is visible to all authenticated ATLAS users in the Researcher Directory. You control what you share.'));
+
+  const form = _sgrEl('div', { class:'sgr-form-wrap' });
+
+  // Name
+  const nameRow = _sgrEl('div', { class:'sgr-form-row' });
+  nameRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Full Name *'));
+  const nameInput = _sgrEl('input', { class:'sgr-input', id:'dir-f-name', type:'text', placeholder:'Dr. Jane Smith' });
+  nameInput.value = ep.name || '';
+  nameRow.appendChild(nameInput);
+  form.appendChild(nameRow);
+
+  // Credentials
+  const credRow = _sgrEl('div', { class:'sgr-form-row' });
+  credRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Credentials'));
+  const credInput = _sgrEl('input', { class:'sgr-input', id:'dir-f-cred', type:'text', placeholder:'PharmD, PhD' });
+  credInput.value = ep.credentials || '';
+  credRow.appendChild(credInput);
+  form.appendChild(credRow);
+
+  // Institution
+  const instRow = _sgrEl('div', { class:'sgr-form-row' });
+  instRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Institution'));
+  const instInput = _sgrEl('input', { class:'sgr-input', id:'dir-f-inst', type:'text', placeholder:'University of Ghana · Pharmacy' });
+  instInput.value = ep.institution || '';
+  instRow.appendChild(instInput);
+  form.appendChild(instRow);
+
+  // Country
+  const cntryRow = _sgrEl('div', { class:'sgr-form-row' });
+  cntryRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Country'));
+  const cntryInput = _sgrEl('input', { class:'sgr-input', id:'dir-f-country', type:'text', placeholder:'Ghana' });
+  cntryInput.value = ep.country || '';
+  cntryRow.appendChild(cntryInput);
+  form.appendChild(cntryRow);
+
+  // Instruments
+  const instrRow = _sgrEl('div', { class:'sgr-form-row' });
+  instrRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Instruments Used'));
+  const instrWrap = _sgrEl('div', { style:'display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;' });
+  const epInstr = Array.isArray(ep.instruments) ? ep.instruments : [];
+  _DIR_INSTRUMENTS.forEach(instr => {
+    const label = _sgrEl('label', { style:'display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.78rem;color:rgba(205,216,232,0.8);' });
+    const cb = _sgrEl('input', { type:'checkbox', 'data-instr':instr.key, style:'accent-color:' + instr.color + ';width:14px;height:14px;cursor:pointer;' });
+    if (epInstr.includes(instr.key)) cb.checked = true;
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(instr.label));
+    instrWrap.appendChild(label);
+  });
+  instrRow.appendChild(instrWrap);
+  form.appendChild(instrRow);
+
+  // Specialties
+  const specRow = _sgrEl('div', { class:'sgr-form-row' });
+  specRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Research Specialties'));
+  const epSpec = Array.isArray(ep.specialties) ? ep.specialties : [];
+  const specWrap = _sgrEl('div', { id:'dir-f-specs', style:'display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;' });
+  _DIR_SPECIALTIES.forEach(spec => {
+    const active = epSpec.includes(spec);
+    const pill = _sgrEl('button', {
+      type:'button',
+      'data-spec':spec,
+      style:'font-size:0.64rem;padding:3px 10px;border-radius:20px;cursor:pointer;transition:all 0.15s;border:1px solid ' + (active ? 'rgba(139,111,245,0.6)' : 'rgba(255,255,255,0.1)') + ';background:' + (active ? 'rgba(139,111,245,0.15)' : 'transparent') + ';color:' + (active ? 'rgba(139,111,245,0.9)' : 'rgba(138,160,184,0.6)') + ';'
+    }, spec);
+    pill.addEventListener('click', () => {
+      pill.dataset.active = pill.dataset.active === '1' ? '' : '1';
+      const on = pill.dataset.active === '1';
+      pill.style.border = '1px solid ' + (on ? 'rgba(139,111,245,0.6)' : 'rgba(255,255,255,0.1)');
+      pill.style.background = on ? 'rgba(139,111,245,0.15)' : 'transparent';
+      pill.style.color = on ? 'rgba(139,111,245,0.9)' : 'rgba(138,160,184,0.6)';
+    });
+    if (active) pill.dataset.active = '1';
+    specWrap.appendChild(pill);
+  });
+  specRow.appendChild(specWrap);
+  form.appendChild(specRow);
+
+  // Bio
+  const bioRow = _sgrEl('div', { class:'sgr-form-row' });
+  bioRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Short Bio (280 chars max)'));
+  const bioArea = _sgrEl('textarea', { class:'sgr-textarea', id:'dir-f-bio', rows:'3', placeholder:'One or two sentences about your research focus and clinical/academic context.' });
+  bioArea.value = ep.bio || '';
+  const bioCount = _sgrEl('div', { class:'sgr-char-count', id:'dir-f-bio-count' }, (ep.bio || '').length + ' / 280');
+  bioArea.addEventListener('input', () => {
+    const n = bioArea.value.length;
+    bioCount.textContent = n + ' / 280';
+    bioCount.style.color = n > 280 ? '#ef4444' : 'rgba(96,120,152,0.65)';
+  });
+  bioRow.appendChild(bioArea);
+  bioRow.appendChild(bioCount);
+  form.appendChild(bioRow);
+
+  // Contact email
+  const emailRow = _sgrEl('div', { class:'sgr-form-row' });
+  emailRow.appendChild(_sgrEl('label', { class:'sgr-label' }, 'Contact Email *'));
+  const emailInput = _sgrEl('input', { class:'sgr-input', id:'dir-f-email', type:'email', placeholder:'your@institution.edu' });
+  emailInput.value = ep.contact_email || (user ? user.email : '') || '';
+  emailRow.appendChild(emailInput);
+  form.appendChild(emailRow);
+
+  // Visibility toggle
+  const visRow = _sgrEl('div', { class:'sgr-form-row', style:'flex-direction:row;align-items:center;gap:10px;' });
+  const visCb = _sgrEl('input', { type:'checkbox', id:'dir-f-vis', style:'width:16px;height:16px;accent-color:#10b981;cursor:pointer;' });
+  visCb.checked = ep.visible !== false;
+  visRow.appendChild(visCb);
+  visRow.appendChild(_sgrEl('label', { for:'dir-f-vis', style:'font-size:0.78rem;color:rgba(205,216,232,0.8);cursor:pointer;' }, 'Show my profile in the Researcher Directory'));
+  form.appendChild(visRow);
+
+  const msgEl  = _sgrEl('div', { style:'display:none;margin-top:8px;' });
+  const saveBtn = _sgrEl('button', { class:'sgr-submit-btn', style:'margin-top:8px;' }, isNew ? 'Create Profile →' : 'Save Changes →');
+  saveBtn.addEventListener('click', () => _sgrSubmitProfile(form, saveBtn, msgEl, user, db, afterSave));
+  form.appendChild(saveBtn);
+  form.appendChild(msgEl);
+  container.appendChild(form);
+}
+
+function _sgrSubmitProfile(form, saveBtn, msgEl, user, db, afterSave) {
+  const name   = (document.getElementById('dir-f-name')?.value    || '').trim();
+  const cred   = (document.getElementById('dir-f-cred')?.value    || '').trim();
+  const inst   = (document.getElementById('dir-f-inst')?.value    || '').trim();
+  const country= (document.getElementById('dir-f-country')?.value || '').trim();
+  const bio    = (document.getElementById('dir-f-bio')?.value     || '').trim();
+  const email  = (document.getElementById('dir-f-email')?.value   || '').trim();
+  const visible= document.getElementById('dir-f-vis')?.checked !== false;
+
+  if (!name) { _rexShowMsg(msgEl, 'error', 'Name is required.'); return; }
+  if (!email) { _rexShowMsg(msgEl, 'error', 'Contact email is required.'); return; }
+  if (bio.length > 280) { _rexShowMsg(msgEl, 'error', 'Bio must be 280 characters or fewer.'); return; }
+
+  const instruments = [];
+  form.querySelectorAll('[data-instr]').forEach(cb => { if (cb.checked) instruments.push(cb.dataset.instr); });
+  const specialties = [];
+  form.querySelectorAll('[data-spec]').forEach(pill => { if (pill.dataset.active === '1') specialties.push(pill.dataset.spec); });
+
+  const profile = {
+    name,
+    credentials:   cred   || null,
+    institution:   inst   || null,
+    country:       country || null,
+    bio:           bio    || null,
+    instruments:   instruments.length ? instruments : null,
+    specialties:   specialties.length ? specialties : null,
+    contact_email: email,
+    visible,
+    updated:       Date.now(),
+    uid:           user.uid,
+  };
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="sgr-spinner"></span>Saving…';
+
+  db.ref('researcher_profiles/' + user.uid).set(profile)
+    .then(() => {
+      if (typeof showToast === 'function') showToast('Researcher profile saved.', 3000);
+      if (typeof afterSave === 'function') afterSave();
+      else _sgrRenderDirectory(form.closest('[id]') || document.getElementById('sgr-content-wrap') || document.body);
+    })
+    .catch(err => {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Changes →';
+      _rexShowMsg(msgEl, 'error', 'Save failed: ' + (err.message || 'Unknown error'));
+    });
+}
+
+function _sgrRenderExchangeWithProfilePrompt(container, user, db) {
+  // Render a brief "create your profile" banner above the normal exchange view
+  container.innerHTML = '';
+
+  const banner = _sgrEl('div', {
+    style:'background:rgba(78,156,245,0.07);border:1px solid rgba(78,156,245,0.22);border-radius:10px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;'
+  });
+  const bannerText = _sgrEl('div');
+  bannerText.appendChild(_sgrEl('div', { style:'font-size:0.82rem;font-weight:600;color:rgba(205,216,232,0.9);margin-bottom:2px;' }, 'Your card is live!'));
+  bannerText.appendChild(_sgrEl('div', { style:'font-size:0.76rem;color:rgba(96,120,152,0.8);' }, 'Add a researcher profile so collaborators can learn more about your work.'));
+  banner.appendChild(bannerText);
+
+  const btnRow = _sgrEl('div', { style:'display:flex;gap:8px;flex-shrink:0;' });
+  const createBtn = _sgrEl('button', { class:'sgr-submit-btn', style:'padding:6px 14px;font-size:0.72rem;' }, 'Create Profile →');
+  createBtn.addEventListener('click', () => {
+    _sgrRenderProfileForm(container, null, user, db, () => _sgrRenderExchange(container));
+  });
+  const skipBtn = _sgrEl('button', {
+    style:'padding:6px 12px;font-size:0.70rem;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:rgba(96,120,152,0.7);cursor:pointer;font-family:var(--font-mono,monospace);letter-spacing:0.05em;'
+  }, 'Skip');
+  skipBtn.addEventListener('click', () => _sgrRenderExchange(container));
+  btnRow.appendChild(createBtn);
+  btnRow.appendChild(skipBtn);
+  banner.appendChild(btnRow);
+  container.appendChild(banner);
+
+  // Then render the exchange normally below the banner
+  const feedWrap = _sgrEl('div');
+  container.appendChild(feedWrap);
+  Promise.all([
+    db.ref('research_exchange').once('value'),
+    db.ref('researcher_profiles').once('value').catch(() => null)
+  ]).then(([exchSnap, profSnap]) => {
+    const raw        = exchSnap.val() || {};
+    const profileMap = (profSnap && profSnap.val()) || {};
+    const now        = Date.now();
+    const all        = Object.entries(raw)
+      .filter(([, c]) => c.status !== 'closed' && (!c.expires || c.expires > now))
+      .map(([id, c]) => ({ id, ...c }))
+      .sort((a, b) => (b.posted || 0) - (a.posted || 0));
+    _sgrRenderExchangeView(feedWrap, all, profileMap);
+  }).catch(() => _sgrRenderExchange(feedWrap));
+}
+
+window.saGrantRenderDirectory = _sgrRenderDirectory;

@@ -9,7 +9,7 @@
 <title>ATLAS CHW Assessment</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Arabic:wght@300;400;600&display=swap" rel="stylesheet">
 
 <!-- Firebase 9.23.0 (compat SDK for minimal CDN footprint) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -32,7 +32,7 @@
 html, body {
   background: var(--ink);
   color: var(--bright);
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'IBM Plex Sans', 'Noto Sans Arabic', sans-serif;
   font-size: 16px;
   line-height: 1.5;
   min-height: 100vh;
@@ -126,7 +126,7 @@ html, body {
   width: 100%;
   min-height: 52px;
   padding: 12px 14px;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'IBM Plex Sans', 'Noto Sans Arabic', sans-serif;
   font-size: 17px;
   background: var(--surface);
   border: 2px solid rgba(255,255,255,0.10);
@@ -229,7 +229,7 @@ html, body {
 
 /* ── Question display ─────────────────────────────────────────────────── */
 .question-text {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'IBM Plex Sans', 'Noto Sans Arabic', sans-serif;
   font-size: 22px;
   font-weight: 500;
   color: var(--bright);
@@ -486,6 +486,8 @@ html, body {
       <label for="langSelect">Language</label>
       <select id="langSelect">
         <option value="en">English</option>
+        <option value="el">Ελληνικά</option>
+        <option value="pl">Polski</option>
         <option value="it">Italiano</option>
         <option value="sw">Kiswahili</option>
         <option value="fr">French</option>
@@ -493,6 +495,27 @@ html, body {
         <option value="pt">Portuguese</option>
         <option value="ar">Arabic</option>
         <option value="es">Spanish</option>
+        <option value="de">Deutsch</option>
+        <option value="zh">中文</option>
+        <option value="zh-TW">繁體中文</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+        <option value="ru">Русский</option>
+        <option value="tr">Türkçe</option>
+        <option value="id">Bahasa Indonesia</option>
+        <option value="tl">Filipino</option>
+        <option value="af">Afrikaans</option>
+        <option value="sq">Shqip</option>
+        <option value="bn">বাংলা</option>
+        <option value="hr">Hrvatski</option>
+        <option value="da">Dansk</option>
+        <option value="nl">Nederlands</option>
+        <option value="fi">Suomi</option>
+        <option value="ms">Bahasa Melayu</option>
+        <option value="sv">Svenska</option>
+        <option value="uk">Українська</option>
+        <option value="ur">اردو</option>
+        <option value="vi">Tiếng Việt</option>
       </select>
     </div>
 
@@ -522,6 +545,27 @@ html, body {
         <option>Tuberculosis</option>
         <option>Malaria</option>
         <option>Other</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="ageRangeSelect" id="chw-lbl-agerange">Age Range</label>
+      <select id="ageRangeSelect">
+        <option value="">Select...</option>
+        <option value="18-34">18–34</option>
+        <option value="35-50">35–50</option>
+        <option value="51-64">51–64</option>
+        <option value="65+">65+</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="sexSelect" id="chw-lbl-sex">Sex</label>
+      <select id="sexSelect">
+        <option value="">Select...</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
       </select>
     </div>
 
@@ -780,10 +824,653 @@ var _i18n = {
     yes: "SI", no: "NO",
     freq: ["NUNCA","RARAMENTE","A VECES","CON FRECUENCIA","SIEMPRE"],
   },
+  el: {
+    q:  [
+      "Υπάρχουν στιγμές που ξεχνάτε να πάρετε το φάρμακό σας;",
+      "Τις τελευταίες δύο εβδομάδες, επιλέξατε να παραλείψετε κάποια δόση; Για παράδειγμα, λόγω παρενεργειών, κόστους ή επειδή νιώθατε καλύτερα;",
+      "Τις τελευταίες δύο εβδομάδες, πήρατε λιγότερο φάρμακο ή το σταματήσατε μόνοι σας χωρίς να ενημερώσετε τον γιατρό σας, λόγω του πώς σας έκανε να νιώθετε;",
+      "Όταν η καθημερινή σας ρουτίνα αλλάζει, όπως όταν ταξιδεύετε ή εργάζεστε σε διαφορετικές ώρες, δυσκολεύεστε να συνεχίσετε τη φαρμακευτική σας αγωγή;",
+      "Μπορέσατε να πάρετε την τελευταία σας δόση όπως σας είπε ο γιατρός σας;",
+      "Όταν αρχίζετε να νιώθετε καλύτερα, σκέφτεστε μερικές φορές να σταματήσετε ή να μειώσετε το φάρμακό σας μόνοι σας;",
+      "Το να παίρνετε το φάρμακό σας κάθε μέρα σας φαίνεται μεγάλη πρόκληση στην καθημερινή σας ζωή;",
+      "Σε μια κανονική εβδομάδα, πόσο συχνά δυσκολεύεστε να παίρνετε όλα τα φάρμακά σας όπως έχουν συνταγογραφηθεί;"
+    ],
+    inst: "Κάντε αυτή την ερώτηση στον ασθενή. Πατήστε την απάντησή του.",
+    yes: "ΝΑΙ", no: "ΟΧΙ",
+    freq: ["ΠΟΤΕ","ΣΠΑΝΙΑ","ΚΑΠΟΙΕΣ ΦΟΡΕΣ","ΣΥΧΝΑ","ΠΑΝΤΑ"],
+  },
+  pl: {
+    q:  [
+      "Czy zdarzają się chwile, kiedy zapomina Pan/Pani wziąć lek?",
+      "W ciągu ostatnich dwóch tygodni, czy zdecydował(a) się Pan/Pani pominąć jakąś dawkę? Na przykład z powodu skutków ubocznych, kosztów lub lepszego samopoczucia?",
+      "W ciągu ostatnich dwóch tygodni, czy przyjął(a) Pan/Pani mniej leku lub odstawił(a) go samodzielnie bez informowania lekarza, ze względu na to, jak się czuł(a)?",
+      "Gdy Pana/Pani codzienna rutyna się zmienia, na przykład podczas podróży lub pracy w innych godzinach, czy trudno jest utrzymać regularność przyjmowania leku?",
+      "Czy udało się Panu/Pani przyjąć ostatnią dawkę zgodnie z zaleceniem lekarza?",
+      "Gdy zaczyna się Pan/Pani czuć lepiej, czy myśli Pan/Pani o samodzielnym odstawieniu lub zmniejszeniu dawki leku?",
+      "Czy codzienne przyjmowanie leku stanowi dla Pana/Pani duże wyzwanie w życiu codziennym?",
+      "W typowym tygodniu, jak często ma Pan/Pani trudności z przyjmowaniem wszystkich leków zgodnie z zaleceniem?"
+    ],
+    inst: "Zadaj pacjentowi to pytanie. Dotknij jego odpowiedzi.",
+    yes: "TAK", no: "NIE",
+    freq: ["NIGDY","RZADKO","CZASAMI","CZĘSTO","ZAWSZE"],
+  },
+  de: {
+    q: [
+      "Gibt es Momente, in denen Sie vergessen, Ihr Medikament zu nehmen?",
+      "Haben Sie in den letzten zwei Wochen eine Dosis bewusst ausgelassen? Zum Beispiel wegen Nebenwirkungen, Kosten oder weil Sie sich besser fuhlten?",
+      "Haben Sie in den letzten zwei Wochen ohne Rucksprache mit Ihrem Arzt weniger Medikament genommen oder es abgesetzt, weil Sie sich dadurch unwohl fuhlten?",
+      "Wenn sich Ihre tagliche Routine andert, zum Beispiel bei Reisen oder wechselnden Arbeitszeiten, fallt es Ihnen dann schwer, Ihr Medikament weiter regelmassig zu nehmen?",
+      "Konnten Sie Ihre letzte Dosis so nehmen, wie Ihr Arzt es angeordnet hat?",
+      "Wenn Sie sich besser zu fuhlen beginnen, denken Sie manchmal daran, Ihr Medikament auf eigene Initiative zu reduzieren oder abzusetzen?",
+      "Empfinden Sie die tagliche Einnahme Ihres Medikaments als eine grosse Herausforderung in Ihrem Alltag?",
+      "Wie oft haben Sie in einer normalen Woche Schwierigkeiten, alle Ihre Medikamente wie verordnet einzunehmen?"
+    ],
+    inst: "Stellen Sie dem Patienten diese Frage. Tippen Sie auf seine Antwort.",
+    yes: "JA", no: "NEIN",
+    freq: ["NIE","SELTEN","MANCHMAL","OFT","IMMER"],
+    ui: {
+      beginDay: "Tag beginnen", startAssessment: "Bewertung starten",
+      patientSetup: "Patienteneinrichtung", newAssessment: "Neue Bewertung",
+      patientCode: "Patientenreferenzcode (optional)", condition: "Erkrankung",
+      question: "Frage", of: "von",
+      assessmentComplete: "Bewertung abgeschlossen", actionCard: "CHW-Aktionskarte",
+      peScore: "PE-Wert", recommendedAction: "Empfohlene Massnahme",
+      beliefs: "Einstellungen zum Medikament", routine: "Tagliche Routine", barriers: "Praktische Hinderisse",
+      saveNext: "Speichern und nachster Patient", flagSupervisor: "Fur Vorgesetzten markieren",
+      loadingSession: "Sitzung wird geladen...",
+    }
+  },
+  zh: {
+    q: [
+      "您有时会忘记服药吗?",
+      "在过去两周内,您是否曾主动跳过某次服药?例如因为副作用、费用或感觉好转?",
+      "在过去两周内,您是否未告知医生便自行减少剂量或停药,因为药物让您感到不适?",
+      "当您的日常规律改变时,例如出行或工作时间不同时,是否难以坚持按时服药?",
+      "您上次服药是否按照医生的指示服用的?",
+      "当您开始感觉好转时,您是否曾想过自行减少或停止服药?",
+      "每天按时服药对您来说是否是日常生活中的一大挑战?",
+      "在正常的一周内,您有多少次难以按处方服下所有药物?"
+    ],
+    inst: "向患者提问。点击患者的回答。",
+    yes: "是", no: "否",
+    freq: ["从不","很少","有时","经常","总是"],
+    ui: {
+      beginDay: "开始今日工作", startAssessment: "开始评估",
+      patientSetup: "患者设置", newAssessment: "新评估",
+      patientCode: "患者参考编码 (可选)", condition: "病症",
+      question: "问题", of: "/",
+      assessmentComplete: "评估完成", actionCard: "CHW行动卡",
+      peScore: "PE评分", recommendedAction: "建议措施",
+      beliefs: "用药信念", routine: "日常规律", barriers: "实际障碍",
+      saveNext: "保存并进入下一位患者", flagSupervisor: "标记给主管",
+      loadingSession: "加载会话中...",
+    }
+  },
+  "zh-TW": {
+    q: [
+      "您有時會忘記服藥嗎?",
+      "在過去兩週內,您是否曾主動跳過某次服藥?例如因為副作用、費用或感覺好轉?",
+      "在過去兩週內,您是否未告知醫生便自行減少劑量或停藥,因為藥物讓您感到不適?",
+      "當您的日常規律改變時,例如出行或工作時間不同時,是否難以堅持按時服藥?",
+      "您上次服藥是否按照醫生的指示服用的?",
+      "當您開始感覺好轉時,您是否曾想過自行減少或停止服藥?",
+      "每天按時服藥對您來說是否是日常生活中的一大挑戰?",
+      "在正常的一週內,您有多少次難以按處方服下所有藥物?"
+    ],
+    inst: "向患者提問。點擊患者的回答。",
+    yes: "是", no: "否",
+    freq: ["從不","很少","有時","經常","總是"],
+    ui: {
+      beginDay: "開始今日工作", startAssessment: "開始評估",
+      patientSetup: "患者設置", newAssessment: "新評估",
+      patientCode: "患者參考編碼 (可選)", condition: "病症",
+      question: "問題", of: "/",
+      assessmentComplete: "評估完成", actionCard: "CHW行動卡",
+      peScore: "PE評分", recommendedAction: "建議措施",
+      beliefs: "用藥信念", routine: "日常規律", barriers: "實際障礙",
+      saveNext: "儲存並進入下一位患者", flagSupervisor: "標記給主管",
+      loadingSession: "載入會話中...",
+    }
+  },
+  ja: {
+    q: [
+      "薬を飲み忘れることはありますか?",
+      "過去2週間で、副作用や費用、体調の改善などの理由で、意図的に服薬を飛ばしたことはありますか?",
+      "過去2週間で、医師に告げずに自己判断で薬の量を減らしたり、服薬をやめたりしたことはありますか? 薬の飲み心地が原因の場合も含めてお聞きします。",
+      "旅行や勤務時間の変化など、日常生活のパターンが変わったとき、薬を続けて飲むのが難しくなりますか?",
+      "医師の指示通りに最後の服薬ができましたか?",
+      "体調が良くなってきたとき、自己判断で薬を減らしたりやめたりしようと思ったことはありますか?",
+      "毎日薬を飲み続けることは、日常生活において大きな負担に感じますか?",
+      "普通の1週間の中で、処方された通りに全ての薬を飲むことが難しいと感じる頻度はどのくらいですか?"
+    ],
+    inst: "この質問を患者に読み上げてください。患者の回答をタップしてください。",
+    yes: "はい", no: "いいえ",
+    freq: ["まったくない","ほとんどない","ときどき","よく","いつも"],
+    ui: {
+      beginDay: "業務開始", startAssessment: "評価を開始",
+      patientSetup: "患者設定", newAssessment: "新規評価",
+      patientCode: "患者参照コード (任意)", condition: "疾患",
+      question: "質問", of: "/",
+      assessmentComplete: "評価完了", actionCard: "CHW行動カード",
+      peScore: "PEスコア", recommendedAction: "推奨アクション",
+      beliefs: "服薬に対する考え", routine: "日常ルーティン", barriers: "実際の障壁",
+      saveNext: "保存して次の患者へ", flagSupervisor: "スーパーバイザーに報告",
+      loadingSession: "セッション読み込み中...",
+    }
+  },
+  ko: {
+    q: [
+      "약 복용을 잊어버리는 경우가 있나요?",
+      "지난 2주 동안 부작용, 비용, 또는 상태가 좋아졌다는 이유로 의도적으로 복용을 건너뛴 적이 있나요?",
+      "지난 2주 동안 의사에게 말하지 않고 스스로 약의 양을 줄이거나 복용을 중단한 적이 있나요? 약이 몸에 맞지 않아서 그랬던 경우도 포함합니다.",
+      "출장이나 근무 시간 변경 등 일상 루틴이 바뀌었을 때 약을 계속 복용하기 어렵습니까?",
+      "의사의 지시대로 마지막 복용을 하셨나요?",
+      "상태가 좋아질 때 스스로 약을 줄이거나 중단해야겠다고 생각한 적이 있나요?",
+      "매일 약을 복용하는 것이 일상생활에서 큰 부담으로 느껴지나요?",
+      "보통 한 주 동안 처방대로 모든 약을 복용하기 어렵다고 느끼는 경우가 얼마나 자주 있나요?"
+    ],
+    inst: "환자에게 이 질문을 읽어주세요. 환자의 답변을 탭하세요.",
+    yes: "예", no: "아니요",
+    freq: ["전혀 없음","거의 없음","가끔","자주","항상"],
+    ui: {
+      beginDay: "업무 시작", startAssessment: "평가 시작",
+      patientSetup: "환자 설정", newAssessment: "신규 평가",
+      patientCode: "환자 참조 코드 (선택)", condition: "질환",
+      question: "질문", of: "/",
+      assessmentComplete: "평가 완료", actionCard: "CHW 행동 카드",
+      peScore: "PE 점수", recommendedAction: "권장 조치",
+      beliefs: "복약 신념", routine: "일상 루틴", barriers: "실질적 장애",
+      saveNext: "저장 후 다음 환자", flagSupervisor: "슈퍼바이저에게 알림",
+      loadingSession: "세션 로드 중...",
+    }
+  },
+  ru: {
+    q: [
+      "Бывают ли моменты, когда вы забываете принять лекарство?",
+      "За последние две недели вы намеренно пропускали прием лекарства? Например, из-за побочных эффектов, стоимости или потому что чувствовали себя лучше?",
+      "За последние две недели вы самостоятельно уменьшали дозу или прекращали прием лекарства без ведома врача из-за того, как оно на вас действовало?",
+      "Когда ваш распорядок дня меняется, например во время поездок или при нестандартном рабочем графике, сложно ли вам продолжать принимать лекарство?",
+      "Удалось ли вам принять последнюю дозу так, как назначил врач?",
+      "Когда вы начинаете чувствовать себя лучше, возникает ли у вас желание самостоятельно уменьшить дозу или прекратить прием лекарства?",
+      "Кажется ли вам ежедневный прием лекарства большой трудностью в повседневной жизни?",
+      "Как часто в течение обычной недели вам бывает сложно принимать все лекарства в соответствии с назначением?"
+    ],
+    inst: "Задайте этот вопрос пациенту. Нажмите на его ответ.",
+    yes: "ДА", no: "НЕТ",
+    freq: ["НИКОГДА","РЕДКО","ИНОГДА","ЧАСТО","ВСЕГДА"],
+    ui: {
+      beginDay: "Начать день", startAssessment: "Начать оценку",
+      patientSetup: "Настройка пациента", newAssessment: "Новая оценка",
+      patientCode: "Код пациента (необязательно)", condition: "Состояние",
+      question: "Вопрос", of: "из",
+      assessmentComplete: "Оценка завершена", actionCard: "Карточка действий СЗР",
+      peScore: "Оценка PE", recommendedAction: "Рекомендуемое действие",
+      beliefs: "Отношение к лекарству", routine: "Ежедневная рутина", barriers: "Практические барьеры",
+      saveNext: "Сохранить и следующий пациент", flagSupervisor: "Отметить для руководителя",
+      loadingSession: "Загрузка сеанса...",
+    }
+  },
+  tr: {
+    q: [
+      "Ilacınızı almayı unuttugunuz anlar oluyor mu?",
+      "Son iki haftada, yan etkiler, maliyet veya daha iyi hissetmek gibi nedenlerle bir dozu bilinçli olarak atladınız mı?",
+      "Son iki haftada, ilacın size nasıl hissettirdiginden dolayı doktorunuza sormadan kendi basınıza doz azalttınız mı ya da ilacı bıraktınız mı?",
+      "Seyahat veya farklı çalısma saatleri gibi günlük rutininiz degistiginde, ilacı düzenli almaya devam etmek zor mu oluyor?",
+      "Son dozunuzu doktorunuzun tarif ettigi gibi alabildiniz mi?",
+      "Kendinizi daha iyi hissetmeye basladıgınızda, ilacı kendi basiniza azaltmayı veya bırakmayı dusunuyor musunuz?",
+      "Her gün ilacınızı almanız, günlük yasantınızda büyük bir zorluk gibi mi geliyor?",
+      "Normal bir haftada, reçete edildigine göre tüm ilaçlarınızı almakta ne sıklıkta güçlük çekiyorsunuz?"
+    ],
+    inst: "Bu soruyu hastaya sorun. Yanıtına dokunun.",
+    yes: "EVET", no: "HAYIR",
+    freq: ["HİÇ","NADIREN","BAZEN","SIKLIKLA","HER ZAMAN"],
+    ui: {
+      beginDay: "Güne Basla", startAssessment: "Degerlendirmeyi Baslatın",
+      patientSetup: "Hasta Kurulumu", newAssessment: "Yeni Degerlendirme",
+      patientCode: "Hasta Referans Kodu (isteğe baglı)", condition: "Durum",
+      question: "Soru", of: "/",
+      assessmentComplete: "Degerlendirme Tamamlandı", actionCard: "SİH Eylem Kartı",
+      peScore: "PE Puanı", recommendedAction: "Önerilen Eylem",
+      beliefs: "İlaca iliskin inançlar", routine: "Günlük rutin", barriers: "Pratik engeller",
+      saveNext: "Kaydet ve Sonraki Hasta", flagSupervisor: "Denetçiye Bildir",
+      loadingSession: "Oturum yükleniyor...",
+    }
+  },
+  id: {
+    q: [
+      "Apakah ada saat-saat di mana Anda lupa meminum obat?",
+      "Dalam dua minggu terakhir, apakah Anda pernah sengaja melewatkan dosis? Misalnya karena efek samping, biaya, atau karena merasa sudah lebih baik?",
+      "Dalam dua minggu terakhir, apakah Anda pernah mengurangi dosis atau berhenti minum obat sendiri tanpa memberi tahu dokter, karena cara kerja obat itu terhadap Anda?",
+      "Ketika rutinitas harian Anda berubah, seperti saat bepergian atau bekerja dengan jam yang berbeda, apakah sulit untuk tetap minum obat secara teratur?",
+      "Apakah Anda berhasil meminum dosis terakhir sesuai petunjuk dokter?",
+      "Ketika Anda mulai merasa lebih baik, apakah Anda pernah berpikir untuk mengurangi atau menghentikan obat sendiri?",
+      "Apakah minum obat setiap hari terasa sebagai tantangan besar dalam kehidupan sehari-hari Anda?",
+      "Dalam seminggu normal, seberapa sering Anda kesulitan meminum semua obat sesuai resep?"
+    ],
+    inst: "Ajukan pertanyaan ini kepada pasien. Ketuk jawaban mereka.",
+    yes: "YA", no: "TIDAK",
+    freq: ["TIDAK PERNAH","JARANG","KADANG-KADANG","SERING","SELALU"],
+    ui: {
+      beginDay: "Mulai Hari", startAssessment: "Mulai Penilaian",
+      patientSetup: "Pengaturan Pasien", newAssessment: "Penilaian Baru",
+      patientCode: "Kode Referensi Pasien (opsional)", condition: "Kondisi",
+      question: "Pertanyaan", of: "dari",
+      assessmentComplete: "Penilaian Selesai", actionCard: "Kartu Tindakan KKM",
+      peScore: "Skor PE", recommendedAction: "Tindakan yang Disarankan",
+      beliefs: "Keyakinan tentang obat", routine: "Rutinitas harian", barriers: "Hambatan praktis",
+      saveNext: "Simpan dan Pasien Berikutnya", flagSupervisor: "Tandai untuk Supervisor",
+      loadingSession: "Memuat sesi...",
+    }
+  },
+  tl: {
+    q: [
+      "May mga pagkakataon ba na nakakalimutan mong inumin ang iyong gamot?",
+      "Sa nakalipas na dalawang linggo, sinadya mo bang laktawan ang isang dosis? Halimbawa, dahil sa epekto ng gamot, gastos, o dahil pakiramdam mo ay gumaling ka na?",
+      "Sa nakalipas na dalawang linggo, nagbawas ka ba ng dosis o tumigil sa gamot nang hindi sinasabi sa doktor, dahil sa paraan ng epekto nito sa iyo?",
+      "Kapag nagbabago ang iyong pang-araw-araw na gawi, tulad ng paglalakbay o pagtatrabaho sa ibang oras, nahihirapan ka bang mapanatili ang pag-inom ng gamot?",
+      "Naging maari mo bang inumin ang iyong huling dosis ayon sa itinuro ng iyong doktor?",
+      "Kapag nagsimula kang maging mas maayos ang pakiramdam, naiisip mo bang bawasan o itigil ang gamot nang kusa?",
+      "Ang pag-inom ng gamot araw-araw ba ay pakiramdam mong isang malaking hamon sa iyong pang-araw-araw na buhay?",
+      "Sa isang karaniwang linggo, gaano kadalas kang nahihirapan sa pag-inom ng lahat ng iyong gamot ayon sa reseta?"
+    ],
+    inst: "Itanong ang tanong na ito sa pasyente. I-tap ang kanyang sagot.",
+    yes: "OO", no: "HINDI",
+    freq: ["HINDI KAILANMAN","BIHIRA","MINSAN","MADALAS","PALAGI"],
+    ui: {
+      beginDay: "Simulan ang Araw", startAssessment: "Simulan ang Pagtatasa",
+      patientSetup: "Setup ng Pasyente", newAssessment: "Bagong Pagtatasa",
+      patientCode: "Reference Code ng Pasyente (opsyonal)", condition: "Kondisyon",
+      question: "Tanong", of: "ng",
+      assessmentComplete: "Pagtatasa Kumpleto", actionCard: "CHW Action Card",
+      peScore: "PE Score", recommendedAction: "Inirerekomendang Aksyon",
+      beliefs: "Paniniwala tungkol sa gamot", routine: "Pang-araw-araw na gawi", barriers: "Mga praktikal na hadlang",
+      saveNext: "I-save at Susunod na Pasyente", flagSupervisor: "I-flag para sa Superbisor",
+      loadingSession: "Nilo-load ang session...",
+    }
+  },
+  af: {
+    q: [
+      "Is daar tye wanneer jy vergeet om jou medikasie te neem?",
+      "In die afgelope twee weke, het jy doelbewus 'n dosis oorgeslaan? Byvoorbeeld weens newe-effekte, koste of omdat jy beter gevoel het?",
+      "In die afgelope twee weke, het jy sonder om jou dokter te vertel self minder medikasie geneem of dit gestaak, omdat dit jou ongemaklik laat voel het?",
+      "Wanneer jou daaglikse roetine verander, soos wanneer jy reis of op verskillende tye werk, is dit dan moeilik om aan te hou om jou medikasie te neem?",
+      "Kon jy jou laaste dosis neem soos jou dokter dit voorgeskryf het?",
+      "Wanneer jy begin beter voel, dink jy soms daaraan om jou medikasie op eie houtjie te verminder of te staak?",
+      "Voel die daaglikse inname van jou medikasie soos 'n groot uitdaging in jou alledaagse lewe?",
+      "In 'n tipiese week, hoe gereeld ondervind jy probleme om al jou medikasie soos voorgeskryf te neem?"
+    ],
+    inst: "Vra die pasient hierdie vraag. Tik op hul antwoord.",
+    yes: "JA", no: "NEE",
+    freq: ["NOOIT","SELDE","SOMS","DIKWELS","ALTYD"],
+    ui: {
+      beginDay: "Begin Dag", startAssessment: "Begin Assessering",
+      patientSetup: "Pasient Opstelling", newAssessment: "Nuwe Assessering",
+      patientCode: "Pasientverwysigskode (opsioneel)", condition: "Toestand",
+      question: "Vraag", of: "van",
+      assessmentComplete: "Assessering Voltooi", actionCard: "GGW Aksiekaart",
+      peScore: "PE Telling", recommendedAction: "Aanbevole Aksie",
+      beliefs: "Oortuigings oor medikasie", routine: "Daaglikse roetine", barriers: "Praktiese hindernisse",
+      saveNext: "Stoor en Volgende Pasient", flagSupervisor: "Merk vir Toesighouer",
+      loadingSession: "Sessie word gelaai...",
+    }
+  },
+  sq: {
+    q: [
+      "A ka raste kur harroni te merrni ilaçin tuaj?",
+      "Gjate dy javeve te fundit, a keni zgjedhur me vullnet te anashkaloni ndonje doze? Pershembull per shkak te efekteve anesore, kostos ose sepse ndiheshit me mire?",
+      "Gjate dy javeve te fundit, a keni marre me pak ilaç ose e keni nderprere vete pa i treguar mjekut, per shkak te menyres se si ju bente te ndiheshit?",
+      "Kur rutina juaj e perditshme ndryshon, pershembull kur udhetoni ose punoni me ore te ndryshme, a eshte e veshtire te vazhdoni te merrni ilaçin rregullisht?",
+      "A mundut te merrni dozën tuaj te fundit ashtu si ju ka udhezuar mjeku?",
+      "Kur filloni te ndiheni me mire, a mendoni ndonjehere te ulni ose te nderpreni ilaçin me iniciative tuaj?",
+      "A ju duket marrja e ilaçit çdo dite nje sfide e madhe ne jeten tuaj te perditshme?",
+      "Ne nje jave tipike, sa shpesh keni veshtiresi per te marre te gjithe ilaçet tuaja ashtu si jane recetuar?"
+    ],
+    inst: "Beni kete pyetje pacientit. Trokitni pergjigjen e tyre.",
+    yes: "PO", no: "JO",
+    freq: ["KURRE","RRALLE","NDONJEHERE","SHPESH","GJITHMON"],
+    ui: {
+      beginDay: "Fillo Diten", startAssessment: "Fillo Vleresimin",
+      patientSetup: "Konfigurimi i Pacientit", newAssessment: "Vleresim i Ri",
+      patientCode: "Kodi Referues i Pacientit (opsional)", condition: "Gjendja",
+      question: "Pyetje", of: "nga",
+      assessmentComplete: "Vleresimi Perfundoi", actionCard: "Karta e Veprimit te PSH",
+      peScore: "Rezultati PE", recommendedAction: "Veprimi i Rekomanduar",
+      beliefs: "Besime per ilaçin", routine: "Rutina e perditshme", barriers: "Pengesat praktike",
+      saveNext: "Ruaj dhe Pacienti Tjeter", flagSupervisor: "Sinjalo per Mbikequyesin",
+      loadingSession: "Po ngarkohet sesioni...",
+    }
+  },
+  bn: {
+    q: [
+      "এমন কি কোনো সময় আছে যখন আপনি আপনার ওষুধ খেতে ভুলে যান?",
+      "গত দুই সপ্তাহে, আপনি কি ইচ্ছাকৃতভাবে কোনো ডোজ বাদ দিয়েছেন? যেমন পার্শ্বপ্রতিক্রিয়া, খরচ বা সুস্থ বোধ করার কারণে?",
+      "গত দুই সপ্তাহে, ডাক্তারকে না জানিয়ে নিজে থেকেই কম ওষুধ খেয়েছেন বা বন্ধ করে দিয়েছেন, কারণ এটি আপনাকে অস্বস্তি দিচ্ছিল?",
+      "যখন আপনার দৈনন্দিন রুটিন বদলে যায়, যেমন ভ্রমণ বা ভিন্ন সময়ে কাজ করার সময়, তখন কি নিয়মিত ওষুধ খাওয়া কঠিন হয়ে পড়ে?",
+      "আপনার ডাক্তার যেভাবে বলেছেন, আপনি কি শেষ ডোজটি সেভাবে নিতে পেরেছেন?",
+      "যখন আপনি ভালো অনুভব করতে শুরু করেন, তখন কি কখনো মনে হয় নিজে থেকেই ওষুধ কমিয়ে দেবেন বা বন্ধ করে দেবেন?",
+      "প্রতিদিন ওষুধ খাওয়া কি আপনার দৈনন্দিন জীবনে একটি বড় চ্যালেঞ্জ মনে হয়?",
+      "একটি স্বাভাবিক সপ্তাহে, প্রেসক্রিপশন অনুযায়ী সব ওষুধ খেতে আপনার কতবার অসুবিধা হয়?"
+    ],
+    inst: "রোগীকে এই প্রশ্নটি জিজ্ঞাসা করুন। তাদের উত্তরে ট্যাপ করুন।",
+    yes: "হ্যাঁ", no: "না",
+    freq: ["কখনই না","কদাচিৎ","মাঝে মাঝে","প্রায়ই","সবসময়"],
+    ui: {
+      beginDay: "দিন শুরু করুন", startAssessment: "মূল্যায়ন শুরু করুন",
+      patientSetup: "রোগী সেটআপ", newAssessment: "নতুন মূল্যায়ন",
+      patientCode: "রোগী রেফারেন্স কোড (ঐচ্ছিক)", condition: "রোগ",
+      question: "প্রশ্ন", of: "/",
+      assessmentComplete: "মূল্যায়ন সম্পন্ন", actionCard: "CHW অ্যাকশন কার্ড",
+      peScore: "PE স্কোর", recommendedAction: "প্রস্তাবিত পদক্ষেপ",
+      beliefs: "ওষুধ সম্পর্কে বিশ্বাস", routine: "দৈনন্দিন রুটিন", barriers: "ব্যবহারিক বাধা",
+      saveNext: "সংরক্ষণ করুন এবং পরবর্তী রোগী", flagSupervisor: "সুপারভাইজারের জন্য চিহ্নিত করুন",
+      loadingSession: "সেশন লোড হচ্ছে...",
+    }
+  },
+  hr: {
+    q: [
+      "Ima li trenutaka kada zaboravite uzeti lijek?",
+      "U protekla dva tjedna, jeste li svjesno preskocili dozu? Na primjer, zbog nuspojava, cijene ili jer ste se osjecali bolje?",
+      "U protekla dva tjedna, jeste li bez konzultacije s lijecnikom smanjili dozu ili prestali uzimati lijek zbog nacina na koji vas je on utjecao?",
+      "Kada se vasa dnevna rutina promijeni, na primjer kada putujete ili radite u razlicito vrijeme, je li tesko nastaviti redovito uzimati lijek?",
+      "Jeste li uspjeli uzeti posljednju dozu onako kako vam je lijecnik propisao?",
+      "Kada pocnete osjecati poboljsanje, razmisljate li ponekad o smanjenju ili prestanku uzimanja lijeka na vlastitu inicijativu?",
+      "Cini li vam se svakodnevno uzimanje lijeka velikim izazovom u vasem svakodnevnom zivotu?",
+      "U tipicnom tjednu, koliko cesto imate poteskoca s uzimanjem svih lijekova prema uputama?"
+    ],
+    inst: "Postavite ovo pitanje pacijentu. Dodirnite njihov odgovor.",
+    yes: "DA", no: "NE",
+    freq: ["NIKAD","RIJETKO","PONEKAD","CESTO","UVIJEK"],
+    ui: {
+      beginDay: "Pocni Dan", startAssessment: "Pocni Procjenu",
+      patientSetup: "Postavljanje Pacijenta", newAssessment: "Nova Procjena",
+      patientCode: "Referentni kod pacijenta (neobavezno)", condition: "Stanje",
+      question: "Pitanje", of: "od",
+      assessmentComplete: "Procjena Dovrsena", actionCard: "ZZS Akcijska Kartica",
+      peScore: "PE Rezultat", recommendedAction: "Preporucena Akcija",
+      beliefs: "Uvjerenja o lijeku", routine: "Dnevna rutina", barriers: "Prakticne prepreke",
+      saveNext: "Spremi i Sljedeci Pacijent", flagSupervisor: "Oznaci za Nadredenog",
+      loadingSession: "Ucitavanje sesije...",
+    }
+  },
+  da: {
+    q: [
+      "Er der tidspunkter, hvor du glemmer at tage din medicin?",
+      "I de seneste to uger, har du bevidst valgt at springe en dosis over? For eksempel pa grund af bivirkninger, omkostninger eller fordi du folte dig bedre?",
+      "I de seneste to uger, har du pa eget initiativ taget mindre medicin eller stoppet uden at fortaelle det til din laege, fordi medicinen fik dig til at have det pa en bestemt made?",
+      "Nar din daglige rutine aendrer sig, for eksempel nar du rejser eller arbejder pa forskellige tidspunkter, er det sa svaert at holde fast i din medicin?",
+      "Lykkedes det dig at tage din sidste dosis, som din laege anbefalede?",
+      "Nar du begynder at have det bedre, overvejer du nogle gange at reducere eller stoppe din medicin pa eget initiativ?",
+      "Foler du, at det er en stor udfordring at tage din medicin hver dag i din dagligdag?",
+      "Hvor ofte har du i en typisk uge svaert ved at tage al din medicin som foreskrevet?"
+    ],
+    inst: "Still dette sporgsmal til patienten. Tryk pa deres svar.",
+    yes: "JA", no: "NEJ",
+    freq: ["ALDRIG","SJAELDENT","INDIMELLEM","OFTE","ALTID"],
+    ui: {
+      beginDay: "Start Dag", startAssessment: "Start Vurdering",
+      patientSetup: "Patientopsaetning", newAssessment: "Ny Vurdering",
+      patientCode: "Patientreferencekode (valgfrit)", condition: "Tilstand",
+      question: "Sporgsmal", of: "af",
+      assessmentComplete: "Vurdering Fuldfort", actionCard: "SSA Handlingskort",
+      peScore: "PE Score", recommendedAction: "Anbefalet Handling",
+      beliefs: "Tro pa medicinen", routine: "Daglig rutine", barriers: "Praktiske hindringer",
+      saveNext: "Gem og Naeste Patient", flagSupervisor: "Flag til Supervisor",
+      loadingSession: "Indlaesser session...",
+    }
+  },
+  nl: {
+    q: [
+      "Zijn er momenten waarop u vergeet uw medicijnen in te nemen?",
+      "Heeft u in de afgelopen twee weken bewust een dosis overgeslagen? Bijvoorbeeld vanwege bijwerkingen, kosten of omdat u zich beter voelde?",
+      "Heeft u in de afgelopen twee weken zonder overleg met uw arts zelf minder medicijnen ingenomen of gestopt, vanwege de manier waarop het u deed voelen?",
+      "Als uw dagelijkse routine verandert, zoals bij reizen of wisselende werktijden, is het dan moeilijk om door te gaan met uw medicijnen?",
+      "Heeft u uw laatste dosis kunnen innemen zoals uw arts het heeft voorgeschreven?",
+      "Als u zich beter begint te voelen, denkt u er dan wel eens aan om op eigen initiatief uw medicijnen te verminderen of te stoppen?",
+      "Voelt het dagelijks innemen van uw medicijnen als een grote uitdaging in uw dagelijks leven?",
+      "Hoe vaak heeft u in een normale week moeite met het innemen van alle medicijnen zoals voorgeschreven?"
+    ],
+    inst: "Stel de patient deze vraag. Tik op het antwoord.",
+    yes: "JA", no: "NEE",
+    freq: ["NOOIT","ZELDEN","SOMS","VAAK","ALTIJD"],
+    ui: {
+      beginDay: "Dag Starten", startAssessment: "Beoordeling Starten",
+      patientSetup: "Patientinstelling", newAssessment: "Nieuwe Beoordeling",
+      patientCode: "Patientreferentiecode (optioneel)", condition: "Aandoening",
+      question: "Vraag", of: "van",
+      assessmentComplete: "Beoordeling Voltooid", actionCard: "GGW Actiekaart",
+      peScore: "PE Score", recommendedAction: "Aanbevolen Actie",
+      beliefs: "Overtuigingen over medicijnen", routine: "Dagelijkse routine", barriers: "Praktische barrières",
+      saveNext: "Opslaan en Volgende Patient", flagSupervisor: "Markeren voor Supervisor",
+      loadingSession: "Sessie laden...",
+    }
+  },
+  fi: {
+    q: [
+      "Onko hetkia, jolloin unohdat ottaa laakkeesi?",
+      "Oletko viimeisten kahden viikon aikana tietoisesti jattanyt jonkin annoksen valiin? Esimerkiksi sivuvaikutusten, kustannusten tai paremman olon tunteen vuoksi?",
+      "Oletko viimeisten kahden viikon aikana ottanut laaketta vahemman tai lopettanut sen omatoimisesti kertomatta laakareille, koska laake sai sinut voimaan huonosti?",
+      "Kun paivittainen rutiinisi muuttuu, esimerkiksi matkustaessa tai eri tyoaikoina, onko laakkeenotto vaikea yllapitaa?",
+      "Onnistuiko sinulta ottaa viimeisin annos laakarin ohjeiden mukaisesti?",
+      "Kun alat tuntea olosi paremmaksi, harkitsetko joskus laakkeen vahentamista tai lopettamista omaehtoisesti?",
+      "Tuntuuko paivittainen laakkeenotto suurelta haasteelta arjessasi?",
+      "Kuinka usein sinulla on tyypillisella viikolla vaikeuksia ottaa kaikki laakkeesi maaratyn mukaisesti?"
+    ],
+    inst: "Kysy tama kysymys potilaalta. Napauta hanen vastaustaan.",
+    yes: "KYLLA", no: "EI",
+    freq: ["EI KOSKAAN","HARVOIN","JOSKUS","USEIN","AINA"],
+    ui: {
+      beginDay: "Aloita Paiva", startAssessment: "Aloita Arviointi",
+      patientSetup: "Potilasasetus", newAssessment: "Uusi Arviointi",
+      patientCode: "Potilasviitekoodi (valinnainen)", condition: "Tila",
+      question: "Kysymys", of: "/",
+      assessmentComplete: "Arviointi Valmis", actionCard: "TTA Toimintakortti",
+      peScore: "PE Pistemäärä", recommendedAction: "Suositeltu Toimenpide",
+      beliefs: "Uskomukset laakkeesta", routine: "Paivittainen rutiini", barriers: "Kaytannon esteet",
+      saveNext: "Tallenna ja Seuraava Potilas", flagSupervisor: "Merkitse Valvojalle",
+      loadingSession: "Ladataan istuntoa...",
+    }
+  },
+  ms: {
+    q: [
+      "Adakah terdapat masa-masa di mana anda terlupa untuk mengambil ubat anda?",
+      "Dalam dua minggu yang lalu, adakah anda sengaja meninggalkan sesuatu dos? Contohnya kerana kesan sampingan, kos atau kerana berasa lebih baik?",
+      "Dalam dua minggu yang lalu, adakah anda mengurangkan dos atau berhenti mengambil ubat sendiri tanpa memberitahu doktor, kerana cara ubat itu membuatkan anda berasa?",
+      "Apabila rutin harian anda berubah, seperti semasa bermusafir atau bekerja pada waktu yang berbeza, adakah sukar untuk meneruskan pengambilan ubat secara teratur?",
+      "Adakah anda berjaya mengambil dos terakhir anda seperti yang diarahkan oleh doktor anda?",
+      "Apabila anda mula berasa lebih baik, adakah anda kadangkala terfikir untuk mengurangkan atau menghentikan ubat anda sendiri?",
+      "Adakah pengambilan ubat setiap hari terasa seperti cabaran besar dalam kehidupan seharian anda?",
+      "Dalam seminggu biasa, berapa kerapkah anda menghadapi kesukaran untuk mengambil semua ubat anda seperti yang ditetapkan?"
+    ],
+    inst: "Tanya pesakit soalan ini. Ketik jawapan mereka.",
+    yes: "YA", no: "TIDAK",
+    freq: ["TIDAK PERNAH","JARANG","KADANG-KADANG","KERAP","SENTIASA"],
+    ui: {
+      beginDay: "Mulakan Hari", startAssessment: "Mulakan Penilaian",
+      patientSetup: "Persediaan Pesakit", newAssessment: "Penilaian Baharu",
+      patientCode: "Kod Rujukan Pesakit (pilihan)", condition: "Keadaan",
+      question: "Soalan", of: "daripada",
+      assessmentComplete: "Penilaian Selesai", actionCard: "Kad Tindakan KKM",
+      peScore: "Skor PE", recommendedAction: "Tindakan yang Disyorkan",
+      beliefs: "Kepercayaan tentang ubat", routine: "Rutin harian", barriers: "Halangan praktikal",
+      saveNext: "Simpan dan Pesakit Seterusnya", flagSupervisor: "Tandakan untuk Penyelia",
+      loadingSession: "Memuatkan sesi...",
+    }
+  },
+  sv: {
+    q: [
+      "Finns det stunder da du glomt att ta dina mediciner?",
+      "Under de senaste tva veckorna, har du medvetet hoppat over en dos? Till exempel pa grund av biverkningar, kostnad eller for att du kant dig battre?",
+      "Under de senaste tva veckorna, har du pa eget initiativ tagit mindre medicin eller slutat utan att berata det for din lakare, pa grund av hur medicinen fick dig att ma?",
+      "Nar din dagliga rutin forandras, till exempel nar du reser eller arbetar pa andra tider, ar det da svart att fortsatta ta dina mediciner?",
+      "Lyckades du ta din senaste dos sa som din lakare ordinerade?",
+      "Nar du borjar kanna dig battre, tanker du nagon gang pa att minska eller sluta med medicinen pa eget initiativ?",
+      "Kanns det som en stor utmaning i din vardag att ta dina mediciner varje dag?",
+      "Hur ofta har du under en typisk vecka svarigheter att ta alla dina mediciner enligt ordination?"
+    ],
+    inst: "Stall denna fraga till patienten. Tryck pa deras svar.",
+    yes: "JA", no: "NEJ",
+    freq: ["ALDRIG","SALLAN","IBLAND","OFTA","ALLTID"],
+    ui: {
+      beginDay: "Starta Dag", startAssessment: "Starta Bedomning",
+      patientSetup: "Patientinstallning", newAssessment: "Ny Bedomning",
+      patientCode: "Patientreferenskod (valfritt)", condition: "Tillstand",
+      question: "Fraga", of: "av",
+      assessmentComplete: "Bedomning Klar", actionCard: "CHW Aktionskort",
+      peScore: "PE Poang", recommendedAction: "Rekommenderad Atgard",
+      beliefs: "Overtygelserom medicin", routine: "Daglig rutin", barriers: "Praktiska hinder",
+      saveNext: "Spara och Nasta Patient", flagSupervisor: "Flagga for Handledare",
+      loadingSession: "Laddar session...",
+    }
+  },
+  uk: {
+    q: [
+      "Чи бувають моменти, коли ви забуваєте прийняти ліки?",
+      "За останні два тижні, чи навмисно пропускали ви дозу? Наприклад, через побічні ефекти, вартість або тому що відчували себе краще?",
+      "За останні два тижні, чи зменшували ви дозу або припиняли прийом ліків самостійно без відома лікаря через те, як вони на вас діяли?",
+      "Коли ваш розпорядок дня змінюється, наприклад під час поїздок або роботи у нестандартні години, чи важко вам продовжувати регулярно приймати ліки?",
+      "Чи вдалося вам прийняти останню дозу так, як призначив лікар?",
+      "Коли ви починаєте відчувати себе краще, чи виникає у вас бажання самостійно зменшити дозу або припинити прийом ліків?",
+      "Чи здається вам щоденний прийом ліків великим викликом у повсякденному житті?",
+      "Як часто протягом звичайного тижня вам важко приймати всі ліки відповідно до призначення?"
+    ],
+    inst: "Задайте це питання пацієнту. Натисніть на його відповідь.",
+    yes: "ТАК", no: "НІ",
+    freq: ["НІКОЛИ","РІДКО","ІНОДІ","ЧАСТО","ЗАВЖДИ"],
+    ui: {
+      beginDay: "Почати День", startAssessment: "Почати Оцінку",
+      patientSetup: "Налаштування Пацієнта", newAssessment: "Нова Оцінка",
+      patientCode: "Код пацієнта (необов'язково)", condition: "Стан",
+      question: "Питання", of: "з",
+      assessmentComplete: "Оцінку Завершено", actionCard: "Картка Дій МСО",
+      peScore: "Оцінка PE", recommendedAction: "Рекомендована Дія",
+      beliefs: "Ставлення до ліків", routine: "Щоденна рутина", barriers: "Практичні бар'єри",
+      saveNext: "Зберегти і Наступний Пацієнт", flagSupervisor: "Позначити для Керівника",
+      loadingSession: "Завантаження сеансу...",
+    }
+  },
+  ur: {
+    q: [
+      "کیا کبھی ایسے لمحات آتے ہیں جب آپ اپنی دوائی لینا بھول جاتے ہیں؟",
+      "گزشتہ دو ہفتوں میں، کیا آپ نے جان بوجھ کر کوئی خوراک چھوڑی؟ مثال کے طور پر ضمنی اثرات، قیمت، یا بہتر محسوس کرنے کی وجہ سے؟",
+      "گزشتہ دو ہفتوں میں، کیا آپ نے ڈاکٹر کو بتائے بغیر خود سے دوائی کم کی یا بند کردی، کیونکہ دوائی آپ کو تکلیف دے رہی تھی؟",
+      "جب آپ کا روزمرہ کا معمول بدلتا ہے، جیسے سفر یا مختلف اوقات میں کام، تو کیا دوائی باقاعدگی سے لینا مشکل ہو جاتا ہے؟",
+      "کیا آپ اپنی آخری خوراک ڈاکٹر کی ہدایت کے مطابق لے سکے؟",
+      "جب آپ بہتر محسوس کرنا شروع کرتے ہیں، تو کیا کبھی آپ کے ذہن میں آتا ہے کہ خود سے دوائی کم کریں یا بند کر دیں؟",
+      "کیا ہر روز دوائی لینا آپ کی روزمرہ زندگی میں ایک بڑا چیلنج لگتا ہے؟",
+      "ایک عام ہفتے میں، آپ کو تجویز کردہ تمام دوائیں لینے میں کتنی بار مشکل پیش آتی ہے؟"
+    ],
+    inst: "یہ سوال مریض سے پوچھیں۔ ان کے جواب پر ٹیپ کریں۔",
+    yes: "ہاں", no: "نہیں",
+    freq: ["کبھی نہیں","شاذ و نادر","کبھی کبھی","اکثر","ہمیشہ"],
+    ui: {
+      beginDay: "دن شروع کریں", startAssessment: "تشخیص شروع کریں",
+      patientSetup: "مریض کی ترتیب", newAssessment: "نئی تشخیص",
+      patientCode: "مریض کا حوالہ کوڈ (اختیاری)", condition: "بیماری",
+      question: "سوال", of: "/",
+      assessmentComplete: "تشخیص مکمل", actionCard: "CHW ایکشن کارڈ",
+      peScore: "PE اسکور", recommendedAction: "تجویز کردہ اقدام",
+      beliefs: "دوائی کے بارے میں خیالات", routine: "روزانہ کا معمول", barriers: "عملی رکاوٹیں",
+      saveNext: "محفوظ کریں اور اگلا مریض", flagSupervisor: "نگران کو نشان زد کریں",
+      loadingSession: "سیشن لوڈ ہو رہا ہے...",
+    }
+  },
+  vi: {
+    q: [
+      "Co nhung luc ban quen uong thuoc khong?",
+      "Trong hai tuan qua, ban co chu dong bo qua lieu nao khong? Vi du nhu do tac dung phu, chi phi hoac vi cam thay tot hon?",
+      "Trong hai tuan qua, ban co tu y uong it thuoc hon hoac ngung thuoc ma khong bao bac si, vi thuoc khien ban kho chiu khong?",
+      "Khi lich sinh hoat hang ngay cua ban thay doi, vi du khi di chuyen hoac lam viec gio giac khac, ban co thay kho duy tri viec uong thuoc deu dan khong?",
+      "Ban co the uong lieu cuoi cung dung theo huong dan cua bac si khong?",
+      "Khi ban bat dau cam thay tot hon, ban co khi nao nghi den viec tu y giam lieu hoac ngung thuoc khong?",
+      "Viec uong thuoc hang ngay co phai la mot thach thuc lon trong cuoc song hang ngay cua ban khong?",
+      "Trong mot tuan binh thuong, ban thuong gap kho khan bao nhieu lan khi uong tat ca cac thuoc theo don?"
+    ],
+    inst: "Hoi benh nhan cau hoi nay. Cham vao cau tra loi cua ho.",
+    yes: "CO", no: "KHONG",
+    freq: ["KHONG BAO GIO","HIEM KHI","DOI KHI","THUONG XUYEN","LUON LUON"],
+    ui: {
+      beginDay: "Bat Dau Ngay", startAssessment: "Bat Dau Danh Gia",
+      patientSetup: "Thiet Lap Benh Nhan", newAssessment: "Danh Gia Moi",
+      patientCode: "Ma Tham Chieu Benh Nhan (tuy chon)", condition: "Tinh Trang",
+      question: "Cau Hoi", of: "/",
+      assessmentComplete: "Danh Gia Hoan Tat", actionCard: "The Hanh Dong CHW",
+      peScore: "Diem PE", recommendedAction: "Hanh Dong Khuyen Nghi",
+      beliefs: "Niem tin ve thuoc", routine: "Thoi quen hang ngay", barriers: "Rao can thuc te",
+      saveNext: "Luu va Benh Nhan Tiep Theo", flagSupervisor: "Danh Dau cho Giam Sat Vien",
+      loadingSession: "Dang tai phien...",
+    }
+  },
 };
 
 // Q8 ordinal -> numeric value
 var Q8_VALUES = { 0: 1.00, 1: 0.75, 2: 0.50, 3: 0.25, 4: 0.00 };
+
+// ── Country centroids (approximate) — used for globe plotting ─────────────
+var COUNTRY_CENTROIDS = {
+  'Afghanistan':[33.93,67.71],'Angola':[-11.20,17.87],'Argentina':[-38.42,-63.62],
+  'Bangladesh':[23.68,90.36],'Bolivia':[-16.29,-63.59],'Brazil':[-14.24,-51.93],
+  'Burkina Faso':[12.36,-1.56],'Cambodia':[12.57,104.99],'Cameroon':[3.85,11.50],
+  'Chad':[15.45,18.73],'Colombia':[4.57,-74.30],'Congo (DRC)':[-4.04,21.76],
+  "Cote d'Ivoire":[7.54,-5.55],'Ecuador':[-1.83,-78.18],'Egypt':[26.82,30.80],
+  'Ethiopia':[9.15,40.49],'Ghana':[7.95,-1.02],'Guatemala':[15.78,-90.23],
+  'Guinea':[9.95,-11.24],'Haiti':[18.97,-72.29],'Honduras':[15.20,-86.24],
+  'India':[20.59,78.96],'Indonesia':[-0.79,113.92],'Iraq':[33.22,43.68],
+  'Jordan':[30.59,36.24],'Kenya':[-0.02,37.91],'Laos':[19.86,102.50],
+  'Liberia':[6.43,-9.43],'Madagascar':[-18.77,46.87],'Malawi':[-13.25,34.30],
+  'Mali':[17.57,-3.99],'Mexico':[23.63,-102.55],'Mozambique':[-18.67,35.53],
+  'Myanmar':[16.87,96.08],'Nepal':[28.39,84.12],'Nicaragua':[12.87,-85.21],
+  'Niger':[17.61,8.08],'Nigeria':[9.08,8.68],'Pakistan':[30.38,69.35],
+  'Papua New Guinea':[-6.31,143.96],'Peru':[-9.19,-75.02],'Philippines':[12.88,121.77],
+  'Rwanda':[-1.94,29.87],'Senegal':[14.50,-14.45],'Sierra Leone':[8.46,-11.78],
+  'Somalia':[5.15,46.20],'South Africa':[-30.56,22.94],'South Sudan':[6.88,31.57],
+  'Sudan':[12.86,30.22],'Tanzania':[-6.37,34.89],'Timor-Leste':[-8.87,125.73],
+  'Togo':[8.62,0.82],'Uganda':[1.37,32.29],'Venezuela':[6.42,-66.59],
+  'Vietnam':[14.06,108.28],'Yemen':[15.55,48.52],'Zambia':[-13.13,27.85],
+  'Zimbabwe':[-19.02,29.15]
+};
+
+// ── Convert CHW record to global assessments schema (for globe plotting) ──
+function _chwToGlobalRecord(record) {
+  var coords = COUNTRY_CENTROIDS[record.country] || [0, 0];
+  return {
+    id:               record.id,
+    tool:             'map',
+    instrument_type:  'map',
+    assessment_mode:  'chw',
+    source:           'chw_gateway',
+    upload_source:    'chw_gateway',
+    // MAP item scores with map_ prefix — globe filter uses map_q1 presence
+    map_q1: record.map_q1, map_q2: record.map_q2, map_q3: record.map_q3,
+    map_q4: record.map_q4, map_q5: record.map_q5, map_q6: record.map_q6,
+    map_q7: record.map_q7, map_q8: record.map_q8,
+    // Triadic domain scores
+    arch_score:       record.arch_score,
+    exec_score:       record.exec_score,
+    ctx_score:        record.ctx_score,
+    pe_score:         record.pe_score,
+    score:            record.additive,
+    additive_score:   record.additive,
+    // Phenotype and risk
+    peacs_phenotype:  record.peacs_phenotype,
+    traffic_light:    record.traffic_light,
+    dominant_domain:  record.dominant_domain,
+    // Patient demographics (SDoH)
+    condition:        record.condition,
+    age_range:        record.age_range  || null,
+    gender:           record.sex        || null,
+    // Geography — centroid of country for globe dot placement
+    country:          record.country,
+    latitude:         coords[0],
+    longitude:        coords[1],
+    // CHW context metadata
+    site_id:          record.site_id,
+    chw_name:         record.chw_name,
+    language:         record.language,
+    flagged:          record.flagged,
+    timestamp:        record.ts,
+    synced:           true,
+  };
+}
 
 // ── Utility: unique ID ─────────────────────────────────────────────────────
 function _uid() {
@@ -837,9 +1524,12 @@ function flushQueue() {
 
   var remaining = [];
   var promises  = q.map(function(record) {
-    return _db.ref('chw_assessments/' + record.id)
-      .set(Object.assign({}, record, { synced: true }))
-      .catch(function() { remaining.push(record); });
+    var synced = Object.assign({}, record, { synced: true });
+    var globalRecord = _chwToGlobalRecord(record);
+    return Promise.all([
+      _db.ref('chw_assessments/' + record.id).set(synced),
+      _db.ref('assessments/' + record.id).set(globalRecord),
+    ]).catch(function() { remaining.push(record); });
   });
 
   Promise.all(promises).then(function() {
@@ -875,8 +1565,8 @@ function beginDay() {
 
   sessionStorage.setItem('chw_session', JSON.stringify(_session));
 
-  // Set RTL for Arabic
-  document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+  // Set RTL for Arabic and Urdu
+  document.documentElement.dir = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
 
   _chwApplyLang(lang);
   updateSessionBar();
@@ -1046,7 +1736,9 @@ function classifyPhenotype(scores) {
   if (scores.ctx < 0.65 && scores.arch >= 0.5 && scores.exec >= 0.45) return 'Situational Skipper';
   // Routine Forgetter: execution is the weakest link
   if (scores.exec < 0.5) return 'Routine Forgetter';
-  // Catch-all for moderate-high PE with no clear single failure
+  // Adequate adherent — moderate-high PE with no dominant failure domain
+  if (scores.pe >= 0.75) return 'Adequate Adherent';
+  // Borderline: low overall PE but no single dominant failure pattern
   return 'Routine Forgetter';
 }
 
@@ -1088,13 +1780,96 @@ function computeAndShowResults() {
   var msgEl    = document.getElementById('trafficMsg');
 
   var rLang = _session.language || 'en';
-  var tlLabels = rLang === 'it'
-    ? {GREEN:['VERDE / BUONA ADERENZA','Buona aderenza. Continuare il supporto attuale.'],
-       AMBER:['AMBRA / ALCUNE DIFFICOLTA\'','Alcune difficolt\u00e0. Programmare un follow-up.'],
-       RED:  ['ROSSO / HA BISOGNO DI AIUTO','Necessita di aiuto. Riferire alla clinica.']}
-    : {GREEN:['GREEN / GOOD ADHERENCE','Good adherence. Continue current support.'],
-       AMBER:['AMBER / SOME DIFFICULTIES','Some difficulties. Schedule follow-up.'],
-       RED:  ['RED / NEEDS HELP','Needs help. Refer to clinic.']};
+  var _TL_LABELS = {
+    en: {GREEN:['GREEN / GOOD ADHERENCE','Good adherence. Continue current support.'],
+         AMBER:['AMBER / SOME DIFFICULTIES','Some difficulties. Schedule follow-up.'],
+         RED:  ['RED / NEEDS HELP','Needs help. Refer to clinic.']},
+    it: {GREEN:['VERDE / BUONA ADERENZA','Buona aderenza. Continuare il supporto attuale.'],
+         AMBER:['AMBRA / ALCUNE DIFFICOLTÀ','Alcune difficoltà. Programmare un follow-up.'],
+         RED:  ['ROSSO / HA BISOGNO DI AIUTO','Necessita di aiuto. Riferire alla clinica.']},
+    es: {GREEN:['VERDE / BUENA ADHERENCIA','Buena adherencia. Continuar el apoyo actual.'],
+         AMBER:['ÁMBAR / ALGUNAS DIFICULTADES','Algunas dificultades. Programar seguimiento.'],
+         RED:  ['ROJO / NECESITA AYUDA','Necesita ayuda. Referir a la clínica.']},
+    fr: {GREEN:['VERT / BONNE ADHÉRENCE','Bonne adhérence. Continuer le soutien actuel.'],
+         AMBER:['ORANGE / QUELQUES DIFFICULTÉS','Quelques difficultés. Planifier un suivi.'],
+         RED:  ['ROUGE / BESOIN D\'AIDE','Besoin d\'aide. Orienter vers la clinique.']},
+    sw: {GREEN:['KIJANI / UZINGATIAJI MZURI','Uzingatiaji mzuri. Endelea na msaada wa sasa.'],
+         AMBER:['NJANO / MATATIZO FULANI','Matatizo fulani. Panga ufuatiliaji.'],
+         RED:  ['NYEKUNDU / ANAHITAJI MSAADA','Anahitaji msaada. Peleka klinikini.']},
+    hi: {GREEN:['हरा / अच्छा पालन','अच्छा पालन। वर्तमान सहायता जारी रखें।'],
+         AMBER:['पीला / कुछ कठिनाइयाँ','कुछ कठिनाइयाँ। अनुवर्ती कार्रवाई निर्धारित करें।'],
+         RED:  ['लाल / सहायता चाहिए','सहायता चाहिए। क्लिनिक को संदर्भित करें।']},
+    pt: {GREEN:['VERDE / BOA ADESÃO','Boa adesão. Continuar o suporte atual.'],
+         AMBER:['ÂMBAR / ALGUMAS DIFICULDADES','Algumas dificuldades. Agendar acompanhamento.'],
+         RED:  ['VERMELHO / PRECISA DE AJUDA','Precisa de ajuda. Encaminhar à clínica.']},
+    ar: {GREEN:['أخضر / التزام جيد','التزام جيد. الاستمرار في الدعم الحالي.'],
+         AMBER:['أصفر / بعض الصعوبات','بعض الصعوبات. جدولة متابعة.'],
+         RED:  ['أحمر / يحتاج مساعدة','يحتاج مساعدة. الإحالة إلى العيادة.']},
+    de: {GREEN:['GRÜN / GUTE EINNAHMETREUE','Gute Einnahmetreue. Aktuelle Unterstutzung fortsetzen.'],
+         AMBER:['GELB / EINIGE SCHWIERIGKEITEN','Einige Schwierigkeiten. Folgetermin planen.'],
+         RED:  ['ROT / BRAUCHT HILFE','Braucht Hilfe. An Klinik uberweisen.']},
+    zh: {GREEN:['绿色 / 依从性良好','依从性良好。继续当前支持。'],
+         AMBER:['黄色 / 存在一些困难','存在一些困难。安排随访。'],
+         RED:  ['红色 / 需要帮助','需要帮助。转介至诊所。']},
+    "zh-TW": {GREEN:['綠色 / 依從性良好','依從性良好。繼續當前支持。'],
+         AMBER:['黃色 / 存在一些困難','存在一些困難。安排隨訪。'],
+         RED:  ['紅色 / 需要幫助','需要幫助。轉介至診所。']},
+    ja: {GREEN:['緑 / 良好な服薬遵守','服薬遵守は良好です。現在のサポートを継続してください。'],
+         AMBER:['黄 / 一部困難あり','一部困難があります。フォローアップを予定してください。'],
+         RED:  ['赤 / 支援が必要','支援が必要です。クリニックに紹介してください。']},
+    ko: {GREEN:['초록 / 양호한 복약 순응도','복약 순응도가 양호합니다. 현재 지원을 계속하세요.'],
+         AMBER:['노랑 / 일부 어려움','일부 어려움이 있습니다. 추적 방문을 예약하세요.'],
+         RED:  ['빨강 / 도움 필요','도움이 필요합니다. 클리닉에 의뢰하세요.']},
+    ru: {GREEN:['ЗЕЛЁНЫЙ / ХОРОШАЯ ПРИВЕРЖЕННОСТЬ','Хорошая приверженность. Продолжить текущую поддержку.'],
+         AMBER:['ЖЁЛТЫЙ / НЕКОТОРЫЕ ТРУДНОСТИ','Некоторые трудности. Запланировать последующее наблюдение.'],
+         RED:  ['КРАСНЫЙ / НУЖНА ПОМОЩЬ','Нужна помощь. Направить в клинику.']},
+    tr: {GREEN:['YEŞİL / İYİ UYUM','İyi uyum. Mevcut destegi sürdürün.'],
+         AMBER:['SARI / BAZI GÜÇLÜKLER','Bazi güçlükler. Takip ziyareti planlayın.'],
+         RED:  ['KIRMIZI / YARDIMA İHTİYACI VAR','Yardıma ihtiyaci var. Klinige yönlendirin.']},
+    id: {GREEN:['HIJAU / KEPATUHAN BAIK','Kepatuhan baik. Lanjutkan dukungan saat ini.'],
+         AMBER:['KUNING / BEBERAPA KESULITAN','Beberapa kesulitan. Jadwalkan kunjungan tindak lanjut.'],
+         RED:  ['MERAH / BUTUH BANTUAN','Butuh bantuan. Rujuk ke klinik.']},
+    tl: {GREEN:['BERDE / MAGANDANG PAGSUNOD','Magandang pagsunod sa gamot. Ipagpatuloy ang kasalukuyang suporta.'],
+         AMBER:['DILAW / MAY ILANG KAHIRAPAN','May ilang kahirapan. Mag-iskedyul ng follow-up.'],
+         RED:  ['PULA / KAILANGAN NG TULONG','Kailangan ng tulong. I-refer sa klinika.']},
+    af: {GREEN:['GROEN / GOEIE NAKOMING','Goeie nakoming. Huidige ondersteuning voortsit.'],
+         AMBER:['GEEL / SOMMIGE MOEILIKHEDE','Sommige moeilikhede. Opvolgbesoek beplan.'],
+         RED:  ['ROOI / HULP NODIG','Hulp benodig. Verwys na kliniek.']},
+    sq: {GREEN:['GJELBËR / PAJTUESHMËRI E MIRË','Pajtueshmëri e mirë. Vazhdoni mbeshtetjen aktuale.'],
+         AMBER:['VERDHË / DISA VËSHTIRËSI','Disa vështirësi. Planifikoni vizitë kontrolluese.'],
+         RED:  ['KUQE / KA NEVOJË PËR NDIHMË','Ka nevojë për ndihmë. Referoni në klinikë.']},
+    bn: {GREEN:['সবুজ / ভালো মেনে চলা','ভালো মেনে চলা। বর্তমান সহায়তা অব্যাহত রাখুন।'],
+         AMBER:['হলুদ / কিছু সমস্যা','কিছু সমস্যা। ফলো-আপ নির্ধারণ করুন।'],
+         RED:  ['লাল / সাহায্য দরকার','সাহায্য দরকার। ক্লিনিকে পাঠান।']},
+    hr: {GREEN:['ZELENA / DOBRA ADHERENCIJA','Dobra adherencija. Nastavite s trenutnom podrškom.'],
+         AMBER:['ŽUTA / NEKE POTEŠKOĆE','Neke poteškoće. Zakazite kontrolni pregled.'],
+         RED:  ['CRVENA / TREBA POMOĆ','Treba pomoć. Uputite u kliniku.']},
+    da: {GREEN:['GRØN / GOD MEDICINSK OVERHOLDELSE','God overholdelse. Fortsæt den nuværende støtte.'],
+         AMBER:['GUL / NOGLE VANSKELIGHEDER','Nogle vanskeligheder. Planlæg opfølgningsbesøg.'],
+         RED:  ['RØD / HAR BRUG FOR HJÆLP','Har brug for hjælp. Henvis til klinik.']},
+    nl: {GREEN:['GROEN / GOEDE THERAPIETROUW','Goede therapietrouw. Huidige ondersteuning voortzetten.'],
+         AMBER:['GEEL / ENKELE PROBLEMEN','Enkele problemen. Vervolgbezoek plannen.'],
+         RED:  ['ROOD / HEEFT HULP NODIG','Heeft hulp nodig. Verwijzen naar kliniek.']},
+    fi: {GREEN:['VIHREÄ / HYVÄ HOITOMYÖNTEISYYS','Hyvä hoitomyönteisyys. Jatka nykyistä tukea.'],
+         AMBER:['KELTAINEN / JOITAIN VAIKEUKSIA','Joitain vaikeuksia. Suunnittele seurantakäynti.'],
+         RED:  ['PUNAINEN / TARVITSEE APUA','Tarvitsee apua. Ohjaa klinikalle.']},
+    ms: {GREEN:['HIJAU / PEMATUHAN BAIK','Pematuhan baik. Teruskan sokongan semasa.'],
+         AMBER:['KUNING / BEBERAPA KESUKARAN','Beberapa kesukaran. Jadualkan lawatan susulan.'],
+         RED:  ['MERAH / MEMERLUKAN BANTUAN','Memerlukan bantuan. Rujuk ke klinik.']},
+    sv: {GREEN:['GRÖN / GOD FÖLJSAMHET','God följsamhet. Fortsätt med nuvarande stöd.'],
+         AMBER:['GUL / VISSA SVÅRIGHETER','Vissa svårigheter. Boka uppföljningsbesök.'],
+         RED:  ['RÖD / BEHÖVER HJÄLP','Behöver hjälp. Remittera till klinik.']},
+    uk: {GREEN:['ЗЕЛЕНИЙ / ХОРОША ПРИХИЛЬНІСТЬ','Хороша прихильність до лікування. Продовжити поточну підтримку.'],
+         AMBER:['ЖОВТИЙ / ДЕЯКІ ТРУДНОЩІ','Деякі труднощі. Запланувати повторний візит.'],
+         RED:  ['ЧЕРВОНИЙ / ПОТРІБНА ДОПОМОГА','Потрібна допомога. Направити до клініки.']},
+    ur: {GREEN:['سبز / اچھی پابندی','اچھی پابندی۔ موجودہ مدد جاری رکھیں۔'],
+         AMBER:['پیلا / کچھ مشکلات','کچھ مشکلات۔ فالو اپ ملاقات طے کریں۔'],
+         RED:  ['سرخ / مدد درکار ہے','مدد درکار ہے۔ کلینک کو ریفر کریں۔']},
+    vi: {GREEN:['XANH / TUAN THU TOT','Tuan thu thuoc tot. Tiep tuc ho tro hien tai.'],
+         AMBER:['VANG / MOT SO KHO KHAN','Mot so kho khan. Lap lich tai kham.'],
+         RED:  ['DO / CAN DUOC HO TRO','Can duoc ho tro. Chuyen den phong kham.']}
+  };
+  var tlLabels = _TL_LABELS[rLang] || _TL_LABELS.en;
   var tlInfo = tlLabels[tl] || tlLabels['RED'];
   if (tl === 'GREEN') {
     circleEl.style.background = '#10b981'; labelEl.style.color = '#10b981';
@@ -1146,16 +1921,45 @@ function computeAndShowResults() {
   showScreen(3);
 }
 
+var _DOMAIN_STRINGS = {
+  en: { ctx: ['Few barriers','Some barriers','Many barriers'], arch: ['Strong','Some doubts','Needs discussion'], exec: ['On track','Sometimes forgets','Often forgets'] },
+  it: { ctx: ['Poche barriere','Alcune barriere','Molte barriere'], arch: ['Forte','Alcuni dubbi','Necessita discussione'], exec: ['In pari','A volte dimentica','Dimentica spesso'] },
+  es: { ctx: ['Pocas barreras','Algunas barreras','Muchas barreras'], arch: ['Fuerte','Algunas dudas','Necesita discusión'], exec: ['Al día','A veces olvida','Olvida frecuente'] },
+  fr: { ctx: ['Peu de barrières','Quelques barrières','Nombreuses barrières'], arch: ['Fort','Quelques doutes','Nécessite discussion'], exec: ['Sur la bonne voie','Oublie parfois','Oublie souvent'] },
+  sw: { ctx: ['Vizuizi vichache','Vizuizi fulani','Vizuizi vingi'], arch: ['Imara','Shaka fulani','Inahitaji majadiliano'], exec: ['Kwa wakati','Wakati mwingine husahau','Husahau mara kwa mara'] },
+  hi: { ctx: ['कम बाधाएं','कुछ बाधाएं','अधिक बाधाएं'], arch: ['मजबूत','कुछ संदेह','चर्चा की जरूरत'], exec: ['सही रास्ते पर','कभी-कभी भूलता है','अक्सर भूलता है'] },
+  pt: { ctx: ['Poucas barreiras','Algumas barreiras','Muitas barreiras'], arch: ['Forte','Algumas dúvidas','Precisa discussão'], exec: ['No caminho','Às vezes esquece','Esquece com frequência'] },
+  ar: { ctx: ['عوائق قليلة','بعض العوائق','عوائق كثيرة'], arch: ['قوي','بعض الشكوك','يحتاج نقاش'], exec: ['على المسار','أحياناً ينسى','كثيراً ما ينسى'] },
+  el: { ctx: ['Λίγοι φραγμοί','Μερικοί φραγμοί','Πολλοί φραγμοί'], arch: ['Ισχυρή','Μερικές αμφιβολίες','Χρειάζεται συζήτηση'], exec: ['Στο σωστό δρόμο','Μερικές φορές ξεχνά','Συχνά ξεχνά'] },
+  pl: { ctx: ['Niewiele barier','Kilka barier','Wiele barier'], arch: ['Silna','Kilka wątpliwości','Wymaga rozmowy'], exec: ['Na właściwej drodze','Czasem zapomina','Często zapomina'] },
+  de: { ctx: ['Wenige Hindernisse','Einige Hindernisse','Viele Hindernisse'], arch: ['Stark','Einige Zweifel','Beratungsbedarf'], exec: ['Auf Kurs','Vergisst manchmal','Vergisst oft'] },
+  zh: { ctx: ['障碍少','有些障碍','障碍多'], arch: ['认知强','有些疑虑','需要讨论'], exec: ['按时服药','偶尔忘记','经常忘记'] },
+  "zh-TW": { ctx: ['障礙少','有些障礙','障礙多'], arch: ['認知強','有些疑慮','需要討論'], exec: ['按時服藥','偶爾忘記','經常忘記'] },
+  ja: { ctx: ['障壁が少ない','一部障壁あり','障壁が多い'], arch: ['理解良好','一部疑問あり','要相談'], exec: ['順調','時々忘れる','よく忘れる'] },
+  ko: { ctx: ['장벽 적음','일부 장벽','장벽 많음'], arch: ['강함','일부 의구심','상담 필요'], exec: ['순조로움','가끔 잊음','자주 잊음'] },
+  ru: { ctx: ['Мало барьеров','Некоторые барьеры','Много барьеров'], arch: ['Сильная','Некоторые сомнения','Требует обсуждения'], exec: ['На правильном пути','Иногда забывает','Часто забывает'] },
+  tr: { ctx: ['Az engel','Bazi engeller','Cok engel'], arch: ['Guclu','Bazi suphe','Tartisma gerekli'], exec: ['Yolunda','Bazen unuluyor','Sik unutuluyor'] },
+  id: { ctx: ['Sedikit hambatan','Beberapa hambatan','Banyak hambatan'], arch: ['Kuat','Beberapa keraguan','Perlu diskusi'], exec: ['Tepat waktu','Kadang lupa','Sering lupa'] },
+  tl: { ctx: ['Kaunting hadlang','Ilang hadlang','Maraming hadlang'], arch: ['Malakas','Ilang pagdududa','Kailangan ng talakayan'], exec: ['Nasa tamang landas','Minsan nakakalimot','Madalas nakakalimot'] },
+  af: { ctx: ['Min hindernisse','Sommige hindernisse','Baie hindernisse'], arch: ['Sterk','Sommige twyfel','Bespreking nodig'], exec: ['Op koers','Vergeet soms','Vergeet dikwels'] },
+  sq: { ctx: ['Pak pengesa','Disa pengesa','Shume pengesa'], arch: ['E forte','Disa dyshime','Nevojitet diskutim'], exec: ['Ne rruge te drejte','Nganjehre harron','Shpesh harron'] },
+  bn: { ctx: ['কম বাধা','কিছু বাধা','অনেক বাধা'], arch: ['শক্তিশালী','কিছু সন্দেহ','আলোচনার প্রয়োজন'], exec: ['সঠিক পথে','মাঝে মাঝে ভুলে যায়','প্রায়ই ভুলে যায়'] },
+  hr: { ctx: ['Malo prepreka','Neke prepreke','Mnogo prepreka'], arch: ['Snazna','Neke sumnje','Potrebna rasprava'], exec: ['Na pravom putu','Ponekad zaboravlja','Cesto zaboravlja'] },
+  da: { ctx: ['Fa barrierer','Nogle barrierer','Mange barrierer'], arch: ['Stærk','Nogle tvivl','Kræver diskussion'], exec: ['Pa rette spor','Glemmer ind imellem','Glemmer ofte'] },
+  nl: { ctx: ['Weinig barrières','Enkele barrières','Veel barrières'], arch: ['Sterk','Enige twijfel','Bespreking nodig'], exec: ['Op schema','Vergeet soms','Vergeet vaak'] },
+  fi: { ctx: ['Vahan esteitä','Joitain esteitä','Paljon esteitä'], arch: ['Vahva','Joitain epailyksia','Vaatii keskustelua'], exec: ['Oikealla tiella','Unohtaa joskus','Unohtaa usein'] },
+  ms: { ctx: ['Sedikit halangan','Beberapa halangan','Banyak halangan'], arch: ['Kuat','Beberapa keraguan','Perlu perbincangan'], exec: ['Mengikut jadual','Kadang-kadang lupa','Kerap lupa'] },
+  sv: { ctx: ['Fa hinder','Nagra hinder','Manga hinder'], arch: ['Stark','Viss tvekan','Behover diskussion'], exec: ['Pa ratt vag','Glomt ibland','Glomt ofta'] },
+  uk: { ctx: ['Мало бар\'єрів','Деякі бар\'єри','Багато бар\'єрів'], arch: ['Сильна','Деякі сумніви','Потребує обговорення'], exec: ['На правильному шляху','Іноді забуває','Часто забуває'] },
+  ur: { ctx: ['کم رکاوٹیں','کچھ رکاوٹیں','زیادہ رکاوٹیں'], arch: ['مضبوط','کچھ شکوک','بات چیت کی ضرورت'], exec: ['درست راستے پر','کبھی کبھی بھولتے ہیں','اکثر بھولتے ہیں'] },
+  vi: { ctx: ['It rao can','Mot so rao can','Nhieu rao can'], arch: ['Manh','Mot so nghi ngo','Can thao luan'], exec: ['Dung lich','Doi khi quen','Thuong xuyen quen'] }
+};
 function domainRating(score, domain) {
-  var it = (_session.language === 'it');
-  if (domain === 'ctx') {
-    if (score >= 0.825) return it ? 'Poche barriere'   : 'Few barriers';
-    if (score >= 0.675) return it ? 'Alcune barriere'  : 'Some barriers';
-    return it ? 'Molte barriere' : 'Many barriers';
-  }
-  if (score >= 0.75) return domain === 'arch' ? (it?'Forte':'Strong') : (it?'In pari':'On track');
-  if (score >= 0.45) return domain === 'arch' ? (it?'Alcuni dubbi':'Some doubts') : (it?'A volte dimentica':'Sometimes forgets');
-  return domain === 'arch' ? (it?'Necessita discussione':'Needs discussion') : (it?'Dimentica spesso':'Often forgets');
+  var lang = _session.language || 'en';
+  var ds = _DOMAIN_STRINGS[lang] || _DOMAIN_STRINGS.en;
+  var tier = score >= 0.75 ? 0 : score >= 0.45 ? 1 : 2;
+  if (domain === 'ctx') { var ctxTier = score >= 0.825 ? 0 : score >= 0.675 ? 1 : 2; return ds.ctx[ctxTier]; }
+  return ds[domain] ? ds[domain][tier] : ds.exec[tier];
 }
 
 function domainColor(score) {
@@ -1164,21 +1968,235 @@ function domainColor(score) {
   return '#ef4444';
 }
 
+var _ACTION_STRINGS = {
+  en: {
+    RED_arch: 'Refer to health worker or clinic. Patient may not believe medicine is helping.',
+    RED_exec: 'Help patient make a reminder plan. Show them the blister pack organiser.',
+    RED_ctx:  'Check what is making it hard. Cost? Travel? Supply problems? Note barriers.',
+    AMBER:    'Schedule a follow-up visit in 2 to 4 weeks. Encourage patient.',
+    GREEN:    'Reassess in 3 months. Praise patient for keeping up with medicine.'
+  },
+  it: {
+    RED_arch: 'Riferire all\'operatore sanitario o alla clinica. Il paziente potrebbe non credere che il farmaco aiuti.',
+    RED_exec: 'Aiutare il paziente a creare un piano di promemoria. Mostrare l\'organizzatore blister.',
+    RED_ctx:  'Verificare cosa rende difficile. Costi? Spostamenti? Problemi di approvvigionamento? Annotare le barriere.',
+    AMBER:    'Programmare una visita di follow-up in 2-4 settimane. Incoraggiare il paziente.',
+    GREEN:    'Rivalutare tra 3 mesi. Complimentarsi con il paziente per la costanza nella terapia.'
+  },
+  es: {
+    RED_arch: 'Referir al trabajador de salud o clínica. El paciente puede no creer que el medicamento ayuda.',
+    RED_exec: 'Ayudar al paciente a crear un plan de recordatorio. Mostrar el organizador de blíster.',
+    RED_ctx:  '¿Qué lo hace difícil? ¿Costo? ¿Transporte? ¿Problemas de suministro? Anotar barreras.',
+    AMBER:    'Programar visita de seguimiento en 2 a 4 semanas. Animar al paciente.',
+    GREEN:    'Reevaluar en 3 meses. Felicitar al paciente por seguir con su medicación.'
+  },
+  fr: {
+    RED_arch: 'Référer au professionnel de santé ou à la clinique. Le patient ne croit peut-être pas au traitement.',
+    RED_exec: 'Aider le patient à créer un plan de rappel. Montrer l\'organisateur de plaquette.',
+    RED_ctx:  'Vérifier ce qui rend les choses difficiles. Coût? Transport? Approvisionnement? Noter les barrières.',
+    AMBER:    'Planifier une visite de suivi dans 2 à 4 semaines. Encourager le patient.',
+    GREEN:    'Réévaluer dans 3 mois. Féliciter le patient pour sa constance.'
+  },
+  sw: {
+    RED_arch: 'Peleka kwa mfanyakazi wa afya au kliniki. Mgonjwa huenda asikubaliane na dawa.',
+    RED_exec: 'Saidia mgonjwa kuunda mpango wa ukumbusho. Onyesha sanduku la dawa.',
+    RED_ctx:  'Angalia kinachofanya iwe ngumu. Gharama? Safari? Tatizo la usambazaji? Andika vikwazo.',
+    AMBER:    'Panga ziara ya ufuatiliaji katika wiki 2 hadi 4. Himiza mgonjwa.',
+    GREEN:    'Tathmini tena baada ya miezi 3. Msifu mgonjwa kwa kuendelea na dawa.'
+  },
+  hi: {
+    RED_arch: 'स्वास्थ्य कर्मी या क्लिनिक को रेफर करें। रोगी को दवा पर विश्वास नहीं हो सकता।',
+    RED_exec: 'रोगी को रिमाइंडर प्लान बनाने में मदद करें। ब्लिस्टर पैक ऑर्गनाइजर दिखाएं।',
+    RED_ctx:  'क्या मुश्किल बना रहा है? लागत? यात्रा? आपूर्ति समस्या? बाधाएं नोट करें।',
+    AMBER:    '2 से 4 सप्ताह में फॉलो-अप विजिट निर्धारित करें। रोगी को प्रोत्साहित करें।',
+    GREEN:    '3 महीने में पुनर्मूल्यांकन करें। दवा लेने के लिए रोगी की प्रशंसा करें।'
+  },
+  pt: {
+    RED_arch: 'Encaminhar ao profissional de saúde ou clínica. O paciente pode não acreditar no medicamento.',
+    RED_exec: 'Ajudar o paciente a criar um plano de lembrete. Mostrar o organizador de blisters.',
+    RED_ctx:  'O que está dificultando? Custo? Transporte? Problemas de fornecimento? Anotar barreiras.',
+    AMBER:    'Agendar visita de acompanhamento em 2 a 4 semanas. Encorajar o paciente.',
+    GREEN:    'Reavaliar em 3 meses. Elogiar o paciente por manter a adesão.'
+  },
+  ar: {
+    RED_arch: 'إحالة إلى العامل الصحي أو العيادة. قد لا يؤمن المريض بفائدة الدواء.',
+    RED_exec: 'مساعدة المريض على إنشاء خطة تذكير. عرض منظم الشريط الدوائي.',
+    RED_ctx:  'ما الذي يجعل الأمر صعباً؟ التكلفة؟ التنقل؟ مشاكل التوريد؟ تدوين العوائق.',
+    AMBER:    'جدولة زيارة متابعة خلال 2 إلى 4 أسابيع. تشجيع المريض.',
+    GREEN:    'إعادة التقييم بعد 3 أشهر. تهنئة المريض على الالتزام بالدواء.'
+  },
+  el: {
+    RED_arch: 'Υψηλός κίνδυνος μη-τήρησης αγωγής. Παραπομπή σε επαγγελματία υγείας. Ο ασθενής ενδέχεται να μην πιστεύει στη φαρμακευτική αγωγή.',
+    RED_exec: 'Υψηλός κίνδυνος μη-τήρησης αγωγής. Βοηθήστε τον ασθενή να δημιουργήσει πλάνο υπενθύμισης. Απαιτείται άμεση παρέμβαση.',
+    RED_ctx:  'Υψηλός κίνδυνος μη-τήρησης αγωγής. Ελέγξτε τους φραγμούς: κόστος, μετακίνηση, προμήθεια; Καταγράψτε τα εμπόδια.',
+    AMBER:    'Μέτριος κίνδυνος. Απαιτείται παρακολούθηση και υποστήριξη. Προγραμματίστε επισκέψη παρακολούθησης σε 2 έως 4 εβδομάδες.',
+    GREEN:    'Χαμηλός κίνδυνος. Διατηρήστε τη θετική ενίσχυση. Επανεκτίμηση σε 3 μήνες.'
+  },
+  pl: {
+    RED_arch: 'Wysokie ryzyko braku adherencji. Skieruj do pracownika ochrony zdrowia. Pacjent może nie wierzyć w skuteczność leku.',
+    RED_exec: 'Wysokie ryzyko braku adherencji. Pomóż pacjentowi stworzyć plan przypomnień. Wymagana natychmiastowa interwencja.',
+    RED_ctx:  'Wysokie ryzyko braku adherencji. Sprawdź bariery: koszty, dojazd, dostępność leku? Odnotuj przeszkody.',
+    AMBER:    'Umiarkowane ryzyko. Wymagane monitorowanie i wsparcie. Zaplanuj wizytę kontrolną za 2 do 4 tygodni.',
+    GREEN:    'Niskie ryzyko. Utrzymaj pozytywne wzmocnienie. Ponowna ocena za 3 miesiące.'
+  },
+  de: {
+    RED_arch: 'Uberweisen Sie den Patienten an einen Gesundheitsmitarbeiter oder eine Klinik. Der Patient glaubt moglicherweise nicht an die Wirksamkeit des Medikaments.',
+    RED_exec: 'Helfen Sie dem Patienten, einen Erinnerungsplan zu erstellen. Zeigen Sie ihm den Blister-Organizer.',
+    RED_ctx:  'Klaren Sie, was die Einnahme erschwert. Kosten? Transportprobleme? Versorgungsprobleme? Notieren Sie die Hindernisse.',
+    AMBER:    'Folgetermin in 2 bis 4 Wochen vereinbaren. Den Patienten ermutigen.',
+    GREEN:    'In 3 Monaten erneut bewerten. Den Patienten fur seine Konsequenz loben.'
+  },
+  zh: {
+    RED_arch: '转介至医疗工作者或诊所。患者可能不相信药物有效。',
+    RED_exec: '帮助患者制定提醒计划。展示泡罩包装整理盒。',
+    RED_ctx:  '了解是什么让服药变得困难。费用? 交通? 供应问题? 记录障碍。',
+    AMBER:    '2至4周内安排随访。鼓励患者。',
+    GREEN:    '3个月后重新评估。称赞患者坚持服药。'
+  },
+  "zh-TW": {
+    RED_arch: '轉介至醫療工作者或診所。患者可能不相信藥物有效。',
+    RED_exec: '幫助患者制定提醒計劃。展示泡殼包裝整理盒。',
+    RED_ctx:  '了解是什麼讓服藥變得困難。費用? 交通? 供應問題? 記錄障礙。',
+    AMBER:    '2至4週內安排隨訪。鼓勵患者。',
+    GREEN:    '3個月後重新評估。稱讚患者堅持服藥。'
+  },
+  ja: {
+    RED_arch: '医療従事者または診療所に紹介してください。患者が薬の有効性を信じていない可能性があります。',
+    RED_exec: '患者がリマインダー計画を作成できるよう支援してください。ブリスターパック整理ケースを見せてください。',
+    RED_ctx:  '何が服薬を困難にしているか確認してください。費用? 交通手段? 供給の問題? 障壁をメモしてください。',
+    AMBER:    '2週間から4週間以内にフォローアップ訪問を予定してください。患者を励ましてください。',
+    GREEN:    '3ヶ月後に再評価してください。服薬を続けていることを患者に称えてください。'
+  },
+  ko: {
+    RED_arch: '의료 종사자나 클리닉에 의뢰하세요. 환자가 약물의 효과를 믿지 않을 수 있습니다.',
+    RED_exec: '환자가 알림 계획을 세울 수 있도록 도와주세요. 블리스터 팩 정리함을 보여주세요.',
+    RED_ctx:  '무엇이 복용을 어렵게 하는지 확인하세요. 비용? 교통? 공급 문제? 장벽을 기록하세요.',
+    AMBER:    '2주에서 4주 이내에 추적 방문을 예약하세요. 환자를 격려하세요.',
+    GREEN:    '3개월 후에 재평가하세요. 복약을 유지한 환자를 칭찬하세요.'
+  },
+  ru: {
+    RED_arch: 'Направить к медицинскому работнику или в клинику. Пациент может не верить в эффективность лекарства.',
+    RED_exec: 'Помочь пациенту составить план напоминаний. Показать органайзер для блистерных упаковок.',
+    RED_ctx:  'Выяснить, что затрудняет приём. Стоимость? Транспорт? Проблемы со снабжением? Отметить барьеры.',
+    AMBER:    'Назначить визит для последующего наблюдения через 2-4 недели. Подбодрить пациента.',
+    GREEN:    'Повторная оценка через 3 месяца. Похвалить пациента за соблюдение режима приёма.'
+  },
+  tr: {
+    RED_arch: 'Saglık calısanına veya klinige yonlendirin. Hasta, ilacın isine yaradigına inanmıyor olabilir.',
+    RED_exec: 'Hastanın hatırlatma plani olusturmasına yardım edin. Blister paket duzenliyicisini gösterin.',
+    RED_ctx:  'Ne ise yaramadıgını kontrol edin. Maliyet mi? Ulasım mı? Tedarik sorunu mu? Engelleri not edin.',
+    AMBER:    '2 ila 4 hafta icinde takip ziyareti planlayın. Hastayı tesvík edin.',
+    GREEN:    '3 ayda bir yeniden degerlendirin. Hastayı ilacına devam ettigi icin ovun.'
+  },
+  id: {
+    RED_arch: 'Rujuk ke petugas kesehatan atau klinik. Pasien mungkin tidak percaya bahwa obat tersebut membantu.',
+    RED_exec: 'Bantu pasien membuat rencana pengingat. Tunjukkan kotak pengatur blister.',
+    RED_ctx:  'Periksa apa yang membuat pengobatan sulit. Biaya? Transportasi? Masalah pasokan? Catat hambatan.',
+    AMBER:    'Jadwalkan kunjungan tindak lanjut dalam 2 hingga 4 minggu. Beri semangat pasien.',
+    GREEN:    'Nilai ulang dalam 3 bulan. Puji pasien karena konsisten minum obat.'
+  },
+  tl: {
+    RED_arch: 'I-refer sa manggagawang pangkalusugan o klinika. Maaaring hindi naniniwala ang pasyente na nakakatulong ang gamot.',
+    RED_exec: 'Tulungan ang pasyente na gumawa ng plano para sa paalala. Ipakita ang blister pack organizer.',
+    RED_ctx:  'Alamin kung ano ang nagpapahirap. Gastos? Transportasyon? Problema sa supply? Itala ang mga hadlang.',
+    AMBER:    'Mag-iskedyul ng follow-up na pagbisita sa loob ng 2 hanggang 4 na linggo. Hikayatin ang pasyente.',
+    GREEN:    'Muling suriin pagkatapos ng 3 buwan. Purihin ang pasyente sa pagpapatuloy ng gamot.'
+  },
+  af: {
+    RED_arch: 'Verwys na gesondheidswerker of kliniek. Die pasient glo dalk nie dat die medikasie help nie.',
+    RED_exec: 'Help die pasient om \'n herinneringsplan op te stel. Wys die blister-pakket-organiseerder.',
+    RED_ctx:  'Gaan na wat dit moeilik maak. Koste? Vervoer? Voorraadprobleme? Teken hindernisse aan.',
+    AMBER:    'Beplan \'n opvolgbesoek in 2 tot 4 weke. Moedig die pasient aan.',
+    GREEN:    'Herbeoordeel in 3 maande. Loof die pasient vir die volharding met medikasie.'
+  },
+  sq: {
+    RED_arch: 'Referoni tek punojesi i shendetit ose klinikes. Pacienti mund te mos besoje se ilaçi ndihmon.',
+    RED_exec: 'Ndihmoni pacientin te hartoje nje plan kujtimi. Tregoni organizesin e blistrave.',
+    RED_ctx:  'Kontrolloni cfare e ben te veshtire. Kostoja? Transporti? Probleme furnizimi? Shenoni pengesat.',
+    AMBER:    'Planifikoni nje vizite kontrolluese brenda 2 deri 4 jave. Inkurajoni pacientin.',
+    GREEN:    'Vleresoni perseri pas 3 muajsh. Lavderoni pacientin per vazhdimesine me ilaçin.'
+  },
+  bn: {
+    RED_arch: 'স্বাস্থ্যকর্মী বা ক্লিনিকে রেফার করুন। রোগী হয়তো বিশ্বাস করেন না যে ওষুধ কাজ করছে।',
+    RED_exec: 'রোগীকে একটি রিমাইন্ডার পরিকল্পনা তৈরি করতে সাহায্য করুন। ব্লিস্টার প্যাক অর্গানাইজার দেখান।',
+    RED_ctx:  'কী কঠিন করে তুলছে তা দেখুন। খরচ? যাতায়াত? সরবরাহ সমস্যা? বাধাগুলি নোট করুন।',
+    AMBER:    '২ থেকে ৪ সপ্তাহের মধ্যে ফলো-আপ ভিজিট নির্ধারণ করুন। রোগীকে উৎসাহিত করুন।',
+    GREEN:    '৩ মাসে পুনরায় মূল্যায়ন করুন। ওষুধ মেনে চলার জন্য রোগীর প্রশংসা করুন।'
+  },
+  hr: {
+    RED_arch: 'Uputite zdravstvenom djelatniku ili klinici. Pacijent mozda ne vjeruje da mu lijek pomaze.',
+    RED_exec: 'Pomozite pacijentu izraditi plan podsjetnika. Pokazite organizator za blister pakiranje.',
+    RED_ctx:  'Provjerite sto otezava uzimanje lijeka. Troskovi? Prijevoz? Problemi s nabavom? Zabiljezte prepreke.',
+    AMBER:    'Zakazite kontrolni posjet za 2 do 4 tjedna. Ohrabrite pacijenta.',
+    GREEN:    'Ponovna procjena za 3 mjeseca. Pohvalite pacijenta za dosljednost u uzimanju lijeka.'
+  },
+  da: {
+    RED_arch: 'Henvis til sundhedsmedarbejder eller klinik. Patienten tror mASKe ikke pa, at medicinen hjælper.',
+    RED_exec: 'Hjaelp patienten med at lave en pamindelesplan. Vis blister-pakke-organisatoren.',
+    RED_ctx:  'Find ud af, hvad der gor det svaert. Udgifter? Transport? Forsyningsproblemer? Noter barrierer.',
+    AMBER:    'Plaenlaeg et opfolgningsbesog om 2 til 4 uger. Opmuntr patienten.',
+    GREEN:    'Genvurder om 3 maneder. Ros patienten for at holde fast ved medicinen.'
+  },
+  nl: {
+    RED_arch: 'Verwijs naar een zorgverlener of kliniek. De patient gelooft misschien niet dat het medicijn helpt.',
+    RED_exec: 'Help de patient een herinneringsplan op te stellen. Toon de blister-verpakking-organizer.',
+    RED_ctx:  'Ga na wat het moeilijk maakt. Kosten? Vervoer? Bevoorradingsproblemen? Noteer barrières.',
+    AMBER:    'Plan een vervolgbezoek in 2 tot 4 weken. Moedig de patient aan.',
+    GREEN:    'Herbeoordeel over 3 maanden. Complimenteer de patient voor de therapietrouw.'
+  },
+  fi: {
+    RED_arch: 'Lahetä terveydenhuollon ammattilaiselle tai klinikalle. Potilas ei ehka usko laakkeen auttavan.',
+    RED_exec: 'Auta potilasta luomaan muistutussuunnitelma. Nayta blister-pakkauksen järjestelijä.',
+    RED_ctx:  'Selvita, mika tekee laakkeenottamisen vaikeaksi. Kustannukset? Matka? Toimitusongelmia? Kirjaa esteet.',
+    AMBER:    'Suunnittele seurantakaynti 2-4 viikon sisaan. Kannusta potilasta.',
+    GREEN:    'Uudelleenarviointi 3 kuukauden kuluessa. Kehuja potilaalle lahteenottamisen jatkamisesta.'
+  },
+  ms: {
+    RED_arch: 'Rujuk kepada pekerja kesihatan atau klinik. Pesakit mungkin tidak percaya bahawa ubat membantu.',
+    RED_exec: 'Bantu pesakit membuat pelan peringatan. Tunjukkan pengatur pek blister.',
+    RED_ctx:  'Semak apa yang menyukarkan pengambilan ubat. Kos? Pengangkutan? Masalah bekalan? Catat halangan.',
+    AMBER:    'Jadualkan lawatan susulan dalam 2 hingga 4 minggu. Galakkan pesakit.',
+    GREEN:    'Nilai semula dalam 3 bulan. Puji pesakit kerana meneruskan pengambilan ubat.'
+  },
+  sv: {
+    RED_arch: 'Remittera till vard­personal eller klinik. Patienten kanske inte tror att medicinen hjälper.',
+    RED_exec: 'Hjalp patienten att skapa en paminnelseplan. Visa blister-paket-organisatoren.',
+    RED_ctx:  'Ta reda pa vad som gor det svart. Kostnader? Transport? Forsorjningsproblem? Anteckna hinder.',
+    AMBER:    'Boka ett uppfoljningsbesok om 2 till 4 veckor. Uppmuntra patienten.',
+    GREEN:    'Omvärdera om 3 manader. Berömma patienten for att halla fast vid medicinen.'
+  },
+  uk: {
+    RED_arch: 'Направити до медичного працівника або клініки. Пацієнт може не вірити, що ліки допомагають.',
+    RED_exec: 'Допоможіть пацієнту скласти план нагадувань. Покажіть органайзер для блістерних упаковок.',
+    RED_ctx:  'З\'ясуйте, що ускладнює приймання. Вартість? Транспорт? Проблеми з постачанням? Занотуйте бар\'єри.',
+    AMBER:    'Призначте повторний візит через 2-4 тижні. Підбадьоріть пацієнта.',
+    GREEN:    'Повторна оцінка через 3 місяці. Похваліть пацієнта за дотримання режиму приймання ліків.'
+  },
+  ur: {
+    RED_arch: 'صحت کارکن یا کلینک کو ریفر کریں۔ مریض شاید یقین نہیں رکھتے کہ دوائی فائدہ مند ہے۔',
+    RED_exec: 'مریض کو یادداشت کا منصوبہ بنانے میں مدد کریں۔ بلسٹر پیک آرگنائزر دکھائیں۔',
+    RED_ctx:  'معلوم کریں کہ کیا مشکل بنا رہا ہے۔ خرچ? نقل و حمل? سپلائی کا مسئلہ? رکاوٹیں نوٹ کریں۔',
+    AMBER:    '2 سے 4 ہفتوں میں فالو اپ ملاقات طے کریں۔ مریض کی حوصلہ افزائی کریں۔',
+    GREEN:    '3 ماہ میں دوبارہ تشخیص کریں۔ مریض کو دوائی جاری رکھنے پر سراہیں۔'
+  },
+  vi: {
+    RED_arch: 'Chuyen den nhan vien y te hoac phong kham. Benh nhan co the khong tin rang thuoc co tac dung.',
+    RED_exec: 'Giup benh nhan lap ke hoach nhac nho. Chi cho ho hop dung blister.',
+    RED_ctx:  'Kiem tra xem dieu gi khien viec uong thuoc kho khan. Chi phi? Di lai? Van de cung cap? Ghi lai cac rao can.',
+    AMBER:    'Lap lich tai kham trong 2 den 4 tuan. Dong vien benh nhan.',
+    GREEN:    'Danh gia lai sau 3 thang. Khen benh nhan vi duy tri viec uong thuoc.'
+  }
+};
 function getActionText(tl, dominant) {
-  var it = (_session.language === 'it');
+  var lang = _session.language || 'en';
+  var as = _ACTION_STRINGS[lang] || _ACTION_STRINGS.en;
   if (tl === 'RED') {
-    if (dominant === 'Architecture') {
-      return it ? 'Riferire all\'operatore sanitario o alla clinica. Il paziente potrebbe non credere che il farmaco aiuti.' : 'Refer to health worker or clinic. Patient may not believe medicine is helping.';
-    } else if (dominant === 'Execution') {
-      return it ? 'Aiutare il paziente a creare un piano di promemoria. Mostrare l\'organizzatore blister.' : 'Help patient make a reminder plan. Show them the blister pack organiser.';
-    } else {
-      return it ? 'Verificare cosa rende difficile. Costi? Spostamenti? Problemi di approvvigionamento? Annotare le barriere.' : 'Check what is making it hard. Cost? Travel? Supply problems? Note barriers.';
-    }
+    if (dominant === 'Architecture') return as.RED_arch;
+    if (dominant === 'Execution')    return as.RED_exec;
+    return as.RED_ctx;
   }
-  if (tl === 'AMBER') {
-    return it ? 'Programmare una visita di follow-up in 2-4 settimane. Incoraggiare il paziente.' : 'Schedule a follow-up visit in 2 to 4 weeks. Encourage patient.';
-  }
-  return it ? 'Rivalutare tra 3 mesi. Complimentarsi con il paziente per la costanza nella terapia.' : 'Reassess in 3 months. Praise patient for keeping up with medicine.';
+  if (tl === 'AMBER') return as.AMBER;
+  return as.GREEN;
 }
 
 // ── Save and go to next patient ────────────────────────────────────────────
@@ -1209,7 +2227,10 @@ function saveAndNext(flagged) {
     assessment_mode:  'chw',
     ts:               Date.now(),
     synced:           false,
-    // Raw question scores
+    // Patient demographics (SDoH)
+    age_range:        document.getElementById('ageRangeSelect').value || null,
+    sex:              document.getElementById('sexSelect').value || null,
+    // Raw question scores (map_ prefix for globe instrument identification)
     map_q1: a[0], map_q2: a[1], map_q3: a[2], map_q4: a[3],
     map_q5: a[4], map_q6: a[5], map_q7: a[6], map_q8: a[7],
   };
@@ -1242,8 +2263,14 @@ function _writeRecord(record, callback) {
     return;
   }
 
-  _db.ref('chw_assessments/' + record.id)
-    .set(Object.assign({}, record, { synced: true }))
+  var synced = Object.assign({}, record, { synced: true });
+  var globalRecord = _chwToGlobalRecord(record);
+
+  // Dual-write: chw_assessments (full CHW record) + assessments (globe-compatible)
+  Promise.all([
+    _db.ref('chw_assessments/' + record.id).set(synced),
+    _db.ref('assessments/' + record.id).set(globalRecord),
+  ])
     .then(function() {
       if (callback) callback(true);
     })
@@ -1270,7 +2297,7 @@ function esc(s) {
       var sess = JSON.parse(stored);
       if (sess && sess.chwName && sess.siteId && sess.country) {
         _session = sess;
-        document.documentElement.dir = (sess.language === 'ar') ? 'rtl' : 'ltr';
+        document.documentElement.dir = (sess.language === 'ar' || sess.language === 'ur') ? 'rtl' : 'ltr';
       }
     }
   } catch (e) {}

@@ -220,7 +220,6 @@ function _accDiagDump() {
     lambda_url: typeof LAMBDA_URL !== 'undefined' ? LAMBDA_URL : null,
   };
   console.group('%cATLAS Diagnostic Dump', 'color:#d4a843;font-family:monospace;font-size:14px;font-weight:bold;');
-  console.log(JSON.stringify(dump, null, 2));
   console.groupEnd();
   showToast('🔧 Diagnostic dump written to browser console (F12 → Console)', 3500);
 }
@@ -543,7 +542,7 @@ function accLoadGAI() {
     // ── Score distribution bar chart ──────────────────────────────────────
     const scoreBuckets = Array(9).fill(0);
     valid.forEach(r => {
-      const s = Math.round(r.score);
+      const s = r.score >= 8 ? 8 : Math.max(0, Math.floor(r.score));
       if (s >= 0 && s <= 8) scoreBuckets[s]++;
     });
     const maxBucket = Math.max(...scoreBuckets, 1);
@@ -604,89 +603,6 @@ function accLoadGAI() {
           <td style="padding:7px 10px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:0.51rem;color:${bandCol};">${band}</span></td>
         </tr>`;
       }).join('');
-    }
-
-    // ── MMAS-8 PE Domain Analysis removed — PE applies to MAP only ──────────
-    if (false) {
-      // Legacy MMAS PE block retained as dead code for data-model reference
-      let gPeSum=0, gASum=0, gESum=0, gCSum=0, gPeN=0, gCntA=0, gCntE=0, gCntC=0;
-      const peCountries = new Set();
-      valid.forEach(r => {
-        const _rpe = r.mmas_pe !== undefined
-          ? { pe: r.mmas_pe, a: r.mmas_a, e: r.mmas_e, c: r.mmas_c }
-          : (typeof computeMMASPE === 'function' ? computeMMASPE(r) : null);
-        if (!_rpe) return;
-        gPeSum += _rpe.pe; gASum += _rpe.a; gESum += _rpe.e; gCSum += _rpe.c; gPeN++;
-        const minV = Math.min(_rpe.a, _rpe.e, _rpe.c);
-        if (_rpe.a===minV) gCntA++; else if (_rpe.e===minV) gCntE++; else gCntC++;
-        if (r.country && r.country !== 'Unknown') peCountries.add(r.country);
-      });
-
-      if (gPeN > 0) {
-        const gAvgPE = gPeSum / gPeN;
-        const gAvgA  = gASum  / gPeN;
-        const gAvgE  = gESum  / gPeN;
-        const gAvgC  = gCSum  / gPeN;
-        const gConst = gAvgA<=gAvgE&&gAvgA<=gAvgC?'Architecture':gAvgE<=gAvgA&&gAvgE<=gAvgC?'Execution':'Context';
-        const peColor = gAvgPE >= 0.75 ? 'var(--optimal)' : gAvgPE >= 0.5 ? '#f59e0b' : 'var(--poor)';
-        const card = (val, lbl, col) => `<div style="background:${tc('rgba(255,255,255,0.02)','rgba(0,0,0,0.03)')};border:1px solid ${tc('rgba(255,255,255,0.06)','rgba(0,0,0,0.1)')};border-radius:8px;padding:16px;">
-          <div class="acc-stat-big" style="font-size:1.8rem;color:${col};">${val}</div>
-          <div class="acc-stat-lbl">${lbl}</div></div>`;
-        const bar = (v, col, lbl) => `<div style="margin-bottom:8px;">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:${col};display:flex;justify-content:space-between;margin-bottom:3px;"><span>${lbl}</span><span>${v.toFixed(3)}</span></div>
-          <div style="height:7px;border-radius:3px;background:${tc('rgba(255,255,255,0.06)','rgba(0,0,0,0.1)')};overflow:hidden;">
-            <div style="height:100%;width:${Math.round(v*100)}%;background:${col};border-radius:3px;transition:width 0.9s ease;"></div>
-          </div></div>`;
-        mmasPeEl.innerHTML =
-          card(gAvgPE.toFixed(3), 'Global Avg MMAS PE', peColor) +
-          card(gPeN.toLocaleString(), 'Records with Q-Level Data', tc('rgba(255,255,255,0.8)','rgba(0,0,0,0.8)')) +
-          card(peCountries.size, 'Countries with PE Data', 'var(--strata)') +
-          `<div style="background:${tc('rgba(255,255,255,0.02)','rgba(0,0,0,0.03)')};border:1px solid rgba(212,168,67,0.15);border-radius:8px;padding:16px;grid-column:1/-1;">
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Global Domain Averages &amp; Constraint Distribution</div>
-            ${bar(gAvgA,'var(--base)','Architecture (A) · Q2,Q3,Q6 — Decisions &amp; Beliefs')}
-            ${bar(gAvgE,'var(--mvmt)','Execution (E) · Q1,Q4,Q5,Q8 — Behavioral Reliability')}
-            ${bar(gAvgC,'var(--strata)','Context (C) · Q7 — Burden &amp; Friction')}
-            <div style="margin-top:10px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid rgba(212,168,67,0.18);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:var(--pe);display:flex;gap:16px;flex-wrap:wrap;">
-              <span>◈ Global constraint: <strong>${gConst}</strong></span>
-              <span style="color:var(--base);">A: ${Math.round(gCntA/gPeN*100)}%</span>
-              <span style="color:var(--mvmt);">E: ${Math.round(gCntE/gPeN*100)}%</span>
-              <span style="color:var(--strata);">C: ${Math.round(gCntC/gPeN*100)}%</span>
-            </div>
-          </div>`;
-
-        // PE by country table
-        const peCoEntries = Object.entries(byCo)
-          .filter(([,d]) => d.peN >= 3)
-          .sort((a,b) => b[1].peN - a[1].peN)
-          .slice(0, 20);
-        const peCoDivEl  = document.getElementById('gai-mmas-pe-country');
-        const peCotbody  = document.getElementById('gai-mmas-pe-country-tbody');
-        if (peCoDivEl) peCoDivEl.style.display = peCoEntries.length ? '' : 'none';
-        if (peCotbody && peCoEntries.length) {
-          peCotbody.innerHTML = peCoEntries.map(([co, d], i) => {
-            const avgPE = d.peSum / d.peN;
-            const avgA  = d.aSum  / d.peN;
-            const avgE  = d.eSum  / d.peN;
-            const avgC  = d.cSum  / d.peN;
-            const minV  = Math.min(avgA, avgE, avgC);
-            const lim   = avgA===minV ? 'A' : avgE===minV ? 'E' : 'C';
-            const limC  = lim==='A'?'var(--base)':lim==='E'?'var(--mvmt)':'var(--strata)';
-            const peCol = avgPE >= 0.75 ? 'var(--optimal)' : avgPE >= 0.5 ? '#f59e0b' : 'var(--poor)';
-            const shade = i%2===1?`background:${tc('rgba(255,255,255,0.02)','rgba(0,0,0,0.02)')};`:'';
-            return `<tr style="${shade}">
-              <td style="padding:5px 8px;color:${tc('rgba(255,255,255,0.8)','rgba(0,0,0,0.8)')};">${co}</td>
-              <td style="padding:5px 8px;text-align:right;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${peCol};">${avgPE.toFixed(3)}</td>
-              <td style="padding:5px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--base);">${avgA.toFixed(2)}</td>
-              <td style="padding:5px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--mvmt);">${avgE.toFixed(2)}</td>
-              <td style="padding:5px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--strata);">${avgC.toFixed(2)}</td>
-              <td style="padding:5px 8px;text-align:center;"><span style="font-size:0.75rem;padding:1px 6px;border-radius:5px;background:${limC}18;color:${limC};border:1px solid ${limC}35;">${lim}</span></td>
-              <td style="padding:5px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${tc('rgba(255,255,255,0.4)','rgba(0,0,0,0.45)')};">${d.peN}</td>
-            </tr>`;
-          }).join('');
-        }
-      } else {
-        mmasPeEl.innerHTML = `<div style="color:${tc('rgba(255,255,255,0.2)','rgba(0,0,0,0.38)')};font-family:'IBM Plex Mono',monospace;font-size:0.61rem;grid-column:1/-1;">No Q-level data yet — PE domain scores will appear as assessments with individual item responses accumulate.</div>`;
-      }
     }
 
     // ── Condition breakdown ───────────────────────────────────────────────
@@ -1216,7 +1132,6 @@ async function initiateGAICheckout() {
   // ── Magic link return — complete workspace authentication ──────────────────
   if (p.get('magic')) {
     const token = p.get('magic').trim();
-    console.log('[ATLAS] Magic link detected, token length:', token.length);
     window.history.replaceState({}, '', window.location.pathname); // clean URL immediately
     (async () => {
       // Show relay overlay immediately so user knows something is happening
@@ -1245,16 +1160,13 @@ async function initiateGAICheckout() {
       };
 
       try {
-        console.log('[ATLAS] Calling /verify-magic…');
         const res  = await fetch(`${LAMBDA_URL}/verify-magic`, {
           method:  'POST',
           mode:    'cors',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ token }),
         });
-        console.log('[ATLAS] /verify-magic response status:', res.status);
         const data = await res.json();
-        console.log('[ATLAS] /verify-magic response:', JSON.stringify({ valid: data.valid, hasToken: !!data.token, key: data.key, hasProfile: !!data.profile, error: data.error }));
         if (!data.valid || !data.token) {
           const errMsg = data.error || 'Magic link invalid or expired.';
           console.warn('[ATLAS] Magic link rejected:', errMsg);
@@ -1263,9 +1175,7 @@ async function initiateGAICheckout() {
         }
         // Sign into Firebase
         try {
-          console.log('[ATLAS] Signing in with custom token…');
           await firebase.auth().signInWithCustomToken(data.token);
-          console.log('[ATLAS] Firebase sign-in success, uid:', firebase.auth().currentUser?.uid);
         } catch(authErr) {
           console.error('[ATLAS] Firebase signInWithCustomToken failed:', authErr.code, authErr.message);
           _setStatus('✗', 'Auth Failed', 'Firebase error: ' + authErr.code + '. Please enter your workspace key manually.', true);
@@ -1303,11 +1213,9 @@ async function initiateGAICheckout() {
         // (SDK needs ~1-2s to establish connection on a fresh page load).
         const _safeKey = (data.key || '').replace(/[.#$[\]/]/g, '_');
         const _rtdbRef  = firebase.database().ref('magic_signals/' + _safeKey);
-        console.log('[ATLAS] Writing RTDB signal, will close tab after confirmation…');
 
         // Fallback: close after 4s even if RTDB never confirms (network issue)
         const _closeTimer = setTimeout(() => {
-          console.log('[ATLAS] RTDB close timeout — closing tab anyway');
           window.close();
           setTimeout(() => {
             _setStatus('✓', 'Access Granted', 'Your ATLAS window is now active. You can close this tab.', false);
@@ -1318,7 +1226,6 @@ async function initiateGAICheckout() {
         _rtdbRef.set({ completed: true, key: data.key, ts: Date.now() })
           .then(() => {
             clearTimeout(_closeTimer);
-            console.log('[ATLAS] RTDB write confirmed — closing relay tab');
             window.close();
             // If close fails (tab stays open), show close button after short delay
             setTimeout(() => {
@@ -1648,9 +1555,10 @@ function setUILanguage(lang) {
   if (!UI_STRINGS[lang]) return;
   _currentUILang = lang;
   localStorage.setItem('atlas_ui_lang', lang);
-  // Update active button state
+  // Update active button state — match by data-lang attribute or button text (e.g. "EN")
   document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('onclick') === `setUILanguage('${lang}')`);
+    const btnLang = (btn.getAttribute('data-lang') || btn.textContent.trim()).toLowerCase();
+    btn.classList.toggle('active', btnLang === lang.toLowerCase());
   });
   // Apply to all data-i18n elements
   applyUIStrings();
@@ -1680,7 +1588,8 @@ function applyUIStrings() {
       document.addEventListener('DOMContentLoaded', () => {
         applyUIStrings();
         document.querySelectorAll('.lang-btn').forEach(btn => {
-          btn.classList.toggle('active', btn.getAttribute('onclick') === `setUILanguage('${stored}')`);
+          const btnLang = (btn.getAttribute('data-lang') || btn.textContent.trim()).toLowerCase();
+          btn.classList.toggle('active', btnLang === stored.toLowerCase());
         });
       });
     } else {
@@ -1730,7 +1639,7 @@ function populateIRBAssistant() {
   var sponsor   = cfg.sponsor  || '[Sponsor]';
   var protocol  = cfg.protocol || '[Protocol Number]';
   var startDate = cfg.start    || '[Start Date]';
-  var lockDate  = cfg.lock     || '[Lock Date]';
+  var lockDate  = cfg.lock     || cfg.end || '[Lock Date]';
   var targetN   = cfg.target   || '[N]';
   var siteCount = sites.length || '[N]';
 

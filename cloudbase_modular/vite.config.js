@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { readdirSync } from 'fs';
+import { readdirSync, existsSync } from 'fs';
 
 // Build all JS modules as separate output files (not bundled together)
 // This preserves the modular structure for Cloudflare deployment
@@ -20,9 +20,10 @@ function getModuleEntries() {
     });
   } catch(e) {}
 
-  // Root JS files
+  // Root JS files (skip if file doesn't exist)
   ['_worker', '_psych_js', '_v86_js'].forEach(name => {
-    entries[name] = resolve(__dirname, name + '.js');
+    const p = resolve(__dirname, name + '.js');
+    if (existsSync(p)) entries[name] = p;
   });
 
   return entries;
@@ -50,10 +51,6 @@ export default defineConfig({
         entryFileNames: '[name].js',
         chunkFileNames: 'chunks/[name].js',
         assetFileNames: '[name][extname]',
-        // No code splitting — keep global scope intact
-        inlineDynamicImports: false,
-        preserveModules: true,
-        preserveModulesRoot: '',
         format: 'iife', // IIFE wrapping preserves global scope
         // Each file gets its own IIFE so globals leak to window correctly
         name: '_atlas_module',

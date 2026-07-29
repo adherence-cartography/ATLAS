@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MAP | Icelandic</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,Helvetica,"Noto Sans Arabic",sans-serif;font-size:10.5pt;color:#1a1a1a;background:#e8eaf0;}
+.page{width:8.5in;min-height:11in;margin:0.35in auto;background:white;padding:0.55in 0.7in 0.5in;box-shadow:0 4px 18px rgba(0,0,0,0.18);}
+/* ── HEADER ── */
+.header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1B3A6B;padding-bottom:9px;margin-bottom:12px;}
+.header-left h1{font-size:24pt;font-weight:900;color:#1B3A6B;letter-spacing:2px;line-height:1;}
+.header-left h2{font-size:8.5pt;font-weight:400;color:#555;margin-top:2px;letter-spacing:0.3px;}
+.language-badge{display:inline-block;background:#1B3A6B;color:white;padding:3px 12px;border-radius:20px;font-size:8pt;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}
+.version-info{font-size:7pt;color:#999;margin-top:4px;text-align:right;}
+/* ── PATIENT INFO ── */
+.patient-info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 12px;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:6px;padding:9px 12px;margin-bottom:11px;}
+.full-width{grid-column:1/-1;}
+.patient-info label{display:block;font-size:6.5pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px;}
+.info-field{border-bottom:1px solid #999;min-height:15px;width:100%;}
+/* ── PREAMBLE ── */
+.preamble{border-left:4px solid #1B3A6B;background:#f5f7fb;padding:8px 12px;margin-bottom:12px;border-radius:0 4px 4px 0;}
+.preamble p{font-size:9.5pt;color:#1a1a1a;line-height:1.5;font-weight:500;}
+/* ── QUESTIONS ── */
+.section-title{font-size:7.5pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.9px;border-bottom:1px solid #cdd4e3;padding-bottom:3px;margin-bottom:8px;}
+.question-row{display:flex;align-items:flex-start;gap:9px;padding:5px 0;}
+.q-number{font-size:10.5pt;font-weight:700;color:#1B3A6B;min-width:20px;padding-top:1px;flex-shrink:0;}
+.q-text{flex:1;font-size:9.5pt;line-height:1.4;}
+.q-response{display:flex;gap:12px;align-items:center;padding-top:1px;flex-shrink:0;}
+.checkbox-option{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.checkbox-label{font-size:7pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;}
+.checkbox{width:15px;height:15px;border:2px solid #1B3A6B;border-radius:2px;display:inline-block;}
+.q-rule{border:none;border-top:1px solid #ececec;}
+/* ── Q8 LIKERT ── */
+.q8-block{padding:5px 0;}
+.q8-header{display:flex;gap:9px;align-items:flex-start;margin-bottom:7px;}
+.likert-options{display:flex;gap:5px;margin-left:29px;}
+.likert-option{display:flex;flex-direction:column;align-items:center;text-align:center;flex:1;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:5px;padding:6px 4px;gap:4px;}
+.likert-option .opt-label{font-size:8pt;font-weight:700;color:#1B3A6B;line-height:1.2;}
+/* ── CLOSING ── */
+.closing{border:1px solid #cdd4e3;border-radius:5px;background:#f9fafb;padding:8px 12px;margin-top:10px;}
+.closing p{font-size:8.5pt;color:#444;line-height:1.5;font-style:italic;}
+/* ── CLINICIAN ZONE ── */
+.clinician-zone{border-top:2px dashed #bbb;padding-top:10px;margin-top:11px;}
+.scoring-wrap{border:1px solid #cdd4e3;border-radius:5px;overflow:hidden;margin-bottom:9px;}
+.scoring-header-bar{background:#1B3A6B;color:white;padding:4px 10px;font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+/* ── Q1-Q7 SCORING TABLE ── */
+.q-score-table{width:100%;border-collapse:collapse;font-size:8pt;}
+.q-score-table thead th{background:#e8ecf5;color:#1B3A6B;padding:4px 8px;text-align:center;font-size:7pt;text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid #cdd4e3;}
+.q-score-table thead th:first-child{text-align:left;}
+.q-score-table tbody td{padding:3px 8px;border-bottom:1px solid #eee;text-align:center;}
+.q-score-table tbody td:first-child{text-align:left;font-weight:600;}
+.q-score-table tbody tr:nth-child(even) td{background:#f8f9fc;}
+.q-score-table tbody tr.q5-row td{background:#fff8e6;}
+.score-pill{display:inline-block;padding:1px 8px;border-radius:8px;font-size:8pt;font-weight:700;min-width:22px;}
+.pill-1{background:#e6f4ea;color:#276228;}
+.pill-0{background:#fdecea;color:#922323;}
+.reverse-tag{display:inline-block;background:#ff8f00;color:white;font-size:6pt;font-weight:700;padding:1px 5px;border-radius:6px;letter-spacing:0.4px;text-transform:uppercase;vertical-align:middle;margin-left:4px;}
+/* ── Q8 SCORING ── */
+.scoring-grid{display:flex;}
+.score-cell{flex:1;padding:5px 4px;text-align:center;border-right:1px solid #dde2ee;}
+.score-cell:last-child{border-right:none;}
+.score-cell .sc-freq{font-size:7pt;color:#444;line-height:1.3;}
+.score-cell .sc-value{font-size:12pt;font-weight:800;color:#1B3A6B;display:block;margin:1px 0;}
+.score-cell .sc-class{font-size:6.5pt;color:#777;font-style:italic;}
+/* ── TOTALS ── */
+.totals-row{display:flex;gap:10px;margin-bottom:9px;}
+.total-box{flex:1;border:1.5px solid #1B3A6B;border-radius:4px;padding:6px 10px;}
+.total-box.accent{border-color:#1b6b3a;}
+.total-box label{font-size:6.5pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:4px;}
+.total-box.accent label{color:#1b6b3a;}
+.score-line{border-bottom:1px solid #888;height:18px;}
+/* ── CLASSIFICATION ── */
+.class-table{width:100%;border-collapse:collapse;font-size:8.5pt;margin-bottom:9px;}
+.class-table thead th{background:#1B3A6B;color:white;padding:4px 9px;text-align:left;font-size:7pt;text-transform:uppercase;letter-spacing:0.4px;}
+.class-table tbody td{padding:4px 9px;border-bottom:1px solid #e8e8e8;}
+.class-table tbody tr:nth-child(even) td{background:#f8f9fc;}
+.badge{display:inline-block;padding:1px 8px;border-radius:8px;font-size:7.5pt;font-weight:600;}
+.badge-high{background:#e6f4ea;color:#276228;}
+.badge-medium{background:#fff4e2;color:#9a5000;}
+.badge-low{background:#fdecea;color:#922323;}
+/* ── PE SECTION ── */
+.pe-section{border:1px solid #1B3A6B;border-radius:5px;overflow:hidden;margin-bottom:9px;}
+.pe-header-bar{background:#0d2744;color:white;padding:4px 10px;font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+.pe-table{width:100%;border-collapse:collapse;font-size:8pt;}
+.pe-table thead th{background:#e8ecf5;color:#0d2744;padding:3px 8px;text-align:left;font-size:7pt;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #cdd4e3;}
+.pe-table tbody td{padding:4px 8px;border-bottom:1px solid #eee;vertical-align:top;}
+.pe-table tbody tr:nth-child(even) td{background:#f8f9fc;}
+.pe-table .domain-val{font-size:6.5pt;color:#888;}
+.pe-formula-row{background:#0d2744;color:white;padding:6px 10px;text-align:center;font-size:9.5pt;font-weight:700;letter-spacing:0.5px;}
+.pe-note{font-size:7pt;color:#555;padding:5px 10px;background:#f5f7fb;border-top:1px solid #cdd4e3;}
+/* ── SIGNATURES ── */
+.sig-row{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:9px;}
+.sig-field label{font-size:6.5pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:3px;}
+.sig-line{border-bottom:1px solid #888;height:18px;}
+/* ── FOOTER ── */
+.footer{border-top:1px solid #cdd4e3;padding-top:6px;display:flex;justify-content:space-between;align-items:flex-end;}
+.footer-left{font-size:6.5pt;color:#999;line-height:1.5;}
+.footer-right{font-size:6.5pt;color:#999;text-align:right;line-height:1.5;}
+/* ── RTL ── */
+
+@media print{body{background:white;}.page{box-shadow:none;margin:0;width:100%;padding:0.5in 0.6in;}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div class="header-left">
+    <h1>MAP</h1>
+    <h2>Multidimensional Adherence Parameters &nbsp;|&nbsp; 8-Item Instrument &nbsp;|&nbsp; Adherence Cartography</h2>
+  </div>
+  <div class="header-right">
+    <div class="language-badge">Íslenska</div>
+    <div class="version-info">Form No. MAP-IS-001 &nbsp;|&nbsp; Version 1.0 &nbsp;|&nbsp; adherence.cc</div>
+  </div>
+</div>
+
+<div class="patient-info">
+  <div class="full-width"><label>Nafn sjúklings</label><div class="info-field"></div></div>
+  <div><label>Dagsetning</label><div class="info-field"></div></div>
+  <div><label>Fæðingardagur</label><div class="info-field"></div></div>
+  <div><label>Sjúklingsnúmer</label><div class="info-field"></div></div>
+  <div class="full-width"><label>Nafn heilbrigðisstarfsmanns</label><div class="info-field"></div></div>
+</div>
+
+<div class="preamble"><p>Það getur verið krefjandi að taka lyf samkvæmt fyrirmælum af mörgum ástæðum, þar á meðal lífsstæður, dagleg venjur, aukaverkanir, kostnaður eða viðhorf til meðferðar. Eftirfarandi spurningar varða reynslu þína af lyfjum þínum. Engar svör eru rétt eða röng. Heiðarleg svör þín hjálpa okkur að styðja þig betur.</p></div>
+
+<div>
+<div class="section-title">Spurningar</div>
+
+<div class="question-row">
+  <div class="q-number">1.</div>
+  <div class="q-text">Eru tímar þar sem þú gleymir að taka lyf þín?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Já</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Nei</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">2.</div>
+  <div class="q-text">Á síðustu tveimur vikum, voru tímar þar sem þú valdir meðvitað að sleppa skammti (til dæmis vegna aukaverkana, kostnaðar eða vegna þess að þér leið betur)?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Já</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Nei</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">3.</div>
+  <div class="q-text">Á síðustu tveimur vikum, minnkaðirðu skammt þinn eða hættir þú að taka lyf að eigin frumkvæði, án þess að segja lækni þínum eða umönnunarteymi frá því, vegna þess hvernig það lét þig líða?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Já</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Nei</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">4.</div>
+  <div class="q-text">Þegar dagleg venjur þínar breytast (til dæmis þegar þú ferðast, vinnur á öðrum tíma eða dvelur utan heimilis), finnst þér þá erfitt að halda áfram með lyf þín?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Já</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Nei</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">5.</div>
+  <div class="q-text">Gast þú tekið síðasta skammt þinn eins og fyrirskipað var?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Já</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Nei</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">6.</div>
+  <div class="q-text">Þegar þér byrjar að líða betur eða einkenni þín batna, hugsar þú þá einhvern tíman um að minnka eða gera hlé á lyfjum þínum að eigin frumkvæði?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Já</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Nei</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">7.</div>
+  <div class="q-text">Finnst þér það vera mikið áskorun í daglegu lífi þínu að fylgjast með lyfjaáætlun þinni?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Já</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Nei</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="q8-block">
+  <div class="q8-header">
+    <div class="q-number">8.</div>
+    <div class="q-text">Hversu oft á dæmigerðri viku átt þú í erfiðleikum með að taka öll lyf þín samkvæmt fyrirmælum?</div>
+  </div>
+  <div class="likert-options">
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Aldrei</span></div>
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Sjaldan</span></div>
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Stundum</span></div>
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Oft</span></div>
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Alltaf</span></div>
+  </div>
+</div>
+</div>
+
+<div class="closing"><p>Ef þú hefur spurningar um lyf þín, eða ef eitthvað gerir það erfitt að taka þau samkvæmt fyrirmælum, skaltu tala við lækni þinn, hjúkrunarfræðing eða lyfjafræðing. Heiðarleg svör þín hjálpa okkur að finna bestu leiðirnar til að styðja þig.</p></div>
+
+<!-- ══ CLINICIAN ZONE ══ -->
+<div class="clinician-zone">
+<div class="section-title" style="color:#888;">Eingöngu til klínískrar notkunar</div>
+
+<div class="scoring-wrap">
+  <div class="scoring-header-bar">Q1–Q7 Stigagjöf</div>
+  <table class="q-score-table">
+    <thead><tr><th>Item</th><th>Já</th><th>Nei</th><th>Score</th></tr></thead>
+    <tbody>
+      <tr><td>Q1</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr><td>Q2</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr><td>Q3</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr><td>Q4</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr class="q5-row"><td>Q5 <span class="reverse-tag">&#8593;</span></td><td><span class="score-pill pill-1">1</span></td><td><span class="score-pill pill-0">0</span></td><td style="font-size:7pt;color:#9a5000;">Q5: Jákvæð orðalag — Já = Fylginn (1)</td></tr>
+      <tr><td>Q6</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr><td>Q7</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="scoring-wrap">
+  <div class="scoring-header-bar">Q8 Stigaviðmið</div>
+  <div class="scoring-grid">
+    <div class="score-cell"><div class="sc-freq">Aldrei</div><span class="sc-value">1.00</span><div class="sc-class">Adherent</div></div>
+    <div class="score-cell"><div class="sc-freq">Sjaldan</div><span class="sc-value">0.75</span><div class="sc-class">&#8250;</div></div>
+    <div class="score-cell"><div class="sc-freq">Stundum</div><span class="sc-value">0.50</span><div class="sc-class">&#8250;</div></div>
+    <div class="score-cell"><div class="sc-freq">Oft</div><span class="sc-value">0.25</span><div class="sc-class">&#8250;</div></div>
+    <div class="score-cell"><div class="sc-freq">Alltaf</div><span class="sc-value">0.00</span><div class="sc-class">Non-adherent</div></div>
+  </div>
+</div>
+
+<div class="totals-row">
+  <div class="total-box"><label>Stig Q1–Q7 (samlagning)</label><div class="score-line"></div></div>
+  <div class="total-box"><label>Stig Q8</label><div class="score-line"></div></div>
+  <div class="total-box accent"><label>MAP heildarstig (0–8)</label><div class="score-line"></div></div>
+</div>
+
+<table class="class-table">
+  <thead><tr><th>Heildarstig</th><th>Flokkun</th><th>Fylgniþrep</th></tr></thead>
+  <tbody>
+    <tr><td>8.0</td><td><span class="badge badge-high">Há fylgni</span></td><td>Fylginn</td></tr>
+    <tr><td>6.0 &ndash; 7.75</td><td><span class="badge badge-medium">Miðlungs fylgni</span></td><td>Að mestu fylginn</td></tr>
+    <tr><td>&lt; 6.0</td><td><span class="badge badge-low">Lág fylgni</span></td><td>Ekki fylginn</td></tr>
+  </tbody>
+</table>
+
+<div class="pe-section">
+  <div class="pe-header-bar">PE-Stig (ATLAS)</div>
+  <table class="pe-table">
+    <thead><tr><th>Domain</th><th>Formula</th><th>Score</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Uppbygging (A)</strong><br/><span class="domain-val">Skoðanir &amp; meðvitaðar ákvarðanir</span></td><td style="font-family:monospace;font-size:7.5pt;">mean(Q2, Q3, Q6)</td><td><div style="border-bottom:1px solid #aaa;height:16px;width:60px;"></div></td></tr>
+      <tr><td><strong>Framkvæmd (E)</strong><br/><span class="domain-val">Hegðunaráreiðanleiki &amp; samkvæmni</span></td><td style="font-family:monospace;font-size:7.5pt;">mean(Q1, Q5, Q8)</td><td><div style="border-bottom:1px solid #aaa;height:16px;width:60px;"></div></td></tr>
+      <tr><td><strong>Samhengisvörður (C&#x261;)</strong><br/><span class="domain-val">Upplifað byrði &amp; umhverfi</span></td><td style="font-family:monospace;font-size:7.5pt;">0.5 + 0.5 &times; mean(Q4, Q7)</td><td><div style="border-bottom:1px solid #aaa;height:16px;width:60px;"></div></td></tr>
+    </tbody>
+  </table>
+  <div class="pe-formula-row">PE = (A &times; E &times; C&#x261;)&#x00B9;&#x141B;&#x00B3; = ______</div>
+  <div class="pe-note">PE er á bilinu 0–1. Samhengisvörður-gólf kemur í veg fyrir hrun vegna eins atriðis. Reiknað sjálfkrafa í ATLAS.</div>
+</div>
+
+<div class="sig-row">
+  <div class="sig-field"><label>Undirskrift klínísks starfsmanns</label><div class="sig-line"></div></div>
+  <div class="sig-field"><label>Dagsetning framkvæmdar</label><div class="sig-line"></div></div>
+</div>
+</div>
+
+<div class="footer">
+  <div class="footer-left">MAP &copy; Adherence Cartography &middot; adherence.cc &middot; Allur réttur áskilinn. Óleyfileg fjölföldun án stofnanaleyfi er bönnuð.</div>
+  <div class="footer-right">Íslenska<br/>Form MAP-IS-001 &nbsp;|&nbsp; v1.0</div>
+</div>
+</div>
+</body>
+</html>

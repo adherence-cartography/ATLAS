@@ -309,8 +309,8 @@ function _poiContribSubmit(coords) {
     longitude:      +coords.lon,
     country:        country,
     city:           city,
-    contributor_id: uid,
-    contributed_at: Date.now(),
+    submitted_by:   uid,
+    submitted_at:   Date.now(),
     confirmations:  1,
     confirmed_by:   [uid],
     verified:       false,
@@ -365,7 +365,7 @@ function _poiContribVerify(poiKey, currentRecord) {
   // Prevent self-confirmation
   const alreadyConfirmed = Array.isArray(currentRecord.confirmed_by)
     && currentRecord.confirmed_by.includes(uid);
-  if (alreadyConfirmed || currentRecord.contributor_id === uid) {
+  if (alreadyConfirmed || currentRecord.submitted_by === uid) {
     _poiToast('You have already confirmed this POI.');
     return;
   }

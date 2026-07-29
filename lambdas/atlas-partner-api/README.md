@@ -44,27 +44,29 @@ No authentication required. Use this to verify connectivity during integration s
 
 ### POST /v1/map/submit
 
-Submit a MAP (Medication Adherence Phenotyping) assessment. Requires 8 numeric responses on a 0-1 scale.
+Submit a MAP (Multidimensional Adherence Parameters) assessment. Requires 8 numeric responses on a 0-1 scale.
 
 **Request body**
 ```json
 {
   "patient_ref": "PATIENT-001",
-  "responses": [0.8, 0.6, 0.7, 0.5, 0.9, 0.4, 0.6, 0.8],
-  "condition": "hypertension",
+  "study_id": "MAMEDS-GR-2026",
+  "responses": [1, 1, 1, 1, 1, 1, 1, 0.75],
+  "condition": "Hypertension",
   "drug": "amlodipine",
   "age_range": "45-54",
   "gender": "female",
-  "city": "London",
-  "country": "GB",
-  "metadata": { "clinic_id": "CL-42" }
+  "city": "Athens",
+  "country": "GR",
+  "metadata": { "pharmacy_id": "PH-042" }
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `patient_ref` | string | No | Pseudonymised patient identifier (your internal reference) |
-| `responses` | number[8] | Yes | Eight MAP responses, each 0.0 to 1.0 |
+| `study_id` | string | No | Study or cohort identifier. Use to group submissions for bulk retrieval via `/v1/study/{study_id}/results` |
+| `responses` | number[8] | Yes | Eight MAP responses, each 0.0 to 1.0 (binary items: 0 = non-adherent, 1 = adherent; Q8 ordinal: Never=1.00, Rarely=0.75, Sometimes=0.50, Often=0.25, All the time=0.00) |
 | `condition` | string | No | Medical condition being treated |
 | `drug` | string | No | Medication name |
 | `age_range` | string | No | e.g. "45-54" |
@@ -78,19 +80,12 @@ Submit a MAP (Medication Adherence Phenotyping) assessment. Requires 8 numeric r
 {
   "assessment_id": "3f2e1a4b-...",
   "result": {
-    "base": 0.833,
-    "mvmt": 0.567,
-    "strata": 0.775,
     "pe": 0.715,
-    "phenotype": "Routine Forgetter",
-    "intervention": {
-      "strategy": "Habit Anchoring",
-      "actions": [
-        "Visible pill organizer placement",
-        "Smartphone alarm linked to daily routine",
-        "Blister pack dispensing"
-      ]
-    }
+    "architecture": 0.833,
+    "execution": 0.917,
+    "context_guard": 1.000,
+    "additive": 6.75,
+    "low_adherence": false
   },
   "timestamp": "2026-06-10T09:01:23.456Z"
 }
@@ -98,12 +93,15 @@ Submit a MAP (Medication Adherence Phenotyping) assessment. Requires 8 numeric r
 
 **MAP scoring formula**
 
-| Dimension | Inputs | Formula |
-|-----------|--------|---------|
-| `base` | q1, q5, q8 | mean of responses[0,4,7] |
-| `mvmt` | q2, q3, q6 | mean of responses[1,2,5] |
-| `strata` | q4, q7 | 0.5 + 0.5 * mean(responses[3,6]) |
-| `pe` | all | cube_root(base * mvmt * strata) |
+| Domain | Inputs | Formula |
+|--------|--------|---------|
+| `architecture` | Q2, Q3, Q6 | mean of responses[1,2,5] — intentional decisions |
+| `execution` | Q1, Q5, Q8 | mean of responses[0,4,7] — behavioral reliability |
+| `context_guard` | Q4, Q7 | 0.5 + 0.5 × mean(responses[3,6]) — environmental friction, floored at 0.5 |
+| `pe` | all three | cube_root(architecture × execution × context_guard) |
+| `additive` | all | sum of all 8 responses — directly comparable to MMAS-8 benchmarks |
+
+The weakest domain directly governs PE: a patient strong on execution and context-guard but weak on architecture (beliefs) cannot have their PE rescued by the other two. This is what makes MAP clinically superior to a simple sum score for intervention targeting.
 
 ---
 
@@ -115,19 +113,21 @@ Submit an MMAS-8 (Morisky Medication Adherence Scale) assessment.
 ```json
 {
   "patient_ref": "PATIENT-001",
+  "study_id": "MAMEDS-GR-2026",
   "responses": [false, false, true, false, false, false, false, 1],
-  "condition": "diabetes",
+  "condition": "Type 2 Diabetes Mellitus",
   "drug": "metformin",
   "age_range": "35-44",
   "gender": "male",
-  "city": "Manchester",
-  "country": "GB",
+  "city": "Thessaloniki",
+  "country": "GR",
   "metadata": {}
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
+| `study_id` | string | No | Study or cohort identifier. Use to group submissions for bulk retrieval via `/v1/study/{study_id}/results` |
 | `responses` | array[8] | Yes | Responses 1-7 are boolean (true = missed dose), response 8 is 1-5 scale |
 
 **MMAS scoring formula**
@@ -213,7 +213,7 @@ Alternatively, supply a pre-computed `pe` value instead of `base`/`mvmt`/`strata
 
 ### GET /v1/results/{assessment_id}
 
-Retrieve a single assessment record. The record must belong to your partner key.
+Retrieve a single assessment record by its UUID. The record must belong to your partner key.
 
 **Example**
 ```
@@ -259,6 +259,38 @@ X-Partner-Key: pk_live_abcdef
   ]
 }
 ```
+
+---
+
+### GET /v1/study/{study_id}/results
+
+Retrieve all assessments belonging to a given study cohort, scoped to your partner account. Designed for pilot studies where all submissions share a common `study_id`.
+
+**Query parameters**
+
+| Param | Values | Description |
+|-------|--------|-------------|
+| `instrument` | `map`, `mmas` | Filter by instrument type |
+
+**Example**
+```
+GET /v1/study/MAMEDS-GR-2026/results?instrument=mmas
+X-Partner-Key: pk_live_abcdef
+```
+
+**Response 200**
+```json
+{
+  "study_id": "MAMEDS-GR-2026",
+  "total": 87,
+  "results": [
+    { "assessment_id": "...", "tool": "mmas", "score": 7, "low_adherence": false, "condition": "Hypertension", "country": "GR", "timestamp": 1749550883456 },
+    { "assessment_id": "...", "tool": "mmas", "score": 4, "low_adherence": true,  "condition": "Type 2 Diabetes Mellitus", "country": "GR", "timestamp": 1749637283456 }
+  ]
+}
+```
+
+Results are sorted by timestamp ascending (first submission first).
 
 ---
 

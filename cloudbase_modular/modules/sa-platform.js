@@ -233,6 +233,7 @@ function _saPlatWsNew() {
                   <option value="institution_academic">Institution · Academic</option>
                   <option value="institution_health">Institution · Health System</option>
                   <option value="institution_amc">Institution · Academic Med Ctr</option>
+                  <option value="institution_sponsored">Institution · Sponsored Trial</option>
                 </optgroup>
               </select>
             </div>
@@ -356,7 +357,7 @@ function _saPlatWsNew() {
       const tesseraCntry= tesseraOn ? (document.getElementById('sa-ws-new-tessera-country')?.value || '') : null;
       const dims        = ['base','mvmt','strata'].filter(d => document.getElementById('sa-ws-new-dim-'+d)?.checked);
       const region     = document.getElementById('sa-ws-new-region')?.value || 'us';
-      const _instTypeMap = { institution_academic:'academic', institution_health:'health', institution_amc:'amc' };
+      const _instTypeMap = { institution_academic:'academic', institution_health:'health', institution_amc:'amc', institution_sponsored:'sponsored' };
       // Firebase role — the actual role stored in the workspace profile
       const role = _instTypeMap[_roleRaw] ? 'institution' : _roleRaw;
       const institution_type = _instTypeMap[_roleRaw] || null;

@@ -390,6 +390,7 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
 .inst-tab-btn.active.tab-academic{border-bottom-color:var(--purple);color:var(--purple);}
 .inst-tab-btn.active.tab-health{border-bottom-color:var(--blue);color:var(--blue);}
 .inst-tab-btn.active.tab-amc{border-bottom-color:var(--gold);color:var(--gold);}
+.inst-tab-btn.active.tab-sponsored{border-bottom-color:#1a9488;color:#1a9488;}
 .inst-tab-pane{display:none;padding:28px 32px;}
 .inst-tab-pane.active{display:grid;grid-template-columns:1fr 220px;gap:28px;align-items:start;}
 @media(max-width:680px){.inst-tab-pane.active{grid-template-columns:1fr;}}
@@ -398,6 +399,7 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
 [data-theme="light"] .inst-tab-btn.active.tab-academic{color:var(--purple);}
 [data-theme="light"] .inst-tab-btn.active.tab-health{color:var(--blue);}
 [data-theme="light"] .inst-tab-btn.active.tab-amc{color:var(--gold);}
+[data-theme="light"] .inst-tab-btn.active.tab-sponsored{color:#1a9488;}
 /* CTO1: PO Path */
 .po-conf-eyebrow{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#4e9cf5;margin-bottom:.4rem;font-family:monospace}
 .po-conf-heading{font-size:1.3rem;margin:0 0 .5rem;color:#e8f0f8}
@@ -715,10 +717,11 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
 
   <div class="inst-tab-card">
     <!-- Tab bar -->
-    <div class="inst-tab-bar">
+    <div class="inst-tab-bar" style="grid-template-columns:1fr 1fr 1fr 1fr;">
       <button class="inst-tab-btn tab-academic active" onclick="switchInstTab('academic')">Academic<br/><span style="font-size:0.55rem;opacity:0.65;">$399/month</span></button>
       <button class="inst-tab-btn tab-health" onclick="switchInstTab('health')">Health System<br/><span style="font-size:0.55rem;opacity:0.65;">$599/month</span></button>
       <button class="inst-tab-btn tab-amc" onclick="switchInstTab('amc')">Academic Med Ctr<br/><span style="font-size:0.55rem;opacity:0.65;">$799/month</span></button>
+      <button class="inst-tab-btn tab-sponsored" onclick="switchInstTab('sponsored')">Sponsored Trial<br/><span style="font-size:0.55rem;opacity:0.65;">Agreement-based</span></button>
     </div>
 
     <!-- ── ACADEMIC PANE ── -->
@@ -838,6 +841,42 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
         <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">BAA &amp; DUA · priority support<br/>Add. PI $99 · Researcher $49 · Student $19</div>
       </div>
     </div>
+
+    <!-- ── SPONSORED TRIAL PANE ── -->
+    <div class="inst-tab-pane" id="inst-pane-sponsored">
+      <div>
+        <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:#1a9488;margin-bottom:8px;">CRO · Pharma Sponsor · Multi-Site Clinical Trial Network</div>
+        <p style="font-size:0.85rem;color:var(--muted);line-height:1.75;margin-bottom:16px;">Built for CRO-managed, sponsor-funded trials using ATLAS as the study delivery and adherence data platform. Purpose-built role separation between site coordinators, CRO monitors, and sponsor observers. Every agreement is executed directly — no self-serve checkout.</p>
+        <ul class="tier-features" style="margin-bottom:0;">
+          <li><span class="feat-check" style="background:rgba(26,148,136,0.15);color:#1a9488;">&#10086;</span><span><strong style="color:#1a9488;">Site Monitor Dashboard</strong> — per-site enrollment, compliance rate, LTFU flags, and coordinator roster across all trial sites simultaneously</span></li>
+          <li><span class="feat-check" style="background:rgba(26,148,136,0.15);color:#1a9488;">&#10086;</span><span><strong style="color:#1a9488;">Sponsor Portal</strong> — dedicated real-time read-only view for sponsor oversight: enrollment milestones, aggregate adherence trends, protocol compliance by site</span></li>
+          <li><span class="feat-check" style="background:rgba(26,148,136,0.15);color:#1a9488;">&#10086;</span><span><strong style="color:#1a9488;">Assessment Window Tracker</strong> — visit schedule management, baseline / interim / end-of-study windows, overdue participant alerts per site</span></li>
+          <li><span class="feat-check" style="background:rgba(26,148,136,0.15);color:#1a9488;">&#10086;</span><span><strong style="color:#1a9488;">Data Review &amp; Query Log</strong> — CRO monitor flags data issues, site coordinator responds, full resolution trail retained for audit</span></li>
+          <li><span class="feat-check" style="background:rgba(26,148,136,0.15);color:#1a9488;">&#10003;</span><span>Clinical Study Module — LTFU tracking, protocol deviations, CONSORT participant flow, visit schedule</span></li>
+          <li><span class="feat-check" style="background:rgba(26,148,136,0.15);color:#1a9488;">&#10003;</span><span>IRB-ready structured data export — on-demand, formatted for regulatory submission at any time</span></li>
+          <li><span class="feat-check" style="background:rgba(26,148,136,0.15);color:#1a9488;">&#10003;</span><span>ZOE Adherence — integrated participant engagement between assessment windows, included in platform price</span></li>
+          <li><span class="feat-check" style="background:rgba(26,148,136,0.15);color:#1a9488;">&#10003;</span><span>Role-based access — Site Coordinator, CRO Monitor, Sponsor Observer, Study PI — configurable per site</span></li>
+          <li><span class="feat-check" style="background:rgba(26,148,136,0.15);color:#1a9488;">&#10003;</span><span>Audit trail · BAA &amp; DUA · Commercial License Agreement · B2B API · dedicated study support</span></li>
+        </ul>
+      </div>
+      <div>
+        <div style="background:rgba(26,148,136,0.05);border:1px solid rgba(26,148,136,0.28);border-radius:10px;padding:20px;text-align:center;margin-bottom:12px;">
+          <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:#1a9488;margin-bottom:8px;">Sponsored Trial</div>
+          <div style="font-family:var(--font-d);font-size:1.7rem;font-weight:300;color:var(--bright);line-height:1.1;margin-bottom:4px;">Agreement-based</div>
+          <div style="font-size:0.80rem;color:var(--muted);margin-bottom:4px;">flat-rate per study program</div>
+          <div style="font-family:var(--font-m);font-size:0.60rem;color:rgba(26,148,136,0.7);margin-bottom:6px;">from $22,000 / 2-year study</div>
+          <div style="font-family:var(--font-m);font-size:0.56rem;color:var(--muted);opacity:0.7;margin-bottom:16px;line-height:1.7;">Platform + instrument license bundled<br/>Two fixed installments / no per-admin billing</div>
+          <div style="font-family:var(--font-m);font-size:0.56rem;color:rgba(26,148,136,0.65);background:rgba(26,148,136,0.06);border:1px solid rgba(26,148,136,0.18);border-radius:5px;padding:5px 8px;margin-bottom:14px;letter-spacing:0.06em;">INST-TRIAL-XXXX-2026</div>
+          <a href="mailto:philip.morisky@adherence.cc?subject=Sponsored Trial Agreement - ATLAS Platform&body=Please include: study name, sponsor, CRO, number of sites, estimated participant count, and study duration."
+            style="display:block;width:100%;padding:11px;border-radius:8px;font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;transition:background 0.2s;background:rgba(26,148,136,0.1);border:1px solid rgba(26,148,136,0.35);color:#1a9488;box-sizing:border-box;"
+            onmouseover="this.style.background='rgba(26,148,136,0.2)'" onmouseout="this.style.background='rgba(26,148,136,0.1)'">
+            Request Agreement
+          </a>
+        </div>
+        <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">BAA · DUA · CLA included<br/>Custom site &amp; role configuration<br/>Direct agreement only</div>
+      </div>
+    </div>
+
   </div>
 </section>
 <div style="position:relative;z-index:1;max-width:960px;margin:0 auto 48px;padding:0 40px;text-align:center;">
@@ -1426,7 +1465,7 @@ function toggleFeatures(tier) {
 }
 
 function switchInstTab(type) {
-  ['academic','health','amc'].forEach(t => {
+  ['academic','health','amc','sponsored'].forEach(t => {
     const pane = document.getElementById('inst-pane-' + t);
     const btn  = document.querySelector('.inst-tab-btn.tab-' + t);
     if (pane) pane.classList.toggle('active', t === type);

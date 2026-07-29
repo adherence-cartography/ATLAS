@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="MAP Self"/>
 <meta name="robots" content="noindex,nofollow"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&family=Noto+Sans+Arabic:wght@300;400;600&display=swap" rel="stylesheet"/>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" integrity="sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0" crossorigin="anonymous"></script>
 <style>
@@ -35,7 +35,7 @@
   --radius: 14px;
   --radius-sm: 8px;
   --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', 'Noto Sans Arabic', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
 }
 
@@ -704,10 +704,35 @@ body { min-height: 100vh; display: flex; flex-direction: column; }
   <div class="lang-label" id="wlc-lang-label">Select your language</div>
   <div class="lang-grid">
     <button class="lang-btn selected" data-lang="en" onclick="selectLang('en')">English</button>
+    <button class="lang-btn" data-lang="el" onclick="selectLang('el')">Ελληνικά</button>
+    <button class="lang-btn" data-lang="pl" onclick="selectLang('pl')">Polski</button>
     <button class="lang-btn" data-lang="it" onclick="selectLang('it')">Italiano</button>
     <button class="lang-btn" data-lang="es" onclick="selectLang('es')">Español</button>
     <button class="lang-btn" data-lang="fr" onclick="selectLang('fr')">Français</button>
     <button class="lang-btn" data-lang="ar" onclick="selectLang('ar')">العربية</button>
+    <button class="lang-btn" data-lang="de" onclick="selectLang('de')">Deutsch</button>
+    <button class="lang-btn" data-lang="zh" onclick="selectLang('zh')">中文</button>
+    <button class="lang-btn" data-lang="zh-TW" onclick="selectLang('zh-TW')">繁體中文</button>
+    <button class="lang-btn" data-lang="ja" onclick="selectLang('ja')">日本語</button>
+    <button class="lang-btn" data-lang="ko" onclick="selectLang('ko')">한국어</button>
+    <button class="lang-btn" data-lang="ru" onclick="selectLang('ru')">Русский</button>
+    <button class="lang-btn" data-lang="tr" onclick="selectLang('tr')">Türkçe</button>
+    <button class="lang-btn" data-lang="hi" onclick="selectLang('hi')">हिन्दी</button>
+    <button class="lang-btn" data-lang="id" onclick="selectLang('id')">Bahasa Indonesia</button>
+    <button class="lang-btn" data-lang="tl" onclick="selectLang('tl')">Filipino</button>
+    <button class="lang-btn" data-lang="sw" onclick="selectLang('sw')">Kiswahili</button>
+    <button class="lang-btn" data-lang="af" onclick="selectLang('af')">Afrikaans</button>
+    <button class="lang-btn" data-lang="sq" onclick="selectLang('sq')">Shqip</button>
+    <button class="lang-btn" data-lang="bn" onclick="selectLang('bn')">বাংলা</button>
+    <button class="lang-btn" data-lang="hr" onclick="selectLang('hr')">Hrvatski</button>
+    <button class="lang-btn" data-lang="da" onclick="selectLang('da')">Dansk</button>
+    <button class="lang-btn" data-lang="nl" onclick="selectLang('nl')">Nederlands</button>
+    <button class="lang-btn" data-lang="fi" onclick="selectLang('fi')">Suomi</button>
+    <button class="lang-btn" data-lang="ms" onclick="selectLang('ms')">Bahasa Melayu</button>
+    <button class="lang-btn" data-lang="sv" onclick="selectLang('sv')">Svenska</button>
+    <button class="lang-btn" data-lang="uk" onclick="selectLang('uk')">Українська</button>
+    <button class="lang-btn" data-lang="ur" onclick="selectLang('ur')">اردو</button>
+    <button class="lang-btn" data-lang="vi" onclick="selectLang('vi')">Tiếng Việt</button>
   </div>
 
   <p class="code-label" id="wlc-code-label">Enter your patient code if your doctor or pharmacist gave you one (optional)</p>
@@ -1234,8 +1259,1857 @@ const _SELF_TRANS = {
       exec: "\u0646\u0635\u064a\u062d\u0629: \u0627\u062d\u062a\u0641\u0638 \u0628\u062f\u0648\u0627\u0626\u0643 \u0641\u064a \u0645\u0643\u0627\u0646 \u0645\u0631\u0626\u064a \u0643\u0644 \u064a\u0648\u0645\u060c \u0645\u062b\u0644 \u0628\u062c\u0627\u0646\u0628 \u0641\u0631\u0634\u0627\u0629 \u0623\u0633\u0646\u0627\u0646\u0643\u060c \u0644\u064a\u0633\u0627\u0639\u062f\u0643 \u0639\u0644\u0649 \u0628\u0646\u0627\u0621 \u0627\u0644\u0639\u0627\u062f\u0629.",
       ctx: "\u0646\u0635\u064a\u062d\u0629: \u0627\u0633\u0623\u0644 \u0635\u064a\u062f\u0644\u0627\u0646\u064a\u0643 \u0639\u0646 \u0639\u0628\u0648\u0627\u062a \u0627\u0644\u0623\u0642\u0631\u0627\u0635 \u0623\u0648 \u062d\u0627\u0641\u0638\u0627\u062a \u0627\u0644\u062d\u0628\u0648\u0628 \u0627\u0644\u062a\u064a \u062a\u0633\u0647\u0644 \u062d\u0645\u0644 \u062f\u0648\u0627\u0626\u0643 \u0639\u0646\u062f \u0627\u0644\u0633\u0641\u0631."
     }
+  },
+
+  el: {
+    hero: "Πώς τα πάτε με τα φάρμακά σας;",
+    sub: "Χρειάζεται περίπου 3 λεπτά. Οι απαντήσεις σας είναι ιδιωτικές και βοηθούν την ομάδα φροντίδας σας να καταλάβει πώς να σας υποστηρίξει.",
+    langLabel: "Επιλέξτε τη γλώσσα σας",
+    codeLabel: "Εισάγετε τον κωδικό ασθενή σας εάν σας τον έδωσε ο γιατρός ή ο φαρμακοποιός σας (προαιρετικό)",
+    codePlaceholder: "π.χ. PT-2024-001",
+    begin: "Έναρξη",
+    powered: "Με τεχνολογία MAP · Multidimensional Adherence Parameters",
+    qLabel: "Ερώτηση",
+    of: "από",
+    yes: "Ναι",
+    no: "Όχι",
+    completeLabel: "Ολοκλήρωση αξιολόγησης",
+    resultsTitle: "Τα αποτελέσματά σας",
+    scoreLabel: "Επίπεδο τήρησης αγωγής σας",
+    domArchLabel: "Τα συναισθήματά σας για τα φάρμακά σας",
+    domExecLabel: "Η καθημερινή σας ρουτίνα φαρμάκων",
+    domCtxLabel: "Πρακτικές δυσκολίες",
+    tipLabel: "Συμβουλή υποστήριξης",
+    btnShare: "Κοινοποίηση με την ομάδα φροντίδας μου",
+    btnSave: "Αποθήκευση αποτελεσμάτων μου",
+    btnRemind: "Επανάληψη σε 30 ημέρες",
+    savingMsg: "Αποθήκευση...",
+    savedMsg: "Αποθηκεύτηκε με επιτυχία.",
+    saveErrMsg: "Δεν ήταν δυνατή η αποθήκευση. Παρακαλώ δοκιμάστε ξανά.",
+    reminderMsg: "Ρυθμίστε μια υπενθύμιση στο τηλέφωνό σας σε 30 ημέρες. Η πρόθεσή σας καταγράφηκε.",
+    shareHeaderLabel: "Περίληψη για την ομάδα φροντίδας",
+    sumTitle: "Περίληψη Αυτοαξιολόγησης MAP",
+    sumScoreLabel: "Επίπεδο τήρησης αγωγής",
+    sumArchLabel: "Συναισθήματα για τα φάρμακα",
+    sumExecLabel: "Καθημερινή ρουτίνα",
+    sumCtxLabel: "Πρακτικές δυσκολίες",
+    copyBtn: "Αντιγραφή στο πρόχειρο",
+    copiedMsg: "Αντιγράφηκε στο πρόχειρο!",
+    shareBackBtn: "Επιστροφή στα αποτελέσματά μου",
+    questions: [
+      { text: "Υπάρχουν στιγμές που ξεχνάτε να πάρετε τα φάρμακά σας;", type: "binary" },
+      { text: "Τις τελευταίες δύο εβδομάδες, υπήρξαν στιγμές που επιλέξατε να παραλείψετε μια δόση, π.χ. λόγω παρενεργειών, κόστους ή επειδή νιώθατε καλύτερα;", type: "binary" },
+      { text: "Τις τελευταίες δύο εβδομάδες, μειώσατε τη δόση σας ή σταματήσατε ένα φάρμακο μόνοι σας, χωρίς να ενημερώσετε τον γιατρό ή την ομάδα φροντίδας σας, λόγω του πώς σας έκανε να νιώθετε;", type: "binary" },
+      { text: "Όταν αλλάζει η καθημερινή σας ρουτίνα, π.χ. κατά τα ταξίδια, με διαφορετικό ωράριο εργασίας ή μακριά από το σπίτι, δυσκολεύεστε να ακολουθήσετε τη φαρμακευτική αγωγή σας;", type: "binary" },
+      { text: "Μπορέσατε να πάρετε την τελευταία σας δόση όπως σας έχει συνταγογραφηθεί;", type: "binary" },
+      { text: "Όταν αρχίζετε να νιώθετε καλύτερα ή τα συμπτώματά σας βελτιώνονται, σκέφτεστε μερικές φορές να μειώσετε ή να διακόψετε τη φαρμακευτική αγωγή σας με δική σας πρωτοβουλία;", type: "binary" },
+      { text: "Η τήρηση της φαρμακευτικής σας ρουτίνας φαίνεται να αποτελεί μεγάλη πρόκληση στην καθημερινή σας ζωή;", type: "binary" },
+      { text: "Κατά τη διάρκεια μιας τυπικής εβδομάδας, πόσο συχνά δυσκολεύεστε να πάρετε όλα τα φάρμακά σας όπως συνταγογραφήθηκαν;", type: "ordinal",
+        options: ["Ποτέ", "Σπάνια", "Μερικές φορές", "Συχνά", "Πάντα"] }
+    ],
+    peTiers: [
+      "Η συνολική σας τήρηση αγωγής είναι ισχυρή.",
+      "Τα πάτε καλά, με μερικά σημεία που αξίζει να παρακολουθήσετε.",
+      "Υπάρχουν τομείς όπου θα μπορούσατε να επωφεληθείτε από πρόσθετη υποστήριξη.",
+      "Αυτό αξίζει να συζητηθεί με τον γιατρό ή τον φαρμακοποιό σας."
+    ],
+    archInsights: [
+      "Φαίνεται να έχετε αμφιβολίες σχετικά με τα φάρμακά σας που θα ήταν χρήσιμο να αντιμετωπίσετε με τον γιατρό σας.",
+      "Μπορεί να αναρωτιέστε για την αποτελεσματικότητα των φαρμάκων σας.",
+      "Εμπιστεύεστε τους λόγους για τους οποίους παίρνετε τα φάρμακά σας."
+    ],
+    execInsights: [
+      "Το να θυμάστε να παίρνετε τα φάρμακά σας τακτικά φαίνεται να αποτελεί πρόκληση.",
+      "Μερικές φορές μπορεί να είναι δύσκολο να θυμάστε τα φάρμακά σας.",
+      "Διατηρείτε καλά τη ρουτίνα φαρμάκων σας."
+    ],
+    ctxInsights: [
+      "Πρακτικές πτυχές δυσκολεύουν την τακτική λήψη των φαρμάκων σας.",
+      "Μερικές φορές το πρόγραμμά σας ή τα ταξίδια καθιστούν δυσκολότερη την τήρηση της φαρμακευτικής αγωγής σας.",
+      "Η καθημερινή σας ζωή δεν φαίνεται να επηρεάζει τη λήψη των φαρμάκων σας."
+    ],
+    tips: {
+      arch: "Συμβουλή: Εάν έχετε αμφιβολίες για τα φάρμακά σας, η καταγραφή των ερωτήσεών σας πριν από το επόμενο ραντεβού μπορεί να σας βοηθήσει να πάρετε απαντήσεις.",
+      exec: "Συμβουλή: Η φύλαξη των φαρμάκων σας σε ορατό μέρος κάθε μέρα, π.χ. δίπλα στην οδοντόβουρτσά σας, μπορεί να σας βοηθήσει να δημιουργήσετε τη συνήθεια.",
+      ctx: "Συμβουλή: Ρωτήστε τον φαρμακοποιό σας για blister ή χαπόκουτα που διευκολύνουν τη μεταφορά φαρμάκων κατά τα ταξίδια."
+    }
+  },
+
+  pl: {
+    hero: "Jak radzisz sobie z przyjmowaniem leków?",
+    sub: "Zajmuje to około 3 minuty. Twoje odpowiedzi są prywatne i pomagają Twojemu zespołowi opieki zrozumieć, jak Cię wspierać.",
+    langLabel: "Wybierz swój język",
+    codeLabel: "Wpisz swój kod pacjenta, jeśli podał go Twój lekarz lub farmaceuta (opcjonalne)",
+    codePlaceholder: "np. PT-2024-001",
+    begin: "Rozpocznij",
+    powered: "Technologia MAP · Multidimensional Adherence Parameters",
+    qLabel: "Pytanie",
+    of: "z",
+    yes: "Tak",
+    no: "Nie",
+    completeLabel: "Ocena zakończona",
+    resultsTitle: "Twoje wyniki",
+    scoreLabel: "Twój poziom adherencji",
+    domArchLabel: "Twoje odczucia wobec leków",
+    domExecLabel: "Twoja codzienna rutyna lekowa",
+    domCtxLabel: "Praktyczne wyzwania",
+    tipLabel: "Wskazówka wsparcia",
+    btnShare: "Udostępnij mojemu zespołowi opieki",
+    btnSave: "Zapisz moje wyniki",
+    btnRemind: "Powtórz za 30 dni",
+    savingMsg: "Zapisywanie...",
+    savedMsg: "Zapisano pomyślnie.",
+    saveErrMsg: "Nie można zapisać. Spróbuj ponownie.",
+    reminderMsg: "Ustaw przypomnienie w telefonie za 30 dni. Twój zamiar został zapisany.",
+    shareHeaderLabel: "Podsumowanie dla zespołu opieki",
+    sumTitle: "Podsumowanie samooceny MAP",
+    sumScoreLabel: "Poziom adherencji",
+    sumArchLabel: "Odczucia wobec leków",
+    sumExecLabel: "Codzienna rutyna",
+    sumCtxLabel: "Praktyczne wyzwania",
+    copyBtn: "Kopiuj do schowka",
+    copiedMsg: "Skopiowano do schowka!",
+    shareBackBtn: "Powrót do wyników",
+    questions: [
+      { text: "Czy zdarzają Ci się chwile, gdy zapominasz wziąć leki?", type: "binary" },
+      { text: "W ciągu ostatnich dwóch tygodni, czy były chwile, gdy celowo pominąłeś(-aś) dawkę, np. z powodu skutków ubocznych, kosztów lub dlatego, że czułeś(-aś) się lepiej?", type: "binary" },
+      { text: "W ciągu ostatnich dwóch tygodni, czy zmniejszyłeś(-aś) dawkę lub odstawiłeś(-aś) lek na własną rękę, bez informowania lekarza lub zespołu opieki, z powodu tego, jak się po nim czułeś(-aś)?", type: "binary" },
+      { text: "Gdy Twoja codzienna rutyna się zmienia, np. podczas podróży, przy innym harmonogramie pracy lub poza domem, czy masz trudności z przestrzeganiem schematu przyjmowania leków?", type: "binary" },
+      { text: "Czy udało Ci się wziąć ostatnią dawkę zgodnie z zaleceniami?", type: "binary" },
+      { text: "Gdy zaczynasz czuć się lepiej lub Twoje objawy ustępują, czy czasem myślisz o zmniejszeniu lub odstawieniu leku z własnej inicjatywy?", type: "binary" },
+      { text: "Czy przestrzeganie schematu przyjmowania leków stanowi dla Ciebie duże wyzwanie w codziennym życiu?", type: "binary" },
+      { text: "W typowym tygodniu, jak często masz trudności z wzięciem wszystkich leków zgodnie z zaleceniami?", type: "ordinal",
+        options: ["Nigdy", "Rzadko", "Czasami", "Często", "Cały czas"] }
+    ],
+    peTiers: [
+      "Twoja ogólna adherencja jest silna.",
+      "Radzisz sobie dobrze, z kilkoma punktami wartymi obserwacji.",
+      "Są obszary, w których możesz skorzystać z dodatkowego wsparcia.",
+      "Warto omówić to z lekarzem lub farmaceutą."
+    ],
+    archInsights: [
+      "Wydaje się, że masz wątpliwości dotyczące swoich leków, które warto omówić z lekarzem.",
+      "Możliwe, że zastanawiasz się nad skutecznością swoich leków.",
+      "Ufasz powodom, dla których przyjmujesz swoje leki."
+    ],
+    execInsights: [
+      "Regularne pamiętanie o przyjmowaniu leków wydaje się być wyzwaniem.",
+      "Czasem może być trudno pamiętać o lekach.",
+      "Dobrze utrzymujesz swoją rutynę lekową."
+    ],
+    ctxInsights: [
+      "Praktyczne aspekty utrudniają regularne przyjmowanie leków.",
+      "Czasem Twój harmonogram lub podróże utrudniają przestrzeganie schematu lekowego.",
+      "Twoje codzienne życie nie wydaje się kolidować z przyjmowaniem leków."
+    ],
+    tips: {
+      arch: "Wskazówka: Jeśli masz wątpliwości co do swoich leków, zapisanie pytań przed następną wizytą może pomóc Ci uzyskać odpowiedzi.",
+      exec: "Wskazówka: Trzymanie leków w widocznym miejscu każdego dnia, np. obok szczoteczki do zębów, może pomóc Ci wyrobić nawyk.",
+      ctx: "Wskazówka: Zapytaj farmaceutę o blistry lub organizatory tabletek ułatwiające transport leków podczas podróży."
+    }
+  },
+
+  de: {
+    hero: "Wie kommen Sie mit Ihren Medikamenten zurecht?",
+    sub: "Das dauert etwa 3 Minuten. Ihre Antworten sind vertraulich und helfen Ihrem Behandlungsteam zu verstehen, wie es Sie besser unterstützen kann.",
+    langLabel: "Sprache auswählen",
+    codeLabel: "Geben Sie Ihren Patientencode ein, falls Ihr Arzt oder Apotheker Ihnen einen gegeben hat (optional)",
+    codePlaceholder: "z. B. PT-2024-001",
+    begin: "Beginnen",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "Frage",
+    of: "von",
+    yes: "Ja",
+    no: "Nein",
+    completeLabel: "Bewertung abgeschlossen",
+    resultsTitle: "Ihre Ergebnisse",
+    scoreLabel: "Ihr Medikamenten-Adherenz-Niveau",
+    domArchLabel: "Ihre Einstellung zu Ihren Medikamenten",
+    domExecLabel: "Ihre tägliche Medikamentenroutine",
+    domCtxLabel: "Praktische Herausforderungen",
+    tipLabel: "Unterstützungstipp",
+    btnShare: "Mit meinem Behandlungsteam teilen",
+    btnSave: "Meine Ergebnisse speichern",
+    btnRemind: "In 30 Tagen wiederholen",
+    savingMsg: "Wird gespeichert...",
+    savedMsg: "Erfolgreich gespeichert.",
+    saveErrMsg: "Speichern nicht möglich. Bitte versuchen Sie es erneut.",
+    reminderMsg: "Richten Sie eine Erinnerung auf Ihrem Telefon für 30 Tage ein. Ihre Absicht wurde vermerkt.",
+    shareHeaderLabel: "Zusammenfassung für das Behandlungsteam",
+    sumTitle: "MAP Selbstbewertung Zusammenfassung",
+    sumScoreLabel: "Medikamenten-Adherenz-Niveau",
+    sumArchLabel: "Einstellung zu Medikamenten",
+    sumExecLabel: "Tägliche Routine",
+    sumCtxLabel: "Praktische Herausforderungen",
+    copyBtn: "In die Zwischenablage kopieren",
+    copiedMsg: "In die Zwischenablage kopiert!",
+    shareBackBtn: "Zurück zu meinen Ergebnissen",
+    questions: [
+      { text: "Gibt es Momente, in denen Sie vergessen, Ihre Medikamente zu nehmen?", type: "binary" },
+      { text: "Gab es in den letzten zwei Wochen Momente, in denen Sie sich entschieden haben, eine Dosis auszulassen, zum Beispiel wegen Nebenwirkungen, Kosten oder weil Sie sich besser fühlten?", type: "binary" },
+      { text: "Haben Sie in den letzten zwei Wochen Ihre Dosis eigenmächtig reduziert oder ein Medikament abgesetzt, ohne Ihren Arzt oder Ihr Behandlungsteam zu informieren, weil es Ihnen nicht gut bekommen ist?", type: "binary" },
+      { text: "Wenn sich Ihr Tagesablauf ändert, zum Beispiel auf Reisen, bei anderen Arbeitszeiten oder außer Haus, fällt es Ihnen dann schwer, Ihre Medikamente regelmäßig einzunehmen?", type: "binary" },
+      { text: "Konnten Sie Ihre letzte Dosis wie verordnet einnehmen?", type: "binary" },
+      { text: "Wenn Sie sich besser zu fühlen beginnen oder Ihre Symptome sich verbessern, denken Sie manchmal daran, Ihre Medikamente eigenmächtig zu reduzieren oder zu pausieren?", type: "binary" },
+      { text: "Empfinden Sie das Einhalten Ihrer Medikamentenroutine als große Herausforderung in Ihrem Alltag?", type: "binary" },
+      { text: "Wie oft haben Sie in einer typischen Woche Schwierigkeiten, alle Ihre Medikamente wie verordnet einzunehmen?", type: "ordinal",
+        options: ["Nie", "Selten", "Manchmal", "Oft", "Immer"] }
+    ],
+    peTiers: [
+      "Ihre Gesamtadhärenz ist stark.",
+      "Sie machen das gut, mit einigen Bereichen, die Sie im Auge behalten sollten.",
+      "Es gibt Bereiche, in denen Sie mehr Unterstützung gebrauchen könnten.",
+      "Das ist etwas, das Sie mit Ihrem Arzt oder Apotheker besprechen sollten."
+    ],
+    archInsights: [
+      "Es scheint, dass Sie einige Zweifel an Ihren Medikamenten haben, die es wert wären, mit Ihrem Arzt zu besprechen.",
+      "Sie haben möglicherweise Fragen, ob Ihre Medikamente wirklich helfen.",
+      "Sie sind zuversichtlich, warum Sie Ihre Medikamente einnehmen."
+    ],
+    execInsights: [
+      "Die regelmäßige Einnahme Ihrer Medikamente scheint eine Herausforderung zu sein.",
+      "Manchmal kann es schwierig sein, sich an die Medikamente zu erinnern.",
+      "Sie halten Ihre Medikamentenroutine gut ein."
+    ],
+    ctxInsights: [
+      "Es gibt praktische Dinge, die es schwerer machen, Ihre Medikamente konsequent einzunehmen.",
+      "Manchmal machen Ihr Alltag oder Reisen es schwieriger, bei Ihren Medikamenten zu bleiben.",
+      "Ihr Alltag scheint Ihre Medikamenteneinnahme nicht zu beeinträchtigen."
+    ],
+    tips: {
+      arch: "Tipp: Wenn Sie unsicher über Ihre Medikamente sind, können Sie Ihre Fragen vor dem nächsten Termin aufschreiben, um Antworten zu erhalten.",
+      exec: "Tipp: Bewahren Sie Ihre Medikamente an einem gut sichtbaren Ort auf, zum Beispiel neben Ihrer Zahnbürste, um die Gewohnheit zu festigen.",
+      ctx: "Tipp: Fragen Sie Ihren Apotheker nach Blisterpackungen oder Pillendosen, die das Reisen mit Ihren Medikamenten erleichtern."
+    }
+  },
+
+  zh: {
+    hero: "您在服药方面情况如何？",
+    sub: "大约需要3分钟。您的回答是保密的，有助于您的医疗团队了解如何更好地支持您。",
+    langLabel: "选择您的语言",
+    codeLabel: "如果您的医生或药剂师给了您一个患者代码，请输入（可选）",
+    codePlaceholder: "例如：PT-2024-001",
+    begin: "开始",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "问题",
+    of: "/",
+    yes: "是",
+    no: "否",
+    completeLabel: "评估完成",
+    resultsTitle: "您的结果",
+    scoreLabel: "您的用药依从性水平",
+    domArchLabel: "您对药物的看法",
+    domExecLabel: "您的日常用药习惯",
+    domCtxLabel: "实际挑战",
+    tipLabel: "支持建议",
+    btnShare: "与我的医疗团队分享",
+    btnSave: "保存我的结果",
+    btnRemind: "30天后再次评估",
+    savingMsg: "保存中...",
+    savedMsg: "保存成功。",
+    saveErrMsg: "无法保存，请重试。",
+    reminderMsg: "请在手机上设置30天后的提醒。您的意愿已记录。",
+    shareHeaderLabel: "医疗团队摘要",
+    sumTitle: "MAP自我评估摘要",
+    sumScoreLabel: "用药依从性水平",
+    sumArchLabel: "对药物的看法",
+    sumExecLabel: "日常习惯",
+    sumCtxLabel: "实际挑战",
+    copyBtn: "复制到剪贴板",
+    copiedMsg: "已复制到剪贴板！",
+    shareBackBtn: "返回我的结果",
+    questions: [
+      { text: "您有时会忘记服药吗？", type: "binary" },
+      { text: "在过去两周内，您是否曾主动跳过某次用药，例如因为副作用、费用或感觉好转？", type: "binary" },
+      { text: "在过去两周内，您是否曾自行减少剂量或停用某种药物，而没有告知医生或医疗团队，原因是该药物让您感到不适？", type: "binary" },
+      { text: "当您的日常作息发生变化时，例如出行、工作时间不同或不在家，您是否觉得难以坚持按时服药？", type: "binary" },
+      { text: "您是否按照医嘱服用了最后一次剂量？", type: "binary" },
+      { text: "当您开始感觉好转或症状改善时，您是否曾想过自行减少或暂停用药？", type: "binary" },
+      { text: "坚持用药计划对您来说是日常生活中的一大挑战吗？", type: "binary" },
+      { text: "在典型的一周内，您有多少次难以按处方服完所有药物？", type: "ordinal",
+        options: ["从不", "很少", "有时", "经常", "总是"] }
+    ],
+    peTiers: [
+      "您的整体依从性很强。",
+      "您做得很好，有些方面值得关注。",
+      "有些方面您可能需要更多支持。",
+      "这值得与您的医生或药剂师讨论。"
+    ],
+    archInsights: [
+      "您似乎对自己的药物有一些疑虑，值得与医生讨论。",
+      "您可能对自己的药物是否真正有效有一些疑问。",
+      "您对服药的原因感到有把握。"
+    ],
+    execInsights: [
+      "定期记得服药似乎对您来说是个挑战。",
+      "有时记住服药可能比较困难。",
+      "您的日常用药习惯保持得很好。"
+    ],
+    ctxInsights: [
+      "有一些实际因素使您难以持续服药。",
+      "有时您的日程安排或出行使坚持服药更加困难。",
+      "您的日常生活似乎不会影响您的用药。"
+    ],
+    tips: {
+      arch: "建议：如果您对自己的药物有疑虑，在下次就诊前写下您的问题，有助于获得解答。",
+      exec: "建议：将药物放在每天都能看到的地方，例如牙刷旁边，有助于养成习惯。",
+      ctx: "建议：可以询问药剂师关于泡罩包装或药盒的建议，方便出行时携带药物。"
+    }
+  },
+
+  'zh-TW': {
+    hero: "您在服藥方面情況如何？",
+    sub: "大約需要3分鐘。您的回答是保密的，有助於您的醫療團隊了解如何更好地支持您。",
+    langLabel: "選擇您的語言",
+    codeLabel: "如果您的醫生或藥劑師給了您一個患者代碼，請輸入（可選）",
+    codePlaceholder: "例如：PT-2024-001",
+    begin: "開始",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "問題",
+    of: "/",
+    yes: "是",
+    no: "否",
+    completeLabel: "評估完成",
+    resultsTitle: "您的結果",
+    scoreLabel: "您的用藥依從性水平",
+    domArchLabel: "您對藥物的看法",
+    domExecLabel: "您的日常用藥習慣",
+    domCtxLabel: "實際挑戰",
+    tipLabel: "支持建議",
+    btnShare: "與我的醫療團隊分享",
+    btnSave: "儲存我的結果",
+    btnRemind: "30天後再次評估",
+    savingMsg: "儲存中...",
+    savedMsg: "儲存成功。",
+    saveErrMsg: "無法儲存，請重試。",
+    reminderMsg: "請在手機上設定30天後的提醒。您的意願已記錄。",
+    shareHeaderLabel: "醫療團隊摘要",
+    sumTitle: "MAP自我評估摘要",
+    sumScoreLabel: "用藥依從性水平",
+    sumArchLabel: "對藥物的看法",
+    sumExecLabel: "日常習慣",
+    sumCtxLabel: "實際挑戰",
+    copyBtn: "複製到剪貼簿",
+    copiedMsg: "已複製到剪貼簿！",
+    shareBackBtn: "返回我的結果",
+    questions: [
+      { text: "您有時會忘記服藥嗎？", type: "binary" },
+      { text: "在過去兩週內，您是否曾主動跳過某次用藥，例如因為副作用、費用或感覺好轉？", type: "binary" },
+      { text: "在過去兩週內，您是否曾自行減少劑量或停用某種藥物，而沒有告知醫生或醫療團隊，原因是該藥物讓您感到不適？", type: "binary" },
+      { text: "當您的日常作息發生變化時，例如出行、工作時間不同或不在家，您是否覺得難以堅持按時服藥？", type: "binary" },
+      { text: "您是否按照醫囑服用了最後一次劑量？", type: "binary" },
+      { text: "當您開始感覺好轉或症狀改善時，您是否曾想過自行減少或暫停用藥？", type: "binary" },
+      { text: "堅持用藥計畫對您來說是日常生活中的一大挑戰嗎？", type: "binary" },
+      { text: "在典型的一週內，您有多少次難以按處方服完所有藥物？", type: "ordinal",
+        options: ["從不", "很少", "有時", "經常", "總是"] }
+    ],
+    peTiers: [
+      "您的整體依從性很強。",
+      "您做得很好，有些方面值得關注。",
+      "有些方面您可能需要更多支持。",
+      "這值得與您的醫生或藥劑師討論。"
+    ],
+    archInsights: [
+      "您似乎對自己的藥物有一些疑慮，值得與醫生討論。",
+      "您可能對自己的藥物是否真正有效有一些疑問。",
+      "您對服藥的原因感到有把握。"
+    ],
+    execInsights: [
+      "定期記得服藥似乎對您來說是個挑戰。",
+      "有時記住服藥可能比較困難。",
+      "您的日常用藥習慣保持得很好。"
+    ],
+    ctxInsights: [
+      "有一些實際因素使您難以持續服藥。",
+      "有時您的日程安排或出行使堅持服藥更加困難。",
+      "您的日常生活似乎不會影響您的用藥。"
+    ],
+    tips: {
+      arch: "建議：如果您對自己的藥物有疑慮，在下次就診前寫下您的問題，有助於獲得解答。",
+      exec: "建議：將藥物放在每天都能看到的地方，例如牙刷旁邊，有助於養成習慣。",
+      ctx: "建議：可以詢問藥劑師關於泡殼包裝或藥盒的建議，方便出行時攜帶藥物。"
+    }
+  },
+
+  ja: {
+    hero: "お薬の服用はいかがですか？",
+    sub: "約3分で完了します。回答は非公開で、医療チームがどのようにサポートできるかを理解するために使用されます。",
+    langLabel: "言語を選択してください",
+    codeLabel: "医師または薬剤師から患者コードをお知らせされた場合は入力してください（任意）",
+    codePlaceholder: "例：PT-2024-001",
+    begin: "開始",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "質問",
+    of: "/",
+    yes: "はい",
+    no: "いいえ",
+    completeLabel: "評価完了",
+    resultsTitle: "あなたの結果",
+    scoreLabel: "服薬アドヒアランスのレベル",
+    domArchLabel: "お薬に対するお気持ち",
+    domExecLabel: "日常の服薬習慣",
+    domCtxLabel: "実際の課題",
+    tipLabel: "サポートのヒント",
+    btnShare: "医療チームと共有する",
+    btnSave: "結果を保存する",
+    btnRemind: "30日後に再度実施する",
+    savingMsg: "保存中...",
+    savedMsg: "正常に保存されました。",
+    saveErrMsg: "保存できませんでした。もう一度お試しください。",
+    reminderMsg: "30日後のリマインダーをスマートフォンに設定してください。あなたの意向が記録されました。",
+    shareHeaderLabel: "医療チーム向けサマリー",
+    sumTitle: "MAP自己評価サマリー",
+    sumScoreLabel: "服薬アドヒアランスのレベル",
+    sumArchLabel: "お薬に対する意識",
+    sumExecLabel: "日常習慣",
+    sumCtxLabel: "実際の課題",
+    copyBtn: "クリップボードにコピー",
+    copiedMsg: "クリップボードにコピーしました！",
+    shareBackBtn: "結果に戻る",
+    questions: [
+      { text: "お薬を飲み忘れることはありますか？", type: "binary" },
+      { text: "過去2週間で、副作用や費用、体調の改善などを理由に、意図的に薬を飲まなかったことはありましたか？", type: "binary" },
+      { text: "過去2週間で、医師や医療チームに伝えずに、自分の判断で薬の量を減らしたり、薬を止めたりしたことはありましたか？", type: "binary" },
+      { text: "旅行や勤務時間の変更、外出など、日常のルーティンが変わったときに、薬を続けて飲むことが難しいと感じますか？", type: "binary" },
+      { text: "処方された通りに、最後の薬を服用できましたか？", type: "binary" },
+      { text: "体調が良くなってきたり、症状が改善したりしたときに、自分の判断で薬を減らしたり、飲むのをやめようと思ったことはありますか？", type: "binary" },
+      { text: "毎日薬を飲み続けることは、日常生活において大きな負担に感じますか？", type: "binary" },
+      { text: "典型的な1週間で、処方された通りにすべての薬を飲むことが難しいのはどのくらいですか？", type: "ordinal",
+        options: ["全くない", "ほとんどない", "時々ある", "よくある", "いつもある"] }
+    ],
+    peTiers: [
+      "全体的な服薬アドヒアランスは良好です。",
+      "概ねうまくいっていますが、注意が必要な点もあります。",
+      "いくつかの点でサポートが必要かもしれません。",
+      "医師や薬剤師に相談することをお勧めします。"
+    ],
+    archInsights: [
+      "お薬について、医師に相談する価値のある疑問をお持ちのようです。",
+      "お薬が本当に効いているかどうか、疑問に感じているかもしれません。",
+      "なぜお薬を飲む必要があるか、しっかりと理解されています。"
+    ],
+    execInsights: [
+      "定期的にお薬を飲むことを覚えておくのが難しいようです。",
+      "お薬を飲むことを思い出すのが難しいときがあります。",
+      "服薬ルーティンをうまく続けられています。"
+    ],
+    ctxInsights: [
+      "継続的に薬を飲むことを難しくする実際的な要因があります。",
+      "スケジュールや旅行が、服薬の継続を難しくすることがあります。",
+      "日常生活はお薬の服用に影響していないようです。"
+    ],
+    tips: {
+      arch: "ヒント：お薬について不安な点がある場合は、次の受診前に質問を書き留めておくと、答えを得やすくなります。",
+      exec: "ヒント：歯ブラシの隣など、毎日目に入る場所にお薬を置くと、習慣化しやすくなります。",
+      ctx: "ヒント：薬剤師に、旅行中でも薬を持ち歩きやすいブリスターパックやピルケースについて聞いてみてください。"
+    }
+  },
+
+  ko: {
+    hero: "약 복용은 어떻게 되고 있나요?",
+    sub: "약 3분이 소요됩니다. 귀하의 답변은 비공개이며, 의료팀이 어떻게 지원할 수 있는지 이해하는 데 도움이 됩니다.",
+    langLabel: "언어를 선택하세요",
+    codeLabel: "의사나 약사로부터 환자 코드를 받으셨다면 입력해 주세요 (선택 사항)",
+    codePlaceholder: "예: PT-2024-001",
+    begin: "시작",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "질문",
+    of: "/",
+    yes: "예",
+    no: "아니요",
+    completeLabel: "평가 완료",
+    resultsTitle: "귀하의 결과",
+    scoreLabel: "복약 순응도 수준",
+    domArchLabel: "약에 대한 귀하의 생각",
+    domExecLabel: "일상적인 복약 습관",
+    domCtxLabel: "실질적인 어려움",
+    tipLabel: "지원 팁",
+    btnShare: "의료팀과 공유하기",
+    btnSave: "결과 저장하기",
+    btnRemind: "30일 후 다시 하기",
+    savingMsg: "저장 중...",
+    savedMsg: "저장되었습니다.",
+    saveErrMsg: "저장할 수 없습니다. 다시 시도해 주세요.",
+    reminderMsg: "30일 후 알림을 휴대폰에 설정하세요. 귀하의 의도가 기록되었습니다.",
+    shareHeaderLabel: "의료팀 요약",
+    sumTitle: "MAP 자기 평가 요약",
+    sumScoreLabel: "복약 순응도 수준",
+    sumArchLabel: "약에 대한 생각",
+    sumExecLabel: "일상 습관",
+    sumCtxLabel: "실질적인 어려움",
+    copyBtn: "클립보드에 복사",
+    copiedMsg: "클립보드에 복사되었습니다!",
+    shareBackBtn: "결과로 돌아가기",
+    questions: [
+      { text: "약 먹는 것을 잊어버리는 경우가 있나요?", type: "binary" },
+      { text: "지난 2주간, 부작용, 비용, 또는 몸이 나아진 것 같아서 등의 이유로 의도적으로 복용을 건너뛴 적이 있나요?", type: "binary" },
+      { text: "지난 2주간, 의사나 의료팀에 알리지 않고 스스로 판단하여 약의 용량을 줄이거나 복용을 중단한 적이 있나요?", type: "binary" },
+      { text: "여행, 다른 근무 일정, 또는 집을 떠나는 경우 등 일상 루틴이 바뀔 때 약을 꾸준히 복용하기 어렵다고 느끼나요?", type: "binary" },
+      { text: "마지막 복용분을 처방대로 복용하셨나요?", type: "binary" },
+      { text: "몸 상태가 좋아지거나 증상이 개선되기 시작하면, 스스로 약을 줄이거나 중단할까 생각한 적이 있나요?", type: "binary" },
+      { text: "복약 일정을 유지하는 것이 일상생활에서 큰 부담으로 느껴지나요?", type: "binary" },
+      { text: "일반적인 한 주 동안, 처방대로 모든 약을 복용하는 데 어려움을 겪는 경우가 얼마나 자주 있나요?", type: "ordinal",
+        options: ["전혀 없음", "거의 없음", "가끔", "자주", "항상"] }
+    ],
+    peTiers: [
+      "전반적인 복약 순응도가 우수합니다.",
+      "잘 하고 계시지만, 주의가 필요한 부분이 있습니다.",
+      "일부 영역에서 추가적인 지원이 도움이 될 수 있습니다.",
+      "의사나 약사와 상담해 보시기를 권장합니다."
+    ],
+    archInsights: [
+      "약에 대해 의사와 상담해볼 만한 의구심이 있으신 것 같습니다.",
+      "약이 실제로 도움이 되는지 의문이 드실 수도 있습니다.",
+      "왜 약을 복용하는지 잘 이해하고 계십니다."
+    ],
+    execInsights: [
+      "정기적으로 약 복용을 기억하는 것이 어려운 것 같습니다.",
+      "때때로 약 복용을 기억하기 어려울 수 있습니다.",
+      "복약 루틴을 잘 유지하고 계십니다."
+    ],
+    ctxInsights: [
+      "꾸준한 복약을 어렵게 만드는 실질적인 요소들이 있습니다.",
+      "때때로 일정이나 여행으로 인해 복약 유지가 더 어려워지기도 합니다.",
+      "일상생활이 복약에 영향을 미치지 않는 것 같습니다."
+    ],
+    tips: {
+      arch: "팁: 약에 대해 확신이 없다면, 다음 진료 전에 질문을 적어두면 답을 얻는 데 도움이 됩니다.",
+      exec: "팁: 칫솔 옆 등 매일 눈에 띄는 곳에 약을 두면 복약 습관을 형성하는 데 도움이 됩니다.",
+      ctx: "팁: 약사에게 여행 중 약을 편리하게 가지고 다닐 수 있는 블리스터 팩이나 약통에 대해 물어보세요."
+    }
+  },
+
+  ru: {
+    hero: "Как у вас обстоят дела с приёмом лекарств?",
+    sub: "Это займёт около 3 минут. Ваши ответы конфиденциальны и помогают вашей медицинской команде понять, как лучше вас поддержать.",
+    langLabel: "Выберите язык",
+    codeLabel: "Введите ваш код пациента, если врач или фармацевт его предоставил (необязательно)",
+    codePlaceholder: "напр. PT-2024-001",
+    begin: "Начать",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "Вопрос",
+    of: "из",
+    yes: "Да",
+    no: "Нет",
+    completeLabel: "Оценка завершена",
+    resultsTitle: "Ваши результаты",
+    scoreLabel: "Ваш уровень приверженности лечению",
+    domArchLabel: "Ваше отношение к лекарствам",
+    domExecLabel: "Ваш ежедневный режим приёма лекарств",
+    domCtxLabel: "Практические трудности",
+    tipLabel: "Совет по поддержке",
+    btnShare: "Поделиться с медицинской командой",
+    btnSave: "Сохранить результаты",
+    btnRemind: "Повторить через 30 дней",
+    savingMsg: "Сохранение...",
+    savedMsg: "Успешно сохранено.",
+    saveErrMsg: "Не удалось сохранить. Пожалуйста, попробуйте ещё раз.",
+    reminderMsg: "Установите напоминание на телефоне через 30 дней. Ваше намерение зафиксировано.",
+    shareHeaderLabel: "Сводка для медицинской команды",
+    sumTitle: "Сводка самооценки MAP",
+    sumScoreLabel: "Уровень приверженности лечению",
+    sumArchLabel: "Отношение к лекарствам",
+    sumExecLabel: "Ежедневный режим",
+    sumCtxLabel: "Практические трудности",
+    copyBtn: "Скопировать в буфер обмена",
+    copiedMsg: "Скопировано в буфер обмена!",
+    shareBackBtn: "Вернуться к результатам",
+    questions: [
+      { text: "Бывают ли моменты, когда вы забываете принять лекарства?", type: "binary" },
+      { text: "За последние две недели были ли случаи, когда вы намеренно пропускали дозу, например из-за побочных эффектов, стоимости или потому что чувствовали себя лучше?", type: "binary" },
+      { text: "За последние две недели вы самостоятельно уменьшали дозу или отменяли лекарство, не сообщая об этом врачу или медицинской команде, из-за того, как оно на вас влияло?", type: "binary" },
+      { text: "Когда ваш распорядок дня меняется, например во время поездок, при другом рабочем графике или вдали от дома, вам трудно соблюдать режим приёма лекарств?", type: "binary" },
+      { text: "Смогли ли вы принять последнюю дозу так, как предписано?", type: "binary" },
+      { text: "Когда вы начинаете чувствовать себя лучше или симптомы улучшаются, вы иногда думаете о том, чтобы самостоятельно уменьшить дозу или сделать перерыв в приёме лекарств?", type: "binary" },
+      { text: "Соблюдение режима приёма лекарств является для вас серьёзной проблемой в повседневной жизни?", type: "binary" },
+      { text: "В типичную неделю как часто вам трудно принимать все лекарства так, как предписано?", type: "ordinal",
+        options: ["Никогда", "Редко", "Иногда", "Часто", "Всегда"] }
+    ],
+    peTiers: [
+      "Ваша общая приверженность лечению высокая.",
+      "Вы справляетесь хорошо, есть несколько моментов, заслуживающих внимания.",
+      "Есть области, в которых вам может потребоваться дополнительная поддержка.",
+      "Это стоит обсудить с вашим врачом или фармацевтом."
+    ],
+    archInsights: [
+      "Похоже, у вас есть сомнения относительно ваших лекарств, которые стоит обсудить с врачом.",
+      "Возможно, у вас есть вопросы о том, действительно ли ваши лекарства помогают.",
+      "Вы уверены в том, зачем принимаете лекарства."
+    ],
+    execInsights: [
+      "Регулярно помнить о приёме лекарств, по-видимому, является для вас проблемой.",
+      "Иногда бывает трудно не забыть о лекарствах.",
+      "Вы хорошо соблюдаете режим приёма лекарств."
+    ],
+    ctxInsights: [
+      "Есть практические факторы, из-за которых сложно принимать лекарства регулярно.",
+      "Иногда ваш график или поездки затрудняют соблюдение режима приёма лекарств.",
+      "Ваша повседневная жизнь, похоже, не мешает приёму лекарств."
+    ],
+    tips: {
+      arch: "Совет: если у вас есть сомнения относительно лекарств, запишите вопросы перед следующим визитом к врачу — это поможет получить ответы.",
+      exec: "Совет: храните лекарства на видном месте, например рядом с зубной щёткой — это поможет выработать привычку.",
+      ctx: "Совет: спросите фармацевта о блистерных упаковках или таблетницах, которые удобно брать с собой в дорогу."
+    }
+  },
+
+  tr: {
+    hero: "İlaçlarınızı düzenli kullanmak nasıl gidiyor?",
+    sub: "Bu yaklaşık 3 dakika sürer. Yanıtlarınız gizlidir ve sağlık ekibinizin size nasıl destek olabileceğini anlamasına yardımcı olur.",
+    langLabel: "Dilinizi seçin",
+    codeLabel: "Doktorunuz veya eczacınız size bir hasta kodu verdiyse girin (isteğe bağlı)",
+    codePlaceholder: "örn. PT-2024-001",
+    begin: "Başla",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "Soru",
+    of: "/",
+    yes: "Evet",
+    no: "Hayır",
+    completeLabel: "Değerlendirme tamamlandı",
+    resultsTitle: "Sonuçlarınız",
+    scoreLabel: "İlaç uyum düzeyiniz",
+    domArchLabel: "İlaçlarınıza karşı tutumunuz",
+    domExecLabel: "Günlük ilaç rutininiz",
+    domCtxLabel: "Pratik zorluklar",
+    tipLabel: "Destek ipucu",
+    btnShare: "Sağlık ekibimle paylaş",
+    btnSave: "Sonuçlarımı kaydet",
+    btnRemind: "30 gün sonra tekrar yap",
+    savingMsg: "Kaydediliyor...",
+    savedMsg: "Başarıyla kaydedildi.",
+    saveErrMsg: "Kaydedilemedi. Lütfen tekrar deneyin.",
+    reminderMsg: "Telefonunuza 30 gün sonrası için bir hatırlatıcı kurun. Niyetiniz not edildi.",
+    shareHeaderLabel: "Sağlık Ekibi Özeti",
+    sumTitle: "MAP Öz Değerlendirme Özeti",
+    sumScoreLabel: "İlaç uyum düzeyi",
+    sumArchLabel: "İlaçlara karşı tutum",
+    sumExecLabel: "Günlük rutin",
+    sumCtxLabel: "Pratik zorluklar",
+    copyBtn: "Panoya kopyala",
+    copiedMsg: "Panoya kopyalandı!",
+    shareBackBtn: "Sonuçlarıma geri dön",
+    questions: [
+      { text: "İlaçlarınızı almayı unuttuğunuz anlar oluyor mu?", type: "binary" },
+      { text: "Son iki haftada, örneğin yan etkiler, maliyet veya daha iyi hissetme gibi nedenlerle bir dozu atlamayı tercih ettiğiniz oldu mu?", type: "binary" },
+      { text: "Son iki haftada, ilacın sizi nasıl hissettirdiği nedeniyle doktorunuza veya sağlık ekibinize bildirmeden kendi başınıza doz azaltma ya da ilacı kesme yoluna gittiniz mi?", type: "binary" },
+      { text: "Seyahat, farklı çalışma saatleri veya evden uzakta olmak gibi günlük rutininizin değiştiği durumlarda ilaçlarınıza devam etmekte güçlük çekiyor musunuz?", type: "binary" },
+      { text: "Son dozunuzu reçete edildiği şekilde alabildiniz mi?", type: "binary" },
+      { text: "Kendinizi daha iyi hissetmeye başladığınızda veya belirtileriniz gerilediğinde, ilaçlarınızı kendi başınıza azaltmayı veya durdurmayı düşündüğünüz oluyor mu?", type: "binary" },
+      { text: "İlaç rutininizi sürdürmek günlük yaşamınızda büyük bir zorluk gibi hissettiriyor mu?", type: "binary" },
+      { text: "Tipik bir haftada, tüm ilaçlarınızı reçete edildiği gibi almanızı zorlaştıran durumlar ne sıklıkla yaşanıyor?", type: "ordinal",
+        options: ["Hiçbir zaman", "Nadiren", "Bazen", "Sık sık", "Her zaman"] }
+    ],
+    peTiers: [
+      "Genel ilaç uyumunuz güçlüdür.",
+      "İyi gidiyorsunuz; dikkat etmeniz gereken birkaç alan var.",
+      "Daha fazla desteğe ihtiyaç duyabileceğiniz alanlar mevcut.",
+      "Bunu doktorunuz veya eczacınızla konuşmanızı öneririz."
+    ],
+    archInsights: [
+      "İlaçlarınız hakkında doktorunuzla konuşmayı düşünmeniz gereken bazı şüpheleriniz olduğu anlaşılıyor.",
+      "İlaçlarınızın gerçekten işe yarayıp yaramadığı konusunda sorularınız olabilir.",
+      "İlaçlarınızı neden aldığınız konusunda kendinize güveniyorsunuz."
+    ],
+    execInsights: [
+      "İlaçlarınızı düzenli olarak almayı hatırlamak sizin için zor görünüyor.",
+      "Zaman zaman ilaçlarınızı hatırlamak güçleşebilir.",
+      "İlaç rutininizi iyi sürdürüyorsunuz."
+    ],
+    ctxInsights: [
+      "İlaçlarınızı düzenli almanızı zorlaştıran pratik etkenler var.",
+      "Programınız veya seyahatler zaman zaman ilaç uyumunuzu güçleştiriyor.",
+      "Günlük yaşamınız ilaç kullanımınızı olumsuz etkilemiyor gibi görünüyor."
+    ],
+    tips: {
+      arch: "İpucu: İlaçlarınız hakkında tereddütleriniz varsa, bir sonraki randevudan önce sorularınızı yazmanız yanıt almanıza yardımcı olabilir.",
+      exec: "İpucu: İlaçlarınızı her gün görebileceğiniz bir yerde, örneğin diş fırçanızın yanında saklayın; bu alışkanlık oluşturmayı kolaylaştırır.",
+      ctx: "İpucu: Eczacınıza, seyahatte ilaç taşımayı kolaylaştıran blister ambalajlar veya ilaç kutuları hakkında danışın."
+    }
+  },
+
+  hi: {
+    hero: "आप अपनी दवाइयाँ कैसे ले रहे हैं?",
+    sub: "इसमें लगभग 3 मिनट लगते हैं। आपके उत्तर निजी हैं और आपकी देखभाल टीम को यह समझने में मदद करते हैं कि आपका सहयोग कैसे करें।",
+    langLabel: "अपनी भाषा चुनें",
+    codeLabel: "यदि आपके डॉक्टर या फार्मासिस्ट ने आपको एक मरीज़ कोड दिया है तो दर्ज करें (वैकल्पिक)",
+    codePlaceholder: "जैसे: PT-2024-001",
+    begin: "शुरू करें",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "प्रश्न",
+    of: "/",
+    yes: "हाँ",
+    no: "नहीं",
+    completeLabel: "मूल्यांकन पूर्ण",
+    resultsTitle: "आपके परिणाम",
+    scoreLabel: "आपकी दवा अनुपालन स्तर",
+    domArchLabel: "दवाओं के प्रति आपका दृष्टिकोण",
+    domExecLabel: "आपकी दैनिक दवा दिनचर्या",
+    domCtxLabel: "व्यावहारिक चुनौतियाँ",
+    tipLabel: "सहायता सुझाव",
+    btnShare: "अपनी देखभाल टीम के साथ साझा करें",
+    btnSave: "मेरे परिणाम सहेजें",
+    btnRemind: "30 दिन बाद फिर करें",
+    savingMsg: "सहेजा जा रहा है...",
+    savedMsg: "सफलतापूर्वक सहेजा गया।",
+    saveErrMsg: "सहेज नहीं सका। कृपया पुनः प्रयास करें।",
+    reminderMsg: "30 दिन बाद के लिए अपने फोन में रिमाइंडर सेट करें। आपका इरादा नोट कर लिया गया है।",
+    shareHeaderLabel: "देखभाल टीम सारांश",
+    sumTitle: "MAP स्व-मूल्यांकन सारांश",
+    sumScoreLabel: "दवा अनुपालन स्तर",
+    sumArchLabel: "दवाओं के प्रति दृष्टिकोण",
+    sumExecLabel: "दैनिक दिनचर्या",
+    sumCtxLabel: "व्यावहारिक चुनौतियाँ",
+    copyBtn: "क्लिपबोर्ड पर कॉपी करें",
+    copiedMsg: "क्लिपबोर्ड पर कॉपी हो गया!",
+    shareBackBtn: "मेरे परिणामों पर वापस जाएं",
+    questions: [
+      { text: "क्या ऐसे समय होते हैं जब आप अपनी दवाइयाँ लेना भूल जाते हैं?", type: "binary" },
+      { text: "पिछले दो हफ्तों में, क्या ऐसे समय आए जब आपने जानबूझकर एक खुराक छोड़ी, उदाहरण के लिए साइड इफेक्ट्स, लागत या बेहतर महसूस करने के कारण?", type: "binary" },
+      { text: "पिछले दो हफ्तों में, क्या आपने अपने डॉक्टर या देखभाल टीम को बताए बिना खुद ही खुराक कम की या कोई दवा बंद कर दी, इसलिए कि वह आपको कैसा महसूस करा रही थी?", type: "binary" },
+      { text: "जब आपकी दैनिक दिनचर्या बदलती है, जैसे यात्रा, अलग काम के घंटे, या घर से दूर रहना, तो क्या आपको अपनी दवाइयाँ लेते रहना मुश्किल लगता है?", type: "binary" },
+      { text: "क्या आप निर्देशानुसार अपनी आखिरी खुराक लेने में सक्षम थे?", type: "binary" },
+      { text: "जब आप बेहतर महसूस करने लगते हैं या लक्षण सुधरने लगते हैं, तो क्या आप कभी खुद से दवा कम करने या रोकने के बारे में सोचते हैं?", type: "binary" },
+      { text: "क्या आपकी दवा की दिनचर्या को बनाए रखना आपकी रोज़ाना की ज़िंदगी में एक बड़ी चुनौती जैसा लगता है?", type: "binary" },
+      { text: "एक सामान्य सप्ताह में, आपको कितनी बार अपनी सभी निर्धारित दवाइयाँ लेने में कठिनाई होती है?", type: "ordinal",
+        options: ["कभी नहीं", "शायद ही कभी", "कभी-कभी", "अक्सर", "हमेशा"] }
+    ],
+    peTiers: [
+      "आपका समग्र अनुपालन मजबूत है।",
+      "आप अच्छा कर रहे हैं, कुछ क्षेत्रों पर ध्यान देना उचित होगा।",
+      "कुछ क्षेत्र हैं जहाँ आपको अधिक सहायता की आवश्यकता हो सकती है।",
+      "यह आपके डॉक्टर या फार्मासिस्ट से चर्चा करने योग्य है।"
+    ],
+    archInsights: [
+      "लगता है कि आपके मन में दवाओं के बारे में कुछ संदेह हैं जो डॉक्टर से चर्चा करने योग्य हो सकते हैं।",
+      "आपके मन में यह सवाल हो सकता है कि आपकी दवाइयाँ वास्तव में मदद कर रही हैं या नहीं।",
+      "आप अपनी दवाइयाँ क्यों ले रहे हैं, इस बारे में आप आश्वस्त हैं।"
+    ],
+    execInsights: [
+      "नियमित रूप से दवाइयाँ लेना याद रखना आपके लिए एक चुनौती लगती है।",
+      "कभी-कभी दवाइयाँ याद रखना मुश्किल हो सकता है।",
+      "आप अपनी दवा की दिनचर्या को अच्छी तरह बनाए रख रहे हैं।"
+    ],
+    ctxInsights: [
+      "कुछ व्यावहारिक बातें हैं जो आपकी दवाइयाँ लगातार लेना कठिन बना रही हैं।",
+      "कभी-कभी आपका शेड्यूल या यात्रा दवाइयाँ लेते रहना मुश्किल बना देती है।",
+      "आपकी रोज़ाना की ज़िंदगी आपकी दवाइयों में बाधा नहीं डालती लगती।"
+    ],
+    tips: {
+      arch: "सुझाव: यदि आपको अपनी दवाइयों के बारे में संदेह है, तो अगली मुलाकात से पहले अपने सवाल लिख लें, इससे उत्तर पाने में मदद मिलेगी।",
+      exec: "सुझाव: दवाइयों को हर दिन नज़र में आने वाली जगह, जैसे टूथब्रश के पास, रखने से आदत बनाने में मदद मिल सकती है।",
+      ctx: "सुझाव: अपने फार्मासिस्ट से ब्लिस्टर पैक या पिल ऑर्गनाइज़र के बारे में पूछें जो यात्रा के दौरान दवाइयाँ साथ रखना आसान बनाते हैं।"
+    }
+  },
+
+  id: {
+    hero: "Bagaimana Anda dalam mengonsumsi obat-obatan?",
+    sub: "Ini membutuhkan sekitar 3 menit. Jawaban Anda bersifat pribadi dan membantu tim perawatan Anda memahami cara terbaik untuk mendukung Anda.",
+    langLabel: "Pilih bahasa Anda",
+    codeLabel: "Masukkan kode pasien Anda jika dokter atau apoteker memberi Anda satu (opsional)",
+    codePlaceholder: "mis. PT-2024-001",
+    begin: "Mulai",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "Pertanyaan",
+    of: "dari",
+    yes: "Ya",
+    no: "Tidak",
+    completeLabel: "Penilaian selesai",
+    resultsTitle: "Hasil Anda",
+    scoreLabel: "Tingkat kepatuhan minum obat Anda",
+    domArchLabel: "Pandangan Anda tentang obat-obatan Anda",
+    domExecLabel: "Rutinitas minum obat harian Anda",
+    domCtxLabel: "Tantangan praktis",
+    tipLabel: "Tips dukungan",
+    btnShare: "Bagikan dengan tim perawatan saya",
+    btnSave: "Simpan hasil saya",
+    btnRemind: "Ulangi dalam 30 hari",
+    savingMsg: "Menyimpan...",
+    savedMsg: "Berhasil disimpan.",
+    saveErrMsg: "Tidak dapat menyimpan. Silakan coba lagi.",
+    reminderMsg: "Atur pengingat di ponsel Anda untuk 30 hari ke depan. Niat Anda telah dicatat.",
+    shareHeaderLabel: "Ringkasan Tim Perawatan",
+    sumTitle: "Ringkasan Penilaian Mandiri MAP",
+    sumScoreLabel: "Tingkat kepatuhan minum obat",
+    sumArchLabel: "Pandangan tentang obat",
+    sumExecLabel: "Rutinitas harian",
+    sumCtxLabel: "Tantangan praktis",
+    copyBtn: "Salin ke clipboard",
+    copiedMsg: "Disalin ke clipboard!",
+    shareBackBtn: "Kembali ke hasil saya",
+    questions: [
+      { text: "Apakah ada saat-saat ketika Anda lupa minum obat?", type: "binary" },
+      { text: "Dalam dua minggu terakhir, apakah ada saat-saat ketika Anda memilih untuk melewatkan dosis, misalnya karena efek samping, biaya, atau merasa lebih baik?", type: "binary" },
+      { text: "Dalam dua minggu terakhir, apakah Anda mengurangi dosis atau menghentikan obat sendiri tanpa memberi tahu dokter atau tim perawatan, karena efeknya pada Anda?", type: "binary" },
+      { text: "Ketika rutinitas harian Anda berubah, misalnya saat bepergian, bekerja dengan jadwal berbeda, atau berada jauh dari rumah, apakah Anda merasa sulit untuk tetap minum obat?", type: "binary" },
+      { text: "Apakah Anda dapat minum dosis terakhir sesuai petunjuk?", type: "binary" },
+      { text: "Ketika Anda mulai merasa lebih baik atau gejala membaik, apakah Anda pernah berpikir untuk mengurangi atau menghentikan obat sendiri?", type: "binary" },
+      { text: "Apakah menjaga rutinitas minum obat terasa seperti tantangan besar dalam kehidupan sehari-hari Anda?", type: "binary" },
+      { text: "Dalam seminggu yang biasa, seberapa sering Anda mengalami kesulitan minum semua obat sesuai resep?", type: "ordinal",
+        options: ["Tidak pernah", "Jarang", "Kadang-kadang", "Sering", "Selalu"] }
+    ],
+    peTiers: [
+      "Kepatuhan keseluruhan Anda sangat baik.",
+      "Anda melakukannya dengan baik, dengan beberapa area yang perlu diperhatikan.",
+      "Ada beberapa area di mana Anda mungkin memerlukan lebih banyak dukungan.",
+      "Ini layak dibicarakan dengan dokter atau apoteker Anda."
+    ],
+    archInsights: [
+      "Tampaknya Anda memiliki beberapa keraguan tentang obat-obatan Anda yang layak dibahas dengan dokter.",
+      "Anda mungkin memiliki pertanyaan tentang apakah obat-obatan Anda benar-benar membantu.",
+      "Anda yakin tentang alasan mengapa Anda minum obat-obatan Anda."
+    ],
+    execInsights: [
+      "Mengingat untuk minum obat secara teratur tampaknya menjadi tantangan.",
+      "Terkadang mengingat obat-obatan bisa terasa sulit.",
+      "Anda menjalani rutinitas minum obat dengan baik."
+    ],
+    ctxInsights: [
+      "Ada hal-hal praktis yang membuat konsumsi obat Anda secara konsisten menjadi lebih sulit.",
+      "Terkadang jadwal atau perjalanan membuat kepatuhan minum obat menjadi lebih sulit.",
+      "Kehidupan sehari-hari Anda tampaknya tidak mengganggu rutinitas minum obat."
+    ],
+    tips: {
+      arch: "Tips: Jika Anda ragu tentang obat-obatan Anda, menuliskan pertanyaan sebelum janji temu berikutnya dapat membantu Anda mendapatkan jawaban.",
+      exec: "Tips: Simpan obat di tempat yang terlihat setiap hari, seperti di sebelah sikat gigi Anda, untuk membantu membangun kebiasaan.",
+      ctx: "Tips: Tanyakan kepada apoteker Anda tentang blister pack atau kotak obat yang memudahkan membawa obat saat bepergian."
+    }
+  },
+
+  tl: {
+    hero: "Kumusta ang iyong pag-inom ng gamot?",
+    sub: "Aabutin ito ng mga 3 minuto. Ang iyong mga sagot ay pribado at nakakatulong sa iyong koponan ng pangangalaga na maunawaan kung paano ka susuportahan.",
+    langLabel: "Piliin ang iyong wika",
+    codeLabel: "Ilagay ang iyong patient code kung ibinigay ito ng iyong doktor o parmasyutiko (opsyonal)",
+    codePlaceholder: "hal. PT-2024-001",
+    begin: "Simulan",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "Tanong",
+    of: "ng",
+    yes: "Oo",
+    no: "Hindi",
+    completeLabel: "Natapos na ang pagtatasa",
+    resultsTitle: "Ang iyong mga resulta",
+    scoreLabel: "Ang iyong antas ng pagsunod sa gamot",
+    domArchLabel: "Ang iyong pagtingin sa iyong mga gamot",
+    domExecLabel: "Ang iyong pang-araw-araw na gawi sa gamot",
+    domCtxLabel: "Mga praktikal na hamon",
+    tipLabel: "Tip sa suporta",
+    btnShare: "Ibahagi sa aking koponan ng pangangalaga",
+    btnSave: "I-save ang aking mga resulta",
+    btnRemind: "Ulitin pagkatapos ng 30 araw",
+    savingMsg: "Nag-se-save...",
+    savedMsg: "Matagumpay na na-save.",
+    saveErrMsg: "Hindi ma-save. Pakisubukang muli.",
+    reminderMsg: "Mag-set ng paalala sa iyong telepono pagkatapos ng 30 araw. Naitala na ang iyong intensyon.",
+    shareHeaderLabel: "Buod para sa Koponan ng Pangangalaga",
+    sumTitle: "Buod ng MAP Self-Assessment",
+    sumScoreLabel: "Antas ng pagsunod sa gamot",
+    sumArchLabel: "Pagtingin sa gamot",
+    sumExecLabel: "Pang-araw-araw na gawi",
+    sumCtxLabel: "Mga praktikal na hamon",
+    copyBtn: "Kopyahin sa clipboard",
+    copiedMsg: "Nakopya sa clipboard!",
+    shareBackBtn: "Bumalik sa aking mga resulta",
+    questions: [
+      { text: "Mayroon bang mga pagkakataon na nakalimutan mong uminom ng iyong mga gamot?", type: "binary" },
+      { text: "Sa nakalipas na dalawang linggo, mayroon bang mga pagkakataon na pinili mong laktawan ang isang dosis, halimbawa dahil sa mga side effect, gastos, o dahil sa pakiramdam na mas magaling ka na?", type: "binary" },
+      { text: "Sa nakalipas na dalawang linggo, binabawasan mo ba ang iyong dosis o itinigil ang isang gamot nang mag-isa, nang hindi sinasabi sa iyong doktor o koponan ng pangangalaga, dahil sa epekto nito sa iyo?", type: "binary" },
+      { text: "Kapag nagbabago ang iyong pang-araw-araw na gawain, halimbawa kapag naglalakbay, nagtatrabaho sa ibang oras, o malayo sa bahay, nahihirapan ka bang mapanatili ang iyong mga gamot?", type: "binary" },
+      { text: "Nagawa mo bang inumin ang iyong huling dosis ayon sa itinakda?", type: "binary" },
+      { text: "Kapag nagsimula kang makaramdam ng mas magaling o bumubuti ang iyong mga sintomas, naiisip mo bang bawasan o itigil ang iyong gamot nang mag-isa?", type: "binary" },
+      { text: "Ang pagpapanatili ng iyong gawi sa gamot ay pakiramdam na malaking hamon sa iyong pang-araw-araw na buhay?", type: "binary" },
+      { text: "Sa isang karaniwang linggo, gaano kadalas kang nahihirapang inumin ang lahat ng iyong mga gamot ayon sa reseta?", type: "ordinal",
+        options: ["Hindi kailanman", "Bihira", "Minsan", "Madalas", "Palagi"] }
+    ],
+    peTiers: [
+      "Ang iyong kabuuang pagsunod ay malakas.",
+      "Maganda ang ginagawa mo, may ilang lugar na dapat bantayan.",
+      "May ilang lugar kung saan maaaring kailangan mo ng karagdagang suporta.",
+      "Ito ay isang bagay na dapat talakayin sa iyong doktor o parmasyutiko."
+    ],
+    archInsights: [
+      "Mukhang mayroon kang ilang alinlangan tungkol sa iyong mga gamot na maaaring sulit na talakayin sa iyong doktor.",
+      "Maaaring mayroon kang mga katanungan tungkol sa kung talagang tumutulong ang iyong mga gamot.",
+      "Kumpiyansa ka sa dahilan kung bakit mo iniinom ang iyong mga gamot."
+    ],
+    execInsights: [
+      "Ang pag-alala sa pag-inom ng iyong mga gamot nang regular ay tila isang hamon.",
+      "Minsan mahirap matandaan ang mga gamot.",
+      "Maayos mong pinapanatili ang iyong gawi sa gamot."
+    ],
+    ctxInsights: [
+      "Mayroong mga praktikal na bagay na nagpapahirap sa iyo na inumin ang iyong mga gamot nang tuloy-tuloy.",
+      "Minsan ang iyong iskedyul o paglalakbay ay nagpapahirap sa pagpapanatili ng iyong mga gamot.",
+      "Ang iyong pang-araw-araw na buhay ay tila hindi nakakasagabal sa iyong mga gamot."
+    ],
+    tips: {
+      arch: "Tip: Kung hindi ka sigurado tungkol sa iyong mga gamot, ang pagsulat ng iyong mga katanungan bago ang iyong susunod na appointment ay makakatulong sa iyo na makakuha ng mga sagot.",
+      exec: "Tip: Ang pag-iimbak ng iyong mga gamot sa lugar na makikita mo araw-araw, tulad ng sa tabi ng iyong toothbrush, ay makakatulong na bumuo ng gawi.",
+      ctx: "Tip: Itanong sa iyong parmasyutiko ang tungkol sa mga blister pack o pill organizer na nagpapadali ng pagdadala ng iyong mga gamot sa paglalakbay."
+    }
+  },
+
+  sw: {
+    hero: "Unajisikiaje kuhusu dawa zako?",
+    sub: "Hii itachukua dakika 3 hivi. Majibu yako ni ya siri na yanasaidia timu yako ya huduma kuelewa jinsi ya kukusaidia.",
+    langLabel: "Chagua lugha yako",
+    codeLabel: "Weka nambari yako ya mgonjwa ikiwa daktari au mfamasia wako amekupa moja (hiari)",
+    codePlaceholder: "mfano: PT-2024-001",
+    begin: "Anza",
+    powered: "Inayoendeshwa na MAP · Multidimensional Adherence Parameters",
+    qLabel: "Swali",
+    of: "ya",
+    yes: "Ndiyo",
+    no: "Hapana",
+    completeLabel: "Tathmini imekamilika",
+    resultsTitle: "Matokeo yako",
+    scoreLabel: "Kiwango chako cha kufuata dawa",
+    domArchLabel: "Hisia zako kuhusu dawa zako",
+    domExecLabel: "Utaratibu wako wa kila siku wa dawa",
+    domCtxLabel: "Changamoto za vitendo",
+    tipLabel: "Ushauri wa msaada",
+    btnShare: "Shiriki na timu yangu ya huduma",
+    btnSave: "Hifadhi matokeo yangu",
+    btnRemind: "Rudia baada ya siku 30",
+    savingMsg: "Inahifadhi...",
+    savedMsg: "Imehifadhiwa kwa mafanikio.",
+    saveErrMsg: "Haikuweza kuhifadhi. Tafadhali jaribu tena.",
+    reminderMsg: "Weka ukumbusho kwenye simu yako baada ya siku 30. Nia yako imerekodiwa.",
+    shareHeaderLabel: "Muhtasari wa Timu ya Huduma",
+    sumTitle: "Muhtasari wa Tathmini ya Kibinafsi ya MAP",
+    sumScoreLabel: "Kiwango cha kufuata dawa",
+    sumArchLabel: "Hisia kuhusu dawa",
+    sumExecLabel: "Utaratibu wa kila siku",
+    sumCtxLabel: "Changamoto za vitendo",
+    copyBtn: "Nakili kwenye ubao wa kunakili",
+    copiedMsg: "Imenakiliwa kwenye ubao wa kunakili!",
+    shareBackBtn: "Rudi kwenye matokeo yangu",
+    questions: [
+      { text: "Je, kuna nyakati ambapo unasahau kumeza dawa zako?", type: "binary" },
+      { text: "Katika wiki mbili zilizopita, je, kulikuwa na nyakati ambapo ulichagua kuruka kipimo, kwa mfano kwa sababu ya madhara, gharama, au kujisikia vizuri zaidi?", type: "binary" },
+      { text: "Katika wiki mbili zilizopita, je, ulipunguza kipimo chako au kusimamisha dawa peke yako, bila kumwambia daktari au timu yako ya huduma, kwa sababu ya jinsi ilivyokufanya uhisi?", type: "binary" },
+      { text: "Wakati utaratibu wako wa kila siku unabadilika, kwa mfano unaposafiri, kufanya kazi kwa saa tofauti, au kukaa mbali na nyumbani, je, unajipata ni vigumu kuendelea na dawa zako?", type: "binary" },
+      { text: "Je, uliweza kumeza kipimo chako cha mwisho kama ilivyoelekezwa?", type: "binary" },
+      { text: "Unapoanza kujisikia vizuri au dalili zako zinaboreka, je, wakati mwingine hufikiri kupunguza au kusimamisha dawa yako peke yako?", type: "binary" },
+      { text: "Je, kudumisha utaratibu wako wa dawa kunajihisi kama changamoto kubwa katika maisha yako ya kila siku?", type: "binary" },
+      { text: "Katika wiki ya kawaida, mara ngapi unakuwa na shida kumeza dawa zako zote kama ilivyoagizwa?", type: "ordinal",
+        options: ["Kamwe", "Mara chache", "Wakati mwingine", "Mara nyingi", "Kila wakati"] }
+    ],
+    peTiers: [
+      "Ufuataji wako wa jumla ni imara.",
+      "Unafanya vizuri, na maeneo machache ya kufuatilia.",
+      "Kuna maeneo ambayo ungeweza kufaidika na msaada zaidi.",
+      "Hii inastahili kujadiliwa na daktari au mfamasia wako."
+    ],
+    archInsights: [
+      "Unaonekana una wasiwasi fulani kuhusu dawa zako ambao unaweza kustahili kujadiliwa na daktari wako.",
+      "Unaweza kuwa na maswali kuhusu kama dawa zako zinakusaidia kweli.",
+      "Una ujasiri katika sababu unazomeza dawa zako."
+    ],
+    execInsights: [
+      "Kukumbuka kumeza dawa zako kwa kawaida inaonekana kuwa changamoto.",
+      "Wakati mwingine ni vigumu kukumbuka dawa.",
+      "Unadumisha utaratibu wako wa dawa vizuri."
+    ],
+    ctxInsights: [
+      "Kuna mambo ya vitendo yanayokufanya iwe vigumu kumeza dawa zako kwa utulivu.",
+      "Wakati mwingine ratiba yako au kusafiri kunafanya iwe vigumu kudumisha dawa zako.",
+      "Maisha yako ya kila siku hayaonekani kuingilia dawa zako."
+    ],
+    tips: {
+      arch: "Ushauri: Ikiwa una shaka kuhusu dawa zako, kuandika maswali yako kabla ya miadi yako ijayo kunaweza kukusaidia kupata majibu.",
+      exec: "Ushauri: Hifadhi dawa zako mahali unapoona kila siku, kama vile karibu na mswaki wako, kusaidia kujenga tabia.",
+      ctx: "Ushauri: Muulize mfamasia wako kuhusu vifuko vya vidonge au mpangilio wa vidonge ambavyo hufanya iwe rahisi kubeba dawa zako unaposafiri."
+    }
+  },
+
+  af: {
+    hero: "Hoe gaan dit met jou medikasie?",
+    sub: "Dit neem ongeveer 3 minute. Jou antwoorde is privaat en help jou sorgspan om te verstaan hoe om jou te ondersteun.",
+    langLabel: "Kies jou taal",
+    codeLabel: "Voer jou pasiëntekode in as jou dokter of apteker jou een gegee het (opsioneel)",
+    codePlaceholder: "bv. PT-2024-001",
+    begin: "Begin",
+    powered: "Aangedryf deur MAP · Multidimensional Adherence Parameters",
+    qLabel: "Vraag",
+    of: "van",
+    yes: "Ja",
+    no: "Nee",
+    completeLabel: "Assessering voltooi",
+    resultsTitle: "Jou resultate",
+    scoreLabel: "Jou medikasie-nakoming vlak",
+    domArchLabel: "Jou gevoelens oor jou medikasie",
+    domExecLabel: "Jou daaglikse medikasie roetine",
+    domCtxLabel: "Praktiese uitdagings",
+    tipLabel: "Ondersteuningswenk",
+    btnShare: "Deel met my sorgspan",
+    btnSave: "Stoor my resultate",
+    btnRemind: "Herhaal oor 30 dae",
+    savingMsg: "Stoor...",
+    savedMsg: "Suksesvol gestoor.",
+    saveErrMsg: "Kon nie stoor nie. Probeer asseblief weer.",
+    reminderMsg: "Stel 'n telefoonherinnering vir 30 dae vanaf nou. Jou voorneme is aangeteken.",
+    shareHeaderLabel: "Sorgspan Opsomming",
+    sumTitle: "MAP Self-Assessering Opsomming",
+    sumScoreLabel: "Medikasie-nakoming vlak",
+    sumArchLabel: "Gevoelens oor medikasie",
+    sumExecLabel: "Daaglikse roetine",
+    sumCtxLabel: "Praktiese uitdagings",
+    copyBtn: "Kopieer na knipbord",
+    copiedMsg: "Gekopieer na knipbord!",
+    shareBackBtn: "Terug na my resultate",
+    questions: [
+      { text: "Is daar tye wanneer jy vergeet om jou medikasie te neem?", type: "binary" },
+      { text: "In die afgelope twee weke, was daar tye wanneer jy gekies het om 'n dosis oor te slaan, byvoorbeeld as gevolg van newe-effekte, koste, of omdat jy beter gevoel het?", type: "binary" },
+      { text: "In die afgelope twee weke, het jy jou dosis verminder of 'n medikasie op jou eie gestaak, sonder om jou dokter of sorgspan te vertel, as gevolg van hoe dit jou laat voel het?", type: "binary" },
+      { text: "Wanneer jou daaglikse roetine verander, byvoorbeeld wanneer jy reis, verskillende ure werk, of van die huis af weg bly, vind jy dit moeilik om by jou medikasie te hou?", type: "binary" },
+      { text: "Was jy in staat om jou laaste dosis soos voorgeskryf te neem?", type: "binary" },
+      { text: "Wanneer jy begin beter voel of jou simptome verbeter, dink jy soms daaraan om jou medikasie op jou eie te verminder of te staak?", type: "binary" },
+      { text: "Voel dit om jou medikasie roetine by te hou soos 'n groot uitdaging in jou alledaagse lewe?", type: "binary" },
+      { text: "In 'n tipiese week, hoe dikwels het jy moeite om al jou medikasie soos voorgeskryf te neem?", type: "ordinal",
+        options: ["Nooit", "Selde", "Soms", "Dikwels", "Altyd"] }
+    ],
+    peTiers: [
+      "Jou algehele nakoming is sterk.",
+      "Jy doen goed, met 'n paar areas om dop te hou.",
+      "Daar is areas waar jy baat kan vind by meer ondersteuning.",
+      "Dit is die moeite werd om met jou dokter of apteker te bespreek."
+    ],
+    archInsights: [
+      "Dit lyk asof jy sekere twyfel het oor jou medikasie wat die moeite werd kan wees om met jou dokter te bespreek.",
+      "Jy het dalk vrae oor of jou medikasie werklik help.",
+      "Jy is vol vertroue oor die rede waarom jy jou medikasie neem."
+    ],
+    execInsights: [
+      "Om te onthou om jou medikasie gereeld te neem lyk na 'n uitdaging.",
+      "Dit is soms moeilik om medikasie te onthou.",
+      "Jy handhaaf jou medikasie roetine goed."
+    ],
+    ctxInsights: [
+      "Daar is praktiese dinge wat dit vir jou moeilik maak om jou medikasie konsekwent te neem.",
+      "Soms maak jou skedule of reis dit moeilik om jou medikasie by te hou.",
+      "Jou alledaagse lewe lyk nie asof dit jou medikasie belemmer nie."
+    ],
+    tips: {
+      arch: "Wenk: As jy twyfel oor jou medikasie, kan dit help om jou vrae neer te skryf voor jou volgende afspraak sodat jy antwoorde kan kry.",
+      exec: "Wenk: Bêre jou medikasie op 'n plek wat jy elke dag sien, soos langs jou tandeborstel, om 'n gewoonte te help bou.",
+      ctx: "Wenk: Vra jou apteker oor blisterhouers of pilorganiseerders wat dit makliker maak om jou medikasie saam te neem as jy reis."
+    }
+  },
+
+  sq: {
+    hero: "Si po ia dilni me barêt tuaja?",
+    sub: "Kjo zërë rreth 3 minuta. Përgjigjet tuaja janë private dhe ndihmojnë ekipin tuaj të këjdesjes të kuptojë si të ju mbjëlsinë.",
+    langLabel: "Zgjidhni gjuhën tuaj",
+    codeLabel: "Shkruani kodin tuaj të pacientit nëse mjeku ose farmacisti juaj ju ka dhënë një (opsionale)",
+    codePlaceholder: "p.sh. PT-2024-001",
+    begin: "Fillo",
+    powered: "Fuqizuar nga MAP · Multidimensional Adherence Parameters",
+    qLabel: "Pyetje",
+    of: "nga",
+    yes: "Po",
+    no: "Jo",
+    completeLabel: "Vlerësimi i kompletuar",
+    resultsTitle: "Rezultatet tuaja",
+    scoreLabel: "Niveli juaj i respektimit të barërave",
+    domArchLabel: "Ndjenjat tuaja për barêt tuaja",
+    domExecLabel: "Rutina juaj e përditshme e barërave",
+    domCtxLabel: "Sfidat praktike",
+    tipLabel: "Këshillë mbjëljëse",
+    btnShare: "Ndaj me ekipin tim të këjdesjes",
+    btnSave: "Ruaj rezultatet e mia",
+    btnRemind: "Përsëris pas 30 ditësh",
+    savingMsg: "Duke ruajtur...",
+    savedMsg: "Ruajtur me sukses.",
+    saveErrMsg: "Nuk mund të ruhet. Ju lutem provoni përsëri.",
+    reminderMsg: "Vendosni një kujtues në telefon pas 30 ditësh. Qllimi juaj është shpërndarë.",
+    shareHeaderLabel: "Përmbledhje për Ekipin e Këjdesjes",
+    sumTitle: "Përmbledhje e Vetëvlerësimit MAP",
+    sumScoreLabel: "Niveli i respektimit të barërave",
+    sumArchLabel: "Ndjenjat për barêt",
+    sumExecLabel: "Rutina e përditshme",
+    sumCtxLabel: "Sfidat praktike",
+    copyBtn: "Kopjo në kujtues",
+    copiedMsg: "Kopjuar në kujtues!",
+    shareBackBtn: "Kthehu tek rezultatet e mia",
+    questions: [
+      { text: "A ka herë kur harroni të merrni barêt tuaja?", type: "binary" },
+      { text: "Nën dy javët e fundit, ka pasur herë kur keni zgjedhur të kaperceni një dozë, për shembull, për shkak të efekteve anësore, kostos, ose sepse ndiheshit më mirë?", type: "binary" },
+      { text: "Nën dy javët e fundit, a keni zvogëluar dozimin tuaj ose ndalëni një barë vetë nga vetë, pa i treguar mjekut ose ekipit tuaj të këjdesjes, për shkak të mënyrës se si ju binte të ndiheni?", type: "binary" },
+      { text: "Kur rutina juaj e përditshme ndryshon, për shembull kur udhëtoni, punoni orë të ndryshme, ose qushni larg shtep\u00eisë, a e gjeni të vështirë të ndiqni orarin e barërave?", type: "binary" },
+      { text: "A mundët të merrni dozimin tuaj të fundit siç është përshkruar?", type: "binary" },
+      { text: "Kur filloni të ndiheni më mirë ose simptomat tuaja përmirësohen, a mendoni ndonjëherë të zvogëloni ose të ndalni barën tuaj vetë nga vetë?", type: "binary" },
+      { text: "A ndiheni si një sfidë e madhe nën jetën tuaj të përditshme ruajtja e rutinës suaj të barërave?", type: "binary" },
+      { text: "Nën një javë tipike, sa shpesh keni veshti rësi të merrni të gjitha barêt tuaja siç është përshkruar?", type: "ordinal",
+        options: ["Kurrë", "Rrallë", "Ndonjëherë", "Shpesh", "Gjithmonë"] }
+    ],
+    peTiers: [
+      "Pajtueshmeria juaj e përgjithshme është e fortë.",
+      "Jeni duke bërë mirë, me disa fusha për të vëzhguar.",
+      "Ka fusha ku do të kishit përfituar nga mbjëljësa shtese.",
+      "Kjo është diçka që ia vlen të diskutoni me mjekun ose farmacistin tuaj."
+    ],
+    archInsights: [
+      "Duket se keni disa dyshime për barêt tuaja që mund të ia vlenë të diskutoni me mjekun tuaj.",
+      "Mund të keni pyetje nAESE barêt tuaja vërtet ndihmojnë.",
+      "Jeni të sigurtë për arsyen përse merrni barêt tuaja."
+    ],
+    execInsights: [
+      "Kujtimi për të marrë barêt tuaja rregullisht duket si një sfidë.",
+      "Ndonjëherë është e vështirë të kujtosh barêt.",
+      "Ju mbani mirë rutinën tuaj të barërave."
+    ],
+    ctxInsights: [
+      "Ka gjera praktike që e bëjnë të vështirë për ju të merrni barêt tuaja vazhdimisht.",
+      "Ndonjëherë orari juaj ose udhëtimi e bën të vështirë të ndiqni barêt tuaja.",
+      "Jeta juaj e përditshme nuk duket se ndikon nën barêt tuaja."
+    ],
+    tips: {
+      arch: "Këshillë: Nëse keni dyshime për barêt tuaja, shkrimi i pyetjeve tuaja para takimit tuaj të ardhshëm mund të ju ndihmojë të merrni përgjigje.",
+      exec: "Këshillë: Ruani barêt tuaja nën një vend që e shikoni çdo ditë, si pranë furzës tuaj të dhëmbish, për të ndihmuar nën ndertimin e një zakoni.",
+      ctx: "Këshillë: Pyesni farmacistin tuaj për paketëzim me flluskua ose organizues të hapave që e bëjnë më të lehtë bartjen e barërave tuaja kur udhëtoni."
+    }
+  },
+
+  bn: {
+    hero: "আপনি কি আপনার ওষুধ ঠিকমতো খাচ্ছেন?",
+    sub: "এটি প্রায় ৩ মিনিট সময় নেবে। আপনার উত্তরগুলি ব্যক্তিগত এবং আপনার যত্ন দলকে বুঝতে সাহায্য করে যে কীভাবে আপনাকে সহায়তা করবে।",
+    langLabel: "আপনার ভাষা নির্বাচন করুন",
+    codeLabel: "আপনার রোগীর কোড লিখুন যদি আপনার ডাক্তার বা ফার্মাসিস্ট আপনাকে একটি দিয়ে থাকেন (ঐচ্ছিক)",
+    codePlaceholder: "যেমন: PT-2024-001",
+    begin: "শুরু করুন",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "প্রশ্ন",
+    of: "এর",
+    yes: "হ্যাঁ",
+    no: "না",
+    completeLabel: "মূল্যায়ন সম্পন্ন",
+    resultsTitle: "আপনার ফলাফল",
+    scoreLabel: "আপনার ওষুধ গ্রহণের স্তর",
+    domArchLabel: "ওষুধ সম্পর্কে আপনার অনুভূতি",
+    domExecLabel: "আপনার প্রতিদিনের ওষুধের রুটিন",
+    domCtxLabel: "ব্যবহারিক চ্যালেঞ্জ",
+    tipLabel: "সহায়তার পরামর্শ",
+    btnShare: "আমার যত্ন দলের সাথে শেয়ার করুন",
+    btnSave: "আমার ফলাফল সংরক্ষণ করুন",
+    btnRemind: "৩০ দিন পরে আবার নিন",
+    savingMsg: "সংরক্ষণ হচ্ছে...",
+    savedMsg: "সফলভাবে সংরক্ষিত হয়েছে।",
+    saveErrMsg: "সংরক্ষণ করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",
+    reminderMsg: "এখন থেকে ৩০ দিন পরে আপনার ফোনে একটি অনুস্মারক সেট করুন। আপনার উদ্দেশ্য নোট করা হয়েছে।",
+    shareHeaderLabel: "যত্ন দলের সারসংক্ষেপ",
+    sumTitle: "MAP স্ব-মূল্যায়ন সারসংক্ষেপ",
+    sumScoreLabel: "ওষুধ গ্রহণের স্তর",
+    sumArchLabel: "ওষুধ সম্পর্কে অনুভূতি",
+    sumExecLabel: "প্রতিদিনের রুটিন",
+    sumCtxLabel: "ব্যবহারিক চ্যালেঞ্জ",
+    copyBtn: "ক্লিপবোর্ডে কপি করুন",
+    copiedMsg: "ক্লিপবোর্ডে কপি হয়েছে!",
+    shareBackBtn: "আমার ফলাফলে ফিরে যান",
+    questions: [
+      { text: "এমন কি কোনো সময় আছে যখন আপনি আপনার ওষুধ খেতে ভুলে যান?", type: "binary" },
+      { text: "গত দুই সপ্তাহে, কি এমন কোনো সময় ছিল যখন আপনি একটি ডোজ এড়িয়ে যাওয়ার সিদ্ধান্ত নিয়েছিলেন, যেমন পার্শ্বপ্রতিক্রিয়া, খরচ বা ভালো অনুভব করার কারণে?", type: "binary" },
+      { text: "গত দুই সপ্তাহে, আপনি কি নিজে থেকে আপনার ডোজ কমিয়েছেন বা কোনো ওষুধ বন্ধ করেছেন, আপনার ডাক্তার বা যত্ন দলকে না জানিয়ে, কারণ এটি আপনাকে কীভাবে অনুভব করাচ্ছিল?", type: "binary" },
+      { text: "যখন আপনার প্রতিদিনের রুটিন পরিবর্তন হয়, যেমন ভ্রমণের সময়, ভিন্ন কাজের সময়সূচী বা বাড়ির বাইরে থাকার সময়, আপনি কি ওষুধের সময়সূচী অনুসরণ করতে কষ্ট পান?", type: "binary" },
+      { text: "আপনি কি নির্ধারিত মতো আপনার শেষ ডোজ নিতে পেরেছিলেন?", type: "binary" },
+      { text: "যখন আপনি ভালো অনুভব করতে শুরু করেন বা আপনার উপসর্গগুলি উন্নত হয়, তখন আপনি কি কখনো নিজে থেকে ওষুধ কমানো বা বন্ধ করার কথা ভাবেন?", type: "binary" },
+      { text: "আপনার ওষুধের রুটিন বজায় রাখা কি আপনার প্রতিদিনের জীবনে একটি বড় চ্যালেঞ্জ মনে হয়?", type: "binary" },
+      { text: "একটি সাধারণ সপ্তাহে, কত ঘন ঘন আপনি নির্ধারিত মতো সমস্ত ওষুধ নিতে অসুবিধায় পড়েন?", type: "ordinal",
+        options: ["কখনো না", "খুব কমই", "কখনো কখনো", "প্রায়ই", "সবসময়"] }
+    ],
+    peTiers: [
+      "আপনার সামগ্রিক মান্যতা শক্তিশালী।",
+      "আপনি ভালো করছেন, কিছু এলাকায় নজর দেওয়ার বিষয় আছে।",
+      "কিছু এলাকায় আপনি আরও সহায়তা থেকে উপকৃত হতে পারেন।",
+      "এটি আপনার ডাক্তার বা ফার্মাসিস্টের সাথে আলোচনা করার যোগ্য।"
+    ],
+    archInsights: [
+      "মনে হচ্ছে আপনার ওষুধ সম্পর্কে কিছু সংশয় আছে যা আপনার ডাক্তারের সাথে আলোচনা করার মূল্য রাখতে পারে।",
+      "আপনার ওষুধ সত্যিই সাহায্য করছে কিনা সে বিষয়ে আপনার প্রশ্ন থাকতে পারে।",
+      "আপনি কেন আপনার ওষুধ নিচ্ছেন সে বিষয়ে আপনি আত্মবিশ্বাসী।"
+    ],
+    execInsights: [
+      "নিয়মিতভাবে ওষুধ খাওয়ার কথা মনে রাখা একটি চ্যালেঞ্জ মনে হচ্ছে।",
+      "কখনো কখনো ওষুধ মনে রাখা কঠিন।",
+      "আপনি আপনার ওষুধের রুটিন ভালোভাবে বজায় রাখছেন।"
+    ],
+    ctxInsights: [
+      "ব্যবহারিক বিষয়গুলি আছে যা আপনার জন্য ওষুধ ধারাবাহিকভাবে নেওয়া কঠিন করে তোলে।",
+      "কখনো কখনো আপনার সময়সূচী বা ভ্রমণ আপনার ওষুধ বজায় রাখা কঠিন করে তোলে।",
+      "আপনার প্রতিদিনের জীবন আপনার ওষুধে হস্তক্ষেপ করছে বলে মনে হয় না।"
+    ],
+    tips: {
+      arch: "পরামর্শ: যদি আপনার ওষুধ নিয়ে সন্দেহ থাকে, তাহলে আপনার পরবর্তী অ্যাপয়েন্টমেন্টের আগে প্রশ্নগুলি লিখে রাখলে আপনাকে উত্তর পেতে সাহায্য করতে পারে।",
+      exec: "পরামর্শ: প্রতিদিন যে জায়গাটি দেখেন, যেমন আপনার টুথব্রাশের পাশে, সেখানে ওষুধ রাখুন যাতে অভ্যাস গড়তে সাহায্য হয়।",
+      ctx: "পরামর্শ: আপনার ফার্মাসিস্টকে ব্লিস্টার প্যাক বা পিল অর্গানাইজার সম্পর্কে জিজ্ঞাসা করুন যা ভ্রমণের সময় ওষুধ বহন করা সহজ করে।"
+    }
+  },
+
+  hr: {
+    hero: "Kako se snalazite s vašim lijekovima?",
+    sub: "Ovo traje oko 3 minute. Vaši odgovori su privatni i pomažu vašem timu za njegu da razumije kako vas podržati.",
+    langLabel: "Odaberite svoj jezik",
+    codeLabel: "Unesite svoju šifru pacijenta ako vam ju je dao vaš liječnik ili ljekarnik (neobavezno)",
+    codePlaceholder: "npr. PT-2024-001",
+    begin: "Počni",
+    powered: "Pokretano MAP · Multidimensional Adherence Parameters",
+    qLabel: "Pitanje",
+    of: "od",
+    yes: "Da",
+    no: "Ne",
+    completeLabel: "Procjena dovršena",
+    resultsTitle: "Vaši rezultati",
+    scoreLabel: "Vaša razina pridržavanja lijekova",
+    domArchLabel: "Vaši osjećaji o vašim lijekovima",
+    domExecLabel: "Vaša svakodnevna rutina lijekova",
+    domCtxLabel: "Praktični izazovi",
+    tipLabel: "Savjet za podršku",
+    btnShare: "Podijeli s mojim timom za njegu",
+    btnSave: "Spremi moje rezultate",
+    btnRemind: "Ponovi za 30 dana",
+    savingMsg: "Spremanje...",
+    savedMsg: "Uspješno spremljeno.",
+    saveErrMsg: "Nije moguće spremiti. Molimo pokušajte ponovo.",
+    reminderMsg: "Postavite podsjetnik na telefonu za 30 dana od sada. Vaša namjera je zabilježena.",
+    shareHeaderLabel: "Sažetak za Tim za Njegu",
+    sumTitle: "Sažetak MAP Samoprocjene",
+    sumScoreLabel: "Razina pridržavanja lijekova",
+    sumArchLabel: "Osjećaji o lijekovima",
+    sumExecLabel: "Svakodnevna rutina",
+    sumCtxLabel: "Praktični izazovi",
+    copyBtn: "Kopiraj u međuspremnik",
+    copiedMsg: "Kopirano u međuspremnik!",
+    shareBackBtn: "Povratak na moje rezultate",
+    questions: [
+      { text: "Postoje li trenuci kada zaboravite uzeti svoje lijekove?", type: "binary" },
+      { text: "U protekla dva tjedna, je li bilo trenutaka kada ste odabrali preskočiti dozu, na primjer zbog nuspojava, troška ili osjećaja boljeg stanja?", type: "binary" },
+      { text: "U protekla dva tjedna, jeste li smanjili dozu ili prestali uzimati lijek na vlastitu inicijativu, bez da ste obavijestili svog liječnika ili tim za njegu, zbog načina na koji vas je to tjerao osjećati?", type: "binary" },
+      { text: "Kada se vaša svakodnevna rutina promijeni, na primjer kada putujete, radite u različite sate ili ostajete daleko od kuće, smatrate li teškim pridržavati se rasporeda lijekova?", type: "binary" },
+      { text: "Jeste li mogli uzeti svoju zadnju dozu prema uputama?", type: "binary" },
+      { text: "Kada počnete osjećati bolje ili se vaši simptomi poboljšaju, pomišljate li ponekad na smanjenje ili zaustavljanje lijekova na vlastitu inicijativu?", type: "binary" },
+      { text: "Čini li vam se pridržavanje rasporeda lijekova kao veliki izazov u vašem svakodnevnom životu?", type: "binary" },
+      { text: "U tipičnom tjednu, koliko često imate poteškoće s uzimanjem svih svojih lijekova prema receptu?", type: "ordinal",
+        options: ["Nikada", "Rijetko", "Ponekad", "Često", "Uvijek"] }
+    ],
+    peTiers: [
+      "Vaše ukupno pridržavanje je snažno.",
+      "Dobro se snalazite, s nekoliko područja za praćenje.",
+      "Postoje područja u kojima biste mogli imati koristi od dodatne podrške.",
+      "Ovo je vrijedno razgovarati s vašim liječnikom ili ljekarnikom."
+    ],
+    archInsights: [
+      "Čini se da imate određene sumnje o vašim lijekovima koje bi mogle biti vrijedno raspraviti s vašim liječnikom.",
+      "Možda imate pitanja o tome stvarno li vam vaši lijekovi pomažu.",
+      "Sigurni ste u razlog zašto uzimate svoje lijekove."
+    ],
+    execInsights: [
+      "Sjećanje na redovito uzimanje lijekova čini se izazovom.",
+      "Ponekad je teško zapamtiti lijekove.",
+      "Dobro održavate svoju rutinu lijekova."
+    ],
+    ctxInsights: [
+      "Postoje praktične stvari koje vam otežavaju dosljedno uzimanje lijekova.",
+      "Ponekad vaš raspored ili putovanje otežava održavanje vaših lijekova.",
+      "Čini se da vaš svakodnevni život ne ometa vaše lijekove."
+    ],
+    tips: {
+      arch: "Savjet: Ako imate sumnje o vašim lijekovima, zapisivanje pitanja prije sljedećeg pregleda može vam pomoći da dobijete odgovore.",
+      exec: "Savjet: Pohranite lijekove na vidljivom mjestu koje vidite svaki dan, kao što je pored četkice za zube, kako biste izgradili naviku.",
+      ctx: "Savjet: Pitajte svog ljekarnika o blister pakovanjima ili organizatorima tableta koji olakšavaju nošenje lijekova dok putujete."
+    }
+  },
+
+  da: {
+    hero: "Hvordan klarer du dig med din medicin?",
+    sub: "Det tager cirka 3 minutter. Dine svar er private og hjælper dit plejeteam med at forstå, hvordan de kan støtte dig.",
+    langLabel: "Vælg dit sprog",
+    codeLabel: "Indtast din patientkode, hvis din læge eller farmaceut har givet dig en (valgfrit)",
+    codePlaceholder: "f.eks. PT-2024-001",
+    begin: "Start",
+    powered: "Drevet af MAP · Multidimensional Adherence Parameters",
+    qLabel: "Spørgsmål",
+    of: "af",
+    yes: "Ja",
+    no: "Nej",
+    completeLabel: "Vurdering afsluttet",
+    resultsTitle: "Dine resultater",
+    scoreLabel: "Dit medicin-efterlevelsesniveau",
+    domArchLabel: "Dine følelser om din medicin",
+    domExecLabel: "Din daglige medicin-rutine",
+    domCtxLabel: "Praktiske udfordringer",
+    tipLabel: "Støttetip",
+    btnShare: "Del med mit plejeteam",
+    btnSave: "Gem mine resultater",
+    btnRemind: "Tag igen om 30 dage",
+    savingMsg: "Gemmer...",
+    savedMsg: "Gemt med succes.",
+    saveErrMsg: "Kunne ikke gemme. Prøv venligst igen.",
+    reminderMsg: "Indstil en telefonpåmindelse 30 dage fra nu. Din hensigt er noteret.",
+    shareHeaderLabel: "Plejeteam-oversigt",
+    sumTitle: "MAP Selvvurdering Oversigt",
+    sumScoreLabel: "Medicin-efterlevelsesniveau",
+    sumArchLabel: "Følelser om medicin",
+    sumExecLabel: "Daglig rutine",
+    sumCtxLabel: "Praktiske udfordringer",
+    copyBtn: "Kopier til udklipsholder",
+    copiedMsg: "Kopieret til udklipsholder!",
+    shareBackBtn: "Tilbage til mine resultater",
+    questions: [
+      { text: "Er der tidspunkter, hvor du glemmer at tage din medicin?", type: "binary" },
+      { text: "I de seneste to uger, har der været tidspunkter, hvor du valgte at springe en dosis over, for eksempel på grund af bivirkninger, omkostninger eller at føle dig bedre?", type: "binary" },
+      { text: "I de seneste to uger, reducerede du din dosis eller stoppede en medicin på eget initiativ, uden at fortælle din læge eller plejeteam, på grund af hvordan det fik dig til at føle?", type: "binary" },
+      { text: "Når din daglige rutine ændres, for eksempel når du rejser, arbejder forskellige timer eller er væk hjemmefra, finder du det svært at følge dit medicinprogram?", type: "binary" },
+      { text: "Var du i stand til at tage din sidste dosis som ordineret?", type: "binary" },
+      { text: "Når du begynder at have det bedre, eller dine symptomer forbedres, tænker du somme tider på at reducere eller stoppe din medicin på eget initiativ?", type: "binary" },
+      { text: "Føles det at holde din medicinrutine som en stor udfordring i din dagligdag?", type: "binary" },
+      { text: "I en typisk uge, hvor ofte har du svært ved at tage al din medicin som ordineret?", type: "ordinal",
+        options: ["Aldrig", "Sjældent", "Somme tider", "Ofte", "Altid"] }
+    ],
+    peTiers: [
+      "Din overordnede efterlevelse er stærk.",
+      "Du klarer dig godt, med et par områder at holde øje med.",
+      "Der er områder, hvor du kunne have gavn af yderligere støtte.",
+      "Dette er værd at diskutere med din læge eller farmaceut."
+    ],
+    archInsights: [
+      "Det ser ud til, at du har visse tvivl om din medicin, som kan være værd at diskutere med din læge.",
+      "Du har måske spørgsmål til, om din medicin virkelig hjælper.",
+      "Du er tryg med årsagen til, at du tager din medicin."
+    ],
+    execInsights: [
+      "At huske at tage din medicin regelmæssigt ser ud til at være en udfordring.",
+      "Det er somme tider svært at huske medicin.",
+      "Du holder din medicinrutine godt."
+    ],
+    ctxInsights: [
+      "Der er praktiske ting, der gør det svært for dig at tage din medicin konsekvent.",
+      "Somme tider gør dit program eller din rejse det svært at holde din medicin.",
+      "Dit daglige liv ser ikke ud til at forstyrre din medicin."
+    ],
+    tips: {
+      arch: "Tip: Hvis du er i tvivl om din medicin, kan det at skrive dine spørgsmål ned inden din næste aftale hjælpe dig med at få svar.",
+      exec: "Tip: Opbevar din medicin et synligt sted, du ser hver dag, som ved siden af din tandbørste, for at hjælpe med at opbygge en vane.",
+      ctx: "Tip: Spørg din farmaceut om blisterpakninger eller pilleorganisatorer, der gør det lettere at have din medicin med på rejsen."
+    }
+  },
+
+  nl: {
+    hero: "Hoe gaat het met uw medicijnen?",
+    sub: "Dit duurt ongeveer 3 minuten. Uw antwoorden zijn privé en helpen uw zorgteam te begrijpen hoe ze u kunnen ondersteunen.",
+    langLabel: "Selecteer uw taal",
+    codeLabel: "Voer uw patiëntcode in als uw arts of apotheker u een heeft gegeven (optioneel)",
+    codePlaceholder: "bijv. PT-2024-001",
+    begin: "Begin",
+    powered: "Aangedreven door MAP · Multidimensional Adherence Parameters",
+    qLabel: "Vraag",
+    of: "van",
+    yes: "Ja",
+    no: "Nee",
+    completeLabel: "Beoordeling voltooid",
+    resultsTitle: "Uw resultaten",
+    scoreLabel: "Uw medicatie-therapietrouwniveau",
+    domArchLabel: "Uw gevoelens over uw medicatie",
+    domExecLabel: "Uw dagelijkse medicatieroutine",
+    domCtxLabel: "Praktische uitdagingen",
+    tipLabel: "Ondersteuningsadvies",
+    btnShare: "Delen met mijn zorgteam",
+    btnSave: "Mijn resultaten opslaan",
+    btnRemind: "Herhaal na 30 dagen",
+    savingMsg: "Opslaan...",
+    savedMsg: "Succesvol opgeslagen.",
+    saveErrMsg: "Kan niet opslaan. Probeer het opnieuw.",
+    reminderMsg: "Stel een telefoonherinnering in voor 30 dagen vanaf nu. Uw voornemen is genoteerd.",
+    shareHeaderLabel: "Samenvatting voor Zorgteam",
+    sumTitle: "MAP Zelfevaluatie Samenvatting",
+    sumScoreLabel: "Medicatie-therapietrouwniveau",
+    sumArchLabel: "Gevoelens over medicatie",
+    sumExecLabel: "Dagelijkse routine",
+    sumCtxLabel: "Praktische uitdagingen",
+    copyBtn: "Kopiëren naar klembord",
+    copiedMsg: "Gekopieerd naar klembord!",
+    shareBackBtn: "Terug naar mijn resultaten",
+    questions: [
+      { text: "Zijn er momenten waarop u vergeet uw medicijnen in te nemen?", type: "binary" },
+      { text: "In de afgelopen twee weken, waren er momenten waarop u ervoor koos een dosis over te slaan, bijvoorbeeld vanwege bijwerkingen, kosten of omdat u zich beter voelde?", type: "binary" },
+      { text: "In de afgelopen twee weken, heeft u uw dosis verminderd of een medicijn op eigen initiatief gestopt, zonder uw arts of zorgteam te vertellen, vanwege hoe het u deed voelen?", type: "binary" },
+      { text: "Wanneer uw dagelijkse routine verandert, bijvoorbeeld als u op reis bent, andere uren werkt of van huis weg bent, vindt u het dan moeilijk om uw medicatieschema bij te houden?", type: "binary" },
+      { text: "Was u in staat uw laatste dosis in te nemen zoals voorgeschreven?", type: "binary" },
+      { text: "Wanneer u zich beter begint te voelen of uw symptomen verbeteren, denkt u dan soms aan het verminderen of stoppen van uw medicatie op eigen initiatief?", type: "binary" },
+      { text: "Voelt het bijhouden van uw medicatieroutine als een grote uitdaging in uw dagelijks leven?", type: "binary" },
+      { text: "In een typische week, hoe vaak heeft u moeite om al uw medicijnen in te nemen zoals voorgeschreven?", type: "ordinal",
+        options: ["Nooit", "Zelden", "Soms", "Vaak", "Altijd"] }
+    ],
+    peTiers: [
+      "Uw algehele therapietrouw is sterk.",
+      "U doet het goed, met een paar aandachtspunten.",
+      "Er zijn gebieden waar u baat zou kunnen hebben bij extra ondersteuning.",
+      "Dit is het waard om te bespreken met uw arts of apotheker."
+    ],
+    archInsights: [
+      "Het lijkt erop dat u bepaalde twijfels heeft over uw medicijnen die het waard kunnen zijn om met uw arts te bespreken.",
+      "U heeft mogelijk vragen of uw medicijnen echt helpen.",
+      "U bent zeker over de reden waarom u uw medicijnen inneemt."
+    ],
+    execInsights: [
+      "Herinneren om uw medicijnen regelmatig in te nemen lijkt een uitdaging.",
+      "Het is soms moeilijk om medicijnen te onthouden.",
+      "U houdt uw medicatieroutine goed bij."
+    ],
+    ctxInsights: [
+      "Er zijn praktische zaken die het voor u moeilijk maken om uw medicijnen consequent in te nemen.",
+      "Soms maakt uw schema of reizen het moeilijk om uw medicatie bij te houden.",
+      "Uw dagelijks leven lijkt uw medicatie niet te verstoren."
+    ],
+    tips: {
+      arch: "Tip: Als u twijfels heeft over uw medicijnen, kan het opschrijven van uw vragen voor uw volgende afspraak u helpen antwoorden te krijgen.",
+      exec: "Tip: Bewaar uw medicijnen op een zichtbare plek die u elke dag ziet, zoals naast uw tandenborstel, om een gewoonte op te bouwen.",
+      ctx: "Tip: Vraag uw apotheker naar blisterverpakkingen of pillendoosjes die het gemakkelijker maken om uw medicijnen mee te nemen op reis."
+    }
+  },
+
+  fi: {
+    hero: "Miten pärjäät lääkkeidesi kanssa?",
+    sub: "Tämä kestää noin 3 minuuttia. Vastauksesi ovat yksityisiä ja auttavat hoitotiimiäsi ymmärtämään, miten he voivat tukea sinua.",
+    langLabel: "Valitse kielesi",
+    codeLabel: "Syötä potilaskoodisi, jos lääkärisi tai apteekkisi on antanut sinulle sellaisen (valinnainen)",
+    codePlaceholder: "esim. PT-2024-001",
+    begin: "Aloita",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "Kysymys",
+    of: "/",
+    yes: "Kyllä",
+    no: "Ei",
+    completeLabel: "Arviointi valmis",
+    resultsTitle: "Tuloksesi",
+    scoreLabel: "Lääkehoidon sitoutumistasosi",
+    domArchLabel: "Tunteesi lääkkeistäsi",
+    domExecLabel: "Päivittäinen lääkäroutinesi",
+    domCtxLabel: "Käytännön haasteet",
+    tipLabel: "Tukivinkki",
+    btnShare: "Jaa hoitotiimilleni",
+    btnSave: "Tallenna tulokseni",
+    btnRemind: "Ota uudelleen 30 päivän kuluttua",
+    savingMsg: "Tallennetaan...",
+    savedMsg: "Tallennettu onnistuneesti.",
+    saveErrMsg: "Tallennus epäonnistui. Yritä uudelleen.",
+    reminderMsg: "Aseta puhelinmuistutus 30 päivän päähän. Aikomuksesi on kirjattu.",
+    shareHeaderLabel: "Hoitotiimin yhteenveto",
+    sumTitle: "MAP Itsearviointilyhennelmä",
+    sumScoreLabel: "Lääkehoidon sitoutumistaso",
+    sumArchLabel: "Tunteet lääkkeistä",
+    sumExecLabel: "Päivittäinen rutiini",
+    sumCtxLabel: "Käytännön haasteet",
+    copyBtn: "Kopioi leikepöydälle",
+    copiedMsg: "Kopioitu leikepöydälle!",
+    shareBackBtn: "Takaisin tuloksiini",
+    questions: [
+      { text: "Onko hetkiä, jolloin unohdat ottaa lääkkeesi?", type: "binary" },
+      { text: "Kuluneiden kahden viikon aikana, onko ollut hetkiä, jolloin olet päättänyt jättää annoksen väliin, esimerkiksi sivuvaikutusten, kustannusten tai paremman olon vuoksi?", type: "binary" },
+      { text: "Kuluneiden kahden viikon aikana, oletko pienentänyt annosta tai lopettanut lääkkeen omasta aloitteestasi, kertomatta lääkärillesi tai hoitotiimillesi, koska se sai sinut tuntemaan tietyllä tavalla?", type: "binary" },
+      { text: "Kun päivittäinen rutiinisi muuttuu, esimerkiksi matkustaessasi, tehdessäsi töitä eri aikoina tai ollessasi poissa kotoa, onko sinulla vaikeuksia pitää kiinni lääkeohjelmastasi?", type: "binary" },
+      { text: "Pystyitkö ottamaan viimeisen annoksesi määräyksen mukaisesti?", type: "binary" },
+      { text: "Kun alat voida paremmin tai oireesi helpottavat, ajatteletko joskus vähentää tai lopettaa lääkityksesi omasta aloitteestasi?", type: "binary" },
+      { text: "Tuntuuko lääkäroutinistasi kiinni pitäminen suurelta haasteelta jokapäiväisessä elämässäsi?", type: "binary" },
+      { text: "Tyypillisellä viikolla, kuinka usein sinulla on vaikeuksia ottaa kaikki lääkkeesi määräyksen mukaisesti?", type: "ordinal",
+        options: ["Ei koskaan", "Harvoin", "Joskus", "Usein", "Aina"] }
+    ],
+    peTiers: [
+      "Kokonaissitoutumisesi on vahva.",
+      "Pärjäät hyvin, muutamia seurattavia alueita.",
+      "On alueita, joilla lisätuesta voisi olla hyötyä.",
+      "Tämä kannattaa keskustella lääkärisi tai apteekkisi kanssa."
+    ],
+    archInsights: [
+      "Sinulla näyttää olevan tiettyjä epäilyksiä lääkkeistäsi, joista voisi olla hyvä puhua lääkärisi kanssa.",
+      "Sinulla saattaa olla kysymyksiä siitä, auttavatko lääkkeesi todella.",
+      "Olet varma syystä, miksi otat lääkkeesi."
+    ],
+    execInsights: [
+      "Lääkkeiden säännöllinen muistaminen vaikuttaa haasteelta.",
+      "Joskus lääkkeiden muistaminen on vaikeaa.",
+      "Pidät lääkäroutinistasi hyvin kiinni."
+    ],
+    ctxInsights: [
+      "On käytännön asioita, jotka tekevät lääkkeiden johdonmukaisen ottamisen sinulle vaikeaksi.",
+      "Joskus aikataulusi tai matkustaminen vaikeuttaa lääkkeistä kiinni pitämistä.",
+      "Jokapäiväinen elämäsi ei näytä häiritsevän lääkitystäsi."
+    ],
+    tips: {
+      arch: "Vinkki: Jos sinulla on epäilyksiä lääkkeistäsi, kysymysten kirjoittaminen ennen seuraavaa käyntiä voi auttaa saamaan vastauksia.",
+      exec: "Vinkki: Säilytä lääkkeesi näkyvässä paikassa, jonka näet joka päivä, kuten hammasharjasi vieressä, jotta voit rakentaa tottumuksen.",
+      ctx: "Vinkki: Kysy apteekista läpipainopakkauksista tai lääkedoseteista, jotka helpottavat lääkkeiden mukaan ottamista matkustaessa."
+    }
+  },
+
+  ms: {
+    hero: "Bagaimana anda dengan ubat-ubatan anda?",
+    sub: "Ini mengambil masa lebih kurang 3 minit. Jawapan anda adalah sulit dan membantu pasukan penjagaan anda memahami cara untuk menyokong anda.",
+    langLabel: "Pilih bahasa anda",
+    codeLabel: "Masukkan kod pesakit anda jika doktor atau ahli farmasi anda telah memberikan anda satu (pilihan)",
+    codePlaceholder: "cth. PT-2024-001",
+    begin: "Mula",
+    powered: "Dikuasakan oleh MAP · Multidimensional Adherence Parameters",
+    qLabel: "Soalan",
+    of: "daripada",
+    yes: "Ya",
+    no: "Tidak",
+    completeLabel: "Penilaian selesai",
+    resultsTitle: "Keputusan anda",
+    scoreLabel: "Tahap pematuhan ubat anda",
+    domArchLabel: "Perasaan anda tentang ubat anda",
+    domExecLabel: "Rutin ubat harian anda",
+    domCtxLabel: "Cabaran praktikal",
+    tipLabel: "Petua sokongan",
+    btnShare: "Kongsi dengan pasukan penjagaan saya",
+    btnSave: "Simpan keputusan saya",
+    btnRemind: "Ambil semula dalam 30 hari",
+    savingMsg: "Menyimpan...",
+    savedMsg: "Berjaya disimpan.",
+    saveErrMsg: "Tidak dapat menyimpan. Sila cuba lagi.",
+    reminderMsg: "Tetapkan peringatan telefon untuk 30 hari dari sekarang. Niat anda telah dicatat.",
+    shareHeaderLabel: "Ringkasan Pasukan Penjagaan",
+    sumTitle: "Ringkasan Penilaian Kendiri MAP",
+    sumScoreLabel: "Tahap pematuhan ubat",
+    sumArchLabel: "Perasaan tentang ubat",
+    sumExecLabel: "Rutin harian",
+    sumCtxLabel: "Cabaran praktikal",
+    copyBtn: "Salin ke papan klip",
+    copiedMsg: "Disalin ke papan klip!",
+    shareBackBtn: "Kembali ke keputusan saya",
+    questions: [
+      { text: "Adakah terdapat masa-masa apabila anda lupa untuk mengambil ubat anda?", type: "binary" },
+      { text: "Dalam dua minggu lalu, adakah terdapat masa-masa apabila anda memilih untuk melepasi dos, contohnya kerana kesan sampingan, kos, atau berasa lebih baik?", type: "binary" },
+      { text: "Dalam dua minggu lalu, adakah anda mengurangkan dos anda atau menghentikan ubat sendiri, tanpa memberitahu doktor atau pasukan penjagaan anda, kerana cara ia membuatkan anda berasa?", type: "binary" },
+      { text: "Apabila rutin harian anda berubah, contohnya apabila melancong, bekerja pada waktu berbeza, atau tinggal jauh dari rumah, adakah anda mendapati ia sukar untuk mengikuti jadual ubat anda?", type: "binary" },
+      { text: "Adakah anda dapat mengambil dos terakhir anda seperti yang ditetapkan?", type: "binary" },
+      { text: "Apabila anda mula berasa lebih baik atau gejala anda bertambah baik, adakah anda kadang-kadang berfikir untuk mengurangkan atau menghentikan ubat anda sendiri?", type: "binary" },
+      { text: "Adakah mengekalkan rutin ubat anda terasa seperti cabaran besar dalam kehidupan harian anda?", type: "binary" },
+      { text: "Dalam minggu biasa, berapa kerap anda menghadapi kesukaran untuk mengambil semua ubat anda seperti yang ditetapkan?", type: "ordinal",
+        options: ["Tidak pernah", "Jarang", "Kadang-kadang", "Kerap", "Sentiasa"] }
+    ],
+    peTiers: [
+      "Pematuhan keseluruhan anda adalah kukuh.",
+      "Anda melakukan dengan baik, dengan beberapa kawasan untuk dipantau.",
+      "Terdapat kawasan di mana anda boleh mendapat manfaat daripada sokongan tambahan.",
+      "Ini adalah sesuatu yang patut dibincangkan dengan doktor atau ahli farmasi anda."
+    ],
+    archInsights: [
+      "Nampaknya anda mempunyai beberapa keraguan tentang ubat anda yang mungkin berbaloi untuk dibincangkan dengan doktor anda.",
+      "Anda mungkin mempunyai soalan sama ada ubat anda benar-benar membantu.",
+      "Anda yakin tentang sebab anda mengambil ubat anda."
+    ],
+    execInsights: [
+      "Mengingati untuk mengambil ubat anda secara teratur nampaknya menjadi cabaran.",
+      "Kadang-kadang sukar untuk mengingati ubat.",
+      "Anda mengekalkan rutin ubat anda dengan baik."
+    ],
+    ctxInsights: [
+      "Terdapat perkara praktikal yang menyukarkan anda untuk mengambil ubat secara konsisten.",
+      "Kadang-kadang jadual atau perjalanan anda menyukarkan untuk mengekalkan ubat anda.",
+      "Kehidupan harian anda nampaknya tidak mengganggu ubat anda."
+    ],
+    tips: {
+      arch: "Petua: Jika anda mempunyai keraguan tentang ubat anda, menuliskan soalan anda sebelum temu janji anda seterusnya boleh membantu anda mendapatkan jawapan.",
+      exec: "Petua: Simpan ubat anda di tempat yang dapat dilihat setiap hari, seperti di sebelah berus gigi anda, untuk membantu membina tabiat.",
+      ctx: "Petua: Tanya ahli farmasi anda tentang pembungkusan blister atau pengatur pil yang memudahkan membawa ubat anda semasa melancong."
+    }
+  },
+
+  sv: {
+    hero: "Hur klarar du dig med dina mediciner?",
+    sub: "Det tar ungefär 3 minuter. Dina svar är privata och hjälper ditt vårdteam att förstå hur de kan stödja dig.",
+    langLabel: "Välj ditt språk",
+    codeLabel: "Ange din patientkod om din läkare eller apotekare har gett dig en (valfritt)",
+    codePlaceholder: "t.ex. PT-2024-001",
+    begin: "Börja",
+    powered: "Drivs av MAP · Multidimensional Adherence Parameters",
+    qLabel: "Fråga",
+    of: "av",
+    yes: "Ja",
+    no: "Nej",
+    completeLabel: "Bedömning klar",
+    resultsTitle: "Dina resultat",
+    scoreLabel: "Din nivå av läkemedelsföljsamhet",
+    domArchLabel: "Dina känslor om dina mediciner",
+    domExecLabel: "Din dagliga medicin-rutin",
+    domCtxLabel: "Praktiska utmaningar",
+    tipLabel: "Stödtips",
+    btnShare: "Dela med mitt vårdteam",
+    btnSave: "Spara mina resultat",
+    btnRemind: "Ta om efter 30 dagar",
+    savingMsg: "Sparar...",
+    savedMsg: "Sparat.",
+    saveErrMsg: "Kunde inte spara. Försök igen.",
+    reminderMsg: "Ställ in en telefon-påminnelse om 30 dagar. Din avsikt har antecknats.",
+    shareHeaderLabel: "Sammanfattning för Vårdteamet",
+    sumTitle: "MAP Självbedömning Sammanfattning",
+    sumScoreLabel: "Nivå av läkemedelsföljsamhet",
+    sumArchLabel: "Känslor om mediciner",
+    sumExecLabel: "Daglig rutin",
+    sumCtxLabel: "Praktiska utmaningar",
+    copyBtn: "Kopiera till urklipp",
+    copiedMsg: "Kopierat till urklipp!",
+    shareBackBtn: "Tillbaka till mina resultat",
+    questions: [
+      { text: "Finns det tillfällen då du glömmer att ta dina mediciner?", type: "binary" },
+      { text: "Under de senaste två veckorna, har det funnits tillfällen då du valt att hoppa över en dos, till exempel på grund av biverkningar, kostnad eller att du mådde bättre?", type: "binary" },
+      { text: "Under de senaste två veckorna, minskade du din dos eller slutade du med ett läkemedel på eget initiativ, utan att berätta för din läkare eller ditt vårdteam, på grund av hur det fick dig att känna?", type: "binary" },
+      { text: "När din dagliga rutin förändras, till exempel när du reser, arbetar andra tider eller är hemifrån, har du då svårt att hålla dig till ditt medicinschema?", type: "binary" },
+      { text: "Kunde du ta din senaste dos enligt ordination?", type: "binary" },
+      { text: "När du börjar må bättre eller dina symtom förbättras, tänker du ibland på att minska eller sluta med din medicin på eget initiativ?", type: "binary" },
+      { text: "Känns det att hålla sig till din medicinrutin som en stor utmaning i ditt vardagsliv?", type: "binary" },
+      { text: "Under en typisk vecka, hur ofta har du svårt att ta alla dina mediciner som ordinerats?", type: "ordinal",
+        options: ["Aldrig", "Sällan", "Ibland", "Ofta", "Alltid"] }
+    ],
+    peTiers: [
+      "Din övergripande följsamhet är stark.",
+      "Du klarar dig bra, med ett par områden att hålla koll på.",
+      "Det finns områden där du skulle kunna ha nytta av mer stöd.",
+      "Det här är värt att diskutera med din läkare eller apotekare."
+    ],
+    archInsights: [
+      "Det verkar som om du har viss tveksamhet kring dina mediciner som kan vara värd att diskutera med din läkare.",
+      "Du kanske har frågor om dina mediciner verkligen hjälper.",
+      "Du är trygg med anledningen till varför du tar dina mediciner."
+    ],
+    execInsights: [
+      "Att komma ihåg att ta dina mediciner regelbundet verkar vara en utmaning.",
+      "Det är ibland svårt att komma ihåg mediciner.",
+      "Du håller din medicinrutin väl."
+    ],
+    ctxInsights: [
+      "Det finns praktiska saker som gör det svårt för dig att ta dina mediciner konsekvent.",
+      "Ibland gör ditt schema eller resande det svårt att hålla dig till dina mediciner.",
+      "Ditt vardagsliv verkar inte störa dina mediciner."
+    ],
+    tips: {
+      arch: "Tips: Om du är osäker på dina mediciner kan det hjälpa att skriva ned dina frågor inför ditt nästa besök för att få svar.",
+      exec: "Tips: Förvara dina mediciner på en synlig plats du ser varje dag, till exempel bredvid din tandborste, för att hjälpa till att bygga en vana.",
+      ctx: "Tips: Fråga din apotekare om blisterförpackningar eller pillerboxar som gör det enklare att ta med dina mediciner när du reser."
+    }
+  },
+
+  uk: {
+    hero: "Як у вас справи з ліками?",
+    sub: "Це займе приблизно 3 хвилини. Ваші відповіді є приватними і допомагають вашій команді догляду зрозуміти, як вас підтримати.",
+    langLabel: "Виберіть мову",
+    codeLabel: "Введіть свій код пацієнта, якщо ваш лікар або фармацевт вам його надав (необов'язково)",
+    codePlaceholder: "напр. PT-2024-001",
+    begin: "Почати",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "Запитання",
+    of: "з",
+    yes: "Так",
+    no: "Ні",
+    completeLabel: "Оцінювання завершено",
+    resultsTitle: "Ваші результати",
+    scoreLabel: "Ваш рівень дотримання режиму прийому ліків",
+    domArchLabel: "Ваші відчуття щодо ліків",
+    domExecLabel: "Ваш щоденний режим прийому ліків",
+    domCtxLabel: "Практичні труднощі",
+    tipLabel: "Порада з підтримки",
+    btnShare: "Поділитися з моєю командою догляду",
+    btnSave: "Зберегти мої результати",
+    btnRemind: "Повторити через 30 днів",
+    savingMsg: "Збереження...",
+    savedMsg: "Успішно збережено.",
+    saveErrMsg: "Не вдалося зберегти. Будь ласка, спробуйте знову.",
+    reminderMsg: "Встановіть нагадування на телефоні через 30 днів. Ваш намір зафіксовано.",
+    shareHeaderLabel: "Зведення для Команди Догляду",
+    sumTitle: "Зведення самооцінки MAP",
+    sumScoreLabel: "Рівень дотримання режиму ліків",
+    sumArchLabel: "Відчуття щодо ліків",
+    sumExecLabel: "Щоденний режим",
+    sumCtxLabel: "Практичні труднощі",
+    copyBtn: "Скопіювати в буфер обміну",
+    copiedMsg: "Скопійовано в буфер обміну!",
+    shareBackBtn: "Повернутися до моїх результатів",
+    questions: [
+      { text: "Бувають випадки, коли ви забуваєте прийняти ліки?", type: "binary" },
+      { text: "За останні два тижні, бували випадки, коли ви свідомо пропускали дозу, наприклад, через побічні ефекти, вартість або те, що почувалися краще?", type: "binary" },
+      { text: "За останні два тижні, чи зменшували ви дозу або припиняли приймати ліки самостійно, не повідомляючи свого лікаря або команду догляду, через те, як це на вас впливало?", type: "binary" },
+      { text: "Коли ваш щоденний розпорядок змінюється, наприклад під час подорожі, роботи в інший час або перебування поза домом, вам важко дотримуватися розкладу прийому ліків?", type: "binary" },
+      { text: "Чи вдалося вам прийняти останню дозу відповідно до призначення?", type: "binary" },
+      { text: "Коли ви почуваєтеся краще або ваші симптоми покращуються, ви іноді думаєте про зменшення або припинення прийому ліків за власною ініціативою?", type: "binary" },
+      { text: "Чи відчуваєте ви дотримання режиму прийому ліків великим викликом у своєму повсякденному житті?", type: "binary" },
+      { text: "У звичайний тиждень, як часто вам важко приймати всі ліки відповідно до призначення?", type: "ordinal",
+        options: ["Ніколи", "Рідко", "Іноді", "Часто", "Завжди"] }
+    ],
+    peTiers: [
+      "Ваш загальний рівень дотримання є міцним.",
+      "Ви справляєтесь добре, є кілька аспектів, на які варто звернути увагу.",
+      "Є сфери, в яких вам може допомогти додаткова підтримка.",
+      "Це варто обговорити з вашим лікарем або фармацевтом."
+    ],
+    archInsights: [
+      "Схоже, у вас є певні сумніви щодо ваших ліків, які варто обговорити з лікарем.",
+      "У вас можуть бути запитання про те, чи справді ваші ліки допомагають.",
+      "Ви впевнені в причині, чому приймаєте свої ліки."
+    ],
+    execInsights: [
+      "Пам'ятати регулярно приймати ліки здається складним завданням.",
+      "Іноді важко пам'ятати про ліки.",
+      "Ви добре дотримуєтесь свого режиму прийому ліків."
+    ],
+    ctxInsights: [
+      "Є практичні речі, які ускладнюють систематичний прийом ліків.",
+      "Іноді ваш розклад або подорожі ускладнюють дотримання режиму ліків.",
+      "Схоже, ваше повсякденне життя не заважає прийому ліків."
+    ],
+    tips: {
+      arch: "Порада: Якщо у вас є сумніви щодо ліків, запис питань перед наступним прийомом може допомогти отримати відповіді.",
+      exec: "Порада: Зберігайте ліки на видному місці, яке ви бачите щодня, наприклад поруч із зубною щіткою, щоб виробити звичку.",
+      ctx: "Порада: Запитайте свого фармацевта про блістерні упаковки або органайзери для таблеток, які полегшують перевезення ліків під час подорожей."
+    }
+  },
+
+  ur: {
+    hero: "آپ اپنی دوائیں کیسے لے رہے ہیں؟",
+    sub: "اس میں تقریباً 3 منٹ لگتے ہیں۔ آپ کے جوابات نجی ہیں اور آپ کی نگہداشت کی ٹیم کو یہ سمجھنے میں مدد کرتے ہیں کہ آپ کو کیسے سہارا دیا جائے۔",
+    langLabel: "اپنی زبان منتخب کریں",
+    codeLabel: "اپنا مریض کوڈ درج کریں اگر آپ کے ڈاکٹر یا فارماسسٹ نے آپ کو ایک دیا ہو (اختیاری)",
+    codePlaceholder: "مثلاً: PT-2024-001",
+    begin: "شروع کریں",
+    powered: "Powered by MAP · Multidimensional Adherence Parameters",
+    qLabel: "سوال",
+    of: "میں سے",
+    yes: "ہاں",
+    no: "نہیں",
+    completeLabel: "تشخیص مکمل",
+    resultsTitle: "آپ کے نتائج",
+    scoreLabel: "آپ کی دوائی پابندی کی سطح",
+    domArchLabel: "دوائیوں کے بارے میں آپ کے احساسات",
+    domExecLabel: "آپ کا روزانہ دوائی کا معمول",
+    domCtxLabel: "عملی چیلنجز",
+    tipLabel: "مدد کا مشورہ",
+    btnShare: "اپنی نگہداشت ٹیم کے ساتھ شیئر کریں",
+    btnSave: "میرے نتائج محفوظ کریں",
+    btnRemind: "30 دنوں میں دوبارہ لیں",
+    savingMsg: "محفوظ ہو رہا ہے...",
+    savedMsg: "کامیابی سے محفوظ ہو گیا۔",
+    saveErrMsg: "محفوظ نہیں ہو سکا۔ براہ کرم دوبارہ کوشش کریں۔",
+    reminderMsg: "ابھی سے 30 دنوں بعد اپنے فون پر یاددہانی سیٹ کریں۔ آپ کا ارادہ نوٹ کر لیا گیا ہے۔",
+    shareHeaderLabel: "نگہداشت ٹیم کا خلاصہ",
+    sumTitle: "MAP خود-تشخیص خلاصہ",
+    sumScoreLabel: "دوائی پابندی کی سطح",
+    sumArchLabel: "دوائیوں کے بارے میں احساسات",
+    sumExecLabel: "روزانہ کا معمول",
+    sumCtxLabel: "عملی چیلنجز",
+    copyBtn: "کلپ بورڈ پر کاپی کریں",
+    copiedMsg: "کلپ بورڈ پر کاپی ہو گیا!",
+    shareBackBtn: "میرے نتائج پر واپس جائیں",
+    questions: [
+      { text: "کیا ایسے اوقات ہوتے ہیں جب آپ اپنی دوائیں لینا بھول جاتے ہیں؟", type: "binary" },
+      { text: "گزشتہ دو ہفتوں میں، کیا ایسے اوقات ہوئے جب آپ نے کسی خوراک کو چھوڑنے کا انتخاب کیا، مثلاً ضمنی اثرات، لاگت، یا بہتر محسوس کرنے کی وجہ سے؟", type: "binary" },
+      { text: "گزشتہ دو ہفتوں میں، کیا آپ نے اپنی خوراک کم کی یا خود سے کوئی دوائی بند کر دی، اپنے ڈاکٹر یا نگہداشت ٹیم کو بتائے بغیر، اس وجہ سے کہ یہ آپ کو کیسا محسوس کرا رہی تھی؟", type: "binary" },
+      { text: "جب آپ کا روزانہ کا معمول بدل جاتا ہے، مثلاً سفر کے دوران، مختلف اوقات کام کرتے ہوئے، یا گھر سے دور رہنے پر، کیا آپ کو دوائی کے شیڈول کی پیروی کرنا مشکل لگتا ہے؟", type: "binary" },
+      { text: "کیا آپ اپنی آخری خوراک ہدایت کے مطابق لے سکے؟", type: "binary" },
+      { text: "جب آپ بہتر محسوس کرنا شروع کرتے ہیں یا آپ کی علامات بہتر ہوتی ہیں، کیا آپ کبھی اپنی دوائی خود سے کم کرنے یا بند کرنے کے بارے میں سوچتے ہیں؟", type: "binary" },
+      { text: "کیا اپنے دوائی کے معمول کو برقرار رکھنا آپ کی روزانہ کی زندگی میں ایک بڑا چیلنج محسوس ہوتا ہے؟", type: "binary" },
+      { text: "ایک عام ہفتے میں، آپ کو کتنی بار تمام دوائیں ہدایت کے مطابق لینے میں مشکل ہوتی ہے؟", type: "ordinal",
+        options: ["کبھی نہیں", "شاید ہی کبھی", "کبھی کبھی", "اکثر", "ہمیشہ"] }
+    ],
+    peTiers: [
+      "آپ کی مجموعی پابندی مضبوط ہے۔",
+      "آپ اچھا کر رہے ہیں، کچھ شعبوں پر نگاہ رکھنے کی ضرورت ہے۔",
+      "کچھ ایسے شعبے ہیں جہاں آپ کو اضافی مدد سے فائدہ ہو سکتا ہے۔",
+      "یہ آپ کے ڈاکٹر یا فارماسسٹ کے ساتھ بات کرنے کے قابل ہے۔"
+    ],
+    archInsights: [
+      "لگتا ہے آپ کے دوائیوں کے بارے میں کچھ شکوک ہیں جن پر اپنے ڈاکٹر سے بات کرنا فائدہ مند ہو سکتا ہے۔",
+      "آپ کے ذہن میں یہ سوال ہو سکتا ہے کہ آیا آپ کی دوائیں واقعی مدد کر رہی ہیں۔",
+      "آپ اس وجہ سے مطمئن ہیں کہ آپ اپنی دوائیں کیوں لیتے ہیں۔"
+    ],
+    execInsights: [
+      "باقاعدگی سے دوائیں لینا یاد رکھنا ایک چیلنج لگتا ہے۔",
+      "کبھی کبھی دوائیں یاد رکھنا مشکل ہوتا ہے۔",
+      "آپ اپنے دوائی کے معمول کو اچھی طرح برقرار رکھتے ہیں۔"
+    ],
+    ctxInsights: [
+      "کچھ عملی باتیں ہیں جو آپ کے لیے دوائیں مستقل طور پر لینا مشکل بناتی ہیں۔",
+      "کبھی کبھی آپ کا شیڈول یا سفر دوائیوں کو برقرار رکھنا مشکل بناتا ہے۔",
+      "آپ کی روزانہ کی زندگی آپ کی دوائیوں میں رکاوٹ نہیں ڈالتی۔"
+    ],
+    tips: {
+      arch: "مشورہ: اگر آپ کو دوائیوں کے بارے میں شک ہو تو اپنے اگلے ملاقات سے پہلے سوالات لکھ لینے سے جوابات پانے میں مدد مل سکتی ہے۔",
+      exec: "مشورہ: اپنی دوائیں ایسی جگہ رکھیں جو آپ روزانہ دیکھیں، جیسے اپنے ٹوتھ برش کے پاس، تاکہ عادت بنانے میں مدد ملے۔",
+      ctx: "مشورہ: اپنے فارماسسٹ سے بلسٹر پیک یا پل آرگنائزر کے بارے میں پوچھیں جو سفر کے دوران دوائیں ساتھ لے جانا آسان بناتے ہیں۔"
+    }
+  },
+
+  vi: {
+    hero: "Bạn đang dùng thuốc như thế nào?",
+    sub: "Việc này mất khoảng 3 phút. Câu trả lời của bạn là riêng tư và giúp đội ngũ chăm sóc hiểu cách hỗ trợ bạn.",
+    langLabel: "Chọn ngôn ngữ của bạn",
+    codeLabel: "Nhập mã bệnh nhân của bạn nếu bác sĩ hoặc dược sĩ đã cung cấp cho bạn (tùy chọn)",
+    codePlaceholder: "vd: PT-2024-001",
+    begin: "Bắt đầu",
+    powered: "Được hỗ trợ bởi MAP · Multidimensional Adherence Parameters",
+    qLabel: "Câu hỏi",
+    of: "trong",
+    yes: "Có",
+    no: "Không",
+    completeLabel: "Đánh giá hoàn tất",
+    resultsTitle: "Kết quả của bạn",
+    scoreLabel: "Mức độ tuân thủ thuốc của bạn",
+    domArchLabel: "Cảm nhận của bạn về thuốc",
+    domExecLabel: "Thói quen uống thuốc hàng ngày của bạn",
+    domCtxLabel: "Thách thức thực tiễn",
+    tipLabel: "Mẹo hỗ trợ",
+    btnShare: "Chia sẻ với đội ngũ chăm sóc của tôi",
+    btnSave: "Lưu kết quả của tôi",
+    btnRemind: "Làm lại sau 30 ngày",
+    savingMsg: "Đang lưu...",
+    savedMsg: "Đã lưu thành công.",
+    saveErrMsg: "Không thể lưu. Vui lòng thử lại.",
+    reminderMsg: "Đặt nhắc nhở điện thoại sau 30 ngày kể từ bây giờ. Ý định của bạn đã được ghi nhận.",
+    shareHeaderLabel: "Tóm Tắt Dành Cho Đội Ngũ Chăm Sóc",
+    sumTitle: "Tóm Tắt Tự Đánh Giá MAP",
+    sumScoreLabel: "Mức độ tuân thủ thuốc",
+    sumArchLabel: "Cảm nhận về thuốc",
+    sumExecLabel: "Thói quen hàng ngày",
+    sumCtxLabel: "Thách thức thực tiễn",
+    copyBtn: "Sao chép vào bộ nhớ tạm",
+    copiedMsg: "Đã sao chép vào bộ nhớ tạm!",
+    shareBackBtn: "Quay lại kết quả của tôi",
+    questions: [
+      { text: "Có những lúc bạn quên uống thuốc không?", type: "binary" },
+      { text: "Trong hai tuần vừa qua, có những lúc bạn chọn bỏ qua một liều không, ví dụ như do tác dụng phụ, chi phí hoặc cảm thấy tốt hơn?", type: "binary" },
+      { text: "Trong hai tuần vừa qua, bạn có tự ý giảm liều hoặc ngừng thuốc mà không báo với bác sĩ hoặc đội ngũ chăm sóc, do cách thuốc ảnh hưởng đến bạn không?", type: "binary" },
+      { text: "Khi thói quen hàng ngày của bạn thay đổi, ví dụ khi đi du lịch, làm việc khác giờ hoặc ở xa nhà, bạn có thấy khó tuân theo lịch uống thuốc không?", type: "binary" },
+      { text: "Bạn có thể uống liều cuối theo đúng chỉ dẫn không?", type: "binary" },
+      { text: "Khi bạn bắt đầu cảm thấy tốt hơn hoặc các triệu chứng cải thiện, bạn có đôi khi nghĩ đến việc tự giảm hoặc ngừng thuốc không?", type: "binary" },
+      { text: "Việc duy trì thói quen uống thuốc có cảm thấy như một thách thức lớn trong cuộc sống hàng ngày của bạn không?", type: "binary" },
+      { text: "Trong một tuần bình thường, bạn thường gặp khó khăn khi uống tất cả thuốc theo đơn bao nhiêu lần?", type: "ordinal",
+        options: ["Không bao giờ", "Hiếm khi", "Đôi khi", "Thường xuyên", "Luôn luôn"] }
+    ],
+    peTiers: [
+      "Mức độ tuân thủ tổng thể của bạn rất tốt.",
+      "Bạn đang làm tốt, với một vài điểm cần chú ý.",
+      "Có những lĩnh vực bạn có thể được hưởng lợi từ sự hỗ trợ thêm.",
+      "Điều này đáng để thảo luận với bác sĩ hoặc dược sĩ của bạn."
+    ],
+    archInsights: [
+      "Có vẻ như bạn có một số hoài nghi về thuốc của mình, điều này có thể đáng thảo luận với bác sĩ.",
+      "Bạn có thể có câu hỏi về việc liệu thuốc của bạn có thực sự giúp ích không.",
+      "Bạn tự tin về lý do tại sao bạn uống thuốc."
+    ],
+    execInsights: [
+      "Việc nhớ uống thuốc thường xuyên có vẻ là một thách thức.",
+      "Đôi khi thật khó để nhớ uống thuốc.",
+      "Bạn duy trì thói quen uống thuốc rất tốt."
+    ],
+    ctxInsights: [
+      "Có những điều thực tế khiến bạn khó uống thuốc một cách nhất quán.",
+      "Đôi khi lịch trình hoặc việc đi lại của bạn khiến bạn khó duy trì thuốc.",
+      "Cuộc sống hàng ngày của bạn có vẻ không cản trở việc uống thuốc."
+    ],
+    tips: {
+      arch: "Mẹo: Nếu bạn có nghi ngờ về thuốc, viết các câu hỏi xuống trước cuộc hẹn tiếp theo có thể giúp bạn nhận được câu trả lời.",
+      exec: "Mẹo: Đặt thuốc ở nơi dễ thấy mỗi ngày, chẳng hạn bên cạnh bàn chải đánh răng, để giúp xây dựng thói quen.",
+      ctx: "Mẹo: Hỏi dược sĩ của bạn về vỉ thuốc blistter hoặc hộp chia thuốc giúp dễ mang theo thuốc khi đi du lịch."
+    }
   }
-};
 
 /* ── Question domain map ──────────────────────────── */
 // Q index 0-7 (Q1-Q8)

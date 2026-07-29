@@ -352,6 +352,8 @@ async function submitAddMember() {
   }
 }
 
+window.renderInstAdmin = renderInstAdmin;
+
 async function revokeInstMember(key) {
   if (!isInstitutionMode()) return;
   if (!key || !confirm('Revoke access for key ' + key + '? This cannot be undone.')) return;

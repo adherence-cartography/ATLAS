@@ -1,9 +1,96 @@
 /**
  * @fileoverview Role-based access control helpers for the ATLAS platform.
  * Single source of truth for workspace mode, role gates, View-As impersonation,
- * and feature entitlement checks.
+ * feature entitlement checks, and LMIC access tier provisioning.
  * @module auth-roles
  */
+
+// ══════════════════════════════════════════════
+// LMIC ACCESS TIER — WHO/World Bank classification
+// ══════════════════════════════════════════════
+// Low-income and Lower-middle-income countries per World Bank Atlas method.
+// Used to auto-detect eligibility for TESSERA GRC LMIC researcher access tier.
+// Matches the country names used in _CONS_COUNTRIES (sa-consortium.js).
+const _LMIC_COUNTRIES = new Set([
+  // Sub-Saharan Africa
+  'Angola','Benin','Burkina Faso','Burundi','Cameroon','Central African Republic',
+  'Chad','Comoros','Congo','Congo (DR)','Cote d\'Ivoire','Djibouti','Eritrea',
+  'Ethiopia','Gambia','Ghana','Guinea','Guinea-Bissau','Kenya','Lesotho',
+  'Liberia','Madagascar','Malawi','Mali','Mauritania','Mozambique','Niger',
+  'Nigeria','Rwanda','Senegal','Sierra Leone','Somalia','South Sudan','Sudan',
+  'Tanzania','Togo','Uganda','Zambia','Zimbabwe',
+  // North Africa & Middle East
+  'Egypt','Morocco','Tunisia','Syria','Yemen',
+  // South Asia
+  'Afghanistan','Bangladesh','India','Nepal','Pakistan','Sri Lanka',
+  // Southeast Asia
+  'Cambodia','Indonesia','Laos','Myanmar','Philippines','Timor-Leste','Vietnam',
+  // Central Asia
+  'Kyrgyzstan','Tajikistan','Uzbekistan',
+  // Latin America & Caribbean
+  'Bolivia','El Salvador','Haiti','Honduras','Nicaragua','Peru',
+  // Pacific
+  'Papua New Guinea','Solomon Islands','Vanuatu',
+  // Eastern Europe (Fogarty-eligible)
+  'Moldova','Ukraine',
+]);
+
+/**
+ * Returns true if the given country name is classified as Low-income or
+ * Lower-middle-income by the World Bank (LMIC designation).
+ *
+ * @param {string} country - Country name matching _CONS_COUNTRIES entries
+ * @returns {boolean}
+ */
+function isLMICCountry(country) {
+  return _LMIC_COUNTRIES.has(country);
+}
+
+/**
+ * Returns true if the current workspace has the LMIC researcher access tier.
+ * Set via workspaceProfile.features.lmic_tier (written by loadLMICTierFromFirebase
+ * or by superadmin provisioning in sa-consortium.js).
+ *
+ * @returns {boolean}
+ */
+function isLMICTier() {
+  if (!workspaceProfile) return false;
+  const f = workspaceProfile.features;
+  return !!(f && f.lmic_tier);
+}
+
+/**
+ * Loads LMIC access tier from Firebase (lmic_access/{uid}).
+ * If the record exists and is active, sets workspaceProfile.features.lmic_tier = true,
+ * elevating the workspace to full researcher capabilities at no cost.
+ * Called once after Firebase auth is confirmed. Non-blocking — silent on failure.
+ *
+ * @param {string} uid - Firebase auth UID
+ * @returns {Promise<void>}
+ */
+async function loadLMICTierFromFirebase(uid) {
+  if (!uid || !workspaceProfile) return;
+  try {
+    const db = (typeof database !== 'undefined' && database) ? database
+             : (window.firebase && window.firebase.database ? window.firebase.database() : null);
+    if (!db) return;
+    const snap = await db.ref('lmic_access/' + uid).once('value');
+    const val  = snap.val();
+    if (val && val.active === true) {
+      if (!workspaceProfile.features) workspaceProfile.features = {};
+      workspaceProfile.features.lmic_tier       = true;
+      workspaceProfile.features.lmic_country    = val.country    || '';
+      workspaceProfile.features.lmic_tessera_grc_id = val.tessera_grc_id || '';
+      workspaceProfile.features.lmic_granted_at = val.granted_at || 0;
+    }
+  } catch (_) {
+    // Silent — LMIC tier is a bonus entitlement, never block auth on failure
+  }
+}
+
+window.isLMICCountry          = isLMICCountry;
+window.isLMICTier             = isLMICTier;
+window.loadLMICTierFromFirebase = loadLMICTierFromFirebase;
 
 /**
  * @typedef {'superadmin'|'institution'|'pi'|'researcher'|'clinician'|'student'|'spectator'} AtlasRole
@@ -133,9 +220,10 @@ function isAmcInst() {
 
 // Apply tab and panel visibility to the institution dashboard based on institutionType
 function _applyInstTabGating() {
-  const health   = isHealthInst();
-  const academic = isAcademicInst();
-  const amc      = isAmcInst();
+  const health     = isHealthInst();
+  const academic   = isAcademicInst();
+  const amc        = isAmcInst();
+  const sponsored  = workspaceProfile && workspaceProfile.institutionType === 'sponsored';
 
   // Analytics tab — always visible (both health and academic have data)
   const analyticsBtn = document.getElementById('inst-tab-btn-analytics');
@@ -158,6 +246,10 @@ function _applyInstTabGating() {
   // Care gap monitor panel — health/AMC only
   const careGap = document.getElementById('inst-care-gap-panel');
   if (careGap) careGap.style.display = (health || amc) ? '' : 'none';
+
+  // Site Monitor tab — sponsored trial only
+  const siteMonitorBtn = document.getElementById('inst-tab-btn-sitemonitor');
+  if (siteMonitorBtn) siteMonitorBtn.style.display = sponsored ? '' : 'none';
 }
 
 /**
@@ -223,12 +315,14 @@ async function loadClinicianRoles() {
     const snap = await db.ref('_config/clinician_roles').once('value');
     const val  = snap.val();
     if (Array.isArray(val) && val.length > 0) {
-      _clinicianRolesSet = new Set(val);
+      _clinicianRolesSet.clear();
+      val.forEach(r => _clinicianRolesSet.add(r));
     }
     // If null or not a valid array, keep the hardcoded default set
   } catch(e) {
     // Silently fall back to hardcoded defaults on any error
-    _clinicianRolesSet = new Set(_CLINICIAN_ROLES_DEFAULT);
+    _clinicianRolesSet.clear();
+    _CLINICIAN_ROLES_DEFAULT.forEach(r => _clinicianRolesSet.add(r));
   }
 }
 
@@ -309,11 +403,13 @@ let _vaActive          = false;  // true when impersonating
 const VA_ROLES = {
   student:               { label: 'Student',                         dot: '#2ec98a' },
   researcher:            { label: 'Researcher',                      dot: '#8b6ff5' },
+  lmic_researcher:       { label: 'LMIC Researcher (TESSERA GRC)',    dot: '#f97316', profileRole: 'student', lmicTier: true },
   clinician:             { label: 'Clinician',                       dot: '#10b981' },
   pi:                    { label: 'PI · Investigator',               dot: '#d4a843' },
   institution_health:    { label: 'Institution · Health System',     dot: '#4e9cf5', profileRole: 'institution', institutionType: 'health'   },
   institution_academic:  { label: 'Institution · Academic',          dot: '#4e9cf5', profileRole: 'institution', institutionType: 'academic' },
   institution_amc:       { label: 'Institution · Academic Med Ctr',  dot: '#4e9cf5', profileRole: 'institution', institutionType: 'amc'      },
+  institution_sponsored: { label: 'Institution · Sponsored Trial',   dot: '#1a9488', profileRole: 'institution', institutionType: 'sponsored'},
   observer:              { label: 'Observer (read-only)',             dot: '#6b8099' },
   publication_license:   { label: 'Publication License',             dot: '#d4a843' },
 };
@@ -371,6 +467,7 @@ function activateViewAs(role) {
 
   // Override role in the live profile object
   // Institution variants carry a profileRole (always 'institution') + institutionType
+  // LMIC researcher variant carries profileRole 'student' + lmic_tier feature flag
   const _vaRoleDef = VA_ROLES[role];
   workspaceProfile.role = _vaRoleDef.profileRole || role;
   workspaceProfile.tier = _vaRoleDef.profileRole || role;
@@ -378,6 +475,18 @@ function activateViewAs(role) {
     workspaceProfile.institutionType = _vaRoleDef.institutionType;
   } else {
     delete workspaceProfile.institutionType;
+  }
+  if (_vaRoleDef.lmicTier) {
+    if (!workspaceProfile.features) workspaceProfile.features = {};
+    workspaceProfile.features.lmic_tier    = true;
+    workspaceProfile.features.lmic_country = 'Uganda';
+    workspaceProfile.features.lmic_tessera_grc_id = 'TESSERA-VA-DEMO';
+  } else {
+    if (workspaceProfile.features) {
+      delete workspaceProfile.features.lmic_tier;
+      delete workspaceProfile.features.lmic_country;
+      delete workspaceProfile.features.lmic_tessera_grc_id;
+    }
   }
 
   // Bust the workspace-scope cache so resolveAllowedWorkspaces re-evaluates
@@ -467,27 +576,34 @@ function getFeature(key) {
   const role = workspaceProfile && workspaceProfile.role;
   // isClinician() may not be callable yet if this is called very early; inline the check
   const _isClin = _clinicianRolesSet && _clinicianRolesSet.has(role);
+  // LMIC tier: treat student and independent users with lmic_tier like full researchers
+  const _isLMIC = !!(f && f.lmic_tier);
+  // Effective role for feature defaults: LMIC-tier students/independent get researcher defaults
+  const _effRole = _isLMIC && (role === 'student' || role === 'independent') ? 'researcher' : role;
   const defaults = {
-    csv_export_cap:  role === 'student'  ? 100 : null,  // 100/mo for student, unlimited above
-    bulk_upload:     role === 'researcher' || _isClin || role === 'pi' || role === 'institution' || role === 'superadmin',
-    peacs_tier:      role === 'student'     ? 'basic'
-                   : role === 'researcher'  ? 'standard'
-                   : _isClin               ? 'standard'
-                   : role === 'pi' || role === 'independent' ? 'standard'
+    csv_export_cap:  _isLMIC ? null                          // LMIC tier: unlimited exports
+                   : _effRole === 'student' ? 100 : null,   // 100/mo for student, unlimited above
+    bulk_upload:     _effRole === 'researcher' || _isClin || _effRole === 'pi' || _effRole === 'institution' || _effRole === 'superadmin',
+    peacs_tier:      _effRole === 'student'     ? 'basic'
+                   : _effRole === 'researcher'  ? 'standard'
+                   : _isClin                   ? 'standard'
+                   : _effRole === 'pi' || _effRole === 'independent' ? 'standard'
                    : 'advanced',
-    zoe_soap:        _isClin || role === 'pi' || role === 'institution' || role === 'superadmin',
-    api_access:      role === 'pi'          ? 'read'
-                   : role === 'institution' ? 'standard'
-                   : role === 'superadmin'  ? 'premium' : 'none',
-    sentinel:        role === 'researcher' || _isClin || role === 'pi' || role === 'institution' || role === 'superadmin',
-    ape:             role === 'researcher' || _isClin || role === 'pi' || role === 'institution' || role === 'superadmin',
-    benchmarking:    role === 'pi' || role === 'institution' || role === 'superadmin',
-    irb_cert:        role === 'researcher' || _isClin || role === 'pi' || role === 'institution' || role === 'superadmin',
-    sub_workspaces:  role === 'pi' || role === 'institution' || role === 'superadmin',
+    zoe_soap:        _isClin || _effRole === 'pi' || _effRole === 'institution' || _effRole === 'superadmin',
+    api_access:      _effRole === 'pi'          ? 'read'
+                   : _effRole === 'institution' ? 'standard'
+                   : _effRole === 'superadmin'  ? 'premium' : 'none',
+    sentinel:        _effRole === 'researcher' || _isClin || _effRole === 'pi' || _effRole === 'institution' || _effRole === 'superadmin',
+    ape:             _effRole === 'researcher' || _isClin || _effRole === 'pi' || _effRole === 'institution' || _effRole === 'superadmin',
+    benchmarking:    _effRole === 'pi' || _effRole === 'institution' || _effRole === 'superadmin',
+    irb_cert:        _effRole === 'researcher' || _isClin || _effRole === 'pi' || _effRole === 'institution' || _effRole === 'superadmin',
+    sub_workspaces:  _effRole === 'pi' || _effRole === 'institution' || _effRole === 'superadmin',
     // Observer: read-only global view for board members and funders
-    observer_read_only: role === 'observer',
+    observer_read_only: _effRole === 'observer',
     // Clinician billing: MTM/CCM/RTM panels
-    clinical_billing: _isClin || role === 'researcher' || role === 'pi' || role === 'institution' || role === 'superadmin',
+    clinical_billing: _isClin || _effRole === 'researcher' || _effRole === 'pi' || _effRole === 'institution' || _effRole === 'superadmin',
+    // Publication license: LMIC tier users pay $0 — waived via TESSERA GRC access grant
+    pub_license_waived: _isLMIC,
   };
   return typeof defaults[key] !== 'undefined' ? defaults[key] : null;
 }
@@ -510,7 +626,12 @@ async function checkExportCap(exportType) {
     const snap = await ref.once('value');
     const used = snap.val() || 0;
     if (used >= cap) {
-      showToast('Export limit reached (' + cap + ' records/month on Student tier). Upgrade to Researcher ($49/mo) for unlimited exports.', 6000);
+      showToast(
+        'Export limit reached (' + cap + ' records/month on Student tier). '
+        + 'Upgrade to Researcher ($49/mo) for unlimited exports, or apply for TESSERA GRC membership '
+        + 'if you are at an LMIC institution (access waived for approved members).',
+        7000
+      );
       return false;
     }
     await ref.set(used + 1);
@@ -571,11 +692,10 @@ async function _loadModulePaths() {
 }
 
 /**
- * Returns true if the current workspace role has access to the given module ID.
- * Module IDs are defined in _ATLAS_FEATURE_CATALOG (superadmin-workspace.js).
- *
- * Phase 1: Always returns true (backward-compatible — no UI breaks).
- * Phase 2: Reads _atlasModPaths + default path to gate each feature.
+ * Returns true if the current workspace has access to the given module ID,
+ * checking per-workspace revokes and grants first, then the SA-configured
+ * role-level paths in Firebase (platform_config/module_paths), and finally
+ * the role defaults in _ATLAS_DEFAULT_PATHS (superadmin-workspace.js).
  *
  * @param {string} moduleId - e.g. 'analytics_sdoh', 'research_pi_panel'
  * @returns {boolean}

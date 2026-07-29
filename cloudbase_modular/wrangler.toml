@@ -2,6 +2,15 @@ name = "atlas"
 main = "_worker.js"
 compatibility_date = "2024-09-02"
 
+# Binding summary for future developers:
+#   FIREBASE_DB_URL ([vars])   — Firebase Realtime Database REST endpoint used for
+#                                real-time data reads/writes (env.FIREBASE_DB_URL).
+#   DB ([d1_databases])        — Cloudflare D1 SQLite database used for assessments,
+#                                certifications, GAI snapshots, MaaS keys, and DHIS2
+#                                connections (env.DB).
+#   AI ([ai])                  — Workers AI binding used to run the Llama 3.1 8B
+#                                dropout prediction model (env.AI.run(...)).
+
 [assets]
 directory = "./"
 binding = "ASSETS"
@@ -9,8 +18,18 @@ binding = "ASSETS"
 [vars]
 LAMBDA_URL = "https://fv3y62xuce6w3t37oj73x5gzcq0uwdqo.lambda-url.us-east-1.on.aws"
 LAMBDA_URL_UAE = "https://krbqzf0ozg.execute-api.me-central-1.amazonaws.com"
+LAMBDA_URL_EU = "https://vjpxvwobavlcxk4bqgk5grmlmm0gdmbx.lambda-url.eu-central-1.on.aws"
 PARTNER_API_URL = "https://w0g7ua5h93.execute-api.us-east-1.amazonaws.com"
+FIREBASE_DB_URL = "https://adherence-project-2026-default-rtdb.firebaseio.com"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
 id = "5d74bb2df64d44ea8f58d707c924f780"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "atlas-db"
+database_id = "e4d079a5-af18-4d4a-b916-c6582983c9eb"
+
+[ai]
+binding = "AI"

@@ -45,6 +45,9 @@ const _C = {
   text:'rgba(205,216,232,0.92)', muted:'rgba(138,160,184,0.8)',
   dim:'rgba(96,120,152,0.65)', navy:'rgba(212,168,67,0.06)',
 };
+// Expose canonical design tokens globally — all other modules use window._ATLAS_COLORS as their fallback
+// so they reference this single object rather than each maintaining their own copy.
+window._ATLAS_COLORS = _C;
 
 // Inject CSS custom property tokens into <head> (idempotent).
 function _saInjectStyles() {
@@ -272,7 +275,7 @@ function _saInjectShell() {
   overlay.querySelector('#sa-ai-toggle').addEventListener('click', _saToggleAI);
 
   // Populate anomaly queue if cache is already warm (re-opened Mission Control)
-  if (_saCache.mmas.length > 0) _saRunAnomalyDetection();
+  if (_saCache.mmas.length > 0 && typeof _saRunAnomalyDetection === 'function') _saRunAnomalyDetection();
 }
 
 // ── Top Bar ──────────────────────────────────────────────────────────────────
@@ -467,7 +470,20 @@ function saTab(tabId) {
     case 'psychometrics': _saRenderPsychometrics(main); break;
     case 'ai':       _saRenderAI(main);       break;
     case 'research': _saRenderResearch(main);  break;
-    case 'consortium':    (window.saConsortiumInit ? window.saConsortiumInit(main) : (main.innerHTML = `<div style="color:${_C.muted};padding:20px;">Consortium module loading…</div>`)); break;
+    case 'consortium': {
+      if (window.saConsortiumInit) {
+        window.saConsortiumInit(main);
+      } else {
+        main.innerHTML = `<div style="color:${_C.muted};padding:20px;">Loading consortium module…</div>`;
+        const _tryConsortium = (n) => {
+          if (window.saConsortiumInit) { window.saConsortiumInit(main); return; }
+          if (n > 0) { setTimeout(() => _tryConsortium(n - 1), 400); return; }
+          main.innerHTML = `<div style="color:${_C.muted};padding:20px;">Consortium module failed to load — refresh the page or check the browser console for script errors.</div>`;
+        };
+        setTimeout(() => _tryConsortium(8), 400);
+      }
+      break;
+    }
     case 'platform':     _saRenderPlatform(main);     break;
     case 'observatory':  _saRenderObservatory(main);  break;
     case 'gai':          _saRenderGAI(main);          break;

@@ -38,8 +38,6 @@
    * @param {string}   opts.title        — Modal heading (e.g. "Authorise Record Deletion")
    * @param {string}   [opts.operation]  — Operation key from _ESIG_MEANINGS (e.g. 'DELETE_RECORD').
    *                                       Determines the read-only meaning text. Defaults to 'DEFAULT'.
-   * @param {string}   [opts.meaning]    — Deprecated: ignored when operation is provided. Kept for
-   *                                       backward-compat callers that don't pass operation yet.
    * @param {string}   [opts.actionLabel]— Primary button label (default: "Sign & Confirm")
    * @param {string}   [opts.recordRef]  — Record reference stored in the signature (for traceability)
    * @param {Function} [opts.onConfirm]  — Called with signature_id on successful sign
@@ -49,7 +47,7 @@
     opts = opts || {};
 
     // BP-CFR-01: Resolve meaning from operation type — read-only, not editable
-    const _resolvedMeaning = _ESIG_MEANINGS[opts.operation] || opts.meaning || _ESIG_MEANINGS.DEFAULT;
+    const _resolvedMeaning = _ESIG_MEANINGS[opts.operation] || _ESIG_MEANINGS.DEFAULT;
 
     // Graceful degradation — anonymous / no-Firebase session
     if (typeof firebase === 'undefined' || !firebase.auth || !firebase.auth().currentUser) {
@@ -235,7 +233,11 @@
             return;
           }
 
-          return db.ref('esignatures').push({
+          // Atomic multi-path write: signature + CFR-11 audit log in a single update
+          // so both succeed or neither does (CFR Part 11 §11.50 completeness requirement)
+          var sigKey = db.ref('esignatures').push().key;
+          var audKey = db.ref('audit_log').push().key;
+          var sigData = {
             uid:          uid,
             email:        email,
             display_name: user.displayName || user.email || uid,
@@ -243,27 +245,24 @@
             record_ref:   opts.recordRef || null,
             timestamp_utc: now,
             client_ts:    Date.now(),
-          });
+          };
+          var audData = {
+            cfr11:         true,
+            action:        'ESIGN',
+            table:         opts.recordRef || 'unknown',
+            actor_uid:     uid,
+            actor_email:   email,
+            meaning:       meaning,
+            signature_id:  sigKey,
+            timestamp_utc: now,
+            client_ts:     Date.now(),
+          };
+          var updates = {};
+          updates['esignatures/' + sigKey] = sigData;
+          updates['audit_log/' + audKey]   = audData;
+          return db.ref().update(updates).then(function() { return sigKey; });
         })
-        .then(function(ref) {
-          var signature_id = ref && ref.key ? ref.key : ('esign-' + Date.now());
-
-          // Write CFR-11 audit entry for the signature
-          var db = (typeof database !== 'undefined') ? database : null;
-          if (db) {
-            db.ref('audit_log').push({
-              cfr11:         true,
-              action:        'ESIGN',
-              table:         opts.recordRef || 'unknown',
-              actor_uid:     uid,
-              actor_email:   email,
-              meaning:       meaning,
-              signature_id:  signature_id,
-              timestamp_utc: now,
-              client_ts:     Date.now(),
-            }).catch(function(){});
-          }
-
+        .then(function(signature_id) {
           overlay.remove();
           if (typeof opts.onConfirm === 'function') opts.onConfirm(signature_id);
         })

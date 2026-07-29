@@ -1,3 +1,101 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// INSTITUTION NETWORK · SITE FRAGILITY ANALYTICS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Classifies a MAP assessment record into a stability phenotype.
+ * Expects normalized fields: r.pe, r.a, r.e, r.c, r.score
+ * Returns: 'stable' | 'conditional' | 'fragile' | 'hidden' | 'domain' | 'unknown'
+ */
+function _instsfClass(r) {
+  var pe = r.pe != null ? +r.pe : null;
+  var a  = r.a  != null ? +r.a  : null;
+  var e  = r.e  != null ? +r.e  : null;
+  var c  = r.c  != null ? +r.c  : null;
+  var sc = r.score != null ? +r.score : null;
+  if (pe === null) return 'unknown';
+  if (a !== null && e !== null && c !== null && a < 0.55 && e < 0.55 && c < 0.55) return 'fragile';
+  if (sc !== null && sc >= 6 && pe < 0.65) return 'hidden';
+  if ((a !== null && a < 0.35) || (e !== null && e < 0.35) || (c !== null && c < 0.35)) return 'domain';
+  if (pe >= 0.65 && (a == null || a >= 0.55) && (e == null || e >= 0.55) && (c == null || c >= 0.55)) return 'stable';
+  return 'conditional';
+}
+
+/**
+ * Renders the site-level fragility breakdown table into the given container.
+ * @param {HTMLElement} container - target element (id="inst-fragility-table")
+ * @param {Array} allRecords - flat array of MAP records, each normalized to have
+ *   .pe, .a, .e, .c, .score, and .workspace_key for grouping by site
+ */
+function _instRenderFragilityTable(container, allRecords) {
+  var recs = (allRecords || []).filter(function(r){ return r.pe != null; });
+  if (!recs.length) {
+    container.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);padding:16px 0;">No MAP assessment data available across child workspaces.</div>';
+    return;
+  }
+
+  // Group by workspace
+  var sites = {};
+  recs.forEach(function(r) {
+    var wk = r.workspace_key || r.workspaceKey || 'unknown';
+    if (!sites[wk]) sites[wk] = { n:0, stable:0, conditional:0, fragile:0, hidden:0, domain:0, peSum:0 };
+    var cl = _instsfClass(r);
+    sites[wk].n++;
+    sites[wk].peSum += (r.pe != null && !isNaN(+r.pe)) ? +r.pe : 0;
+    if (sites[wk][cl] !== undefined) sites[wk][cl]++;
+  });
+
+  var siteArr = Object.keys(sites).map(function(k) {
+    var s = sites[k];
+    var fragN = s.fragile + s.hidden + s.domain;
+    return { key:k, n:s.n, stable:s.stable, fragN:fragN,
+      fragPct: s.n ? Math.round(fragN/s.n*100) : 0,
+      meanPE: s.n ? s.peSum/s.n : 0 };
+  });
+  siteArr.sort(function(a,b){ return b.fragPct - a.fragPct; });
+
+  // Network summary bar
+  var totalN = recs.length;
+  var totalFragile = recs.filter(function(r){ var cl=_instsfClass(r); return cl==='fragile'||cl==='hidden'||cl==='domain'; }).length;
+  var netFragPct = totalN ? Math.round(totalFragile/totalN*100) : 0;
+  var netStable  = recs.filter(function(r){ return _instsfClass(r)==='stable'; }).length;
+  var netStaPct  = totalN ? Math.round(netStable/totalN*100) : 0;
+
+  var rows = siteArr.map(function(s) {
+    var fc = s.fragPct>=40?'#ef4444':s.fragPct>=20?'#f59e0b':'#10b981';
+    var sc = s.fragPct<15?'#10b981':'var(--dim)';
+    return '<tr style="border-top:1px solid var(--border);">'
+      +'<td style="padding:6px 10px;font-family:var(--font-mono);font-size:0.72rem;color:var(--text);">'+s.key+'</td>'
+      +'<td style="padding:6px 10px;font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);text-align:right;">'+s.n+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;"><span style="font-family:var(--font-mono);font-size:0.68rem;color:'+sc+';background:rgba(16,185,129,0.08);padding:1px 6px;border-radius:3px;">'+(s.n ? Math.round(s.stable/s.n*100) : 0)+'%</span></td>'
+      +'<td style="padding:6px 10px;text-align:right;"><span style="font-family:var(--font-mono);font-size:0.68rem;color:'+fc+';background:'+fc+'18;padding:1px 6px;border-radius:3px;">'+s.fragPct+'%</span></td>'
+      +'<td style="padding:6px 10px;font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);text-align:right;">'+(s.meanPE || 0).toFixed(3)+'</td>'
+      +'</tr>';
+  }).join('');
+
+  container.innerHTML =
+    '<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">'
+      +'<div style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;">'
+        +'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.7rem;font-weight:300;color:#10b981;">'+netStaPct+'%</div>'
+        +'<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:3px;">Network Stable</div></div>'
+      +'<div style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;">'
+        +'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.7rem;font-weight:300;color:#ef4444;">'+netFragPct+'%</div>'
+        +'<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:3px;">Network Fragile</div></div>'
+      +'<div style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;">'
+        +'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.7rem;font-weight:300;color:var(--text);">'+siteArr.length+'</div>'
+        +'<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:3px;">Active Sites</div></div>'
+    +'</div>'
+    +'<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Site Fragility Rates · Sorted by Risk</div>'
+    +'<table style="width:100%;border-collapse:collapse;">'
+    +'<thead><tr style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);">'
+    +'<th style="padding:4px 10px;text-align:left;">Site / Workspace</th>'
+    +'<th style="padding:4px 10px;text-align:right;">N</th>'
+    +'<th style="padding:4px 10px;text-align:right;">Stable %</th>'
+    +'<th style="padding:4px 10px;text-align:right;">Fragile %</th>'
+    +'<th style="padding:4px 10px;text-align:right;">Mean PE</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
 // ── MMAS-8 score recompute helper ────────────────────────────────────────────
 // Derives score from individual items rather than stored r.score, to correct
 // historical records where q8 was stored as integer index (0–4).
@@ -40,7 +138,13 @@ function _recomputeMMASScore(r) {
 // Super-admin role is set in Firebase token claims by Lambda — never hardcoded here
 // Institution key: sees only workspaces where parent_institution === currentWorkspace
 // Returns Promise<Set<string>> of allowed workspace keys (null = allow all)
-// Result is cached per session to avoid redundant Firebase reads on re-renders
+// Result is cached in memory (per render) and sessionStorage (per page load) to avoid
+// repeating the Firebase child-discovery reads across tab navigations/refreshes.
+function _saveAllowedWSToSession(ws, val) {
+  try {
+    sessionStorage.setItem('atlas_ws_allowed_' + ws, val === null ? '__all__' : JSON.stringify([...val]));
+  } catch(e) {}
+}
 /** @type {Set<string>|null|undefined} Cached allowed workspace set; null = all workspaces (superadmin); undefined = not yet resolved */
 let _allowedWSCache = undefined;
 /** @type {string|null} Workspace key for which _allowedWSCache was last computed */
@@ -61,8 +165,18 @@ async function resolveAllowedWorkspaces() {
   // Return cached result if workspace hasn't changed
   if (_allowedWSCache !== undefined && _allowedWSCacheKey === ws) return _allowedWSCache;
 
+  // Check sessionStorage so Firebase child-discovery reads are skipped on page reload
+  try {
+    const _ss = sessionStorage.getItem('atlas_ws_allowed_' + ws);
+    if (_ss !== null) {
+      _allowedWSCache = _ss === '__all__' ? null : new Set(JSON.parse(_ss));
+      _allowedWSCacheKey = ws;
+      return _allowedWSCache;
+    }
+  } catch(e) {}
+
   // ── SUPERADMIN: sees every workspace, no filter ──────────────────────────
-  if (isSuperAdmin()) { _allowedWSCache = null; _allowedWSCacheKey = ws; return null; }
+  if (isSuperAdmin()) { _allowedWSCache = null; _allowedWSCacheKey = ws; _saveAllowedWSToSession(ws, null); return null; }
 
   // Also check live Firebase token claims as a secondary confirmation
   try {
@@ -70,7 +184,7 @@ async function resolveAllowedWorkspaces() {
     if (user) {
       const tokenResult = await user.getIdTokenResult();
       if (tokenResult.claims && tokenResult.claims.role === 'superadmin') {
-        _allowedWSCache = null; _allowedWSCacheKey = ws; return null;
+        _allowedWSCache = null; _allowedWSCacheKey = ws; _saveAllowedWSToSession(ws, null); return null;
       }
     }
   } catch(e) {
@@ -134,11 +248,11 @@ async function resolveAllowedWorkspaces() {
     } catch(e) {
       if (window._atlasLog) window._atlasLog('warn', 'PI PEACS child discovery failed: ' + e.message);
     }
-    _allowedWSCache = allowed; _allowedWSCacheKey = ws; return allowed;
+    _allowedWSCache = allowed; _allowedWSCacheKey = ws; _saveAllowedWSToSession(ws, allowed); return allowed;
   }
 
   if (isIndependentMode() || (!isInstitutionMode())) {
-    const r = new Set([ws]); _allowedWSCache = r; _allowedWSCacheKey = ws; return r;
+    const r = new Set([ws]); _allowedWSCache = r; _allowedWSCacheKey = ws; _saveAllowedWSToSession(ws, r); return r;
   }
 
   // ── INSTITUTION: sees own workspace + all child PI workspaces ────────────
@@ -199,6 +313,7 @@ async function resolveAllowedWorkspaces() {
 
   _allowedWSCache = allowed;
   _allowedWSCacheKey = ws;
+  _saveAllowedWSToSession(ws, allowed);
   return allowed;
 }
 
@@ -363,6 +478,28 @@ function refreshCommandCenter() {
         if (_ptbody) _ptbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--poor);padding:20px;font-family:var(--font-mono);font-size:0.86rem;">Patient panel error: ${(e&&e.message||String(e)).slice(0,120)}</td></tr>`;
       }
 
+      // ── Site fragility analytics table ───────────────────────────────────
+      // Normalize MAP records (pe_score/arch_score/exec_score/ctx_score/institution_code)
+      // to the field names expected by _instsfClass (pe/a/e/c/score/workspace_key).
+      try {
+        const _fragEl = document.getElementById('inst-fragility-table');
+        if (_fragEl) {
+          const _mapNorm = mapRecords.map(function(r) {
+            return {
+              pe:            r.pe_score   != null ? r.pe_score   : (r.pe   != null ? r.pe   : null),
+              a:             r.arch_score != null ? r.arch_score : (r.a    != null ? r.a    : null),
+              e:             r.exec_score != null ? r.exec_score : (r.e    != null ? r.e    : null),
+              c:             r.ctx_score  != null ? r.ctx_score  : (r.c    != null ? r.c    : null),
+              score:         r.additive_score != null ? r.additive_score : (r.score != null ? r.score : null),
+              workspace_key: r.institution_code || r.workspace_key || r.workspaceKey || null,
+            };
+          });
+          _instRenderFragilityTable(_fragEl, _mapNorm);
+        }
+      } catch(e) {
+        console.error('_instRenderFragilityTable error:', e);
+      }
+
       // ── Avg preliminary PE (mmas_pe) in collective banner ────────────────
       if (el('icc-coll-avg-pe')) {
         const peVals = records.map(r => r.mmas_pe).filter(v => typeof v === 'number' && !isNaN(v));
@@ -392,10 +529,6 @@ function refreshCommandCenter() {
         .catch(() => {})
         .then(freshToken => {
           if (freshToken && typeof freshToken === 'string') {
-            try {
-              const _pay = JSON.parse(atob(freshToken.split('.')[1]));
-              console.log('[ATLAS] peacs_dimensions token claims at read time:', JSON.stringify({role:_pay.role, workspace:_pay.workspace, tier:_pay.tier}));
-            } catch(_) {}
           }
           return _dimRead();
         })

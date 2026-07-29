@@ -5,11 +5,20 @@
 
 // Globe state
 let _saGlobeMap       = null;   // mapboxgl.Map instance
-let _saGlobeLayers    = { density: true, heatmap: false, alerts: true, peacs: false, poi: false, airc: false };
+let _saGlobeLayers    = { density: true, heatmap: false, alerts: true, peacs: false, poi: false, tessera: false };
 let _saGlobeFilter    = 'all';  // 'all' | 'mmas' | 'map' | 'peacs'
 let _saGlobeClickPanel = null;  // current cluster detail panel content
 let _saPoiPopup       = null;   // active Mapbox popup for POI clicks
-let _saAircPopup      = null;   // active Mapbox popup for AIRC member clicks
+let _saTesseraPopup   = null;   // active Mapbox popup for TESSERA GRC member clicks
+
+// Time slider state
+let _saGlobeAllFeatures  = [];    // full unfiltered feature array (all instruments, all times)
+let _saGlobeTimeMonths   = [];    // [{ts, label}] — one entry per calendar month in the dataset
+let _saGlobeTimeIndex    = 0;     // current slider position; === _saGlobeTimeMonths.length means "All Time"
+let _saGlobeTimeMs       = null;  // null = no cutoff; otherwise ms timestamp of month end
+let _saGlobeTimePlaying  = false;
+let _saGlobeTimeTimer    = null;
+let _saGlobeHideInvalidTs = false; // superadmin toggle: exclude ts=0 records
 
 const _MB_TOKEN = ATLAS_MAPBOX_TOKEN;
 
@@ -18,6 +27,14 @@ function _saRenderGlobe(container) {
   container.style.padding = '0';
   container.style.overflow = 'hidden';
   container.style.position = 'relative';
+
+  // Reset time slider state on each globe render (tab re-entry tears down the DOM)
+  _saGlobeAllFeatures = [];
+  _saGlobeTimeMonths  = [];
+  _saGlobeTimeIndex   = 0;
+  _saGlobeTimeMs      = null;
+  _saGlobeTimePlaying = false;
+  if (_saGlobeTimeTimer) { clearInterval(_saGlobeTimeTimer); _saGlobeTimeTimer = null; }
 
   container.innerHTML = `
     <!-- Map canvas -->
@@ -40,7 +57,7 @@ function _saRenderGlobe(container) {
         ${_saLayerToggle('alerts',  '◐', 'Alert Zones',       _C.red,    true)}
         ${_saLayerToggle('peacs',   '◈', 'PEACS Activity',    _C.purple, false)}
         ${_saLayerToggle('poi',     '⬟', 'Verified POIs',     _C.green,  false)}
-        ${_saLayerToggle('airc',    '◎', 'AIRC Members',      '#d4a843', false)}
+        ${_saLayerToggle('tessera', '◎', 'TESSERA GRC Members', '#d4a843', false)}
       </div>
       <!-- POI contribute button (shown when POI layer is active) -->
       <div id="sa-globe-poi-contrib-wrap" style="display:none;padding:8px 14px;border-bottom:1px solid ${_C.border};">
@@ -81,6 +98,37 @@ function _saRenderGlobe(container) {
       </div>
     </div>
 
+    <!-- TESSERA Live counter (top-left, shown when TESSERA layer is on) -->
+    <div id="sa-tessera-counter" style="
+      position:absolute;top:16px;left:16px;z-index:10;
+      background:rgba(2,12,27,0.92);border:1px solid rgba(212,168,67,0.28);
+      border-radius:10px;padding:10px 14px;backdrop-filter:blur(12px);
+      display:none;min-width:190px;
+    ">
+      <div style="font-size:0.62rem;letter-spacing:0.26em;text-transform:uppercase;color:rgba(212,168,67,0.65);margin-bottom:6px;">TESSERA GRC</div>
+      <div style="display:flex;gap:14px;">
+        <div style="text-align:center;">
+          <div id="sa-tess-institutions" style="font-size:1.1rem;font-weight:700;color:#d4a843;">—</div>
+          <div style="font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(107,128,153,0.7);">Institutions</div>
+        </div>
+        <div style="text-align:center;">
+          <div id="sa-tess-countries" style="font-size:1.1rem;font-weight:700;color:#38bdf8;">—</div>
+          <div style="font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(107,128,153,0.7);">Countries</div>
+        </div>
+        <div style="text-align:center;">
+          <div id="sa-tess-studies" style="font-size:1.1rem;font-weight:700;color:#2ec98a;">—</div>
+          <div style="font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(107,128,153,0.7);">Open Studies</div>
+        </div>
+      </div>
+      <button onclick="_saOpenResearchExchange()" style="
+        margin-top:10px;width:100%;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;
+        letter-spacing:0.14em;text-transform:uppercase;padding:5px 8px;border-radius:5px;
+        cursor:pointer;border:1px solid rgba(212,168,67,0.3);background:rgba(212,168,67,0.07);
+        color:#d4a843;transition:background 0.15s;" onmouseover="this.style.background='rgba(212,168,67,0.14)'" onmouseout="this.style.background='rgba(212,168,67,0.07)'">
+        ◎ Research Exchange →
+      </button>
+    </div>
+
     <!-- Stats overlay (bottom-left) -->
     <div style="position:absolute;bottom:16px;left:16px;z-index:10;display:flex;gap:8px;">
       ${_saGlobeStat('sa-globe-total', 'Points', '—')}
@@ -106,6 +154,46 @@ function _saRenderGlobe(container) {
         padding:8px 14px;border-radius:7px;cursor:pointer;backdrop-filter:blur(8px);">
         ◍ Explain This Region →
       </button>
+    </div>
+
+    <!-- Time slider — shown after data loads when valid timestamps are found -->
+    <div id="sa-time-slider-bar" style="
+      display:none;position:absolute;bottom:64px;left:50%;transform:translateX(-50%);z-index:10;
+      width:clamp(320px,52vw,540px);background:rgba(2,12,27,0.92);
+      border:1px solid rgba(56,189,248,0.18);border-radius:10px;
+      padding:10px 16px;backdrop-filter:blur(12px);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button id="sa-time-play-btn" onclick="saGlobeTimeTogglePlay()" title="Play / Pause" style="
+          flex-shrink:0;width:28px;height:28px;border-radius:50%;
+          border:1px solid rgba(56,189,248,0.35);background:rgba(56,189,248,0.1);
+          color:#38bdf8;cursor:pointer;font-size:0.78rem;padding:0;line-height:1;
+          display:flex;align-items:center;justify-content:center;">▶</button>
+        <div id="sa-time-label" style="
+          flex-shrink:0;width:80px;font-family:'IBM Plex Mono',monospace;
+          font-size:0.74rem;color:#e8f0f8;text-align:center;letter-spacing:0.05em;">All Time</div>
+        <input type="range" id="sa-time-range" min="0" max="1" value="1" step="1"
+          oninput="saGlobeTimeScrub(this.value)"
+          style="flex:1;accent-color:#38bdf8;cursor:pointer;" />
+        <div id="sa-time-count" style="
+          flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;
+          color:rgba(56,189,248,0.65);min-width:54px;text-align:right;">— pts</div>
+      </div>
+      <!-- Superadmin row: timestamp audit info + hide toggle (shown if isSuperAdmin) -->
+      <div id="sa-time-admin-row" style="
+        display:none;margin-top:8px;padding-top:8px;
+        border-top:1px solid rgba(56,189,248,0.1);
+        align-items:center;justify-content:space-between;">
+        <div style="font-size:0.68rem;color:rgba(96,120,152,0.8);font-family:'IBM Plex Mono',monospace;">
+          <span id="sa-time-invalid-count" style="color:rgba(239,68,68,0.75);">0</span> records missing timestamps
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;
+          font-size:0.68rem;color:rgba(138,160,184,0.8);font-family:'IBM Plex Mono',monospace;">
+          <input type="checkbox" id="sa-time-hide-invalid"
+            onchange="saGlobeTimeHideInvalid(this.checked)"
+            style="accent-color:#ef4444;cursor:pointer;" />
+          Hide unverified
+        </label>
+      </div>
     </div>`;
 
   // Restore padding for other tabs when switching away
@@ -186,6 +274,7 @@ function _saGlobeAddData() {
   // MMAS points
   _saCache.mmas.forEach(r => {
     if (!r.latitude || !r.longitude) return;
+    if (r.map_q1 !== undefined) return; // MAP records handled below
     const score = r.score || 0;
     features.push({
       type: 'Feature',
@@ -196,19 +285,21 @@ function _saGlobeAddData() {
         normScore:  score / 8,
         workspace:  r.institution_code || 'Unknown',
         country:    r.country || 'Unknown',
+        source:     r.source || r.assessment_mode || 'mmas',
         ts:         r.timestamp || 0,
       }
     });
   });
 
-  // MAP instrument points (records with map_q1 field in assessments node)
-  // Note: _saCache.map (mapData node) is intentionally excluded here — those are geographic
-  // duplicates of MMAS assessment records already plotted above from _saCache.mmas.
+  // MAP instrument points — all records in assessments node with map_q1 present.
+  // Includes pharmacy gateway, CHW gateway, and self-assessment submissions.
   _saCache.mmas.filter(r => r.map_q1 !== undefined && r.latitude && r.longitude).forEach(r => {
     const _a=((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3;
     const _e=((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3;
-    const _c=0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2;
+    const _c=Math.max(0.5, 0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2);
     const pe = Math.pow(Math.max(0,_a*_e*_c),1/3);
+    // Determine origin: pharmacy, chw, or self-assessment
+    const origin = r.source || r.upload_source || r.assessment_mode || 'map';
     features.push({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [+r.longitude, +r.latitude] },
@@ -216,8 +307,9 @@ function _saGlobeAddData() {
         instrument: 'map',
         score:      pe * 8,
         normScore:  pe,
-        workspace:  r.institution_code || r.workspace || 'Unknown',
+        workspace:  r.institution_code || r.workspace || r.site_id || 'Unknown',
         country:    r.country || 'Unknown',
+        source:     origin,
         ts:         r.timestamp || 0,
       }
     });
@@ -236,10 +328,17 @@ function _saGlobeAddData() {
         normScore:  pe,
         workspace:  r.institution_code || 'Unknown',
         country:    r.country || 'Unknown',
+        source:     r.source || r.assessment_mode || 'peacs',
         ts:         r.timestamp || 0,
       }
     });
   });
+
+  // Store the full unfiltered set so time slider and instrument filter can work from it
+  _saGlobeAllFeatures = features.slice();
+
+  // Initialize time slider (shows only if valid timestamps are present)
+  _saGlobeInitTimeSlider(features);
 
   const geojson = { type: 'FeatureCollection', features };
 
@@ -427,20 +526,22 @@ function _saGlobeOpenDrawer(info) {
   // Store for AI explain
   window._saGlobeCurrentCluster = info;
 
-  // Find nearby records (within ~2 degrees for a fast approximation)
-  const nearby = [..._saCache.mmas, ..._saCache.map, ..._saCache.peacs].filter(r => {
-    if (!r.latitude || !r.longitude) return false;
-    return Math.abs(+r.latitude - info.lat) < 2 && Math.abs(+r.longitude - info.lng) < 2;
-  });
+  // Find nearby assessment records (within ~2 degrees).
+  // _saCache.mmas holds both MMAS-8 (no map_q1) and MAP instrument (has map_q1) records.
+  // _saCache.map is the mapData geo-pin node — excluded here to avoid double-counting.
+  const inRange = r => r.latitude && r.longitude &&
+    Math.abs(+r.latitude - info.lat) < 2 && Math.abs(+r.longitude - info.lng) < 2;
+
+  const nearbyMmas  = (_saCache.mmas  || []).filter(r => r.map_q1 === undefined && inRange(r));
+  const nearbyMap   = (_saCache.mmas  || []).filter(r => r.map_q1 !== undefined && inRange(r));
+  const nearbyPeacs = (_saCache.peacs || []).filter(inRange);
+  const nearby = [...nearbyMmas, ...nearbyMap, ...nearbyPeacs];
 
   const byWs = {};
   nearby.forEach(r => { const w = r.institution_code || r.workspace || '—'; byWs[w] = (byWs[w]||0)+1; });
   const topWs = Object.entries(byWs).sort((a,b) => b[1]-a[1]).slice(0,5);
 
-  const byInst = { mmas: 0, map: 0, peacs: 0 };
-  _saCache.mmas.filter(r => r.latitude && Math.abs(+r.latitude-info.lat)<2).forEach(()=>byInst.mmas++);
-  _saCache.map.filter(r => r.latitude && Math.abs(+r.latitude-info.lat)<2).forEach(()=>byInst.map++);
-  _saCache.peacs.filter(r => r.latitude && Math.abs(+r.latitude-info.lat)<2).forEach(()=>byInst.peacs++);
+  const byInst = { mmas: nearbyMmas.length, map: nearbyMap.length, peacs: nearbyPeacs.length };
 
   body.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -516,7 +617,7 @@ function saToggleLayer(layerId) {
   const on  = _saGlobeLayers[layerId];
   const col = layerId === 'density' ? _C.amber  : layerId === 'heatmap' ? _C.cyan
             : layerId === 'alerts'  ? _C.red     : layerId === 'poi'     ? _C.green
-            : layerId === 'airc'    ? '#d4a843'  : _C.purple;
+            : layerId === 'tessera' ? '#d4a843'  : _C.purple;
   if (btn) {
     btn.style.background = on ? col : 'rgba(56,189,248,0.1)';
     const knob = btn.querySelector('span');
@@ -531,9 +632,13 @@ function saToggleLayer(layerId) {
       _saLoadPoiLayer(_saGlobeMap);
     }
   }
-  // Lazy-load the AIRC member layer the first time it is turned on
-  if (layerId === 'airc' && on && _saGlobeMap && !_saGlobeMap.getSource('airc-members')) {
-    _saLoadAircLayer(_saGlobeMap);
+  // Lazy-load the TESSERA GRC member layer the first time it is turned on
+  if (layerId === 'tessera') {
+    const counterEl = document.getElementById('sa-tessera-counter');
+    if (counterEl) counterEl.style.display = on ? 'block' : 'none';
+    if (on && _saGlobeMap && !_saGlobeMap.getSource('tessera-members')) {
+      _saLoadTesseraLayer(_saGlobeMap);
+    }
   }
   _saGlobeApplyLayerVisibility();
 }
@@ -548,7 +653,7 @@ function _saGlobeApplyLayerVisibility() {
     alerts:  ['sa-alerts'],
     peacs:   ['sa-peacs-layer'],
     poi:     ['atlas-poi-layer'],
-    airc:    ['airc-dots'],
+    tessera: ['tessera-dots','tessera-pulse','tessera-arcs'],
   };
 
   Object.entries(layerMap).forEach(([key, ids]) => {
@@ -557,54 +662,21 @@ function _saGlobeApplyLayerVisibility() {
   });
 }
 
-// Filter points by instrument
+// Filter points by instrument — delegates to _saGlobeApplyTimeFilter which
+// applies both the instrument filter and the active time cutoff in one pass.
 function saGlobeFilter(filter) {
   _saGlobeFilter = filter;
 
-  // Update button styles
   ['all','mmas','map','peacs'].forEach(f => {
     const btn = document.getElementById('sa-gf-' + f);
     if (!btn) return;
     const active = f === filter;
-    btn.style.background = active ? _C.amberFaint : 'transparent';
-    btn.style.color      = active ? _C.amber : _C.muted;
+    btn.style.background  = active ? _C.amberFaint : 'transparent';
+    btn.style.color       = active ? _C.amber : _C.muted;
     btn.style.borderColor = active ? 'rgba(212,168,67,0.35)' : _C.border;
   });
 
-  const map = _saGlobeMap;
-  if (!map || !map.isStyleLoaded()) return;
-
-  // Rebuild features for the active filter
-  const filtered = {
-    type: 'FeatureCollection',
-    features: (map.getSource('sa-data')?._data?.features || [])
-      .filter(f => filter === 'all' || f.properties.instrument === filter)
-  };
-
-  // Re-inject data (if source exists)
-  if (map.getSource('sa-data')) {
-    // Need to rebuild GeoJSON then set data
-    // NOTE: _saCache.mmas holds both MMAS-8 records (no map_q1) and MAP instrument
-    // records (have map_q1). _saCache.map is the mapData node — geographic MMAS
-    // duplicates — which should NOT be used here to avoid double-counting.
-    const features = [];
-    const push = (arr, inst) => arr.forEach(r => {
-      if (!r.latitude || !r.longitude) return;
-      if (filter !== 'all' && inst !== filter) return;
-      const pe = inst === 'mmas' ? (r.score||0)/8 : inst === 'map' ? Math.pow(Math.max(0,((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3*((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3*(0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2)),1/3) : (r.pe!=null ? +r.pe : 0);
-      features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [+r.longitude, +r.latitude] },
-        properties: { instrument: inst, score: pe*8, normScore: pe,
-          workspace: r.institution_code||r.workspace||'Unknown', country: r.country||'Unknown', ts: r.timestamp||0 }
-      });
-    });
-    push((_saCache.mmas||[]).filter(r => r.map_q1 === undefined), 'mmas');
-    push((_saCache.mmas||[]).filter(r => r.map_q1 !== undefined), 'map');
-    push(_saCache.peacs, 'peacs');
-    map.getSource('sa-data').setData({ type: 'FeatureCollection', features });
-    _saSetEl('sa-globe-total', features.length.toLocaleString());
-  }
+  _saGlobeApplyTimeFilter();
 }
 
 // ── POI Layer ─────────────────────────────────────────────────────────────────
@@ -710,139 +782,621 @@ function _saLoadPoiLayer(map) {
   });
 }
 
-// ── AIRC Member Layer ─────────────────────────────────────────────────────────
+// ── TESSERA GRC Member Layer ──────────────────────────────────────────────────
 // Reads active consortium members from Firebase at consortium_members and
-// places one dot per member at the centroid of their country.
-// Dot color encodes tier: T1 gold, T2 blue, T3 green, T4 purple, T5 red.
-// Called lazily the first time the AIRC toggle is switched on.
-// Safe to call multiple times: guards on source existence.
-function _saLoadAircLayer(map) {
-  if (!map) return;
-  if (!window.database) {
-    console.warn('[ATLAS] _saLoadAircLayer: Firebase database not available');
-    return;
-  }
+// places markers at country centroids with pulsing glow rings and arcs.
+// Also reads research_exchange cards for the Research Pinboard.
+// Called lazily the first time the TESSERA GRC toggle is switched on.
+function _saLoadTesseraLayer(map) {
+  if (!map || !window.database) return;
 
-  // Country name to approximate centroid [lng, lat]
-  const _aircCentroids = {
-    'United States':        [-98.35,  39.50],
-    'USA':                  [-98.35,  39.50],
-    'United Kingdom':       [ -3.44,  55.38],
-    'UK':                   [ -3.44,  55.38],
-    'Canada':               [-96.80,  56.13],
-    'Australia':            [133.78, -25.27],
-    'Brazil':               [-51.93, -14.24],
-    'Germany':              [ 10.45,  51.17],
-    'France':               [  2.21,  46.23],
-    'Italy':                [ 12.57,  41.87],
-    'Spain':                [ -3.75,  40.46],
-    'Netherlands':          [  5.29,  52.13],
-    'Sweden':               [ 18.64,  60.13],
-    'Switzerland':          [  8.23,  46.82],
-    'Japan':                [138.25,  36.20],
-    'China':                [104.20,  35.86],
-    'India':                [ 78.96,  20.59],
-    'South Korea':          [127.77,  35.91],
-    'Israel':               [ 34.85,  31.05],
-    'Iran':                 [ 53.69,  32.43],
-    'Saudi Arabia':         [ 45.08,  23.89],
-    'Egypt':                [ 30.80,  26.82],
-    'South Africa':         [ 25.08, -29.00],
-    'Nigeria':              [  8.68,   9.08],
-    'Mexico':               [-102.55,  23.63],
-    'Argentina':            [-63.62, -38.42],
-    'Colombia':             [-74.30,   4.57],
-    'Peru':                 [-75.02,  -9.19],
-    'Turkey':               [ 35.24,  38.96],
-    'Poland':               [ 19.15,  51.92],
-    'Czech Republic':       [ 15.47,  49.82],
-    'Portugal':             [ -8.22,  39.40],
+  // Full country centroid list covering all TESSERA target regions
+  const _tesseraCentroids = {
+    // Americas
+    'United States':   [-98.35,  39.50], 'USA': [-98.35, 39.50],
+    'Canada':          [-96.80,  56.13],
+    'Mexico':          [-102.55, 23.63],
+    'Brazil':          [-51.93, -14.24],
+    'Argentina':       [-63.62, -38.42],
+    'Colombia':        [-74.30,   4.57],
+    'Peru':            [-75.02,  -9.19],
+    'Chile':           [-71.54, -35.68],
+    // Europe (full EU + EEA)
+    'United Kingdom':  [ -3.44,  55.38], 'UK': [-3.44, 55.38],
+    'Germany':         [ 10.45,  51.17],
+    'France':          [  2.21,  46.23],
+    'Italy':           [ 12.57,  41.87],
+    'Spain':           [ -3.75,  40.46],
+    'Portugal':        [ -8.22,  39.40],
+    'Netherlands':     [  5.29,  52.13],
+    'Belgium':         [  4.47,  50.50],
+    'Switzerland':     [  8.23,  46.82],
+    'Austria':         [ 14.55,  47.52],
+    'Sweden':          [ 18.64,  60.13],
+    'Norway':          [  8.47,  60.47],
+    'Denmark':         [  9.50,  56.26],
+    'Finland':         [ 25.75,  61.92],
+    'Poland':          [ 19.15,  51.92],
+    'Czech Republic':  [ 15.47,  49.82],
+    'Hungary':         [ 19.50,  47.16],
+    'Romania':         [ 24.97,  45.94],
+    'Bulgaria':        [ 25.49,  42.73],
+    'Croatia':         [ 15.20,  45.10],
+    'Greece':          [ 21.82,  39.07],
+    'Cyprus':          [ 33.43,  35.13],
+    'Malta':           [ 14.38,  35.94],
+    'Turkey':          [ 35.24,  38.96],
+    'Israel':          [ 34.85,  31.05],
+    // Middle East / Africa
+    'UAE':             [ 53.85,  23.42],
+    'Saudi Arabia':    [ 45.08,  23.89],
+    'Egypt':           [ 30.80,  26.82],
+    'Nigeria':         [  8.68,   9.08],
+    'Kenya':           [ 37.91,  -0.02],
+    'Ethiopia':        [ 40.49,   9.15],
+    'Ghana':           [ -1.02,   7.95],
+    'South Africa':    [ 25.08, -29.00],
+    'Iran':            [ 53.69,  32.43],
+    // Asia-Pacific
+    'India':           [ 78.96,  20.59],
+    'China':           [104.20,  35.86],
+    'Japan':           [138.25,  36.20],
+    'South Korea':     [127.77,  35.91],
+    'Singapore':       [103.82,   1.36],
+    'Australia':       [133.78, -25.27],
+    'New Zealand':     [174.88, -40.90],
+    'Thailand':        [100.99,  15.87],
+    'Philippines':     [121.77,  12.88],
+    'Indonesia':       [113.92,  -0.79],
+    'Malaysia':        [109.70,   3.14],
+    'Vietnam':         [108.28,  14.06],
+    'Pakistan':        [ 69.35,  30.38],
+    'Bangladesh':      [ 90.36,  23.68],
   };
 
-  // Tier color map
-  const _aircTierColors = {
-    1: '#d4a843',
-    2: '#4e9cf5',
-    3: '#2ec98a',
-    4: '#8b6ff5',
-    5: '#e05252',
+  // Tier definitions (match TESSERA GRC tiers in sa-consortium.js)
+  const _tierDef = {
+    1: { color: '#d4a843', label: 'Institutional Partner' },
+    2: { color: '#4e9cf5', label: 'Validation Partner' },
+    3: { color: '#2ec98a', label: 'Research Affiliate' },
+    4: { color: '#8b6ff5', label: 'Student Affiliate' },
+    5: { color: '#f59e0b', label: 'Industry Partner' },
   };
 
-  database.ref('consortium_members').once('value').then(snap => {
-    const raw = snap.val() || {};
+  // Load members and research exchange cards in parallel
+  Promise.all([
+    database.ref('consortium_members').once('value'),
+    database.ref('research_exchange').once('value'),
+  ]).then(([membersSnap, exchangeSnap]) => {
+    const raw      = membersSnap.val() || {};
+    const exchange = exchangeSnap.val() || {};
     const features = [];
+    const arcFeatures = [];
+    const now = Date.now();
 
+    // Build per-member card count
+    const memberCardCount = {};
+    Object.values(exchange).forEach(card => {
+      if (card.memberId && card.status !== 'closed' && (!card.expires || card.expires > now)) {
+        memberCardCount[card.memberId] = (memberCardCount[card.memberId] || 0) + 1;
+      }
+    });
+
+    // Build member feature list + populate centroid lookup by memberId
+    const memberCoords = {};
     Object.entries(raw).forEach(([memberId, member]) => {
-      // Only plot active members
       if (member.status && member.status !== 'active') return;
+      const centroid = _tesseraCentroids[member.country];
+      if (!centroid) return;
 
-      const centroid = _aircCentroids[member.country];
-      if (!centroid) return; // skip unrecognized countries silently
+      // Jitter members in the same country slightly so they don't stack
+      const idx = features.filter(f => f.properties.country === member.country).length;
+      const jitterLng = centroid[0] + (idx % 3 - 1) * 0.8;
+      const jitterLat = centroid[1] + Math.floor(idx / 3) * 0.8;
+      const coords = [jitterLng, jitterLat];
+      memberCoords[memberId] = coords;
 
-      const tier = member.tier ? +member.tier : 0;
-      const dotColor = _aircTierColors[tier] || '#8b6ff5';
+      const tier = member.tier ? +member.tier : 3;
+      const dotColor = (_tierDef[tier] || _tierDef[3]).color;
+      const cardCount = memberCardCount[memberId] || 0;
 
       features.push({
         type: 'Feature',
-        geometry: { type: 'Point', coordinates: centroid },
+        geometry: { type: 'Point', coordinates: coords },
         properties: {
-          memberId:    memberId,
-          name:        member.name        || 'Unknown Member',
+          memberId,
+          name:        member.name        || 'Unknown',
           institution: member.institution || '',
           country:     member.country     || '',
-          tier:        tier,
-          dotColor:    dotColor,
+          pi:          member.pi_name     || member.contact_name || '',
+          tier,
+          dotColor,
+          tierLabel:   (_tierDef[tier] || _tierDef[3]).label,
+          cardCount,
+          // Serialize collaborations as JSON string (Mapbox properties must be scalar)
+          collaborations: JSON.stringify(member.collaborations || []),
         }
       });
     });
 
-    const geojson = { type: 'FeatureCollection', features };
+    // Build collaboration arc features (GeoJSON LineString between partners)
+    const arcsSeen = new Set();
+    features.forEach(f => {
+      const memberId = f.properties.memberId;
+      const collabs  = JSON.parse(f.properties.collaborations || '[]');
+      collabs.forEach(partnerId => {
+        const arcKey = [memberId, partnerId].sort().join('|');
+        if (arcsSeen.has(arcKey)) return;
+        arcsSeen.add(arcKey);
+        const partnerCoords = memberCoords[partnerId];
+        if (!partnerCoords) return;
+        arcFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [f.geometry.coordinates, partnerCoords] },
+          properties: {}
+        });
+      });
+    });
 
-    // Source
-    if (map.getSource('airc-members')) {
-      map.getSource('airc-members').setData(geojson);
+    // Update TESSERA counter overlay
+    const uniqueCountries = new Set(Object.values(raw).map(m => m.country).filter(Boolean)).size;
+    const openStudies = Object.values(exchange).filter(c => c.type === 'study_seeking_collaborator' && c.status !== 'closed' && (!c.expires || c.expires > now)).length;
+    _saSetEl('sa-tess-institutions', features.length.toString());
+    _saSetEl('sa-tess-countries', uniqueCountries.toString());
+    _saSetEl('sa-tess-studies', openStudies.toString());
+
+    const geojson     = { type: 'FeatureCollection', features };
+    const arcGeojson  = { type: 'FeatureCollection', features: arcFeatures };
+
+    // Member source
+    if (map.getSource('tessera-members')) {
+      map.getSource('tessera-members').setData(geojson);
     } else {
-      map.addSource('airc-members', { type: 'geojson', data: geojson });
+      map.addSource('tessera-members', { type: 'geojson', data: geojson });
     }
 
-    // Layer
-    if (!map.getLayer('airc-dots')) {
+    // Collaboration arcs source
+    if (map.getSource('tessera-arcs-src')) {
+      map.getSource('tessera-arcs-src').setData(arcGeojson);
+    } else {
+      map.addSource('tessera-arcs-src', { type: 'geojson', data: arcGeojson });
+    }
+
+    // ── Layer: collaboration arcs ──────────────────────────────────────────
+    if (!map.getLayer('tessera-arcs')) {
       map.addLayer({
-        id:     'airc-dots',
-        type:   'circle',
-        source: 'airc-members',
-        layout: { visibility: _saGlobeLayers.airc ? 'visible' : 'none' },
+        id:     'tessera-arcs',
+        type:   'line',
+        source: 'tessera-arcs-src',
+        layout: { visibility: _saGlobeLayers.tessera ? 'visible' : 'none' },
         paint: {
-          'circle-radius':       8,
+          'line-color':   'rgba(212,168,67,0.3)',
+          'line-width':   1,
+          'line-dasharray': [3, 4],
+        }
+      });
+    }
+
+    // ── Layer: pulsing glow ring (outer) ───────────────────────────────────
+    if (!map.getLayer('tessera-pulse')) {
+      map.addLayer({
+        id:     'tessera-pulse',
+        type:   'circle',
+        source: 'tessera-members',
+        layout: { visibility: _saGlobeLayers.tessera ? 'visible' : 'none' },
+        paint: {
+          'circle-radius':         14,
+          'circle-color':          'transparent',
+          'circle-stroke-width':   2,
+          'circle-stroke-color':   ['get', 'dotColor'],
+          'circle-stroke-opacity': 0.30,
+          'circle-opacity':        0,
+        }
+      });
+    }
+
+    // ── Layer: member dots (primary marker) ───────────────────────────────
+    if (!map.getLayer('tessera-dots')) {
+      map.addLayer({
+        id:     'tessera-dots',
+        type:   'circle',
+        source: 'tessera-members',
+        layout: { visibility: _saGlobeLayers.tessera ? 'visible' : 'none' },
+        paint: {
+          'circle-radius':       9,
           'circle-color':        ['get', 'dotColor'],
-          'circle-opacity':      0.90,
-          'circle-stroke-width': 1.5,
-          'circle-stroke-color': 'rgba(255,255,255,0.35)',
+          'circle-opacity':      0.92,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': 'rgba(255,255,255,0.45)',
         }
       });
 
-      // Click popup
-      map.on('click', 'airc-dots', e => {
+      // Click: rich popup with Research Exchange CTA
+      map.on('click', 'tessera-dots', e => {
         const p      = e.features[0].properties;
         const coords = e.features[0].geometry.coordinates.slice();
+        const flag   = { 'United States':'🇺🇸','UK':'🇬🇧','United Kingdom':'🇬🇧','Germany':'🇩🇪',
+          'France':'🇫🇷','Italy':'🇮🇹','Spain':'🇪🇸','Greece':'🇬🇷','Netherlands':'🇳🇱',
+          'Canada':'🇨🇦','Australia':'🇦🇺','Japan':'🇯🇵','India':'🇮🇳','Brazil':'🇧🇷',
+          'UAE':'🇦🇪','Israel':'🇮🇱','Turkey':'🇹🇷','Poland':'🇵🇱','Sweden':'🇸🇪',
+          'China':'🇨🇳','South Korea':'🇰🇷','Singapore':'🇸🇬','South Africa':'🇿🇦',
+        }[p.country] || '🌍';
 
-        if (_saAircPopup) _saAircPopup.remove();
-        _saAircPopup = new mapboxgl.Popup({ closeButton: true, maxWidth: '260px' })
+        if (_saTesseraPopup) _saTesseraPopup.remove();
+        _saTesseraPopup = new mapboxgl.Popup({ closeButton: true, maxWidth: '280px', offset: 12 })
           .setLngLat(coords)
           .setHTML(`
             <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:#cdd8e8;padding:4px 2px;">
-              <div style="font-weight:700;font-size:0.88rem;margin-bottom:4px;color:#e8f0f8;">${_esc(p.name)}</div>
-              ${p.institution ? `<div style="margin-bottom:4px;color:rgba(200,215,230,0.85);">${_esc(p.institution)}</div>` : ''}
-              <div style="letter-spacing:0.1em;text-transform:uppercase;font-size:0.68rem;color:${p.dotColor};margin-bottom:6px;">Tier ${p.tier} Member</div>
-              ${p.country ? `<div style="color:rgba(138,160,184,0.9);">${_esc(p.country)}</div>` : ''}
+              <div style="font-weight:700;font-size:0.90rem;margin-bottom:3px;color:#e8f0f8;">${_esc(p.name)}</div>
+              ${p.institution ? `<div style="margin-bottom:5px;color:rgba(200,215,230,0.8);font-size:0.78rem;line-height:1.4;">${_esc(p.institution)}</div>` : ''}
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <span style="letter-spacing:0.1em;text-transform:uppercase;font-size:0.66rem;padding:2px 7px;border-radius:10px;background:${p.dotColor}22;border:1px solid ${p.dotColor}55;color:${p.dotColor};">${_esc(p.tierLabel)}</span>
+              </div>
+              ${p.country ? `<div style="color:rgba(138,160,184,0.9);margin-bottom:4px;">${flag} ${_esc(p.country)}</div>` : ''}
+              ${p.pi ? `<div style="color:rgba(138,160,184,0.7);font-size:0.72rem;margin-bottom:8px;">PI: ${_esc(p.pi)}</div>` : ''}
+              ${p.cardCount > 0 ? `
+              <div style="margin-top:6px;padding:6px 8px;background:rgba(212,168,67,0.07);border:1px solid rgba(212,168,67,0.2);border-radius:5px;margin-bottom:8px;">
+                <span style="color:#d4a843;font-size:0.70rem;">◎ ${p.cardCount} open research card${p.cardCount !== 1 ? 's' : ''}</span>
+              </div>` : ''}
+              <button onclick="_saOpenResearchExchange('${_esc(p.memberId)}')" style="
+                width:100%;margin-top:2px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;
+                letter-spacing:0.12em;text-transform:uppercase;padding:6px 8px;border-radius:5px;
+                cursor:pointer;border:1px solid rgba(212,168,67,0.3);background:rgba(212,168,67,0.08);
+                color:#d4a843;">View Research Pinboard →</button>
             </div>`)
           .addTo(map);
       });
 
-      map.on('mouseenter', 'airc-dots', () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', 'airc-dots', () => { map.getCanvas().style.cursor = ''; });
+      map.on('mouseenter', 'tessera-dots', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'tessera-dots', () => { map.getCanvas().style.cursor = ''; });
     }
+
+    // Store exchange data globally for the pinboard panel
+    window._saTesseraExchange = exchange;
+    window._saTesseraMembers  = raw;
+
   }).catch(err => {
-    console.error('[ATLAS] _saLoadAircLayer error:', err);
+    console.error('[ATLAS] _saLoadTesseraLayer error:', err);
   });
+}
+
+// ── Research Exchange / Pinboard ──────────────────────────────────────────────
+// Opens the cluster drawer as a Research Pinboard panel. If memberId is provided,
+// filters to that member's cards. Otherwise shows the full exchange feed.
+function _saOpenResearchExchange(memberId) {
+  const drawer = document.getElementById('sa-globe-drawer');
+  const body   = document.getElementById('sa-globe-drawer-body');
+  if (!drawer || !body) return;
+
+  const exchange = window._saTesseraExchange || {};
+  const members  = window._saTesseraMembers  || {};
+  const now      = Date.now();
+
+  const typeLabels = {
+    study_seeking_collaborator: { label: 'Seeking Collaborator', color: '#d4a843' },
+    grant_announcement:         { label: 'Grant Opportunity',    color: '#38bdf8' },
+    publication:                { label: 'Publication',          color: '#2ec98a' },
+    job_posting:                { label: 'Position Available',   color: '#8b6ff5' },
+  };
+
+  let cards = Object.entries(exchange)
+    .filter(([, c]) => c.status !== 'closed' && (!c.expires || c.expires > now))
+    .map(([id, c]) => ({ id, ...c }))
+    .sort((a, b) => (b.posted || 0) - (a.posted || 0));
+
+  if (memberId) {
+    cards = cards.filter(c => c.memberId === memberId);
+  }
+
+  const memberName = memberId && members[memberId] ? members[memberId].name : null;
+
+  const canPost = typeof isSuperAdmin === 'function' && isSuperAdmin();
+
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div style="font-size:0.66rem;letter-spacing:0.26em;text-transform:uppercase;color:rgba(212,168,67,0.65);margin-bottom:2px;">TESSERA GRC</div>
+        <div style="font-size:1.00rem;font-weight:700;color:#e8f0f8;">Research Exchange</div>
+        ${memberName ? `<div style="font-size:0.76rem;color:rgba(138,160,184,0.8);margin-top:2px;">${_esc(memberName)}</div>` : ''}
+      </div>
+      <button onclick="_saGlobeCloseDrawer()" style="background:none;border:none;color:rgba(96,120,152,0.65);font-size:1rem;cursor:pointer;">✕</button>
+    </div>
+
+    ${memberId ? `<button onclick="_saOpenResearchExchange()" style="
+      font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;
+      padding:5px 10px;border-radius:5px;cursor:pointer;border:1px solid rgba(212,168,67,0.25);
+      background:transparent;color:rgba(212,168,67,0.65);margin-bottom:14px;">← All Members</button>` : ''}
+
+    ${canPost ? `
+    <button onclick="_saOpenPostCard()" style="
+      width:100%;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;
+      letter-spacing:0.14em;text-transform:uppercase;padding:7px 10px;border-radius:6px;
+      cursor:pointer;border:1px solid rgba(212,168,67,0.35);background:rgba(212,168,67,0.09);
+      color:#d4a843;">+ Post Research Card</button>` : ''}
+
+    ${cards.length === 0 ? `
+    <div style="text-align:center;padding:32px 16px;color:rgba(96,120,152,0.65);font-size:0.82rem;line-height:1.7;">
+      No active research cards.<br/>
+      ${canPost ? 'Post the first card to connect with global collaborators.' : 'Check back soon as TESSERA members post their studies.'}
+    </div>` : cards.map(card => {
+      const tDef = typeLabels[card.type] || { label: card.type || 'Post', color: '#8b6ff5' };
+      const mName = card.memberId && members[card.memberId] ? members[card.memberId].name : '';
+      const mCountry = card.memberId && members[card.memberId] ? members[card.memberId].country : '';
+      const daysLeft = card.expires ? Math.max(0, Math.ceil((card.expires - now) / 86400000)) : null;
+      return `
+      <div style="background:rgba(13,27,46,0.9);border:1px solid rgba(212,168,67,0.12);border-radius:8px;padding:14px;margin-bottom:10px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;">
+          <div>
+            <span style="font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;
+              padding:2px 6px;border-radius:10px;background:${tDef.color}18;border:1px solid ${tDef.color}40;
+              color:${tDef.color};">${_esc(tDef.label)}</span>
+          </div>
+          ${daysLeft !== null ? `<span style="font-size:0.64rem;color:rgba(96,120,152,0.65);white-space:nowrap;">${daysLeft}d left</span>` : ''}
+        </div>
+        <div style="font-size:0.88rem;font-weight:700;color:#e8f0f8;margin-bottom:5px;line-height:1.3;">${_esc(card.title || '—')}</div>
+        ${mName ? `<div style="font-size:0.74rem;color:rgba(138,160,184,0.8);margin-bottom:4px;">${_esc(mName)}${mCountry ? ' · ' + _esc(mCountry) : ''}</div>` : ''}
+        ${card.description ? `<div style="font-size:0.78rem;color:rgba(138,160,184,0.75);line-height:1.55;margin-bottom:8px;">${_esc(card.description).slice(0, 160)}${(card.description||'').length > 160 ? '…' : ''}</div>` : ''}
+        ${card.countries_seeking && card.countries_seeking.length ? `
+        <div style="font-size:0.70rem;color:rgba(56,189,248,0.8);margin-top:4px;">
+          Seeking: ${(Array.isArray(card.countries_seeking) ? card.countries_seeking : [card.countries_seeking]).map(c => _esc(c)).join(', ')}
+        </div>` : ''}
+        ${card.contact_email ? `
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);">
+          <a href="mailto:${_esc(card.contact_email)}" style="color:#d4a843;font-size:0.70rem;text-decoration:none;">Contact PI →</a>
+        </div>` : ''}
+      </div>`;
+    }).join('')}`;
+
+  drawer.style.width = '320px';
+  document.getElementById('sa-globe-ai-btn') && (document.getElementById('sa-globe-ai-btn').style.display = 'none');
+}
+
+// Post a new research exchange card (superadmin only)
+function _saOpenPostCard() {
+  const body = document.getElementById('sa-globe-drawer-body');
+  if (!body) return;
+
+  const members = window._saTesseraMembers || {};
+  const memberOptions = Object.entries(members)
+    .filter(([, m]) => m.status !== 'inactive')
+    .map(([id, m]) => `<option value="${_esc(id)}">${_esc(m.name || id)}</option>`)
+    .join('');
+
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:0.96rem;font-weight:700;color:#e8f0f8;">Post Research Card</div>
+      <button onclick="_saOpenResearchExchange()" style="background:none;border:none;color:rgba(96,120,152,0.65);font-size:0.80rem;cursor:pointer;font-family:'IBM Plex Mono',monospace;">← Back</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <label style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(138,160,184,0.7);display:block;margin-bottom:4px;">Member</label>
+        <select id="rex-member" style="width:100%;background:#0d1b2e;border:1px solid rgba(212,168,67,0.2);color:#cdd8e8;padding:7px 10px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">
+          <option value="">— Select member —</option>${memberOptions}
+        </select>
+      </div>
+      <div>
+        <label style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(138,160,184,0.7);display:block;margin-bottom:4px;">Type</label>
+        <select id="rex-type" style="width:100%;background:#0d1b2e;border:1px solid rgba(212,168,67,0.2);color:#cdd8e8;padding:7px 10px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">
+          <option value="study_seeking_collaborator">Seeking Collaborator</option>
+          <option value="grant_announcement">Grant Opportunity</option>
+          <option value="publication">Publication</option>
+          <option value="job_posting">Position Available</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(138,160,184,0.7);display:block;margin-bottom:4px;">Title</label>
+        <input id="rex-title" placeholder="Study or announcement title" style="width:100%;background:#0d1b2e;border:1px solid rgba(212,168,67,0.2);color:#cdd8e8;padding:7px 10px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;box-sizing:border-box;" />
+      </div>
+      <div>
+        <label style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(138,160,184,0.7);display:block;margin-bottom:4px;">Description (optional)</label>
+        <textarea id="rex-desc" placeholder="Brief description (2–3 sentences)" rows="3" style="width:100%;background:#0d1b2e;border:1px solid rgba(212,168,67,0.2);color:#cdd8e8;padding:7px 10px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+      <div>
+        <label style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(138,160,184,0.7);display:block;margin-bottom:4px;">Countries Sought (comma-separated)</label>
+        <input id="rex-countries" placeholder="e.g. Greece, Germany, Spain" style="width:100%;background:#0d1b2e;border:1px solid rgba(212,168,67,0.2);color:#cdd8e8;padding:7px 10px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;box-sizing:border-box;" />
+      </div>
+      <div>
+        <label style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(138,160,184,0.7);display:block;margin-bottom:4px;">Contact Email</label>
+        <input id="rex-email" type="email" placeholder="pi@institution.edu" style="width:100%;background:#0d1b2e;border:1px solid rgba(212,168,67,0.2);color:#cdd8e8;padding:7px 10px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;box-sizing:border-box;" />
+      </div>
+      <div>
+        <label style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(138,160,184,0.7);display:block;margin-bottom:4px;">Expires (days from today)</label>
+        <input id="rex-days" type="number" value="90" min="7" max="365" style="width:100%;background:#0d1b2e;border:1px solid rgba(212,168,67,0.2);color:#cdd8e8;padding:7px 10px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;box-sizing:border-box;" />
+      </div>
+      <button onclick="_saSubmitResearchCard()" style="
+        width:100%;margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;
+        letter-spacing:0.14em;text-transform:uppercase;padding:9px;border-radius:6px;
+        cursor:pointer;border:1px solid rgba(212,168,67,0.4);background:rgba(212,168,67,0.12);
+        color:#d4a843;font-weight:600;">Post Card →</button>
+    </div>`;
+}
+
+function _saSubmitResearchCard() {
+  if (!window.database) return;
+  const memberId = document.getElementById('rex-member')?.value?.trim();
+  const type     = document.getElementById('rex-type')?.value;
+  const title    = document.getElementById('rex-title')?.value?.trim();
+  const desc     = document.getElementById('rex-desc')?.value?.trim();
+  const countries = (document.getElementById('rex-countries')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const email    = document.getElementById('rex-email')?.value?.trim();
+  const days     = parseInt(document.getElementById('rex-days')?.value) || 90;
+
+  if (!memberId || !title) { alert('Member and title are required.'); return; }
+
+  const card = {
+    memberId,
+    type:              type || 'study_seeking_collaborator',
+    title,
+    description:       desc || null,
+    countries_seeking: countries.length ? countries : null,
+    contact_email:     email || null,
+    posted:            Date.now(),
+    expires:           Date.now() + days * 86400000,
+    status:            'active',
+  };
+
+  database.ref('research_exchange').push(card)
+    .then(() => {
+      showToast('Research card posted to TESSERA Exchange.', 3000);
+      // Reload the exchange data and refresh the layer
+      database.ref('research_exchange').once('value').then(snap => {
+        window._saTesseraExchange = snap.val() || {};
+        _saOpenResearchExchange();
+      });
+    })
+    .catch(err => {
+      console.error('[ATLAS] Research card post failed:', err);
+      alert('Could not post card. Check console for details.');
+    });
+}
+
+// ── Time Slider ───────────────────────────────────────────────────────────────
+
+// Called from _saGlobeAddData after features are built.
+// Computes the month range, logs the timestamp audit, and wires up the slider.
+function _saGlobeInitTimeSlider(features) {
+  const validTs    = features.map(f => f.properties.ts).filter(t => t > 0);
+  const invalidCnt = features.length - validTs.length;
+  const pct        = features.length > 0 ? ((invalidCnt / features.length) * 100).toFixed(1) : '0';
+
+  if (validTs.length === 0) return; // no time data — keep slider hidden
+
+  // Build one entry per calendar month from earliest record to now
+  const minTs = Math.min(...validTs);
+  _saGlobeTimeMonths = [];
+  const cursor = new Date(minTs);
+  cursor.setDate(1);
+  cursor.setHours(0, 0, 0, 0);
+  const now = Date.now();
+
+  while (cursor.getTime() <= now) {
+    const label = cursor.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    cursor.setMonth(cursor.getMonth() + 1);
+    _saGlobeTimeMonths.push({ ts: cursor.getTime() - 1, label }); // end of that month
+  }
+
+  if (_saGlobeTimeMonths.length < 2) return; // dataset spans less than two months
+
+  const rangeEl      = document.getElementById('sa-time-range');
+  const bar          = document.getElementById('sa-time-slider-bar');
+  const adminRow     = document.getElementById('sa-time-admin-row');
+  const invalidEl    = document.getElementById('sa-time-invalid-count');
+
+  if (!bar || !rangeEl) return;
+
+  // Slider max = _saGlobeTimeMonths.length; that index means "All Time" (no cutoff)
+  rangeEl.min   = '0';
+  rangeEl.max   = String(_saGlobeTimeMonths.length);
+  rangeEl.value = String(_saGlobeTimeMonths.length);
+  _saGlobeTimeIndex = _saGlobeTimeMonths.length;
+
+  if (invalidEl) invalidEl.textContent = invalidCnt.toString();
+
+  // Show the superadmin row only for superadmins
+  if (adminRow && invalidCnt > 0 && typeof isSuperAdmin === 'function' && isSuperAdmin()) {
+    adminRow.style.display = 'flex';
+  }
+
+  bar.style.display = 'block';
+  _saGlobeUpdateTimeLabel();
+}
+
+// Single source of truth for what appears on the globe — applies both the
+// active time cutoff and the instrument filter to _saGlobeAllFeatures.
+function _saGlobeApplyTimeFilter() {
+  const map = _saGlobeMap;
+  if (!map || !map.isStyleLoaded() || !map.getSource('sa-data')) return;
+
+  let filtered = _saGlobeAllFeatures;
+
+  // Time cutoff (cumulative: show all ts <= cutoff)
+  if (_saGlobeTimeMs !== null) {
+    filtered = filtered.filter(f => {
+      const ts = f.properties.ts;
+      if (!ts) return !_saGlobeHideInvalidTs;
+      return ts <= _saGlobeTimeMs;
+    });
+  } else if (_saGlobeHideInvalidTs) {
+    filtered = filtered.filter(f => f.properties.ts > 0);
+  }
+
+  // Instrument filter on top
+  if (_saGlobeFilter !== 'all') {
+    filtered = filtered.filter(f => f.properties.instrument === _saGlobeFilter);
+  }
+
+  map.getSource('sa-data').setData({ type: 'FeatureCollection', features: filtered });
+
+  // Update stats overlay
+  const countries  = new Set(filtered.map(f => f.properties.country).filter(c => c && c !== 'Unknown')).size;
+  const workspaces = new Set(filtered.map(f => f.properties.workspace).filter(w => w && w !== 'Unknown')).size;
+  _saSetEl('sa-globe-total',     filtered.length.toLocaleString());
+  _saSetEl('sa-globe-countries', countries.toString());
+  _saSetEl('sa-globe-ws',        workspaces.toString());
+
+  // Update count badge in slider bar
+  const countEl = document.getElementById('sa-time-count');
+  if (countEl) countEl.textContent = filtered.length.toLocaleString() + ' pts';
+}
+
+// Called by the range input's oninput handler
+function saGlobeTimeScrub(value) {
+  _saGlobeTimeIndex = parseInt(value, 10);
+  _saGlobeUpdateTimeLabel();
+  _saGlobeApplyTimeFilter();
+}
+
+// Sync the label and _saGlobeTimeMs from the current slider index
+function _saGlobeUpdateTimeLabel() {
+  const labelEl = document.getElementById('sa-time-label');
+  if (_saGlobeTimeIndex >= _saGlobeTimeMonths.length) {
+    if (labelEl) labelEl.textContent = 'All Time';
+    _saGlobeTimeMs = null;
+  } else {
+    if (labelEl) labelEl.textContent = _saGlobeTimeMonths[_saGlobeTimeIndex].label;
+    _saGlobeTimeMs = _saGlobeTimeMonths[_saGlobeTimeIndex].ts;
+  }
+}
+
+// Play / Pause toggle (called by the ▶ button)
+function saGlobeTimeTogglePlay() {
+  if (_saGlobeTimePlaying) { _saGlobeTimePause(); } else { _saGlobeTimePlay(); }
+}
+
+function saGlobeTimePlay() {
+  if (_saGlobeTimePlaying || _saGlobeTimeMonths.length === 0) return;
+  _saGlobeTimePlaying = true;
+  const playBtn = document.getElementById('sa-time-play-btn');
+  if (playBtn) playBtn.textContent = '⏸';
+
+  // Rewind to the beginning if already at the end
+  if (_saGlobeTimeIndex >= _saGlobeTimeMonths.length) {
+    _saGlobeTimeIndex = 0;
+    const rangeEl = document.getElementById('sa-time-range');
+    if (rangeEl) rangeEl.value = '0';
+    _saGlobeUpdateTimeLabel();
+    _saGlobeApplyTimeFilter();
+  }
+
+  _saGlobeTimeTimer = setInterval(() => {
+    _saGlobeTimeIndex++;
+    const rangeEl = document.getElementById('sa-time-range');
+    if (rangeEl) rangeEl.value = String(_saGlobeTimeIndex);
+    _saGlobeUpdateTimeLabel();
+    _saGlobeApplyTimeFilter();
+    if (_saGlobeTimeIndex >= _saGlobeTimeMonths.length) _saGlobeTimePause();
+  }, 800);
+}
+
+function _saGlobeTimePause() {
+  _saGlobeTimePlaying = false;
+  if (_saGlobeTimeTimer) { clearInterval(_saGlobeTimeTimer); _saGlobeTimeTimer = null; }
+  const playBtn = document.getElementById('sa-time-play-btn');
+  if (playBtn) playBtn.textContent = '▶';
+}
+
+// Superadmin: hide/show records with ts=0
+function saGlobeTimeHideInvalid(checked) {
+  _saGlobeHideInvalidTs = checked;
+  _saGlobeApplyTimeFilter();
 }

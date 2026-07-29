@@ -1094,6 +1094,7 @@ async function downloadMAPBulkTemplate() {
   if (btn) { btn.textContent = orig; btn.disabled = false; }
 }
 window.downloadMAPBulkTemplate = downloadMAPBulkTemplate;
+window.processBulkUpload = processBulkUpload;
 
 /**
  * Routes template download to the correct instrument template based on current import tool.

@@ -2,7 +2,8 @@ name = "atlas-api"
 main = "_api_worker.js"
 compatibility_date = "2024-09-02"
 
+# Standalone API worker deployment config. Keep database_id in sync with ../wrangler.toml.
 [[d1_databases]]
 binding = "DB"
 database_name = "atlas-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "e4d079a5-af18-4d4a-b916-c6582983c9eb"

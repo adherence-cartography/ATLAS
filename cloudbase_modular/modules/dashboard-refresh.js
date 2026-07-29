@@ -145,13 +145,17 @@ function _finishMmasLoad(dashMmasData) {
   // Freemium users (EXPL-XXXXXXXX) have a real isolated cohort and do get live updates.
   if (!ws || ws === 'EXPLORER' || ws === 'INDEPENDENT') return;
 
-  if (window._mmasDashListener) {
-    try { database.ref('assessments').off('child_added', window._mmasDashListener); } catch(e) {}
+  if (window._mmasDashListenerRef) {
+    try { window._mmasDashListenerRef.off('child_added', window._mmasDashListener); } catch(e) {}
   }
   const since = Date.now();
-  window._mmasDashListener = database.ref('assessments').on('child_added', snap => {
+  // Server-side timestamp filter prevents Firebase from sending the full historical
+  // collection when the listener attaches — only records newer than `since` arrive.
+  const _mmasLiveRef = database.ref('assessments').orderByChild('timestamp').startAt(since);
+  window._mmasDashListenerRef = _mmasLiveRef;
+  window._mmasDashListener = _mmasLiveRef.on('child_added', snap => {
     const r = snap.val();
-    if (!r || r.timestamp <= since) return;
+    if (!r) return;
     // If allowed workspace cache hasn't resolved yet, defer this record to next full reload
     if (!isSuperAdmin() && !isInstitutionMode() && typeof _allowedWSCache === 'undefined') {
       clearTimeout(window._mmasDashRefreshTimer);
@@ -422,7 +426,7 @@ function renderMmasDashboard(records, isInstitution) {
       _guide.id = _guideId;
       _guide.className = 'mmas-score-guide';
       _guide.innerHTML = '<span class="mmas-score-guide-item"><span class="mmas-badge mmas-high">HIGH</span> = 8</span>'
-        + '<span class="mmas-score-guide-item"><span class="mmas-badge mmas-medium">MED</span> = 6–7</span>'
+        + '<span class="mmas-score-guide-item"><span class="mmas-badge mmas-medium">MED</span> = 6–&lt;8</span>'
         + '<span class="mmas-score-guide-item"><span class="mmas-badge mmas-low">LOW</span> = &lt;6</span>';
       _guideTarget.appendChild(_guide);
     }
@@ -615,8 +619,6 @@ function loadPeacsCohortData() {
 
   // PERF: For non-superadmin roles, use server-side filtering by institution_code to avoid
   // downloading the entire peacs_assessments table on every dashboard load.
-  // NOTE: firebase/database.rules.json requires ".indexOn": ["institution_code"] on the
-  // peacs_assessments node for this orderByChild query to run efficiently on the server.
   const peacsRef = isSuperAdmin()
     ? database.ref('peacs_assessments')
     : database.ref('peacs_assessments').orderByChild('institution_code').equalTo(currentWorkspace);
@@ -692,13 +694,15 @@ function loadPeacsCohortData() {
     _maybeRenderCorrelation();
 
     // Live listener: auto-refresh PEACS dashboard on new submissions (mirrors MMAS pattern)
-    if (window._peacsDashListener) {
-      try { database.ref('peacs_assessments').off('child_added', window._peacsDashListener); } catch(e) {}
+    if (window._peacsDashListenerRef) {
+      try { window._peacsDashListenerRef.off('child_added', window._peacsDashListener); } catch(e) {}
     }
     const _peacsSince = Date.now();
-    window._peacsDashListener = database.ref('peacs_assessments').on('child_added', snap => {
+    const _peacsLiveRef = database.ref('peacs_assessments').orderByChild('timestamp').startAt(_peacsSince);
+    window._peacsDashListenerRef = _peacsLiveRef;
+    window._peacsDashListener = _peacsLiveRef.on('child_added', snap => {
       const r = snap.val();
-      if (!r || r.timestamp <= _peacsSince) return;
+      if (!r) return;
       // If allowed workspace cache hasn't resolved yet, defer this record to next full reload
       if (!isSuperAdmin() && !isInstitutionMode() && typeof _allowedWSCache === 'undefined') {
         clearTimeout(window._peacsDashRefreshTimer);

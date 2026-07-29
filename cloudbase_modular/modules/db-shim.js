@@ -1,20 +1,27 @@
 // ══════════════════════════════════════════════════════════════════════════════
-// ATLAS DB SHIM — UAE Data Residency Layer
+// ATLAS DB SHIM — Multi-Region Data Residency Layer
 // ══════════════════════════════════════════════════════════════════════════════
 //
 // Presents the same API as Firebase's database.ref() but routes writes through
-// the ATLAS Lambda → DynamoDB in AWS me-central-1 (Abu Dhabi, UAE).
+// regional ATLAS Lambda → DynamoDB instances for data residency compliance.
 //
-// Strategy during migration: DUAL WRITE (Phase 1 — default)
+// Supported regions and their DynamoDB backends:
+//   us-east-1     (Virginia)   — default for all non-residency workspaces
+//   me-central-1  (Abu Dhabi)  — UAE PDPL: ALTHIQA-* workspaces
+//   eu-central-1  (Frankfurt)  — EU GDPR:  workspaceProfile.region === 'eu'
+//
+// Write strategy:
+//
+// Phase 1 — dual-write (legacy default, still active for non-residency workspaces):
 //   Every write goes to BOTH Firebase (existing reads stay intact) AND DynamoDB
-//   (UAE data residency).
+//   (regional data residency). Controlled by the absence of the dyna_only flag.
 //
-// Phase 2 — dyna_only flag (per-workspace in workspaceProfile):
+// Phase 2 — dyna_only (active for ALTHIQA/UAE workspaces):
 //   When workspaceProfile.dyna_only === true:
 //     • Writes go ONLY to DynamoDB (Firebase writes are suppressed).
 //     • .once() reads on DYNA_PATHS are served from DynamoDB via atlasDB.query().
 //     • .on() listeners fall back to a one-time DynamoDB fetch (no real-time push).
-//   To activate for an ALTHIQA workspace: set dyna_only:true in its SSM profile.
+//   Set dyna_only:true in the workspace SSM profile to activate for any workspace.
 //
 // Usage — replace database.ref() with atlasDB():
 //   Old: database.ref('assessments').push(data)
@@ -27,15 +34,25 @@
 (function() {
   'use strict';
 
+  // ── Module-scope state ───────────────────────────────────────────────────────
+  // Session identity — set by the auth module on login/logout via setAtlasSessionId().
+  // Used in _cfr11Audit() to stamp audit records with the active session UID.
+  let _atlasSessionId = null;
+
   // ── Config ──────────────────────────────────────────────────────────────────
-  // UAE workspaces (ALTHIQA-*) route to me-central-1 (Abu Dhabi, UAE).
-  // All other workspaces route to us-east-1 (existing infrastructure).
+  // UAE workspaces (ALTHIQA-*) → me-central-1 (Abu Dhabi, UAE) — UAE PDPL
+  // EU workspaces (profile.region === 'eu') → eu-central-1 (Frankfurt) — GDPR
+  // All other workspaces → us-east-1 (Virginia, default)
   const LAMBDA_URL_UAE = '/lambda-proxy-uae';
-  const LAMBDA_URL_US  = 'https://fv3y62xuce6w3t37oj73x5gzcq0uwdqo.lambda-url.us-east-1.on.aws';
+  const LAMBDA_URL_EU  = '/lambda-proxy-eu';
+  const LAMBDA_URL_US  = '/lambda-proxy';
 
   function _lambdaUrl() {
     const ws = (typeof currentWorkspace !== 'undefined') ? currentWorkspace : '';
-    return (ws && ws.startsWith('ALTHIQA')) ? LAMBDA_URL_UAE : LAMBDA_URL_US;
+    if (ws && ws.startsWith('ALTHIQA')) return LAMBDA_URL_UAE;
+    const region = (typeof workspaceProfile !== 'undefined' && workspaceProfile) ? workspaceProfile.region : null;
+    if (region === 'eu') return LAMBDA_URL_EU;
+    return LAMBDA_URL_US;
   }
 
   // Paths routed through DynamoDB (UAE). All others fall through to Firebase only.
@@ -47,6 +64,8 @@
     'audit_log',
     'ws_audit',
     'mapData',
+    'map_assessments',
+    'map_sessions',
   ]);
 
   // Map Firebase path names → Lambda op names
@@ -58,6 +77,8 @@
     'audit_log':                'push_audit',
     'ws_audit':                 'push_audit',
     'mapData':                  'push_map',
+    'map_assessments':          'push_map_assessment',
+    'map_sessions':             'set_map_session',
   };
 
   // ── dyna_only flag ───────────────────────────────────────────────────────────
@@ -170,7 +191,7 @@
         payload_hash:  hash,
         timestamp_utc: new Date().toISOString(),
         client_ts:     Date.now(),
-        session_id:    (typeof _atlasSessionId !== 'undefined') ? _atlasSessionId : null,
+        session_id:    _atlasSessionId,
       };
       if (typeof database !== 'undefined') {
         database.ref('audit_log').push(entry).catch(() => {});
@@ -420,7 +441,12 @@
     }
   };
 
+  // ── Session ID setter — called by auth module on login/logout ────────────────
+  // Called by auth module on login/logout.
+  function setAtlasSessionId(uid) { _atlasSessionId = uid || null; }
+
   // ── Expose globally ──────────────────────────────────────────────────────────
-  window.atlasDB = atlasDB;
+  window.atlasDB            = atlasDB;
+  window.setAtlasSessionId  = setAtlasSessionId;
 
 })();

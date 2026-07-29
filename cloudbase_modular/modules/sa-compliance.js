@@ -101,19 +101,23 @@ function _compBtn(label, onclick, color) {
 
 function _compRenderLocalisation(panel) {
   const infra = [
-    { service:'DynamoDB — Patient Assessments',   region:'me-central-1 · Abu Dhabi, UAE',                   framework:'UAE PDPL',    note:'Primary PHI store — UAE-resident. Dual-write active from db-shim.' },
-    { service:'DynamoDB — PEACS Records',         region:'me-central-1 · Abu Dhabi, UAE',                   framework:'UAE PDPL',    note:'UAE-resident.' },
-    { service:'DynamoDB — Audit Log',             region:'me-central-1 · Abu Dhabi, UAE',                   framework:'21 CFR Pt 11',note:'Immutable audit trail. UAE-resident.' },
-    { service:'Lambda — Data Relay (US)',         region:'us-east-1 · N. Virginia, USA',                    framework:'HIPAA / PDPL',note:'Primary auth, ZOE, and all non-UAE routes. UAE workspace data routed separately via UAE Lambda.' },
-    { service:'Lambda — Data Relay (UAE)',        region:'me-central-1 · Abu Dhabi, UAE',                   framework:'UAE PDPL',    note:'Lambda function and DynamoDB writes are UAE-resident. IAM roles are AWS-global by design (not a residency violation). SSM param migration to me-central-1 complete.' },
-    { service:'SSM Parameter Store',              region:'me-central-1 (ALTHIQA) · us-east-1 (all others)', framework:'UAE PDPL',    note:'Lambda routes ALTHIQA workspace params to me-central-1 SSM. New ALTHIQA workspaces are born in me-central-1.' },
-    { service:'SES — Email Delivery',             region:'us-east-1 · N. Virginia, USA',                    framework:'HIPAA / PDPL',note:'Magic-link and OTP emails only — no PHI payload transmitted.' },
-    { service:'Firebase Realtime Database',       region:'us-central1 · Iowa, USA (default)',               framework:'HIPAA / PDPL',note:'ALTHIQA workspaces are fully exempt — dyna_only:true is set at account creation. Firebase receives no PHI from UAE clients.' },
-    { service:'Cloudflare Workers',               region:'Distributed (nearest PoP)',                        framework:'HIPAA',       note:'Reverse-proxy only — no PHI stored at edge. PHI transits in-flight (TLS 1.3) to Lambda. BAA available under Enterprise; standard proxy pattern accepted under HIPAA.' },
+    { service:'DynamoDB — Patient Assessments (UAE)',  region:'me-central-1 · Abu Dhabi, UAE',                   framework:'UAE PDPL',    note:'Primary PHI store — UAE-resident. Dual-write active from db-shim.' },
+    { service:'DynamoDB — PEACS Records (UAE)',        region:'me-central-1 · Abu Dhabi, UAE',                   framework:'UAE PDPL',    note:'UAE-resident.' },
+    { service:'DynamoDB — Audit Log',                 region:'me-central-1 · Abu Dhabi, UAE',                   framework:'21 CFR Pt 11',note:'Immutable audit trail. UAE-resident.' },
+    { service:'Lambda — Data Relay (US)',              region:'us-east-1 · N. Virginia, USA',                    framework:'HIPAA / PDPL',note:'Primary auth, ZOE, and all non-UAE / non-EU routes. UAE and EU workspace data routed separately via regional Lambdas.' },
+    { service:'Lambda — Data Relay (UAE)',             region:'me-central-1 · Abu Dhabi, UAE',                   framework:'UAE PDPL',    note:'Lambda function and DynamoDB writes are UAE-resident. IAM roles are AWS-global by design (not a residency violation). SSM param migration to me-central-1 complete.' },
+    { service:'SSM Parameter Store (UAE)',             region:'me-central-1 (ALTHIQA) · us-east-1 (all others)', framework:'UAE PDPL',    note:'Lambda routes ALTHIQA workspace params to me-central-1 SSM. New ALTHIQA workspaces are born in me-central-1.' },
+    { service:'DynamoDB — Patient Assessments (EU)',  region:'eu-central-1 · Frankfurt, Germany',               framework:'GDPR',        note:'EU-resident PHI store for European workspace clients. Dual-write active from db-shim. No PHI leaves the EEA.' },
+    { service:'DynamoDB — PEACS Records (EU)',        region:'eu-central-1 · Frankfurt, Germany',               framework:'GDPR',        note:'EU-resident PEACS records for European clients.' },
+    { service:'Lambda — Data Relay (EU)',             region:'eu-central-1 · Frankfurt, Germany',               framework:'GDPR',        note:'EU workspace auth, MAP, and MMAS routes. Firebase exempt (dyna_only:true) — no PHI from EU clients reaches Firebase. SSM keys born in eu-central-1.' },
+    { service:'SSM Parameter Store (EU)',             region:'eu-central-1 · Frankfurt, Germany',               framework:'GDPR',        note:'Workspace keys for EU clients provisioned in eu-central-1. Consistent with GDPR Art. 44 data residency requirement.' },
+    { service:'SES — Email Delivery',                 region:'us-east-1 · N. Virginia, USA',                    framework:'HIPAA / PDPL',note:'Magic-link and OTP emails only — no PHI payload transmitted.' },
+    { service:'Firebase Realtime Database',           region:'us-central1 · Iowa, USA (default)',               framework:'HIPAA / PDPL',note:'ALTHIQA and EU workspaces are fully exempt — dyna_only:true is set at account creation. Firebase receives no PHI from UAE or EU clients.' },
+    { service:'Cloudflare Workers',                   region:'Distributed (nearest PoP)',                        framework:'HIPAA',       note:'Reverse-proxy only — no PHI stored at edge. PHI transits in-flight (TLS 1.3) to Lambda. BAA available under Enterprise; standard proxy pattern accepted under HIPAA.' },
   ];
 
   const sc = 'rgba(46,201,138,0.9)';
-  const fwColors = { 'UAE PDPL':'rgba(212,168,67,0.7)', 'HIPAA':'rgba(99,102,241,0.7)', 'HIPAA / PDPL':'rgba(99,102,241,0.7)', '21 CFR Pt 11':'rgba(46,201,138,0.7)' };
+  const fwColors = { 'UAE PDPL':'rgba(212,168,67,0.7)', 'HIPAA':'rgba(99,102,241,0.7)', 'HIPAA / PDPL':'rgba(99,102,241,0.7)', '21 CFR Pt 11':'rgba(46,201,138,0.7)', 'GDPR':'rgba(6,182,212,0.7)' };
 
   const rows = infra.map(r => `
     <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
@@ -135,7 +139,7 @@ function _compRenderLocalisation(panel) {
     </tr>`).join('');
 
   panel.innerHTML =
-    _compCard('Infrastructure Status', 'Data Localisation · HIPAA · UAE PDPL · 21 CFR Part 11',
+    _compCard('Infrastructure Status', 'Data Localisation · HIPAA · GDPR · UAE PDPL · 21 CFR Part 11',
       `<div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
           <thead><tr style="border-bottom:1px solid ${_C.border};">
@@ -207,16 +211,19 @@ async function _compDsarSearch() {
 
   try {
     const wsFilter = wsInput ? wsInput.value.trim() : '';
-    const snap = await database.ref('assessments').once('value');
-    const all = snap.val() ? Object.entries(snap.val()) : [];
+    const [snapA, snapP] = await Promise.all([
+      database.ref('assessments').once('value'),
+      database.ref('peacs_assessments').once('value'),
+    ]);
+    const allA = snapA.val() ? Object.entries(snapA.val()).map(([k,v]) => ({ _key:k, _table:'assessments',       ...v })) : [];
+    const allP = snapP.val() ? Object.entries(snapP.val()).map(([k,v]) => ({ _key:k, _table:'peacs_assessments', ...v })) : [];
 
-    _dsar.results = all
-      .filter(([, r]) => {
+    _dsar.results = [...allA, ...allP]
+      .filter(r => {
         if (!r || String(r.patient_number || '').trim().toLowerCase() !== patNum.toLowerCase()) return false;
         if (wsFilter && r.institution_code !== wsFilter) return false;
         return true;
-      })
-      .map(([key, r]) => ({ _key: key, ...r }));
+      });
 
     if (!_dsar.results.length) {
       statusEl.style.color = 'rgba(46,201,138,0.85)';
@@ -285,8 +292,9 @@ async function _compDsarAnonymise() {
 
   let done = 0, failed = 0;
   for (const rec of _dsar.results) {
+    const tbl = rec._table || 'assessments';
     try {
-      await database.ref('assessments/' + rec._key).update(blanks);
+      await database.ref(tbl + '/' + rec._key).update(blanks);
       done++;
     } catch(e) { failed++; }
   }
@@ -299,7 +307,7 @@ async function _compDsarAnonymise() {
 
   // Audit log the erasure
   database.ref('audit_log').push({
-    action: 'DSAR_ANONYMISE', table: 'assessments',
+    action: 'DSAR_ANONYMISE', table: 'assessments + peacs_assessments',
     patient_number: patNum, records_affected: done, pseudonym: pseudo,
     actor_email: firebase?.auth()?.currentUser?.email || 'superadmin',
     timestamp_utc: new Date().toISOString(), client_ts: Date.now(), cfr11: true,
@@ -440,21 +448,30 @@ async function _compExportDelete() {
   statusEl.textContent = 'Loading records for deletion...';
 
   try {
-    const snap = await database.ref('assessments').orderByChild('institution_code').equalTo(typed).once('value');
-    const entries = snap.val() ? Object.entries(snap.val()) : [];
+    const [snapA, snapP] = await Promise.all([
+      database.ref('assessments').orderByChild('institution_code').equalTo(typed).once('value'),
+      database.ref('peacs_assessments').orderByChild('institution_code').equalTo(typed).once('value'),
+    ]);
+    const entries      = snapA.val() ? Object.entries(snapA.val()) : [];
+    const peacsEntries = snapP.val() ? Object.entries(snapP.val()) : [];
+    const total = entries.length + peacsEntries.length;
 
-    if (!entries.length) {
+    if (!total) {
       statusEl.style.color = 'rgba(239,100,80,0.85)';
       statusEl.textContent = 'No records found for workspace: ' + typed;
       return;
     }
 
-    if (!confirm('DELETE ' + entries.length + ' records for workspace "' + typed + '"?\n\nThis is permanent and cannot be undone. A deletion certificate will be generated.')) return;
+    if (!confirm('DELETE ' + total + ' records (' + entries.length + ' assessments, ' + peacsEntries.length + ' PEACS) for workspace "' + typed + '"?\n\nThis is permanent and cannot be undone. A deletion certificate will be generated.')) return;
 
-    statusEl.textContent = 'Deleting ' + entries.length + ' records...';
+    statusEl.textContent = 'Deleting ' + total + ' records...';
     let deleted = 0, failed = 0;
     for (const [key] of entries) {
       try { await database.ref('assessments/' + key).remove(); deleted++; }
+      catch(e) { failed++; }
+    }
+    for (const [key] of peacsEntries) {
+      try { await database.ref('peacs_assessments/' + key).remove(); deleted++; }
       catch(e) { failed++; }
     }
 
@@ -467,8 +484,8 @@ async function _compExportDelete() {
       deleted_at_utc:      new Date().toISOString(),
       deleted_by:          actor,
       platform:            'ATLAS',
-      data_store:          'Firebase Realtime Database (assessments node)',
-      note:                'DynamoDB records in AWS me-central-1 must be deleted separately via AWS Console or Lambda admin endpoint.',
+      data_store:          'Firebase Realtime Database (assessments + peacs_assessments nodes)',
+      note:                'DynamoDB records in AWS me-central-1 (UAE) and eu-central-1 (EU) must be deleted separately via AWS Console or Lambda admin endpoint.',
       dpa_clause:          '8.1(b) + 8.3',
       certificate_version: '1.0',
     };
@@ -541,7 +558,7 @@ function _compRenderBreach(panel) {
   }).join('');
 
   panel.innerHTML = `
-    ${_compCard('Log Breach Incident', 'GDPR Art. 33 · UAE PDPL Art. 24 · HIPAA §164.408 · DOH Data Privacy Standard',
+    ${_compCard('Log Breach Incident', 'GDPR Art. 33 · UAE PDPL Art. 24 · HIPAA §164.410 · DOH Data Privacy Standard',
       `<div style="background:rgba(212,168,67,0.07);border:1px solid rgba(212,168,67,0.22);border-radius:6px;
                   padding:12px 16px;margin-bottom:20px;font-size:0.8rem;color:${_C.muted};line-height:1.6;">
         Affected workspace controllers must be notified within <strong style="color:${_C.amber};">24 hours</strong> of becoming aware of any actual or
@@ -703,7 +720,7 @@ const _TOMS = [
   { id:12, domain:'Vulnerability mgmt',  measure:'Continuous scanning; defined patch SLA; annual third-party penetration test.' },
   { id:13, domain:'Secure SDLC',         measure:'Code review, SAST, DAST, dependency and supply-chain scanning in development pipeline.' },
   { id:14, domain:'Sub-Processor mgmt',  measure:'Sub-Processor register (Annex 3); risk assessment before engagement; flow-down of equivalent contractual protection.' },
-  { id:15, domain:'Cross-border',        measure:'UAE residency preference; AAMEN exemption where required; documented PDPL Art 22-23 basis for any cross-border transfer.' },
+  { id:15, domain:'Cross-border',        measure:'Regional data residency enforced: EU clients routed to eu-central-1 (Frankfurt), UAE clients to me-central-1 (Abu Dhabi); AAMEN exemption where required; documented GDPR Art. 44–49 and PDPL Art. 22–23 basis for any cross-border transfer.' },
   { id:16, domain:'Incident response',   measure:'Documented incident response plan; 24-hour Personal Data Breach notification capability; annual tabletop exercise.' },
   { id:17, domain:'Business continuity', measure:'BCP/DR plan with defined RTO and RPO; annual recovery test.' },
   { id:18, domain:'Backup',              measure:'Daily backups; immutable backup option where available; quarterly restore test.' },
@@ -721,12 +738,15 @@ function _compRenderToms(panel) {
     controls: _TOMS.filter(t => t.domain === domain),
   }));
 
-  const sc = 'rgba(46,201,138,0.9)';
+  const sc = 'rgba(212,168,67,0.9)';
 
   panel.innerHTML = `
     <div style="background:rgba(255,255,255,0.03);border:1px solid ${_C.border};border-radius:8px;padding:20px;margin-bottom:16px;">
       <div style="font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:${_C.dim};margin-bottom:6px;">Annex 2 · ADHICS v2.0 Aligned · ${_TOMS.length} Controls</div>
-      <div style="font-size:0.95rem;font-weight:700;color:${_C.text};margin-bottom:14px;">Technical and Organisational Measures (TOMs)</div>
+      <div style="font-size:0.95rem;font-weight:700;color:${_C.text};margin-bottom:8px;">Technical and Organisational Measures (TOMs)</div>
+      <div style="font-size:0.76rem;color:${_C.muted};margin-bottom:16px;line-height:1.5;">
+        Status reflects operator self-declaration per the Data Processing Agreement. Controls are subject to annual attestation and independent audit on request (TOM #21). Not an automated real-time compliance check.
+      </div>
       ${grouped.map(g => `
         <div style="margin-bottom:18px;">
           <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amber};margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid ${_C.border};">${g.domain}</div>
@@ -736,7 +756,7 @@ function _compRenderToms(panel) {
               <div style="flex:1;font-size:0.8rem;color:${_C.muted};line-height:1.55;">${t.measure}</div>
               <div style="flex-shrink:0;">
                 <span style="font-size:0.62rem;font-weight:700;letter-spacing:0.08em;padding:2px 7px;border-radius:4px;
-                  color:${sc};border:1px solid ${sc};background:rgba(46,201,138,0.1);white-space:nowrap;">MET</span>
+                  color:${sc};border:1px solid ${sc};background:rgba(212,168,67,0.1);white-space:nowrap;">Declared</span>
               </div>
             </div>`).join('')}
         </div>`).join('')}

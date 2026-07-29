@@ -5,6 +5,12 @@
 
 function _saRenderCommand(container) {
   container.innerHTML = `
+  <!-- Quick-access bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <button onclick="if(typeof enterSpectatorMode==='function')enterSpectatorMode();" style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(5,150,105,0.07);border:1px solid rgba(5,150,105,0.25);color:#059669;border-radius:7px;padding:7px 14px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(5,150,105,0.14)'" onmouseout="this.style.background='rgba(5,150,105,0.07)'">🌐 Live Global Map</button>
+    <button onclick="if(typeof saTab==='function')saTab('globe');" style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(78,156,245,0.07);border:1px solid rgba(78,156,245,0.25);color:rgba(78,156,245,0.85);border-radius:7px;padding:7px 14px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(78,156,245,0.14)'" onmouseout="this.style.background='rgba(78,156,245,0.07)'">◎ Globe Intelligence</button>
+  </div>
+
   <!-- ALERT BANNER: workspace threshold alerts (hidden when no alerts) -->
   <div id="sa-alert-banner" style="display:none;margin-bottom:10px;"></div>
 
@@ -85,11 +91,11 @@ function _saRenderCommand(container) {
         </div>
         <div class="sa-kpi">
           <div id="sa-mmas-hi" class="sa-kpi-val" style="font-size:0.95rem;color:${_C.green};">—</div>
-          <div class="sa-kpi-lbl" style="color:${_C.dim};">High ≥7</div>
+          <div class="sa-kpi-lbl" style="color:${_C.dim};">High = 8</div>
         </div>
         <div class="sa-kpi">
           <div id="sa-mmas-med" class="sa-kpi-val" style="font-size:0.95rem;color:${_C.amber};">—</div>
-          <div class="sa-kpi-lbl" style="color:${_C.dim};">Medium 6–7</div>
+          <div class="sa-kpi-lbl" style="color:${_C.dim};">Medium 6–&lt;8</div>
         </div>
         <div class="sa-kpi">
           <div id="sa-mmas-lo" class="sa-kpi-val" style="font-size:0.95rem;color:${_C.red};">—</div>
@@ -171,7 +177,13 @@ function _saRenderCommand(container) {
     </div>
   </div>
 
-  <!-- ROW 3: Live Feed full width -->
+  <!-- ROW 3: Network Stability Dashboard -->
+  <div id="sa-network-stability" style="margin:0 0 14px 0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;">
+    <div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Network Stability · MAP Adherence Analysis</div>
+    <div style="font-size:0.84rem;color:var(--dim);">Loading stability data…</div>
+  </div>
+
+  <!-- ROW 4: Live Feed full width -->
   <div class="sa-panel">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
       <span style="width:6px;height:6px;border-radius:50%;background:${_C.cyan};box-shadow:0 0 6px ${_C.cyan};animation:sa-pulse 2s infinite;"></span>
@@ -332,28 +344,40 @@ function _saLoadCommandData() {
   // Mission Control is superadmin-only — always global, no institution scoping.
   // MMAS-8
   const mmasRef = database.ref('assessments');
-  mmasRef.once('value', snap => {
+  mmasRef.once('value').then(function(snap) {
     _saCache.mmas = snap.val() ? Object.values(snap.val()) : [];
+    _saRefreshCommandUI(todayTs);
+  }).catch(function(err) {
+    console.warn('atlas: Firebase load error (mmas):', err.message || err);
+    _saCache.mmas = [];
     _saRefreshCommandUI(todayTs);
   });
 
   // PEACS
   const peacsRef = database.ref('peacs_assessments');
-  peacsRef.once('value', snap => {
+  peacsRef.once('value').then(function(snap) {
     _saCache.peacs = snap.val() ? Object.values(snap.val()) : [];
+    _saRefreshCommandUI(todayTs);
+  }).catch(function(err) {
+    console.warn('atlas: Firebase load error (peacs):', err.message || err);
+    _saCache.peacs = [];
     _saRefreshCommandUI(todayTs);
   });
 
   // MAP
   const mapRef = database.ref('mapData');
-  mapRef.once('value', snap => {
+  mapRef.once('value').then(function(snap) {
     _saCache.map = snap.val() ? Object.values(snap.val()) : [];
+    _saRefreshCommandUI(todayTs);
+  }).catch(function(err) {
+    console.warn('atlas: Firebase load error (map):', err.message || err);
+    _saCache.map = [];
     _saRefreshCommandUI(todayTs);
   });
 
   // Workspaces — Firebase node for metadata cache (subset of all issued keys)
   const wsRef = database.ref('workspaces');
-  wsRef.once('value', snap => {
+  wsRef.once('value').then(function(snap) {
     const allWs = snap.val() || {};
     if (_saCurrentRole === 'pi' && _saInstitutionCode) {
       _saCache.workspaces = Object.fromEntries(
@@ -362,6 +386,10 @@ function _saLoadCommandData() {
     } else {
       _saCache.workspaces = allWs;
     }
+    _saRefreshCommandUI(todayTs);
+  }).catch(function(err) {
+    console.warn('atlas: Firebase load error (workspaces):', err.message || err);
+    _saCache.workspaces = {};
     _saRefreshCommandUI(todayTs);
   });
 
@@ -413,10 +441,10 @@ function _saLoadCommandData() {
 // ── Full UI Refresh from Cached Data ─────────────────────────────────────────
 
 function _saRefreshCommandUI(todayTs) {
-  const mmas     = _saCache.mmas;
-  const peacs    = _saCache.peacs;
-  const map      = _saCache.map;
-  const wsMap    = _saCache.workspaces;
+  const mmas     = _saCache.mmas  || [];
+  const peacs    = _saCache.peacs || [];
+  const map      = _saCache.map   || [];
+  const wsMap    = _saCache.workspaces || {};
 
   // ── Top bar totals ─────────────────────────────────────────────────────────
   // assessments is the source of truth for all MAP instrument records.
@@ -489,8 +517,8 @@ function _saRefreshCommandUI(todayTs) {
   _saSetEl('sa-mmas-n', mmasOnly.length.toLocaleString());
   if (mmasOnly.length) {
     const avg = mmasOnly.reduce((s,r)=>s+(r.score||0),0)/mmasOnly.length;
-    const hi  = mmasOnly.filter(r=>(r.score||0)>=7).length;
-    const med = mmasOnly.filter(r=>(r.score||0)>=6 && (r.score||0)<7).length;
+    const hi  = mmasOnly.filter(r=>(r.score||0)>=8).length;
+    const med = mmasOnly.filter(r=>(r.score||0)>=6 && (r.score||0)<8).length;
     const lo  = mmasOnly.filter(r=>(r.score||0)<6).length;
     const mc  = new Set(mmasOnly.map(r=>r.country).filter(c=>c&&c!=='Unknown')).size;
     _saSetEl('sa-mmas-avg',       avg.toFixed(2));
@@ -529,6 +557,9 @@ function _saRefreshCommandUI(todayTs) {
 
   // ── AI briefing ───────────────────────────────────────────────────────────
   _saRenderBriefing(mmas, peacs, map, gaiPct, todayTs);
+
+  // ── Network stability dashboard ───────────────────────────────────────────
+  _saRenderNetworkStability();
 
   // ── Anomaly queue (sidebar) ───────────────────────────────────────────────
   _saRunAnomalyDetection();
@@ -752,16 +783,14 @@ function _saRenderBriefing(mmas, peacs, map, gai, todayTs) {
       <span style="width:5px;height:5px;border-radius:50%;background:${_C.amber};box-shadow:0 0 4px ${_C.amber};"></span>
       <div style="font-size:0.70rem;letter-spacing:0.22em;text-transform:uppercase;color:${_C.amberDim};">ATLAS Intelligence · ${new Date().toLocaleTimeString()}</div>
     </div>
-    ${lines.map(l=>`<div style="font-size:0.88rem;color:${_C.muted};line-height:1.65;margin-bottom:5px;">${l}</div>`).join('')}
-    <div style="margin-top:8px;font-size:0.70rem;letter-spacing:0.12em;color:${_C.dim};border-top:1px solid ${_C.border};padding-top:6px;">
-      Claude API integration ready — connect <code style="color:${_C.amberDim};">_saCallClaudeAPI()</code> for LLM briefings
-    </div>`;
+    ${lines.map(l=>`<div style="font-size:0.88rem;color:${_C.muted};line-height:1.65;margin-bottom:5px;">${l}</div>`).join('')}`;
 }
 
 async function _saCallClaudeAPI(contextJSON) {
-  const key   = (sessionStorage.getItem('atlas_claude_key')  || '').trim();
-  const model =  sessionStorage.getItem('atlas_claude_model') || 'claude-haiku-4-5-20251001';
-  if (!key) return null;
+  const key      = (sessionStorage.getItem('atlas_claude_key')  || '').trim();
+  const model    =  sessionStorage.getItem('atlas_claude_model') || 'claude-haiku-4-5-20251001';
+  const useProxy = !!(window.ATLAS_CONFIG?.aiProxyUrl);
+  if (!key && !useProxy) return null;
 
   // Build full tri-instrument context from cache if not already provided
   const mmas  = _saCache.mmas  || [];
@@ -790,9 +819,13 @@ async function _saCallClaudeAPI(contextJSON) {
     ? `${contextJSON.query}\n\nData context: ${JSON.stringify(enrichedCtx)}`
     : `Summarise this adherence data: ${JSON.stringify(enrichedCtx)}`;
 
-  const useProxy   = !!(window.ATLAS_CONFIG?.aiProxyUrl);
-  const endpoint   = useProxy ? window.ATLAS_CONFIG.aiProxyUrl : 'https://api.anthropic.com/v1/messages';
-  const idToken    = useProxy ? (await firebase.auth().currentUser?.getIdToken()) : null;
+  const endpoint = useProxy ? window.ATLAS_CONFIG.aiProxyUrl : 'https://api.anthropic.com/v1/messages';
+  let idToken = null;
+  if (useProxy) {
+    const fbUser = firebase.auth().currentUser;
+    if (!fbUser) return null; // not signed in; fall through to rule-based
+    idToken = await fbUser.getIdToken();
+  }
   const reqHeaders = useProxy
     ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }
     : { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
@@ -827,10 +860,10 @@ function _saAskAI() {
   const ctx = {
     query: q.trim(),
     summary: {
-      mmas_n: _saCache.mmas.length,
-      peacs_n: _saCache.peacs.length,
-      map_n: _saCache.map.length,
-      workspaces_n: Object.keys(_saCache.workspaces).length,
+      mmas_n: (_saCache.mmas || []).length,
+      peacs_n: (_saCache.peacs || []).length,
+      map_n: (_saCache.map || []).length,
+      workspaces_n: Object.keys(_saCache.workspaces || {}).length,
     }
   };
   _saCallClaudeAPI(ctx).then(answer => {
@@ -841,9 +874,9 @@ function _saAskAI() {
       resp.innerHTML = `<span style="color:${_C.muted};">${_saAiRuleAnswer(ctx.query)}</span>
         <div style="margin-top:6px;font-size:0.72rem;color:${_C.dim};">Rule-based mode · Add Claude API key in Config tab for LLM responses.</div>`;
     }
-  }).catch(err => {
-    resp.innerHTML = `<span style="color:${_C.dim};">${_saAiRuleAnswer(ctx.query)}</span>
-      <div style="margin-top:6px;font-size:0.72rem;color:rgba(239,68,68,0.6);">Claude API error: ${_saEsc(err.message)} — showing rule-based response.</div>`;
+  }).catch(function() {
+    resp.innerHTML = '<span style="color:' + _C.muted + ';">' + _saAiRuleAnswer(ctx.query) + '</span>'
+      + '<div style="margin-top:6px;font-size:0.72rem;color:' + _C.dim + ';">AI query engine unavailable — showing rule-based response.</div>';
   });
 }
 
@@ -868,6 +901,102 @@ function _saTick() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+// ── Network Stability / Fragility Classification ──────────────────────────────
+
+function _sasfClass(r) {
+  var pe = r.pe != null ? +r.pe : null;
+  var a  = r.a  != null ? +r.a  : null;
+  var e  = r.e  != null ? +r.e  : null;
+  var c  = r.c  != null ? +r.c  : null;
+  var sc = r.score != null ? +r.score : null;
+  if (pe === null) return 'unknown';
+  if (a !== null && e !== null && c !== null && a < 0.55 && e < 0.55 && c < 0.55) return 'fragile';
+  if (sc !== null && sc >= 6 && pe < 0.65) return 'hidden';
+  if ((a !== null && a < 0.35) || (e !== null && e < 0.35) || (c !== null && c < 0.35)) return 'domain';
+  if (pe >= 0.65 && (a == null || a >= 0.55) && (e == null || e >= 0.55) && (c == null || c >= 0.55)) return 'stable';
+  return 'conditional';
+}
+
+function _saRenderNetworkStability() {
+  var el = document.getElementById('sa-network-stability');
+  if (!el) return;
+
+  // MAP instrument records live in _saCache.mmas where map_q1 is present.
+  // Normalise each into {pe,a,e,c,score,workspace_key} using the existing helpers.
+  var mapRecs = (_saCache.mmas || [])
+    .filter(function(r){ return r.map_q1 !== undefined; })
+    .map(function(r){
+      return {
+        pe:  _saMapPE(r),
+        a:   _saMapArch(r),
+        e:   _saMapExec(r),
+        c:   _saMapCtx(r),
+        score: r.score != null ? +r.score : null,
+        workspace_key: r.workspace_key || r.workspaceKey || r.key || 'unknown'
+      };
+    });
+  if (!mapRecs.length) {
+    el.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Network Stability · MAP Adherence Analysis</div>'
+      + '<div style="font-size:0.84rem;color:var(--dim);padding:20px 0;">No MAP assessment data available for stability analysis.</div>';
+    return;
+  }
+
+  var counts = { stable:0, conditional:0, domain:0, hidden:0, fragile:0, unknown:0 };
+  mapRecs.forEach(function(r){ counts[_sasfClass(r)]++; });
+  var total = mapRecs.length;
+
+  function pct(n) { return total ? ((n/total)*100).toFixed(1) : '0.0'; }
+  function kpi(label, value, color) {
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;flex:1;min-width:120px;">'
+      + '<div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">' + label + '</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.9rem;font-weight:300;color:' + color + ';line-height:1;">' + value + '</div>'
+      + '</div>';
+  }
+
+  // Per-workspace fragility
+  var wsMap = {};
+  mapRecs.forEach(function(r) {
+    var wk = r.workspace_key || 'unknown';
+    if (!wsMap[wk]) wsMap[wk] = { n:0, fragileN:0, peSum:0 };
+    wsMap[wk].n++;
+    wsMap[wk].peSum += +r.pe;
+    var cl = _sasfClass(r);
+    if (cl==='fragile'||cl==='hidden'||cl==='domain') wsMap[wk].fragileN++;
+  });
+  var wsArr = Object.keys(wsMap).map(function(k){
+    var w = wsMap[k];
+    return { key:k, n:w.n, fragileN:w.fragileN, fragPct:w.n?Math.round(w.fragileN/w.n*100):0, meanPE:w.n?w.peSum/w.n:0 };
+  });
+  wsArr.sort(function(a,b){ return b.fragPct-a.fragPct; });
+
+  var wsRows = wsArr.slice(0,10).map(function(w) {
+    var fc = w.fragPct>=40?'#ef4444':w.fragPct>=20?'#f59e0b':'#10b981';
+    return '<tr style="border-top:1px solid var(--border);">'
+      +'<td style="padding:5px 8px;font-family:var(--font-mono);font-size:0.70rem;color:var(--text);">'+w.key+'</td>'
+      +'<td style="padding:5px 8px;font-family:var(--font-mono);font-size:0.70rem;color:var(--dim);text-align:right;">'+w.n+'</td>'
+      +'<td style="padding:5px 8px;text-align:right;"><span style="font-family:var(--font-mono);font-size:0.68rem;color:'+fc+';background:'+fc+'18;padding:1px 6px;border-radius:3px;">'+w.fragPct+'%</span></td>'
+      +'<td style="padding:5px 8px;font-family:var(--font-mono);font-size:0.70rem;color:var(--dim);text-align:right;">'+w.meanPE.toFixed(3)+'</td>'
+      +'</tr>';
+  }).join('');
+
+  el.innerHTML =
+    '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Network Stability · MAP Adherence Analysis</div>'
+    + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">'
+      + kpi('Assessed (MAP)', total.toLocaleString(), 'var(--text)')
+      + kpi('Stable', pct(counts.stable)+'%', '#10b981')
+      + kpi('Compoundly Fragile', pct(counts.fragile)+'%', '#ef4444')
+      + kpi('Hidden Binding', pct(counts.hidden)+'%', '#f97316')
+    + '</div>'
+    + (wsArr.length ?
+        '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Workspace Fragility · Top 10 by Rate</div>'
+        +'<table style="width:100%;border-collapse:collapse;">'
+        +'<thead><tr style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);">'
+        +'<th style="padding:4px 8px;text-align:left;">Workspace</th><th style="padding:4px 8px;text-align:right;">N</th>'
+        +'<th style="padding:4px 8px;text-align:right;">Fragile %</th><th style="padding:4px 8px;text-align:right;">Mean PE</th>'
+        +'</tr></thead><tbody>'+wsRows+'</tbody></table>'
+      : '');
+}
 
 // ANOMALY DETECTOR — runs after data loads, flags statistical outliers
 // ══════════════════════════════════════════════════════════════════════════════
@@ -912,7 +1041,7 @@ function _saRunAnomalyDetection() {
 (function _scheduleAnomalyDetect(attempt) {
   const delay = Math.min(500 * Math.pow(1.5, attempt), 8000);
   setTimeout(function() {
-    if (_saCache.mmas.length > 0 || _saCache.peacs.length > 0) {
+    if ((_saCache.mmas||[]).length > 0 || (_saCache.peacs||[]).length > 0) {
       _saRunAnomalyDetection();
     } else if (attempt < 10) {
       _scheduleAnomalyDetect(attempt + 1);

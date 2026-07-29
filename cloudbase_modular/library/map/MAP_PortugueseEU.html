@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MAP | European Portuguese</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,Helvetica,"Noto Sans Arabic",sans-serif;font-size:10.5pt;color:#1a1a1a;background:#e8eaf0;}
+.page{width:8.5in;min-height:11in;margin:0.35in auto;background:white;padding:0.55in 0.7in 0.5in;box-shadow:0 4px 18px rgba(0,0,0,0.18);}
+/* ── HEADER ── */
+.header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1B3A6B;padding-bottom:9px;margin-bottom:12px;}
+.header-left h1{font-size:24pt;font-weight:900;color:#1B3A6B;letter-spacing:2px;line-height:1;}
+.header-left h2{font-size:8.5pt;font-weight:400;color:#555;margin-top:2px;letter-spacing:0.3px;}
+.language-badge{display:inline-block;background:#1B3A6B;color:white;padding:3px 12px;border-radius:20px;font-size:8pt;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}
+.version-info{font-size:7pt;color:#999;margin-top:4px;text-align:right;}
+/* ── PATIENT INFO ── */
+.patient-info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 12px;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:6px;padding:9px 12px;margin-bottom:11px;}
+.full-width{grid-column:1/-1;}
+.patient-info label{display:block;font-size:6.5pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px;}
+.info-field{border-bottom:1px solid #999;min-height:15px;width:100%;}
+/* ── PREAMBLE ── */
+.preamble{border-left:4px solid #1B3A6B;background:#f5f7fb;padding:8px 12px;margin-bottom:12px;border-radius:0 4px 4px 0;}
+.preamble p{font-size:9.5pt;color:#1a1a1a;line-height:1.5;font-weight:500;}
+/* ── QUESTIONS ── */
+.section-title{font-size:7.5pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.9px;border-bottom:1px solid #cdd4e3;padding-bottom:3px;margin-bottom:8px;}
+.question-row{display:flex;align-items:flex-start;gap:9px;padding:5px 0;}
+.q-number{font-size:10.5pt;font-weight:700;color:#1B3A6B;min-width:20px;padding-top:1px;flex-shrink:0;}
+.q-text{flex:1;font-size:9.5pt;line-height:1.4;}
+.q-response{display:flex;gap:12px;align-items:center;padding-top:1px;flex-shrink:0;}
+.checkbox-option{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.checkbox-label{font-size:7pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;}
+.checkbox{width:15px;height:15px;border:2px solid #1B3A6B;border-radius:2px;display:inline-block;}
+.q-rule{border:none;border-top:1px solid #ececec;}
+/* ── Q8 LIKERT ── */
+.q8-block{padding:5px 0;}
+.q8-header{display:flex;gap:9px;align-items:flex-start;margin-bottom:7px;}
+.likert-options{display:flex;gap:5px;margin-left:29px;}
+.likert-option{display:flex;flex-direction:column;align-items:center;text-align:center;flex:1;background:#f5f7fb;border:1px solid #cdd4e3;border-radius:5px;padding:6px 4px;gap:4px;}
+.likert-option .opt-label{font-size:8pt;font-weight:700;color:#1B3A6B;line-height:1.2;}
+/* ── CLOSING ── */
+.closing{border:1px solid #cdd4e3;border-radius:5px;background:#f9fafb;padding:8px 12px;margin-top:10px;}
+.closing p{font-size:8.5pt;color:#444;line-height:1.5;font-style:italic;}
+/* ── CLINICIAN ZONE ── */
+.clinician-zone{border-top:2px dashed #bbb;padding-top:10px;margin-top:11px;}
+.scoring-wrap{border:1px solid #cdd4e3;border-radius:5px;overflow:hidden;margin-bottom:9px;}
+.scoring-header-bar{background:#1B3A6B;color:white;padding:4px 10px;font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+/* ── Q1-Q7 SCORING TABLE ── */
+.q-score-table{width:100%;border-collapse:collapse;font-size:8pt;}
+.q-score-table thead th{background:#e8ecf5;color:#1B3A6B;padding:4px 8px;text-align:center;font-size:7pt;text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid #cdd4e3;}
+.q-score-table thead th:first-child{text-align:left;}
+.q-score-table tbody td{padding:3px 8px;border-bottom:1px solid #eee;text-align:center;}
+.q-score-table tbody td:first-child{text-align:left;font-weight:600;}
+.q-score-table tbody tr:nth-child(even) td{background:#f8f9fc;}
+.q-score-table tbody tr.q5-row td{background:#fff8e6;}
+.score-pill{display:inline-block;padding:1px 8px;border-radius:8px;font-size:8pt;font-weight:700;min-width:22px;}
+.pill-1{background:#e6f4ea;color:#276228;}
+.pill-0{background:#fdecea;color:#922323;}
+.reverse-tag{display:inline-block;background:#ff8f00;color:white;font-size:6pt;font-weight:700;padding:1px 5px;border-radius:6px;letter-spacing:0.4px;text-transform:uppercase;vertical-align:middle;margin-left:4px;}
+/* ── Q8 SCORING ── */
+.scoring-grid{display:flex;}
+.score-cell{flex:1;padding:5px 4px;text-align:center;border-right:1px solid #dde2ee;}
+.score-cell:last-child{border-right:none;}
+.score-cell .sc-freq{font-size:7pt;color:#444;line-height:1.3;}
+.score-cell .sc-value{font-size:12pt;font-weight:800;color:#1B3A6B;display:block;margin:1px 0;}
+.score-cell .sc-class{font-size:6.5pt;color:#777;font-style:italic;}
+/* ── TOTALS ── */
+.totals-row{display:flex;gap:10px;margin-bottom:9px;}
+.total-box{flex:1;border:1.5px solid #1B3A6B;border-radius:4px;padding:6px 10px;}
+.total-box.accent{border-color:#1b6b3a;}
+.total-box label{font-size:6.5pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:4px;}
+.total-box.accent label{color:#1b6b3a;}
+.score-line{border-bottom:1px solid #888;height:18px;}
+/* ── CLASSIFICATION ── */
+.class-table{width:100%;border-collapse:collapse;font-size:8.5pt;margin-bottom:9px;}
+.class-table thead th{background:#1B3A6B;color:white;padding:4px 9px;text-align:left;font-size:7pt;text-transform:uppercase;letter-spacing:0.4px;}
+.class-table tbody td{padding:4px 9px;border-bottom:1px solid #e8e8e8;}
+.class-table tbody tr:nth-child(even) td{background:#f8f9fc;}
+.badge{display:inline-block;padding:1px 8px;border-radius:8px;font-size:7.5pt;font-weight:600;}
+.badge-high{background:#e6f4ea;color:#276228;}
+.badge-medium{background:#fff4e2;color:#9a5000;}
+.badge-low{background:#fdecea;color:#922323;}
+/* ── PE SECTION ── */
+.pe-section{border:1px solid #1B3A6B;border-radius:5px;overflow:hidden;margin-bottom:9px;}
+.pe-header-bar{background:#0d2744;color:white;padding:4px 10px;font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+.pe-table{width:100%;border-collapse:collapse;font-size:8pt;}
+.pe-table thead th{background:#e8ecf5;color:#0d2744;padding:3px 8px;text-align:left;font-size:7pt;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #cdd4e3;}
+.pe-table tbody td{padding:4px 8px;border-bottom:1px solid #eee;vertical-align:top;}
+.pe-table tbody tr:nth-child(even) td{background:#f8f9fc;}
+.pe-table .domain-val{font-size:6.5pt;color:#888;}
+.pe-formula-row{background:#0d2744;color:white;padding:6px 10px;text-align:center;font-size:9.5pt;font-weight:700;letter-spacing:0.5px;}
+.pe-note{font-size:7pt;color:#555;padding:5px 10px;background:#f5f7fb;border-top:1px solid #cdd4e3;}
+/* ── SIGNATURES ── */
+.sig-row{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:9px;}
+.sig-field label{font-size:6.5pt;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:3px;}
+.sig-line{border-bottom:1px solid #888;height:18px;}
+/* ── FOOTER ── */
+.footer{border-top:1px solid #cdd4e3;padding-top:6px;display:flex;justify-content:space-between;align-items:flex-end;}
+.footer-left{font-size:6.5pt;color:#999;line-height:1.5;}
+.footer-right{font-size:6.5pt;color:#999;text-align:right;line-height:1.5;}
+/* ── RTL ── */
+
+@media print{body{background:white;}.page{box-shadow:none;margin:0;width:100%;padding:0.5in 0.6in;}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div class="header-left">
+    <h1>MAP</h1>
+    <h2>Multidimensional Adherence Parameters &nbsp;|&nbsp; 8-Item Instrument &nbsp;|&nbsp; Adherence Cartography</h2>
+  </div>
+  <div class="header-right">
+    <div class="language-badge">Português Europeu</div>
+    <div class="version-info">Form No. MAP-PT-001 &nbsp;|&nbsp; Version 1.0 &nbsp;|&nbsp; adherence.cc</div>
+  </div>
+</div>
+
+<div class="patient-info">
+  <div class="full-width"><label>Nome do Doente</label><div class="info-field"></div></div>
+  <div><label>Data</label><div class="info-field"></div></div>
+  <div><label>Data de Nascimento</label><div class="info-field"></div></div>
+  <div><label>Nº do Doente</label><div class="info-field"></div></div>
+  <div class="full-width"><label>Nome do Profissional de Saúde</label><div class="info-field"></div></div>
+</div>
+
+<div class="preamble"><p>Tomar a medicação conforme prescrito pode ser difícil por muitas razões, incluindo circunstâncias de vida, rotinas diárias, efeitos secundários, custo ou crenças sobre o tratamento. As perguntas seguintes dizem respeito à sua experiência com os seus medicamentos. Não há respostas certas ou erradas. As suas respostas honestas ajudam-nos a apoiá-lo(a) melhor.</p></div>
+
+<div>
+<div class="section-title">Perguntas</div>
+
+<div class="question-row">
+  <div class="q-number">1.</div>
+  <div class="q-text">Há momentos em que se esquece de tomar os seus medicamentos?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Sim</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Não</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">2.</div>
+  <div class="q-text">Nas últimas duas semanas, houve momentos em que optou por saltar uma dose (por exemplo, devido a efeitos secundários, custo ou por se sentir melhor)?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Sim</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Não</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">3.</div>
+  <div class="q-text">Nas últimas duas semanas, reduziu a dose ou interrompeu um medicamento por iniciativa própria, sem informar o seu médico ou equipa de saúde, devido à forma como o fazia sentir?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Sim</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Não</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">4.</div>
+  <div class="q-text">Quando a sua rotina diária muda (por exemplo, quando viaja, trabalha em horários diferentes ou fica fora de casa), sente dificuldade em manter o regime de medicação?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Sim</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Não</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">5.</div>
+  <div class="q-text">Conseguiu tomar a última dose conforme indicado?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Sim</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Não</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">6.</div>
+  <div class="q-text">Quando começa a sentir-se melhor ou os seus sintomas melhoram, pensa alguma vez em reduzir ou pausar a medicação por iniciativa própria?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Sim</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Não</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="question-row">
+  <div class="q-number">7.</div>
+  <div class="q-text">Manter a rotina de medicação parece-lhe um grande desafio na sua vida quotidiana?</div>
+  <div class="q-response">
+    <div class="checkbox-option"><span class="checkbox-label">Sim</span><span class="checkbox"></span></div>
+    <div class="checkbox-option"><span class="checkbox-label">Não</span><span class="checkbox"></span></div>
+  </div>
+</div><hr class="q-rule">
+
+<div class="q8-block">
+  <div class="q8-header">
+    <div class="q-number">8.</div>
+    <div class="q-text">Numa semana típica, com que frequência tem dificuldade em tomar todos os seus medicamentos conforme prescrito?</div>
+  </div>
+  <div class="likert-options">
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Nunca</span></div>
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Raramente</span></div>
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Às vezes</span></div>
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Frequentemente</span></div>
+    <div class="likert-option"><span class="checkbox"></span><span class="opt-label">Sempre</span></div>
+  </div>
+</div>
+</div>
+
+<div class="closing"><p>Se tiver dúvidas sobre os seus medicamentos, ou se algo lhe dificultar tomá-los conforme prescrito, fale com o seu médico, enfermeiro(a) ou farmacêutico(a). As suas respostas honestas ajudam-nos a encontrar as melhores formas de o(a) apoiar.</p></div>
+
+<!-- ══ CLINICIAN ZONE ══ -->
+<div class="clinician-zone">
+<div class="section-title" style="color:#888;">Reservado ao Clínico</div>
+
+<div class="scoring-wrap">
+  <div class="scoring-header-bar">Chave de Pontuação Q1–Q7</div>
+  <table class="q-score-table">
+    <thead><tr><th>Item</th><th>Sim</th><th>Não</th><th>Score</th></tr></thead>
+    <tbody>
+      <tr><td>Q1</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr><td>Q2</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr><td>Q3</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr><td>Q4</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr class="q5-row"><td>Q5 <span class="reverse-tag">&#8593;</span></td><td><span class="score-pill pill-1">1</span></td><td><span class="score-pill pill-0">0</span></td><td style="font-size:7pt;color:#9a5000;">Q5: Formulação positiva — Sim = Aderente (1)</td></tr>
+      <tr><td>Q6</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+      <tr><td>Q7</td><td><span class="score-pill pill-0">0</span></td><td><span class="score-pill pill-1">1</span></td><td></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="scoring-wrap">
+  <div class="scoring-header-bar">Referência de Pontuação Q8</div>
+  <div class="scoring-grid">
+    <div class="score-cell"><div class="sc-freq">Nunca</div><span class="sc-value">1.00</span><div class="sc-class">Adherent</div></div>
+    <div class="score-cell"><div class="sc-freq">Raramente</div><span class="sc-value">0.75</span><div class="sc-class">&#8250;</div></div>
+    <div class="score-cell"><div class="sc-freq">Às vezes</div><span class="sc-value">0.50</span><div class="sc-class">&#8250;</div></div>
+    <div class="score-cell"><div class="sc-freq">Frequentemente</div><span class="sc-value">0.25</span><div class="sc-class">&#8250;</div></div>
+    <div class="score-cell"><div class="sc-freq">Sempre</div><span class="sc-value">0.00</span><div class="sc-class">Non-adherent</div></div>
+  </div>
+</div>
+
+<div class="totals-row">
+  <div class="total-box"><label>Pontuação Q1–Q7 (aditiva)</label><div class="score-line"></div></div>
+  <div class="total-box"><label>Pontuação Q8</label><div class="score-line"></div></div>
+  <div class="total-box accent"><label>Total MAP (0–8)</label><div class="score-line"></div></div>
+</div>
+
+<table class="class-table">
+  <thead><tr><th>Pontuação Total</th><th>Classificação</th><th>Nível de Adesão</th></tr></thead>
+  <tbody>
+    <tr><td>8.0</td><td><span class="badge badge-high">Adesão Elevada</span></td><td>Aderente</td></tr>
+    <tr><td>6.0 &ndash; 7.75</td><td><span class="badge badge-medium">Adesão Moderada</span></td><td>Maioritariamente Aderente</td></tr>
+    <tr><td>&lt; 6.0</td><td><span class="badge badge-low">Baixa Adesão</span></td><td>Não Aderente</td></tr>
+  </tbody>
+</table>
+
+<div class="pe-section">
+  <div class="pe-header-bar">Pontuação Alinhada ao PE (ATLAS)</div>
+  <table class="pe-table">
+    <thead><tr><th>Domain</th><th>Formula</th><th>Score</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Arquitectura (A)</strong><br/><span class="domain-val">Crenças &amp; decisões intencionais</span></td><td style="font-family:monospace;font-size:7.5pt;">média(Q2, Q3, Q6)</td><td><div style="border-bottom:1px solid #aaa;height:16px;width:60px;"></div></td></tr>
+      <tr><td><strong>Execução (E)</strong><br/><span class="domain-val">Fiabilidade &amp; consistência comportamental</span></td><td style="font-family:monospace;font-size:7.5pt;">média(Q1, Q5, Q8)</td><td><div style="border-bottom:1px solid #aaa;height:16px;width:60px;"></div></td></tr>
+      <tr><td><strong>Context-Guard (C&#x261;)</strong><br/><span class="domain-val">Carga percebida &amp; ambiente</span></td><td style="font-family:monospace;font-size:7.5pt;">0.5 + 0.5 &times; média(Q4, Q7)</td><td><div style="border-bottom:1px solid #aaa;height:16px;width:60px;"></div></td></tr>
+    </tbody>
+  </table>
+  <div class="pe-formula-row">PE = (A &times; E &times; C&#x261;)&#x00B9;&#x141B;&#x00B3; = ______</div>
+  <div class="pe-note">PE varia entre 0 e 1. O limite mínimo do Context-Guard previne o colapso do PE por um único item. Calculado automaticamente no ATLAS.</div>
+</div>
+
+<div class="sig-row">
+  <div class="sig-field"><label>Assinatura do Clínico</label><div class="sig-line"></div></div>
+  <div class="sig-field"><label>Data de Administração</label><div class="sig-line"></div></div>
+</div>
+</div>
+
+<div class="footer">
+  <div class="footer-left">MAP &copy; Adherence Cartography &middot; adherence.cc &middot; Todos os direitos reservados. A reprodução não autorizada sem licença institucional é proibida.</div>
+  <div class="footer-right">Português Europeu<br/>Form MAP-PT-001 &nbsp;|&nbsp; v1.0</div>
+</div>
+</div>
+</body>
+</html>

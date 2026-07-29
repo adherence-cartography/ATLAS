@@ -193,7 +193,7 @@ ${_fsSection(11,'21 CFR Part 11 — Electronic Records & Electronic Signatures',
   ['AWS CloudTrail enabled — infrastructure-level API audit','§11.10(d)','Owner Action'],
 ])+`<p style="margin-top:10px;font-size:10px;color:#6b7280;font-style:italic">All Part 11 controls are implemented within the existing Firebase + AWS DynamoDB + Lambda stack. No third-party e-signature service is required for in-application actions. For PI-level study document signatures, DocuSign or Adobe Sign may be used optionally.</p>`)}
 ${_fsIntlAddendum()}
-<div style="border-top:1px solid #e5e7eb;padding-top:14px;margin-top:36px;font-family:'Courier New',monospace;font-size:9px;color:#9ca3af;display:flex;justify-content:space-between"><span>ATLAS · Adherence Inc. · Philip Morisky, MBA · info@adherence.cc · adherence.cc</span><span>ATLAS v8.8.0 · June 2026</span></div>`);
+<div style="border-top:1px solid #e5e7eb;padding-top:14px;margin-top:36px;font-family:'Courier New',monospace;font-size:9px;color:#9ca3af;display:flex;justify-content:space-between"><span>ATLAS · Adherence Inc. · Philip Morisky, MBA · info@adherence.cc · adherence.cc</span><span>ATLAS v8.9.3 · June 2026</span></div>`);
 }
 
 /**
@@ -266,7 +266,7 @@ ${_fsSection(10,'21 CFR Part 11 — Electronic Records & Electronic Signatures',
   ['AWS CloudTrail enabled — infrastructure-level API audit','§11.10(d)','Owner Action'],
 ])+`<p style="margin-top:10px;font-size:10px;color:#6b7280;font-style:italic">All Part 11 controls are implemented within the existing Firebase + AWS DynamoDB + Lambda stack. No third-party e-signature service is required for in-application actions.</p>`)}
 ${_fsIntlAddendum()}
-<div style="border-top:1px solid #e5e7eb;padding-top:14px;margin-top:36px;font-family:'Courier New',monospace;font-size:9px;color:#9ca3af;display:flex;justify-content:space-between"><span>ATLAS · Adherence Inc. · Philip Morisky, MBA · info@adherence.cc · adherence.cc</span><span>ATLAS v8.8.0 · June 2026</span></div>`);
+<div style="border-top:1px solid #e5e7eb;padding-top:14px;margin-top:36px;font-family:'Courier New',monospace;font-size:9px;color:#9ca3af;display:flex;justify-content:space-between"><span>ATLAS · Adherence Inc. · Philip Morisky, MBA · info@adherence.cc · adherence.cc</span><span>ATLAS v8.9.3 · June 2026</span></div>`);
 }
 
 /**
@@ -608,7 +608,7 @@ function openCompliancePage() {
     <div style="border-top:1px solid var(--border);padding-top:18px;font-size:0.76rem;color:var(--dim);line-height:1.8;">
       Questions? <a href="mailto:compliance@adherence.cc" style="color:rgba(16,185,129,0.7);">compliance@adherence.cc</a> &#xB7;
       <a href="mailto:legal@adherence.cc" style="color:rgba(78,156,245,0.7);">legal@adherence.cc</a> &#xB7;
-      ATLAS v8.7.0 · Adherence Inc.
+      ATLAS v8.9.3 · Adherence Inc.
     </div>
   </div>`;
 

@@ -325,9 +325,9 @@ function _saGaiOverviewHTML(d) {
     <!-- Hero gauge -->
     <div style="background:${_C.surface};border:1px solid ${_C.borderB};border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
       ${_saGaiBigGauge(gai)}
-      <div style="font-size:0.70rem;letter-spacing:0.2em;text-transform:uppercase;color:${_C.dim};margin-top:4px;">95% CI ${ciStr}</div>
+      <div style="font-size:0.70rem;letter-spacing:0.2em;text-transform:uppercase;color:${_C.dim};margin-top:4px;">±1.96 SE ${ciStr}</div>
       ${predNext != null ? `<div style="margin-top:8px;padding:6px 14px;border-radius:6px;background:${_saGaiColor(predNext)}12;border:1px solid ${_saGaiColor(predNext)}33;text-align:center;">
-        <div style="font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:${_C.dim};">Projected Next Quarter</div>
+        <div style="font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:${_C.dim};">Linear Trend (Wk 13 est.)</div>
         <div style="font-size:1.00rem;font-weight:700;color:${_saGaiColor(predNext)};font-family:'IBM Plex Mono',monospace;">${predNext.toFixed(3)}</div>
       </div>` : ''}
     </div>
@@ -658,15 +658,16 @@ function _saGaiExportHTML(d) {
     </div>
 
     <!-- Quarterly -->
-    <div style="background:${_C.surface};border:1px solid ${_C.border};border-radius:10px;padding:20px;">
+    <div style="background:${_C.surface};border:1px solid ${_C.border};border-radius:10px;padding:20px;opacity:0.72;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <span style="font-size:1.2rem;color:${_C.amber};">◈</span>
         <span style="font-size:0.78rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:${_C.amber};">Quarterly Digest</span>
+        <span style="margin-left:auto;font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:${_C.amberFaint};border:1px solid ${_C.amberDim};color:${_C.amber};">Coming Soon</span>
       </div>
       <div style="font-size:0.84rem;color:${_C.muted};margin-bottom:14px;line-height:1.6;">
         Automated quarterly GAI digest delivered by email or as a downloadable package.
         Includes quarter-over-quarter trend, institution benchmarking, and predictive trajectory.
-        Ideal for PIs and department leadership.
+        Delivery service is not yet active. You can pre-register your preferences below.
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div>
@@ -688,16 +689,16 @@ function _saGaiExportHTML(d) {
     </div>
 
     <!-- Real-time -->
-    <div style="background:${_C.surface};border:1px solid ${_C.purple}44;border-radius:10px;padding:20px;">
+    <div style="background:${_C.surface};border:1px solid ${_C.purple}44;border-radius:10px;padding:20px;opacity:0.72;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
         <span style="font-size:1.2rem;color:${_C.purple};">◎</span>
         <span style="font-size:0.78rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:${_C.purple};">Real-Time API</span>
-        <span style="margin-left:auto;font-size:0.65rem;letter-spacing:0.16em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:${_C.purple}18;border:1px solid ${_C.purple}44;color:${_C.purple};">Live</span>
+        <span style="margin-left:auto;font-size:0.65rem;letter-spacing:0.16em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:${_C.purple}18;border:1px solid ${_C.purple}44;color:${_C.purple};">Coming Soon</span>
       </div>
       <div style="font-size:0.82rem;color:${_C.muted};margin-bottom:12px;line-height:1.6;">
-        Programmatic access to your workspace GAI metrics. Secured with your workspace key,
-        returns a JSON payload on every call. Use in dashboards, EHR integrations, and research pipelines.
-        Rate limit: 100 requests per day per key.
+        Programmatic access to your workspace GAI metrics via a REST endpoint. Secured with your workspace key.
+        Intended for dashboards, EHR integrations, and research pipelines.
+        API endpoint is not yet deployed. The example below shows the planned response format.
       </div>
 
       <!-- Endpoint URL -->
@@ -723,8 +724,7 @@ function _saGaiExportHTML(d) {
 
       <!-- Action buttons -->
       <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <button onclick="_saGaiTestAPI()" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.10em;text-transform:uppercase;padding:8px 0;border-radius:6px;cursor:pointer;background:${_C.purple}18;border:1px solid ${_C.purple}44;color:${_C.purple};transition:all 0.15s;"
-          onmouseover="this.style.background='${_C.purple}28'" onmouseout="this.style.background='${_C.purple}18'">
+        <button disabled style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.10em;text-transform:uppercase;padding:8px 0;border-radius:6px;cursor:not-allowed;background:${_C.purple}08;border:1px solid ${_C.purple}22;color:${_C.purple}66;">
           ◎ Test API
         </button>
         <button onclick="_saGaiCopyEndpoint()" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;letter-spacing:0.10em;text-transform:uppercase;padding:8px 0;border-radius:6px;cursor:pointer;background:${_C.cyan}12;border:1px solid ${_C.cyan}33;color:${_C.cyan};transition:all 0.15s;"

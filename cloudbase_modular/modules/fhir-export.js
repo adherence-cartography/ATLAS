@@ -20,7 +20,6 @@ function detectSMARTLaunch() {
   if (!launchToken || !issUrl) return null;
   window._atlasSmartContext = { launch: launchToken, iss: issUrl, initiated: Date.now() };
   _showSMARTBanner(issUrl);
-  console.log('[ATLAS FHIR] SMART launch detected from:', issUrl);
   return window._atlasSmartContext;
 }
 
@@ -240,6 +239,7 @@ async function saveFHIRWebhook() {
   const errEl = document.getElementById('fhir-wh-err');
 
   if (!url) { if (errEl) { errEl.textContent = 'FHIR server URL is required.'; errEl.style.display = 'block'; } return; }
+  if (typeof LAMBDA_URL === 'undefined' || !LAMBDA_URL) { if (errEl) { errEl.textContent = 'Backend endpoint not configured.'; errEl.style.display = 'block'; } return; }
 
   try {
     const res = await fetch(LAMBDA_URL + '/fhir-webhook-save', {
@@ -259,6 +259,7 @@ async function testFHIRWebhook() {
   const testObs = assessmentToFHIRObservation({ score: 7.5, q1:0,q2:0,q3:0,q4:0,q5:1,q6:0,q7:0,q8:0, timestamp: Date.now(), patient_number: 'TEST-001' });
   const status = document.getElementById('fhir-wh-err');
   if (status) { status.textContent = 'Sending test ping…'; status.style.color = 'rgba(78,156,245,0.8)'; status.style.display = 'block'; }
+  if (typeof LAMBDA_URL === 'undefined' || !LAMBDA_URL) { if (status) { status.textContent = 'Backend endpoint not configured.'; status.style.color = 'rgba(239,68,68,0.9)'; } return; }
 
   try {
     const res = await fetch(LAMBDA_URL + '/fhir-webhook-test', {
@@ -295,9 +296,6 @@ function _saveSMARTClientId() {
   // If ATLAS is embedded in an EHR iframe the launch + iss params will be present.
   const smartCtx = detectSMARTLaunch();
   if (smartCtx) {
-    // NOTE: Full SMART auth requires a server-side token exchange step (OAuth2 authorization
-    // code flow) before patient data can be fetched from the FHIR server. The call below
-    // pre-populates patient fields only when a patientId is already carried in the context.
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => applySmartPatientContext(smartCtx));
     } else {

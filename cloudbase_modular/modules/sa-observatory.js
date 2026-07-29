@@ -191,7 +191,7 @@ function _saObsFmtScore(r) {
 function _saObsTierCol(r) {
   if (r.score == null) return _C.dim;
   if (r.inst === 'MMAS-8') {
-    if (r.score >= 7) return '#2ec98a';
+    if (r.score >= 8) return '#2ec98a';
     if (r.score >= 6) return _C.amber;
     return '#ef4444';
   }
@@ -240,7 +240,7 @@ function _saObsRenderFeed(body) {
       <div style="background:rgba(255,152,0,0.1);border:1px solid var(--moderate,#ff9800);border-radius:8px;padding:1rem;text-align:center;">
         <div style="font-size:1.75rem;font-weight:700;color:var(--moderate,#ff9800);">${_rMod}</div>
         <div style="font-size:0.75rem;color:var(--muted);">Moderate Risk</div>
-        <div style="font-size:0.7rem;color:var(--muted);">MMAS 6&#8211;7</div>
+        <div style="font-size:0.7rem;color:var(--muted);">MMAS 6 to &lt;8</div>
       </div>
       <div style="background:rgba(76,175,80,0.1);border:1px solid var(--optimal,#4caf50);border-radius:8px;padding:1rem;text-align:center;">
         <div style="font-size:1.75rem;font-weight:700;color:var(--optimal,#4caf50);">${_rLow}</div>

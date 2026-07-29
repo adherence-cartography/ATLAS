@@ -826,6 +826,25 @@ function _grantWorkspaceAccess(code, profile, opts) {
   profile = workspaceProfile;
   // Sync PEACS enabled dims from workspace profile (default to all 3 if not set)
   window._peacsEnabledDims = (profile.peacs_dims?.length > 0) ? profile.peacs_dims : ['base','mvmt','strata'];
+
+  // CFR-11 §11.10(d) — log successful authentication event
+  try {
+    const _loginUser = window.firebase && window.firebase.auth ? window.firebase.auth().currentUser : null;
+    if (typeof database !== 'undefined' && _loginUser) {
+      database.ref('audit_log').push({
+        cfr11:         true,
+        action:        'LOGIN_SUCCESS',
+        table:         'auth',
+        actor_uid:     _loginUser.uid,
+        actor_email:   _loginUser.email || '—',
+        workspace:     code,
+        role:          (profile && profile.role) || 'unknown',
+        auth_method:   _fromMagicLink ? 'magic_link' : 'workspace_key',
+        timestamp:     Date.now(),
+        timestamp_utc: new Date().toISOString(),
+      }).catch(function(){});
+    }
+  } catch(e) {}
   // btn is null when the magic link opens in a fresh window (modal not yet open) — guard it
   if (btn) {
     btn.textContent = '✓ Access Granted';

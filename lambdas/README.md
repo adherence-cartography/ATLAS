@@ -12,7 +12,55 @@ All AWS Lambda source code lives here. One subfolder = one deployed Lambda funct
 | `atlas-api/` | `atlas-claude-proxy` | `https://xckeiwruv7.execute-api.us-east-1.amazonaws.com/` | us-east-1 |
 | `adherence-pulse/` | `atlas-adherence-pulse` | _(EventBridge scheduled trigger, no HTTP)_ | us-east-1 |
 | `gai-api/` | `atlas-gai-api` | `https://api.adherence.cc/gai` | us-east-1 |
+| `atlas-partner-api/` | `atlas-partner-api` | `https://api.adherence.cc/partner` | us-east-1 |
 | `gai-realtime/` | _(not yet deployed)_ | _(future)_ | us-east-1 |
+
+### atlas-partner-api — partner instrument scoring API
+
+REST API for third-party platforms to submit MAP, MMAS-8, and PEACS assessments and receive
+scored results in real time. Partners authenticate with a pre-issued API key (`X-Partner-Key`
+header). All submissions persist to Firebase Realtime Database and optionally push to a
+registered webhook endpoint.
+
+**Routes:**
+- `GET  /v1/health` — health check (no auth)
+- `POST /v1/map/submit` — submit MAP assessment, returns PE + domain scores
+- `POST /v1/mmas/submit` — submit MMAS-8 assessment, returns score + adherence level
+- `POST /v1/peacs/submit` — submit PEACS scores, returns PE + phenotype + intervention
+- `GET  /v1/results/{uuid}` — retrieve a single assessment
+- `GET  /v1/patient/{ref}/results` — all assessments for a patient reference
+- `GET  /v1/study/{study_id}/results` — all assessments for a study cohort
+- `GET  /v1/stats` — partner usage and assessment counts
+
+**Deploy:**
+```bash
+cd lambdas/atlas-partner-api
+npm install
+zip -r deploy.zip index.js node_modules package.json
+# AWS Console > Lambda > Create function > atlas-partner-api
+# Upload deploy.zip | Runtime: Node.js 20.x | Handler: index.handler
+# Timeout: 15s | Memory: 256 MB
+# Wire to API Gateway under https://api.adherence.cc/partner
+```
+
+**Environment variables:**
+- `FIREBASE_SERVICE_ACCOUNT` — JSON string of the Firebase service account credentials
+- `FIREBASE_DATABASE_URL` — defaults to the ATLAS production database if omitted
+
+**Firebase Database indexes required** (add to `database.rules.json` under `.rules`):
+```json
+"assessments": {
+  ".indexOn": ["partner_key", "patient_ref", "study_id"]
+},
+"peacs_assessments": {
+  ".indexOn": ["partner_key", "patient_ref"]
+}
+```
+
+**Partner key provisioning:** Add a record to Firebase at `partner_keys/{apiKey}`.
+See `atlas-partner-api/README.md` for the full partner key schema.
+
+---
 
 ### atlas-main — the core ATLAS Lambda
 

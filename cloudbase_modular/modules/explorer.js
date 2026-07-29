@@ -376,7 +376,7 @@ const EXPLORER_TOUR = [
   {
     icon: '✦',
     title: 'Predictive Emergence',
-    body: 'PE = (Adherence × Engagement × Compliance)^(1/3). Developed by Philip Morisky. Validated retrospectively against COVID-19 outcomes across 12 nations (r = +0.787). Independently incorporated into an EPA World Congress presentation, March 2026.',
+    body: 'PE = (Architecture × Execution × Context-Guard)^(1/3). Developed by Philip Morisky. Validated retrospectively against COVID-19 outcomes across 12 nations (r = +0.787). Independently incorporated into an EPA World Congress presentation, March 2026.',
     cta: null,
   },
   {

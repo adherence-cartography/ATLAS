@@ -200,9 +200,9 @@ function _saCiBuildRecords(filters) {
     if (scaledScore < scoreMin || scaledScore > scoreMax) return false;
     if (countryF && !(r.country||'').toLowerCase().includes(countryF)) return false;
     if (filters.tier !== 'all') {
-      if (filters.tier === 'high'   && norm <  0.85) return false;
-      if (filters.tier === 'medium' && (norm < 0.55 || norm >= 0.85)) return false;
-      if (filters.tier === 'low'    && norm >= 0.55) return false;
+      if (filters.tier === 'high'   && norm <  1.0)             return false;
+      if (filters.tier === 'medium' && (norm < 0.75 || norm >= 1.0)) return false;
+      if (filters.tier === 'low'    && norm >= 0.75)            return false;
     }
     return true;
   }).map(r => ({ ...r, _inst: inst, _norm: inst==='mmas'?(r.score||0)/8:(r.pe!=null?+r.pe:(r.score||0)/8) }));
@@ -563,11 +563,19 @@ function _saCiRenderRisk(body) {
   });
 
   // Tier assignment: STABLE / WATCH / AT-RISK / CRITICAL
+  // MMAS-8 uses validated cutoffs (raw < 6 = low, 6–<8 = medium, 8 = high)
+  // MAP/PEACS use 0–1 PE scale with platform-defined thresholds
   const tiered = allRecords.map(r => {
-    const tier = r._norm >= 0.85 ? 'STABLE'
-               : r._norm >= 0.70 ? 'WATCH'
-               : r._norm >= 0.55 ? 'AT-RISK'
-               : 'CRITICAL';
+    const isMmas = r._inst === 'mmas';
+    const tier = isMmas
+      ? (r._norm >= 1.0  ? 'STABLE'
+       : r._norm >= 0.75 ? 'WATCH'
+       : r._norm >= 0.5  ? 'AT-RISK'
+       :                   'CRITICAL')
+      : (r._norm >= 0.85 ? 'STABLE'
+       : r._norm >= 0.70 ? 'WATCH'
+       : r._norm >= 0.55 ? 'AT-RISK'
+       :                   'CRITICAL');
     return { ...r, _tier: tier };
   });
 
@@ -833,14 +841,14 @@ function _saCiDrawTrajectory() {
 
   // Summary
   const first = means[0], last = means[means.length - 1];
-  const slope = means.length > 1 ? (last - first) : 0;
-  const trend = slope > 0.02 ? '↑ Improving' : slope < -0.02 ? '↓ Declining' : '→ Stable';
-  const tCol  = slope > 0.02 ? _C.green : slope < -0.02 ? _C.red : _C.cyan;
+  const delta = means.length > 1 ? (last - first) : 0;
+  const trend = delta > 0.02 ? '↑ Improving' : delta < -0.02 ? '↓ Declining' : '→ Stable';
+  const tCol  = delta > 0.02 ? _C.green : delta < -0.02 ? _C.red : _C.cyan;
   document.getElementById('sa-traj-summary').innerHTML = `
     <strong style="color:${_C.text};">${records.length.toLocaleString()} records</strong> across
     <strong style="color:${_C.text};">${keys.length} ${bucket} buckets</strong>.
     Overall trend: <strong style="color:${tCol};">${trend}</strong>
-    (Δ ${slope >= 0 ? '+' : ''}${(slope).toFixed(3)} from first to last bucket).
+    (Δ ${delta >= 0 ? '+' : ''}${(delta).toFixed(3)} from first to last bucket).
     Mean range: ${Math.min(...means).toFixed(3)} – ${Math.max(...means).toFixed(3)}.
     Peak volume: ${Math.max(...counts).toLocaleString()} records in a single ${bucket}.`;
 

@@ -2,11 +2,21 @@
   "rules": {
 
     "assessments": {
-      ".indexOn": ["patient_number", "user_id", "timestamp", "campaign_id"]
+      ".indexOn": ["patient_number", "user_id", "timestamp", "campaign_id", "partner_key", "patient_ref", "study_id"]
     },
 
     "peacs_assessments": {
-      ".indexOn": ["patient_number"]
+      ".indexOn": ["patient_number", "partner_key", "patient_ref"]
+    },
+
+    "partner_keys": {
+      ".indexOn": ["active"]
+    },
+
+    "partner_usage": {
+      "$partner": {
+        ".indexOn": [".key"]
+      }
     },
 
     "mapData": {
