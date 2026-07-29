@@ -447,6 +447,13 @@
     "tessera_meta": {
       ".read": true,
       ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "normative_contributions": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null && auth.token.role !== 'observer'",
+      "$record": {
+        ".validate": "newData.hasChildren(['submitted_at','study_title','pi','institution','record_count']) && newData.child('submitted_at').isNumber() && newData.child('submitted_at').val() <= now + 300000 && newData.child('study_title').isString() && newData.child('study_title').val().length <= 500 && newData.child('pi').isString() && newData.child('pi').val().length <= 200 && newData.child('institution').isString() && newData.child('institution').val().length <= 300 && newData.child('record_count').isNumber() && newData.child('record_count').val() >= 1 && newData.child('record_count').val() <= 10000"
+      }
     }
   }
 }

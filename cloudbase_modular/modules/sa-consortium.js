@@ -633,6 +633,56 @@ function _saCons_showNormativeInline(container) {
   }
 }
 
+const _NORM_AGE = {
+  'under 18':'Under 18',
+  '18-24':'18–24','18–24':'18–24',
+  '25-34':'25–34','25–34':'25–34',
+  '35-44':'35–44','35–44':'35–44',
+  '45-54':'45–54','45–54':'45–54',
+  '55-64':'55–64','55–64':'55–64',
+  '65-74':'65–74','65–74':'65–74',
+  '75+':'75 and older','75 and over':'75 and older','75 and older':'75 and older','75+yrs':'75 and older',
+  'prefer not to say':'Prefer not to say',
+};
+const _NORM_EDU = {
+  'no formal education':'No formal education',
+  'primary school':'Primary school','primary':'Primary school',
+  'secondary school':'Secondary school','secondary':'Secondary school','high school':'Secondary school',
+  'vocational/technical':'Vocational / Technical','vocational/ technical':'Vocational / Technical','vocational /technical':'Vocational / Technical','vocational':'Vocational / Technical','technical':'Vocational / Technical',
+  'some university':'Some university / college','some college':'Some university / college','some university / college':'Some university / college',
+  "bachelor's degree":"Bachelor's degree","bachelor degree":"Bachelor's degree","bachelors degree":"Bachelor's degree","bachelor":"Bachelor's degree","undergraduate":"Bachelor's degree",
+  "master's degree":"Master's degree","masters degree":"Master's degree","master's":"Master's degree","masters":"Master's degree","graduate degree":"Master's degree","graduate":"Master's degree","postgraduate":"Master's degree",
+  'doctoral degree':'Doctoral degree','doctorate':'Doctoral degree','doctoral':'Doctoral degree','phd':'Doctoral degree','ph.d.':'Doctoral degree','ph.d':'Doctoral degree',
+  'prefer not to say':'Prefer not to say',
+};
+const _NORM_ROUTE = {
+  'oral':'Oral (Tablet/Capsule)','tablet':'Oral (Tablet/Capsule)','capsule':'Oral (Tablet/Capsule)','oral (tablet/capsule)':'Oral (Tablet/Capsule)',
+  'sublingual':'Sublingual','buccal':'Buccal',
+  'iv':'Intravenous (IV)','intravenous':'Intravenous (IV)','intravenous (iv)':'Intravenous (IV)',
+  'im':'Intramuscular (IM)','intramuscular':'Intramuscular (IM)','intramuscular (im)':'Intramuscular (IM)',
+  'sc':'Subcutaneous (SC)','subcutaneous':'Subcutaneous (SC)','subcutaneous (sc)':'Subcutaneous (SC)',
+  'patch':'Transdermal (Patch)','transdermal':'Transdermal (Patch)','transdermal (patch)':'Transdermal (Patch)',
+  'inhaled':'Inhaled','inhalation':'Inhaled',
+  'intranasal':'Intranasal','nasal':'Intranasal',
+  'eye drops':'Ophthalmic (Eye drops)','ophthalmic':'Ophthalmic (Eye drops)','ophthalmic (eye drops)':'Ophthalmic (Eye drops)',
+  'ear drops':'Otic (Ear drops)','otic':'Otic (Ear drops)','otic (ear drops)':'Otic (Ear drops)',
+  'rectal':'Rectal (Suppository)','suppository':'Rectal (Suppository)','rectal (suppository)':'Rectal (Suppository)',
+  'vaginal':'Vaginal',
+  'topical':'Topical (Cream/Gel)','cream':'Topical (Cream/Gel)','gel':'Topical (Cream/Gel)','topical (cream/gel)':'Topical (Cream/Gel)',
+  'other':'Other',
+};
+const _NORM_Q8 = {
+  'never/rarely':'Never/Rarely','never':'Never/Rarely','rarely':'Never/Rarely',
+  'once in a while':'Once in a while','occasionally':'Once in a while',
+  'sometimes':'Sometimes',
+  'usually':'Usually','often':'Usually',
+  'all the time':'All of the time','always':'All of the time','all of the time':'All of the time',
+};
+function _normLookup(map, val) {
+  if (!val) return val;
+  return map[val.trim().toLowerCase()] || val.trim();
+}
+
 async function _saCons_processNormativeFile(file, statusEl) {
   function setStatus(msg, type) {
     if (!statusEl) return;
@@ -690,17 +740,17 @@ async function _saCons_processNormativeFile(file, statusEl) {
         const q1 = String(row[11] || '').trim();
         if (!q1) continue;
         records.push({
-          date:       String(row[0]  || '').trim(),
+          date:          String(row[0]  || '').trim(),
           country,
-          city:       String(row[2]  || '').trim(),
-          condition:  String(row[3]  || '').trim(),
-          drug_type:  String(row[4]  || '').trim(),
-          drug_name:  String(row[5]  || '').trim(),
-          drug_strength: String(row[6] || '').trim(),
-          route:      String(row[7]  || '').trim(),
-          gender:     String(row[8]  || '').trim(),
-          age_range:  String(row[9]  || '').trim(),
-          education:  String(row[10] || '').trim(),
+          city:          String(row[2]  || '').trim(),
+          condition:     String(row[3]  || '').trim(),
+          drug_type:     String(row[4]  || '').trim(),
+          drug_name:     String(row[5]  || '').trim(),
+          drug_strength: String(row[6]  || '').trim(),
+          route:         _normLookup(_NORM_ROUTE, String(row[7]  || '')),
+          gender:        String(row[8]  || '').trim(),
+          age_range:     _normLookup(_NORM_AGE,   String(row[9]  || '')),
+          education:     _normLookup(_NORM_EDU,   String(row[10] || '')),
           q1: q1.toUpperCase(),
           q2: String(row[12] || '').trim().toUpperCase(),
           q3: String(row[13] || '').trim().toUpperCase(),
@@ -708,7 +758,7 @@ async function _saCons_processNormativeFile(file, statusEl) {
           q5: String(row[15] || '').trim().toUpperCase(),
           q6: String(row[16] || '').trim().toUpperCase(),
           q7: String(row[17] || '').trim().toUpperCase(),
-          q8: String(row[18] || '').trim(),
+          q8: _normLookup(_NORM_Q8, String(row[18] || '')),
         });
       }
 
