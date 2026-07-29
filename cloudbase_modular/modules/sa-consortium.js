@@ -602,20 +602,145 @@ function _saCons_showNormativeInline(container) {
     if (typeof downloadNormativeTemplate === 'function') downloadNormativeTemplate(this);
   });
 
-  const fileInput = document.getElementById('sc-norm-file-input');
+  const statusEl     = document.getElementById('sc-norm-status');
+  const fileInput    = document.getElementById('sc-norm-file-input');
+  const uploadLabel  = document.getElementById('sc-norm-upload-label');
+
+  function _handleNormFile(file) {
+    if (file) _saCons_processNormativeFile(file, statusEl);
+  }
+
   if (fileInput) {
-    fileInput.addEventListener('change', function(e) {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const st = document.getElementById('sc-norm-status');
-      if (st) { st.style.display = 'block'; st.textContent = 'Reading file: ' + file.name + '…'; }
-      if (typeof processBulkUpload === 'function') {
-        processBulkUpload(file);
-      } else {
-        setTimeout(() => { if (typeof processBulkUpload === 'function') processBulkUpload(file); }, 800);
-      }
+    fileInput.addEventListener('change', function(e) { _handleNormFile(e.target.files?.[0]); });
+  }
+
+  if (uploadLabel) {
+    uploadLabel.addEventListener('dragover', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      uploadLabel.style.borderColor = 'rgba(16,185,129,0.6)';
+      uploadLabel.style.background  = 'rgba(16,185,129,0.07)';
+    });
+    uploadLabel.addEventListener('dragleave', function() {
+      uploadLabel.style.borderColor = 'rgba(16,185,129,0.3)';
+      uploadLabel.style.background  = 'rgba(16,185,129,0.03)';
+    });
+    uploadLabel.addEventListener('drop', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      uploadLabel.style.borderColor = 'rgba(16,185,129,0.3)';
+      uploadLabel.style.background  = 'rgba(16,185,129,0.03)';
+      _handleNormFile(e.dataTransfer.files?.[0]);
     });
   }
+}
+
+async function _saCons_processNormativeFile(file, statusEl) {
+  function setStatus(msg, type) {
+    if (!statusEl) return;
+    statusEl.style.display    = 'block';
+    statusEl.style.background = type === 'error' ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)';
+    statusEl.style.border     = type === 'error' ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(16,185,129,0.25)';
+    statusEl.style.color      = type === 'error' ? '#f87171' : '#94c8ac';
+    statusEl.textContent      = msg;
+  }
+
+  setStatus('Reading file: ' + file.name + '…', 'info');
+
+  try {
+    await ensureSheetJS();
+  } catch(e) {
+    setStatus('Could not load Excel parser. Please refresh and try again.', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onerror = () => setStatus('Could not read file.', 'error');
+  reader.onload = async function(ev) {
+    try {
+      const wb = XLSX.read(ev.target.result, { type: 'array' });
+      const ws = wb.Sheets['Data Entry'];
+      if (!ws) {
+        setStatus('Invalid file: "Data Entry" sheet not found. Please use the TESSERA Normative Contribution Template.', 'error');
+        return;
+      }
+
+      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+      if (!String(aoa[0]?.[0] || '').includes('NORMATIVE CONTRIBUTION')) {
+        setStatus('Invalid file: This does not appear to be a TESSERA Normative Contribution Template.', 'error');
+        return;
+      }
+
+      const studyTitle       = String(aoa[1]?.[1] || '').trim();
+      const pi               = String(aoa[2]?.[1] || '').trim();
+      const institution      = String(aoa[3]?.[1] || '').trim();
+      const irbProtocol      = String(aoa[4]?.[1] || '').trim();
+      const clinicalTrialsId = String(aoa[5]?.[1] || '').trim();
+      const studyPhase       = String(aoa[6]?.[1] || '').trim();
+
+      if (!studyTitle || !pi || !institution) {
+        setStatus('Please fill in Study Title, Principal Investigator, and Institution in the Data Entry sheet (rows 2–4, column B).', 'error');
+        return;
+      }
+
+      const records = [];
+      for (let i = 10; i < aoa.length; i++) {
+        const row     = aoa[i];
+        const country = String(row[1] || '').trim();
+        if (!country || country.toUpperCase().includes('EXAMPLE')) continue;
+        const q1 = String(row[11] || '').trim();
+        if (!q1) continue;
+        records.push({
+          date:       String(row[0]  || '').trim(),
+          country,
+          city:       String(row[2]  || '').trim(),
+          condition:  String(row[3]  || '').trim(),
+          drug_type:  String(row[4]  || '').trim(),
+          drug_name:  String(row[5]  || '').trim(),
+          drug_strength: String(row[6] || '').trim(),
+          route:      String(row[7]  || '').trim(),
+          gender:     String(row[8]  || '').trim(),
+          age_range:  String(row[9]  || '').trim(),
+          education:  String(row[10] || '').trim(),
+          q1: q1.toUpperCase(),
+          q2: String(row[12] || '').trim().toUpperCase(),
+          q3: String(row[13] || '').trim().toUpperCase(),
+          q4: String(row[14] || '').trim().toUpperCase(),
+          q5: String(row[15] || '').trim().toUpperCase(),
+          q6: String(row[16] || '').trim().toUpperCase(),
+          q7: String(row[17] || '').trim().toUpperCase(),
+          q8: String(row[18] || '').trim(),
+        });
+      }
+
+      if (records.length === 0) {
+        setStatus('No valid data rows found. Fill in patient records starting at row 11 and delete the example row.', 'error');
+        return;
+      }
+
+      setStatus('Uploading ' + records.length + ' record(s) to TESSERA…', 'info');
+
+      await firebase.database().ref('normative_contributions').push({
+        submitted_at:       Date.now(),
+        study_title:        studyTitle,
+        pi,
+        institution,
+        irb_protocol:       irbProtocol,
+        clinical_trials_id: clinicalTrialsId,
+        study_phase:        studyPhase,
+        record_count:       records.length,
+        records,
+        template_version:   'v1',
+      });
+
+      setStatus('✓ ' + records.length + ' record(s) submitted to the TESSERA Normative Dataset. Thank you for your contribution.', 'success');
+      if (typeof showToast === 'function') showToast('TESSERA: ' + records.length + ' normative records submitted.', 5000);
+
+    } catch(err) {
+      console.error('[normative-upload]', err);
+      setStatus('Upload failed: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
