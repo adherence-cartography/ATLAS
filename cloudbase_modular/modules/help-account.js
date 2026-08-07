@@ -225,7 +225,7 @@ function _uaCancelSubscription() {
   const key     = currentWorkspace || '';
   const subject = encodeURIComponent(`Cancel Subscription — ${key}`);
   const body    = encodeURIComponent(`Hi,\n\nPlease cancel my ATLAS subscription.\n\nWorkspace Key: ${key}\nEmail: ${email}\n\nThank you.`);
-  window.open(`mailto:billing@adherence.cc?subject=${subject}&body=${body}`, '_blank');
+  window.open(`mailto:philip.morisky@adherence.cc?subject=${subject}&body=${body}`, '_blank');
 }
 
 function _uaExportData() {
