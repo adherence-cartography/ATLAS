@@ -355,7 +355,7 @@
       <div class="doc-meta-item">Platform: <span>atlas.adherence.cc</span></div>
       <div class="doc-meta-item">File: <span>pharmacy.html</span></div>
       <div class="doc-meta-item">Deploy target: <span>Cloudflare Workers</span></div>
-      <div class="doc-meta-item">Last revised: <span>July 2026</span></div>
+      <div class="doc-meta-item">Last revised: <span>September 2026 (v2)</span></div>
     </div>
   </div>
 
@@ -363,14 +363,16 @@
   <div class="section">
     <div class="section-title">How the Gateway Works</div>
     <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px;line-height:1.65;">
-      The pharmacy gateway is a 5-screen kiosk page. A pharmacist accesses it via a site-specific URL.
-      On load, the page validates the site code against the ATLAS Lambda, signs in with a scoped Firebase custom token,
-      then presents the setup form. The pharmacist configures the session and hands the tablet to the patient.
+      The pharmacy gateway is a 5-screen kiosk page. The pharmacist signs in with their ATLAS workspace key,
+      which is validated against SSM by the Lambda and exchanged for a scoped Firebase custom token.
+      After sign-in the pharmacist completes an SDoH setup form and hands the tablet to the patient for the MAP assessment.
+      Assessment data is written to the ATLAS <code>assessments</code> node and is immediately visible in the linked ATLAS workspace dashboard.
       When a high-risk result occurs, the pharmacist can push an alert directly to the linked prescriber workspace.
+      The workspace profile (name, pharmacy type, geo coordinates) is read from SSM at login; no setup fields duplicate that information.
     </p>
 
     <div class="flow">
-      <div class="flow-node">Pharmacy URL<br><span style="font-family:var(--mono);font-size:0.68rem;color:var(--muted);">?site=PHRM-XXX</span></div>
+      <div class="flow-node">Pharmacist enters key<br><span style="font-family:var(--mono);font-size:0.68rem;color:var(--muted);">Login screen</span></div>
       <div class="flow-arrow">&#8594;</div>
       <div class="flow-node accent">Lambda validates key<br><span style="font-family:var(--mono);font-size:0.68rem;color:rgba(212,168,67,0.6);">SSM lookup</span></div>
       <div class="flow-arrow">&#8594;</div>
@@ -386,9 +388,20 @@
     <div class="callout info" style="margin-top:16px;">
       <div class="callout-icon">&#9432;</div>
       <div class="callout-body">
-        <strong>No pharmacist login required.</strong>
-        The site code in the URL is the credential. Each pharmacy location gets its own PHRM- key provisioned in SSM.
-        The URL is shared with the pharmacy once and bookmarked on the kiosk device.
+        <strong>One key, two apps.</strong>
+        A clinician workspace key works for both the pharmacy kiosk and the ATLAS staff dashboard.
+        The pharmacist signs into <code>pharmacy.html</code> with the same key they use to log into <code>atlas.adherence.cc</code>.
+        No separate site URL or second credential is needed. Pharmacy name, type, and geo data come from the SSM profile; no fields on the setup screen duplicate that.
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:10px;">
+      <div class="callout-icon">&#9888;</div>
+      <div class="callout-body">
+        <strong>Legacy URL mode still works.</strong>
+        Adding <code>?site=PHRM-XXXX</code> to the URL bypasses the login screen and auto-validates on load.
+        This is retained for fixed kiosk deployments where the device never changes hands and no login prompt is desired.
+        For multi-staff clinics, the login screen is the recommended approach.
       </div>
     </div>
   </div>
@@ -421,8 +434,8 @@
         <div class="step-body">
           <p>Run Wrangler from the <code>cloudbase_modular</code> directory. This deploys all static assets including <code>pharmacy.html</code> to the Cloudflare Workers site.</p>
           <div class="code-label">Terminal — from cloudbase_modular/</div>
-          <div class="code-block"><pre><span class="cmd">npx wrangler deploy</span> <span class="flag">--config</span> wrangler.prod.toml</pre></div>
-          <p>Wrangler will output the deployment URL. Verify at <code>https://atlas.adherence.cc/pharmacy.html?demo=true</code> — you should see the MAP Assessment loading spinner and then the setup screen.</p>
+          <div class="code-block"><pre><span class="cmd">npx wrangler deploy</span></pre></div>
+          <p>Wrangler will output the deployment URL and version ID. Verify at <code>https://atlas.adherence.cc/pharmacy.html?demo=true</code> — you should see the MAP Assessment loading spinner and then the setup screen.</p>
           <div class="callout warn">
             <div class="callout-icon">&#9888;</div>
             <div class="callout-body">
@@ -462,28 +475,29 @@
         <div class="step-header">
           <div class="step-num">3</div>
           <div class="step-title-block">
-            <div class="step-title">Provision a Pharmacy Key in AWS SSM</div>
-            <div class="step-where">AWS SSM Parameter Store &rarr; /atlas/workspaces/PHRM-*</div>
+            <div class="step-title">Provision a Clinician Workspace Key in AWS SSM</div>
+            <div class="step-where">AWS SSM Parameter Store &rarr; /atlas/workspaces/CLIN-* (or any prefix)</div>
           </div>
         </div>
         <div class="step-body">
-          <p>Each pharmacy location needs a <code>PHRM-</code> prefixed key stored in SSM. The key is the site code that appears in the pharmacy URL.</p>
+          <p>Each pharmacy location gets one workspace key in SSM. The same key is used for both the pharmacy kiosk login and the ATLAS staff dashboard login. Pharmacy name, type, and all location metadata are stored in the SSM profile and applied automatically at login; staff do not enter them in the app.</p>
+          <p>The <strong>clinician role</strong> is the correct role for pharmacy keys. Only <code>clinician</code> and <code>pharmacy</code> roles are admitted by the pharmacy gateway; any other role is rejected at the login screen.</p>
 
           <div class="callout warn">
             <div class="callout-icon">&#9888;</div>
             <div class="callout-body">
               <strong>Do not include an <code>email</code> field</strong> in the JSON value.
-              If an email is present, the Lambda triggers a magic link flow, which is incompatible with a shared kiosk URL.
-              The "no email" path issues a direct Firebase token, which is what the pharmacy gateway requires.
+              If an email is present, the Lambda triggers a magic link flow, which requires the pharmacist to check their email each session — incompatible with a shared kiosk.
+              Omit <code>email</code> entirely; the key alone is the credential.
             </div>
           </div>
 
-          <div class="code-label">AWS CLI — provision a pharmacy key</div>
+          <div class="code-label">AWS CLI — provision a clinician key (UAE region)</div>
           <div class="code-block"><pre><span class="cmd">aws ssm put-parameter</span> \
-  <span class="flag">--name</span>  <span class="path">"/atlas/workspaces/PHRM-SITECODE"</span> \
-  <span class="flag">--value</span> <span class="val-str">'{"name":"Pharmacy Display Name","role":"pharmacy","country":"Country Name","country_iso2":"XX","city":"City Name","latitude":0.0000,"longitude":0.0000,"parent_pi":"RESKEY-001","parent_institution_name":"Linked Clinic Name"}'</span> \
+  <span class="flag">--name</span>  <span class="path">"/atlas/workspaces/CLIN-XXXX-XXXX-2026"</span> \
+  <span class="flag">--value</span> <span class="val-str">'{"name":"Pharmacist Name","role":"clinician","country":"Country Name","country_iso2":"XX","city":"City Name","latitude":0.0000,"longitude":0.0000,"parent_pi":"INST-XXXX-XXXX-2026","parent_institution_name":"Clinic Name"}'</span> \
   <span class="flag">--type</span>  SecureString \
-  <span class="flag">--region</span> us-east-1</pre></div>
+  <span class="flag">--region</span> me-central-1</pre></div>
 
           <p>If the key already exists and you are updating it, add <code>--overwrite</code> to the command.</p>
 
@@ -500,12 +514,17 @@
               <tr>
                 <td>name</td>
                 <td class="required">required</td>
-                <td><strong>Pharmacy name.</strong> Pre-fills the "Pharmacy Name" field on the setup screen so the pharmacist does not need to type it each time.</td>
+                <td><strong>Pharmacy name.</strong> Displayed in the green "Connected to Workspace" badge on the setup screen and stored on every assessment record as <code>pharmacy_name</code>. There is no separate "Pharmacy Name" form field; this is the sole source.</td>
               </tr>
               <tr>
                 <td>role</td>
                 <td class="required">required</td>
-                <td>Must be <code>"pharmacy"</code>. Used by Firebase rules (<code>role !== 'observer'</code> check) and may be used for role-based UI logic in future versions.</td>
+                <td>Use <code>"clinician"</code> for pharmacists and pharmacy staff. The pharmacy gateway admits <code>clinician</code> and <code>pharmacy</code> roles; any other value is rejected at the login screen. The same key and role works for ATLAS staff dashboard login.</td>
+              </tr>
+              <tr>
+                <td>pharmacy_type</td>
+                <td class="optional">optional</td>
+                <td>Type of pharmacy location. Stored on every assessment record. Example values: <code>"independent"</code>, <code>"retail_community"</code>, <code>"specialty"</code>, <code>"hospital_clinical"</code>. This replaces the old setup-screen dropdown — it is now set once in SSM per location, not entered by staff each session.</td>
               </tr>
               <tr>
                 <td>parent_pi</td>
@@ -574,17 +593,42 @@
         <div class="step-header">
           <div class="step-num">4</div>
           <div class="step-title-block">
-            <div class="step-title">Generate and Distribute the Pharmacy URL</div>
+            <div class="step-title">Set Up the Kiosk Device</div>
             <div class="step-where">Share with pharmacy staff</div>
           </div>
         </div>
         <div class="step-body">
-          <p>The pharmacy URL is constructed from the SSM key name. The <code>?site=</code> parameter must exactly match the portion after <code>/atlas/workspaces/</code> in SSM.</p>
+          <p>Bookmark the base pharmacy URL on the shared dispensary tablet. No site code in the URL is needed — the pharmacist enters their workspace key on the login screen each session.</p>
 
-          <div class="code-label">URL pattern</div>
-          <div class="code-block"><pre>https://atlas.adherence.cc/pharmacy.html?site=<span class="val-str">PHRM-ROMAFARM001</span></pre></div>
+          <div class="code-label">Kiosk URL (bookmark this)</div>
+          <div class="code-block"><pre>https://atlas.adherence.cc/pharmacy.html</pre></div>
 
-          <p>The site code is normalized to uppercase automatically. Send the URL to the pharmacy site administrator. They should bookmark it on the shared dispensary tablet or kiosk device in a full-screen browser (kiosk mode recommended).</p>
+          <p>The pharmacist enters their clinician workspace key on the login screen and taps <strong>Sign In</strong>. After validation, the setup screen loads. The session persists until the browser tab is closed or refreshed.</p>
+
+          <p style="margin-top:16px;"><strong>Setup screen fields (in order):</strong> The pharmacist completes these fields before handing the tablet to the patient. All SDoH fields match the ATLAS MAP assessment exactly so records merge cleanly into the platform.</p>
+
+          <table class="field-table" style="margin-top:10px;">
+            <thead>
+              <tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Patient Reference Code</td><td class="required">required</td><td>Chart number or visit ID. No personal data. Prefixed with the site code to form the <code>patient_number</code> record key.</td></tr>
+              <tr><td>Medical Condition Being Treated</td><td class="optional">optional</td><td>Searchable single-select populated from the full ATLAS condition library (same data as MAP SDoH). English condition name stored in the record regardless of display language.</td></tr>
+              <tr><td>Number of Medications</td><td class="optional">optional</td><td>Dropdown 1–10. Stored as <code>num_medications</code>.</td></tr>
+              <tr><td>Medication(s)</td><td class="optional">optional</td><td>Free text. Stored as <code>drug_type</code> for compatibility with the ATLAS medication field.</td></tr>
+              <tr><td>Gender</td><td class="optional">optional</td><td>Male / Female / Other / Prefer not to say. Matches ATLAS SDoH options.</td></tr>
+              <tr><td>Age Range</td><td class="optional">optional</td><td>Under 18, 18–24, 25–34, 35–44, 45–54, 55–64, 65–74, 75 or older, Prefer not to say. Identical to ATLAS SDoH age ranges.</td></tr>
+              <tr><td>Highest Level of Education</td><td class="optional">optional</td><td>9-option list matching ATLAS SDoH education field. Stored as <code>education_level</code>.</td></tr>
+              <tr><td>Reported Adherence Barriers</td><td class="optional">optional</td><td>Checkbox chips: Cost, Side Effects, Forgetfulness, Complex Regimen, Access, Beliefs, Swallowing Difficulty, Injection Anxiety. Stored as <code>adherence_barriers</code> array.</td></tr>
+              <tr><td>Pharmacist Notes</td><td class="optional">optional</td><td>Free text clinical context. Stored as <code>pharmacist_notes</code>.</td></tr>
+              <tr><td>Language</td><td class="optional">optional</td><td>Sets the display language for the MAP questions shown to the patient. Defaults to English.</td></tr>
+            </tbody>
+          </table>
+
+          <p style="margin-top:16px;"><strong>Fixed kiosk mode (optional):</strong> If the tablet is permanently assigned to one location and you prefer no login prompt, append the key to the URL. The login screen is skipped and validation happens automatically on load.</p>
+
+          <div class="code-label">Fixed kiosk URL (auto-validates, no login screen)</div>
+          <div class="code-block"><pre>https://atlas.adherence.cc/pharmacy.html?site=<span class="val-str">CLIN-XXXX-XXXX-XXXX</span></pre></div>
 
           <div class="callout ok">
             <div class="callout-icon">&#10003;</div>
@@ -607,16 +651,19 @@
           </div>
         </div>
         <div class="step-body">
-          <p>Open the pharmacy URL in a browser and confirm each stage:</p>
+          <p>Open <code>https://atlas.adherence.cc/pharmacy.html</code> in a browser and confirm each stage:</p>
           <ul class="checklist">
-            <li><strong>Loading spinner</strong> appears briefly while the key is being validated by the Lambda.</li>
-            <li><strong>Setup screen loads</strong> (not an error screen). The pharmacy name field should be pre-filled from the SSM profile.</li>
-            <li>If <code>parent_pi</code> was set: a <strong>green "Connected to Workspace" badge</strong> appears above the form fields with the linked institution name.</li>
+            <li><strong>Login screen appears</strong> with a workspace key input field and Sign In button.</li>
+            <li>Enter the provisioned clinician key and tap Sign In. A <strong>brief "Verifying…" state</strong> appears while the Lambda validates.</li>
+            <li><strong>Setup screen loads</strong> with the Patient Reference Code field at the top, followed by the full SDoH form.</li>
+            <li>If <code>parent_pi</code> was set: a <strong>green "Connected to Workspace" badge</strong> appears with the linked institution name. The pharmacy name from the SSM <code>name</code> field is visible there, not in a separate form input.</li>
+            <li>The <strong>Medical Condition</strong> field is a searchable select. Type a partial name to filter. Condition options are the full ATLAS library.</li>
+            <li>Age ranges show: Under 18, 18–24, 25–34, 35–44, 45–54, 55–64, 65–74, 75 or older, Prefer not to say.</li>
             <li>Complete an assessment. On a red result, navigate to the alert screen.</li>
             <li>If <code>parent_pi</code> was set: the <strong>"Push to [Institution] workspace" button</strong> should appear above the Copy and Email buttons.</li>
             <li>Click the push button. Confirm a success toast appears and the button disables with a checkmark.</li>
-            <li>Log into the linked PI workspace in ATLAS and confirm the alert record appears in <code>prescriber_alerts/{parent_pi}/</code> in Firebase (check Realtime Database console).</li>
-            <li>The pharmacy dashboard (Screen 5) should show only this site's records, not all pharmacy assessments.</li>
+            <li>Log into the linked ATLAS workspace dashboard and confirm the assessment record appears. Verify that <code>age_range</code>, <code>education_level</code>, <code>adherence_barriers</code>, and <code>pharmacist_notes</code> are populated in the raw record.</li>
+            <li>The pharmacy dashboard (Screen 5) should show only records for this workspace, not all pharmacy assessments.</li>
           </ul>
         </div>
       </div>
@@ -633,16 +680,16 @@
       </thead>
       <tbody>
         <tr>
-          <td>Loading spinner hangs, then "Site Not Found" with the correct code</td>
-          <td><strong>Lambda cold start or SSM key missing.</strong> Confirm the key exists in SSM with <code>aws ssm get-parameter --name "/atlas/workspaces/PHRM-XXX" --with-decryption</code>. If absent, provision it (Step 3). If present but still failing, check Lambda logs in CloudWatch for the <code>/validate-key</code> invocation.</td>
+          <td>Login screen shows "This workspace key is invalid or has expired"</td>
+          <td><strong>Key not found in SSM or wrong region.</strong> Confirm the key exists with <code>aws ssm get-parameter --name "/atlas/workspaces/PHRM-XXX" --with-decryption</code>. If absent, provision it (Step 3). UAE keys require <code>--region me-central-1</code>. If the key exists but fails, check Lambda logs in CloudWatch for the <code>/validate-key</code> invocation.</td>
         </tr>
         <tr>
-          <td>"No site code provided" error screen</td>
-          <td><strong>URL is missing <code>?site=</code> parameter.</strong> The URL must include <code>?site=PHRM-XXXX</code>. Check the bookmarked URL on the kiosk device.</td>
+          <td>Tapping Sign In shows "Verifying…" then hangs with no error</td>
+          <td><strong>Lambda cold start or network timeout.</strong> The request times out after 12 seconds and shows a timeout message. Wait a moment and try again — Lambda cold starts on first request after inactivity. If repeated failures occur, check CloudWatch for Lambda errors.</td>
         </tr>
         <tr>
-          <td>Setup screen loads but pharmacy name is not pre-filled</td>
-          <td><strong><code>name</code> field missing from SSM value.</strong> Update the SSM parameter to include <code>"name": "Pharmacy Name"</code> and test again. Existing Lambda cache clears on Lambda restart; force a cold start by updating an env var temporarily.</td>
+          <td>Workspace badge shows wrong name or no name</td>
+          <td><strong><code>name</code> field missing or incorrect in SSM profile.</strong> Update the SSM parameter to include <code>"name": "Pharmacy Name"</code> and test again. The name is read from the profile at login time; re-login after updating SSM to see the change.</td>
         </tr>
         <tr>
           <td>Green "Connected to Workspace" badge does not appear</td>
@@ -662,7 +709,11 @@
         </tr>
         <tr>
           <td>Dashboard shows "No assessments recorded" after completing a real assessment</td>
-          <td><strong>Workspace key mismatch.</strong> The dashboard queries <code>pharmacy_assessments</code> by <code>workspace_key === _PG_SITE_CODE</code>. Confirm the SSM key name matches the URL <code>?site=</code> value exactly (both are normalized to uppercase). Old records stored before this update may have used a different casing and won't appear in the indexed query.</td>
+          <td><strong>institution_code mismatch.</strong> The ATLAS workspace dashboard filters records by <code>institution_code</code> matching the logged-in workspace key. The pharmacy gateway sets <code>institution_code</code> to <code>parent_pi</code> from the SSM profile. Confirm <code>parent_pi</code> in the pharmacy key's SSM entry exactly matches the institution's ATLAS workspace key (uppercase).</td>
+        </tr>
+        <tr>
+          <td>Condition dropdown is empty or shows no options</td>
+          <td><strong><code>modules/lang-conditions.js</code> failed to load.</strong> Open browser DevTools and check the Console for script errors on the <code>lang-conditions.js</code> import. Confirm the file exists at <code>cloudbase_modular/modules/lang-conditions.js</code> and that a fresh deploy has been run.</td>
         </tr>
         <tr>
           <td>Assessment completes but does not appear as a dot on the ATLAS MAP globe</td>
@@ -681,40 +732,64 @@
     <div class="section-title">Quick Reference — Minimal SSM Entry (no workspace link)</div>
     <div class="code-block"><pre>{
   <span class="key">"name"</span>: <span class="val-str">"Pharmacy Display Name"</span>,
-  <span class="key">"role"</span>: <span class="val-str">"pharmacy"</span>
-}</pre></div>
+  <span class="key">"role"</span>: <span class="val-str">"clinician"</span>
+}
+
+<span class="comment">// No "email" field — direct token issuance required for kiosk mode</span></pre></div>
 
     <div class="section-title" style="margin-top:28px;">Quick Reference — Full SSM Entry (with geo + linked PI workspace)</div>
     <div class="code-block"><pre>{
   <span class="key">"name"</span>:                    <span class="val-str">"Pharmacy Display Name"</span>,
-  <span class="key">"role"</span>:                    <span class="val-str">"pharmacy"</span>,
+  <span class="key">"role"</span>:                    <span class="val-str">"clinician"</span>,
+  <span class="key">"pharmacy_type"</span>:           <span class="val-str">"specialty"</span>,           <span class="comment">// independent | retail_community | specialty | hospital_clinical</span>
   <span class="key">"institution"</span>:            <span class="val-str">"Parent Health System or Network"</span>,
   <span class="key">"country"</span>:                <span class="val-str">"Country Name"</span>,
   <span class="key">"country_iso2"</span>:           <span class="val-str">"XX"</span>,                  <span class="comment">// ISO 3166-1 alpha-2 code</span>
   <span class="key">"city"</span>:                   <span class="val-str">"City Name"</span>,
   <span class="key">"latitude"</span>:               <span class="val-num">0.0000</span>,                <span class="comment">// decimal — required for MAP globe</span>
   <span class="key">"longitude"</span>:              <span class="val-num">0.0000</span>,                <span class="comment">// decimal — required for MAP globe</span>
-  <span class="key">"parent_pi"</span>:              <span class="val-str">"RESKEY-001"</span>,          <span class="comment">// PI workspace key in SSM</span>
+  <span class="key">"parent_pi"</span>:              <span class="val-str">"RESKEY-001"</span>,          <span class="comment">// ATLAS workspace key of linked institution/PI</span>
   <span class="key">"parent_institution_name"</span>: <span class="val-str">"Linked Clinic or Research Site"</span>
 }
 
-<span class="comment">// Note: no "email" field — direct token issuance required for kiosk mode</span></pre></div>
+<span class="comment">// No "email" field — direct token issuance required for kiosk mode</span></pre></div>
+
+    <div class="section-title" style="margin-top:28px;">Quick Reference — Assessment record fields written per patient</div>
+    <div class="code-block"><pre><span class="comment">// SDoH fields (all optional, set by pharmacist on setup screen)</span>
+<span class="key">condition</span>          <span class="comment">// from searchable ATLAS condition library</span>
+<span class="key">num_medications</span>    <span class="comment">// integer 1–10</span>
+<span class="key">drug_type</span>          <span class="comment">// medication text</span>
+<span class="key">gender</span>             <span class="comment">// Male | Female | Other/Prefer not to say</span>
+<span class="key">age_range</span>          <span class="comment">// Under 18 | 18–24 | 25–34 | 35–44 | 45–54 | 55–64 | 65–74 | 75 or older | Prefer not to say</span>
+<span class="key">education_level</span>    <span class="comment">// No formal education … Doctoral degree | Prefer not to say</span>
+<span class="key">adherence_barriers</span> <span class="comment">// array — Cost / Side effects / Forgetfulness / Complex regimen / Access / Beliefs / Swallowing / Injection</span>
+<span class="key">pharmacist_notes</span>   <span class="comment">// free text, workspace-only</span>
+
+<span class="comment">// Metadata always written (from SSM profile)</span>
+<span class="key">pharmacy_name</span>      <span class="comment">// from profile.name</span>
+<span class="key">pharmacy_type</span>      <span class="comment">// from profile.pharmacy_type</span>
+<span class="key">institution_code</span>   <span class="comment">// set to parent_pi — required for ATLAS dashboard visibility</span></pre></div>
 
     <div class="section-title" style="margin-top:28px;">Quick Reference — URL formats</div>
-    <div class="code-block"><pre><span class="comment">// Production pharmacy URL</span>
-https://atlas.adherence.cc/pharmacy.html?site=<span class="path">PHRM-SITECODE</span>
+    <div class="code-block"><pre><span class="comment">// Standard kiosk URL (login screen appears)</span>
+https://atlas.adherence.cc/pharmacy.html
+
+<span class="comment">// Fixed kiosk URL (auto-validates on load, no login screen)</span>
+https://atlas.adherence.cc/pharmacy.html?site=<span class="path">CLIN-SITECODE</span>
 
 <span class="comment">// Demo mode — no validation, no Firebase writes, shows synthetic data</span>
 https://atlas.adherence.cc/pharmacy.html?demo=true
 
-<span class="comment">// Verify a key exists in SSM</span>
-<span class="cmd">aws ssm get-parameter</span> <span class="flag">--name</span> <span class="path">"/atlas/workspaces/PHRM-SITECODE"</span> <span class="flag">--with-decryption</span>
+<span class="comment">// Verify a key exists in SSM (US region)</span>
+<span class="cmd">aws ssm get-parameter</span> <span class="flag">--name</span> <span class="path">"/atlas/workspaces/CLIN-SITECODE"</span> <span class="flag">--with-decryption</span>
 
-<span class="comment">// Update an existing key (add --overwrite)</span>
-<span class="cmd">aws ssm put-parameter</span> <span class="flag">--name</span> <span class="path">"/atlas/workspaces/PHRM-SITECODE"</span> <span class="flag">--value</span> <span class="val-str">'{"name":"...","role":"pharmacy"}'</span> <span class="flag">--type</span> SecureString <span class="flag">--overwrite</span>
+<span class="comment">// Provision or update a key (add --overwrite for updates)</span>
+<span class="cmd">aws ssm put-parameter</span> <span class="flag">--name</span> <span class="path">"/atlas/workspaces/CLIN-SITECODE"</span> \
+  <span class="flag">--value</span> <span class="val-str">'{"name":"Pharmacy Name","role":"clinician","parent_pi":"INST-KEY"}'</span> \
+  <span class="flag">--type</span> SecureString
 
 <span class="comment">// Deploy Cloudflare Worker (from cloudbase_modular/)</span>
-<span class="cmd">npx wrangler deploy</span> <span class="flag">--config</span> wrangler.prod.toml
+<span class="cmd">npx wrangler deploy</span>
 
 <span class="comment">// Deploy Firebase rules (from cloudbase_modular/firebase/)</span>
 <span class="cmd">firebase deploy</span> <span class="flag">--only</span> database</pre></div>

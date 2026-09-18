@@ -125,6 +125,9 @@
 @media(max-width:760px){
   .map-spotlight-cols{grid-template-columns:1fr!important;}
 }
+@media(max-width:900px){
+  .pub-license-grid{grid-template-columns:1fr!important;}
+}
 
 /* Smooth theme transitions */
 body,nav,.tier-card,.inst-card,.reg-card,.faq-item,.security-band{
@@ -571,50 +574,67 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
 
       <!-- ── Tab bar ── -->
       <div class="inst-tab-bar">
-        <button class="inst-tab-btn tab-student active" onclick="switchIndivTab('student')">Student<br/><span style="font-size:0.55rem;opacity:0.65;">$19/month</span></button>
+        <button class="inst-tab-btn tab-student active" onclick="switchIndivTab('student')">Researcher · Student<br/><span style="font-size:0.55rem;opacity:0.65;">$49/month · from $19 with code</span></button>
         <button class="inst-tab-btn tab-clinician" onclick="switchIndivTab('clinician')">Clinician · Care Team<br/><span style="font-size:0.55rem;opacity:0.65;">$49/month · Most Popular</span></button>
         <button class="inst-tab-btn tab-pi" onclick="switchIndivTab('pi')">PI · Investigator<br/><span style="font-size:0.55rem;opacity:0.65;">$149/month</span></button>
       </div>
 
-      <!-- ── STUDENT PANE ── -->
+      <!-- ── RESEARCHER · STUDENT PANE ── -->
       <div class="inst-tab-pane active" id="indiv-pane-student">
         <div>
-          <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">Graduate &amp; Undergraduate Students · Thesis &amp; Coursework</div>
-          <p style="font-size:0.85rem;color:var(--muted);line-height:1.75;margin-bottom:16px;">MAP deployed in your cohort, IRB-ready from the day you subscribe. LMIC universities often covered under institutional umbrella.</p>
+          <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">Academic Researchers · Graduate &amp; Undergraduate Students · Thesis &amp; Coursework</div>
+          <p style="font-size:0.85rem;color:var(--muted);line-height:1.75;margin-bottom:16px;">The full researcher workspace. MAP deployed in your cohort, PEACS longitudinal tracking, PE Domain analysis, and validation suite — IRB-ready from day one. Students apply an institution code for $19/month.</p>
           <ul class="tier-features" style="margin-bottom:0;">
             <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>MAP instrument in your cohort — IRB-ready from the day you subscribe</span></li>
             <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Private cohort isolation · your data never mingles with the global pool</span></li>
-            <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>PEACS snapshot — track adherence trajectories across visits</span></li>
-            <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>60+ languages · Grade 6 literacy · ZOE voice guide for patient accessibility</span></li>
-            <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Thesis-ready export · benchmark your cohort vs. published literature</span></li>
-            <li><span class="feat-check" style="background:rgba(139,111,245,0.15);color:var(--purple);">⬟</span><span>Contribute verified pharmacies, clinics &amp; infrastructure to the ATLAS global POI map — your submissions feed directly into patient geo-scoring worldwide</span></li>
+            <li style="background:rgba(46,201,138,0.04);border-radius:6px;padding:7px 8px;border-bottom:none;margin-bottom:2px;"><span class="feat-check" style="background:rgba(46,201,138,0.18);color:var(--green);">✦</span><span><strong style="color:var(--green);">PE Domain Analysis</strong> — Architecture, Execution &amp; Context longitudinal profiles across every visit</span></li>
+            <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>PEACS longitudinal tracking · BASE · MVMT · STRATA subscales</span></li>
+            <li style="background:rgba(46,201,138,0.04);border-radius:6px;padding:7px 8px;border-bottom:none;margin-bottom:2px;"><span class="feat-check" style="background:rgba(46,201,138,0.18);color:var(--green);">✦</span><span><strong style="color:var(--green);">Validation Suite</strong> — Bland-Altman, ICC, AVE/HTMT, Cronbach's α, item-total correlations, publication-ready</span></li>
+            <li><span class="feat-check" style="background:rgba(139,111,245,0.15);color:var(--purple);">⬟</span><span>APA citation generator · power calculator · country intelligence · TESSERA GRC</span></li>
           </ul>
           <button class="feat-expand-btn" onclick="toggleFeatures('student')" id="feat-btn-student" style="color:var(--green);opacity:0.7;">▸ See all features</button>
           <div class="feat-more" id="feat-more-student">
             <ul class="tier-features" style="margin-bottom:0;">
-              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Bulk upload · XLSM template</span></li>
-              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>CSV export · 100 records/month</span></li>
-              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Cartographic design — coordinate grid panels and PE Triangle visualisation</span></li>
-              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Benchmark comparison — cohort vs. ATLAS global average and published literature</span></li>
-              <li><span class="feat-check feat-dim">–</span><span class="feat-dim">No TPE · PE domain scoring</span></li>
-              <li><span class="feat-check feat-dim">–</span><span class="feat-dim">No MTM log · Sentinel alerts · SOAP notes</span></li>
+              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Bulk upload · XLSM template · unlimited CSV export</span></li>
+              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Longitudinal trajectories · predictive modeling · cohort map</span></li>
+              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>60+ languages · Grade 6 literacy · ZOE voice guide for patient accessibility</span></li>
+              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>Benchmark — cohort vs. ATLAS global average and published literature</span></li>
+              <li><span class="feat-check" style="background:rgba(46,201,138,0.15);color:var(--green);">✓</span><span>LMIC program — subsidized access for universities in low and middle income countries</span></li>
+              <li><span class="feat-check feat-dim">–</span><span class="feat-dim">No MTM log · no ZOE SOAP notes · research-only workspace</span></li>
             </ul>
+          </div>
+
+          <!-- Student code field -->
+          <div style="margin-top:18px;padding:14px 16px;background:rgba(46,201,138,0.04);border:1px solid rgba(46,201,138,0.18);border-radius:10px;">
+            <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(46,201,138,0.75);margin-bottom:6px;">Student Discount Code</div>
+            <div style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;line-height:1.65;">Graduate or undergraduate student? Enter the code from your department or thesis supervisor to subscribe at $19/month. No code? Email <a href="mailto:philip.morisky@adherence.cc?subject=Student%20Code%20Request" style="color:rgba(46,201,138,0.7);text-decoration:none;">philip.morisky@adherence.cc</a> with your institution name.</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="stu-code-input" type="text" placeholder="STU-INSTITUTION-2026" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(46,201,138,0.25);border-radius:6px;padding:9px 12px;font-family:var(--font-m);font-size:0.80rem;letter-spacing:0.06em;color:var(--bright);outline:none;transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='rgba(46,201,138,0.5)'" onblur="this.style.borderColor='rgba(46,201,138,0.25)'"
+                oninput="this.value=this.value.toUpperCase()"
+                onkeydown="if(event.key==='Enter')applyStudentCode()"/>
+              <button onclick="applyStudentCode()"
+                style="padding:9px 16px;font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(46,201,138,0.1);border:1px solid rgba(46,201,138,0.35);color:var(--green);border-radius:6px;cursor:pointer;transition:all 0.2s;white-space:nowrap;"
+                onmouseover="this.style.background='rgba(46,201,138,0.2)'" onmouseout="this.style.background='rgba(46,201,138,0.1)'">Apply</button>
+            </div>
+            <div id="stu-code-feedback" style="font-family:var(--font-m);font-size:0.70rem;letter-spacing:0.04em;margin-top:8px;min-height:16px;line-height:1.5;"></div>
           </div>
         </div>
         <div>
           <div style="background:rgba(46,201,138,0.05);border:1px solid rgba(46,201,138,0.2);border-radius:10px;padding:20px;text-align:center;margin-bottom:12px;">
-            <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">Student</div>
-            <div style="font-family:var(--font-d);font-size:2.6rem;font-weight:300;color:var(--bright);line-height:1;">$19</div>
+            <div id="res-tier-label" style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">Researcher</div>
+            <div id="res-price-display" style="font-family:var(--font-d);font-size:2.6rem;font-weight:300;color:var(--bright);line-height:1;">$49</div>
             <div style="font-size:0.80rem;color:var(--muted);margin-bottom:4px;">/month</div>
-            <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);opacity:0.6;margin-bottom:16px;">$199/year · cancel anytime</div>
-            <div style="font-family:var(--font-m);font-size:0.56rem;color:rgba(46,201,138,0.65);background:rgba(46,201,138,0.06);border:1px solid rgba(46,201,138,0.15);border-radius:5px;padding:5px 8px;margin-bottom:14px;letter-spacing:0.06em;">STU-[INST]-XXXX-2026</div>
-            <button class="tier-btn" id="btn-student" style="background:rgba(46,201,138,0.1);border:1px solid rgba(46,201,138,0.3);color:var(--green);" onclick="startCheckout('student')"
+            <div id="res-price-annual" style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);opacity:0.6;margin-bottom:16px;">$499/year · cancel anytime</div>
+            <div id="res-key-fmt" style="font-family:var(--font-m);font-size:0.56rem;color:rgba(46,201,138,0.65);background:rgba(46,201,138,0.06);border:1px solid rgba(46,201,138,0.15);border-radius:5px;padding:5px 8px;margin-bottom:14px;letter-spacing:0.06em;">RES-[INST]-XXXX-2027</div>
+            <button class="tier-btn" id="btn-student" style="background:rgba(46,201,138,0.1);border:1px solid rgba(46,201,138,0.3);color:var(--green);" onclick="startResearcherCheckout()"
               onmouseenter="this.style.background='rgba(46,201,138,0.2)'" onmouseleave="this.style.background='rgba(46,201,138,0.1)'">
-              <span class="btn-text">Get Student Key</span>
+              <span class="btn-text" id="res-btn-text">Get Researcher Key</span>
               <span class="btn-spinner" style="border-top-color:var(--green);"></span>
             </button>
           </div>
-          <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">Letter of Permission included<br/>LMIC program available</div>
+          <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);line-height:1.75;text-align:center;">Letter of Permission included<br/>Student code reduces price to $19/month</div>
         </div>
       </div>
 
@@ -893,53 +913,6 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
   </div>
 </section>
 
-<!-- ── TESSERA NETWORK CALLOUT ─────────────────────────────────────────── -->
-<div style="position:relative;z-index:1;max-width:960px;margin:0 auto 56px;padding:0 40px;">
-  <div style="background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.2);border-radius:14px;padding:36px 40px;">
-    <div style="display:grid;grid-template-columns:1fr auto;gap:32px;align-items:start;">
-      <div>
-        <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.20em;text-transform:uppercase;color:rgba(212,168,67,0.65);margin-bottom:10px;">Scala Carta Foundation &middot; TESSERA GRC</div>
-        <div style="font-family:var(--font-d);font-size:1.55rem;font-weight:300;color:var(--bright);line-height:1.2;margin-bottom:12px;">Building a research career?<br/>TESSERA is your scientific identity, not just a key.</div>
-        <p style="font-size:0.84rem;color:var(--muted);line-height:1.78;margin:0 0 8px;">A standalone workspace key gives you immediate ATLAS access and a Letter of Permission. <strong style="color:var(--bright);font-weight:500;">TESSERA membership</strong> includes your workspace and adds your scientific profile: a credential that appears on publications and grant applications, your tile on the global mosaic, access to the Research Exchange and Researcher Directory, co-authorship pathways, and formal affiliation with the Scala Carta Foundation (501c3). Dues are tax-deductible.</p>
-        <p style="font-size:0.80rem;color:rgba(212,168,67,0.75);line-height:1.65;margin:0 0 18px;"><strong style="color:rgba(212,168,67,0.9);">Already have a workspace key?</strong> Add TESSERA consortium membership as an annual add-on — your existing workspace carries over, no new key issued. Apply from your payment confirmation screen or below.</p>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:0.76rem;">
-          <div style="background:rgba(139,111,245,0.07);border:1px solid rgba(139,111,245,0.2);border-radius:8px;padding:12px 14px;">
-            <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(139,111,245,0.7);margin-bottom:6px;">Student Affiliate</div>
-            <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;color:var(--bright);">$199<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/yr</span></div>
-            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">Workspace included &middot; mosaic tile &middot; credential</div>
-            <div style="color:rgba(139,111,245,0.6);font-size:0.66rem;margin-top:5px;font-family:var(--font-m);">+$99/yr if key held</div>
-          </div>
-          <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:12px 14px;">
-            <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(16,185,129,0.7);margin-bottom:6px;">Research Affiliate</div>
-            <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;color:var(--bright);">$499<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/yr</span></div>
-            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">Workspace included &middot; 3 seats &middot; pub pathway</div>
-            <div style="color:rgba(16,185,129,0.6);font-size:0.66rem;margin-top:5px;font-family:var(--font-m);">+$299/yr if key held</div>
-          </div>
-          <div style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.18);border-radius:8px;padding:12px 14px;">
-            <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(6,182,212,0.7);margin-bottom:6px;">Validation Partner</div>
-            <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;color:var(--bright);">$1,999<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/yr</span></div>
-            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">Workspace included &middot; 10 seats &middot; co-authorship</div>
-          </div>
-          <div style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.18);border-radius:8px;padding:12px 14px;">
-            <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(212,168,67,0.7);margin-bottom:6px;">Institutional Partner</div>
-            <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;color:var(--bright);">$5,999<span style="font-size:0.65rem;font-family:var(--font-b);color:var(--muted);">/yr</span></div>
-            <div style="color:var(--muted);font-size:0.70rem;margin-top:4px;line-height:1.5;">Workspace included &middot; unlimited seats &middot; advisory</div>
-          </div>
-        </div>
-      </div>
-      <div style="flex-shrink:0;display:flex;flex-direction:column;gap:10px;min-width:180px;">
-        <a href="https://scalacartafoundation.org/#apply" target="_blank" rel="noopener"
-          style="display:block;text-align:center;font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.35);color:var(--gold);padding:12px 18px;border-radius:7px;text-decoration:none;transition:all 0.18s;"
-          onmouseover="this.style.background='rgba(212,168,67,0.22)'" onmouseout="this.style.background='rgba(212,168,67,0.12)'">Apply to TESSERA &rarr;</a>
-        <a href="https://scalacartafoundation.org/#membership" target="_blank" rel="noopener"
-          style="display:block;text-align:center;font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted);padding:12px 18px;border-radius:7px;text-decoration:none;transition:all 0.18s;"
-          onmouseover="this.style.borderColor='rgba(255,255,255,0.22)';this.style.color='var(--bright)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--muted)'">View All Tiers</a>
-        <div style="font-size:0.65rem;color:var(--muted);line-height:1.55;text-align:center;padding:0 4px;">Application reviewed in 3–5 business days. Workspace included or carries over if already held.</div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- LOP coverage notice -->
 <div style="position:relative;z-index:1;max-width:960px;margin:0 auto 48px;padding:0 40px;">
   <div style="background:rgba(78,156,245,0.04);border:1px solid rgba(78,156,245,0.18);border-left:3px solid rgba(78,156,245,0.5);border-radius:0 10px 10px 0;padding:20px 24px;display:flex;gap:18px;align-items:flex-start;">
@@ -955,10 +928,10 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
 <section style="position:relative;z-index:1;max-width:960px;margin:0 auto 80px;padding:0 40px;" id="section-pub-license">
 
   <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(212,168,67,0.55);margin-bottom:10px;">Publication Rights</div>
-  <h2 style="font-family:var(--font-d);font-size:1.7rem;font-weight:300;color:var(--bright);margin-bottom:8px;">Two paths. Know which one is yours.</h2>
-  <p style="font-size:0.88rem;color:var(--muted);line-height:1.75;margin-bottom:28px;max-width:680px;">Active workspace subscribers already have their Letter of Permission — it's included in the subscription. If your study is complete and you never subscribed, your path depends on whether the study was funded.</p>
+  <h2 style="font-family:var(--font-d);font-size:1.7rem;font-weight:300;color:var(--bright);margin-bottom:8px;">Three paths. Know which one is yours.</h2>
+  <p style="font-size:0.88rem;color:var(--muted);line-height:1.75;margin-bottom:28px;max-width:680px;">Active workspace subscribers already have their Letter of Permission — it's included in the subscription. If your study is complete and you never subscribed, your path depends on whether the study was funded and whether your institution permits data sharing.</p>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+  <div class="pub-license-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:24px;">
 
     <!-- Left: Student flat-rate -->
     <div style="background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.22);border-top:3px solid rgba(212,168,67,0.55);border-radius:12px;padding:30px;">
@@ -1011,6 +984,32 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
       <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);margin-top:7px;letter-spacing:0.04em;">Instant issuance · Students and self-funded studies only</div>
     </div>
 
+    <!-- Middle: Data-Privacy License -->
+    <div style="background:rgba(139,111,245,0.03);border:1px solid rgba(139,111,245,0.18);border-top:3px solid rgba(139,111,245,0.5);border-radius:12px;padding:30px;display:flex;flex-direction:column;">
+      <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(139,111,245,0.65);margin-bottom:8px;">Data-Restricted Jurisdiction · Institutional Privacy Law</div>
+      <div style="font-family:var(--font-d);font-size:1.2rem;font-weight:300;color:var(--bright);margin-bottom:10px;">Data-Privacy Publication License</div>
+      <p style="font-size:0.80rem;color:var(--muted);line-height:1.75;margin-bottom:16px;">For researchers whose institutional or national regulations prohibit sharing raw patient data externally. No data upload required. Participant count is self-declared. The authorization letter explicitly acknowledges the declared privacy restriction.</p>
+
+      <div style="background:rgba(139,111,245,0.05);border:1px solid rgba(139,111,245,0.18);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+        <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(139,111,245,0.6);margin-bottom:10px;">What this covers</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--purple);flex-shrink:0;">✓</span><span style="font-size:0.76rem;color:var(--muted);line-height:1.6;">MMAS-8 authorization letter for the named study, accepted by journal editors and ethics committees</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--purple);flex-shrink:0;">✓</span><span style="font-size:0.76rem;color:var(--muted);line-height:1.6;">Permanent, verifiable <code style="font-family:var(--font-m);font-size:0.72em;">PUB-XXXX-XXXX</code> key — never expires</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--purple);flex-shrink:0;">✓</span><span style="font-size:0.76rem;color:var(--muted);line-height:1.6;">No raw data required — manuscript methods section or IRB protocol as proof of use</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:rgba(139,111,245,0.4);flex-shrink:0;">↳</span><span style="font-size:0.72rem;color:var(--dim);line-height:1.6;">Participant count is self-declared. Letter notes the declared privacy restriction. Verified by editorial offices via keys.adherence.cc/verify.</span></div>
+        </div>
+      </div>
+
+      <div style="font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);opacity:0.6;margin-bottom:10px;">Flat rate · one-time · any participant count</div>
+      <div style="background:var(--inner-box);border:1px solid var(--inner-box-bd);border-radius:7px;padding:14px;text-align:center;margin-bottom:16px;">
+        <div style="font-family:var(--font-d);font-size:2rem;font-weight:300;color:var(--bright);">$400</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;">one-time · permanent license</div>
+      </div>
+
+      <button onclick="openPubPrivacyModal()" style="font-family:var(--font-m);font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(139,111,245,0.1);border:1px solid rgba(139,111,245,0.32);color:rgba(139,111,245,0.9);padding:11px 20px;border-radius:7px;cursor:pointer;transition:all 0.2s;display:block;width:100%;margin-top:auto;" onmouseover="this.style.background='rgba(139,111,245,0.18)'" onmouseout="this.style.background='rgba(139,111,245,0.1)'">Get Data-Privacy License →</button>
+      <div style="font-family:var(--font-m);font-size:0.58rem;color:var(--muted);margin-top:7px;letter-spacing:0.04em;">Instant · No data upload required · Letter delivered by email</div>
+    </div>
+
     <!-- Right: Funded researcher email path -->
     <div style="background:rgba(78,156,245,0.03);border:1px solid rgba(78,156,245,0.18);border-top:3px solid rgba(78,156,245,0.5);border-radius:12px;padding:30px;display:flex;flex-direction:column;">
       <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(78,156,245,0.65);margin-bottom:8px;">Funded Researcher · PI · Institution</div>
@@ -1049,7 +1048,7 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
   </div>
 
   <div style="font-size:0.74rem;color:var(--muted);opacity:0.7;line-height:1.75;padding:14px 18px;border:1px solid var(--border);border-radius:8px;">
-    Both the Letter of Permission and the Publication License are accepted by journal editors, IRB officers, and ethics committees, and are verifiable at <strong style="color:rgba(212,168,67,0.55);">keys.adherence.cc/verify</strong>. Participant count is validated automatically from your uploaded dataset — no self-reporting.
+    All three documents — Letter of Permission, Publication License, and Data-Privacy Publication License — are accepted by journal editors, IRB officers, and ethics committees, and are verifiable at <strong style="color:rgba(212,168,67,0.55);">keys.adherence.cc/verify</strong>. For the Student and Funded paths, participant count is validated automatically from your uploaded dataset. For the Data-Privacy path, participant count is self-declared and the verification record notes this along with the researcher's stated privacy restriction.
   </div>
 
 </section>
@@ -1109,7 +1108,11 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
   </div>
   <div class="faq-item">
     <div class="faq-q">I already collected my data without a subscription. How do I get a letter for my journal?</div>
-    <div class="faq-a">It depends on how your study was funded. If you are a <strong>student or self-funded researcher</strong> with a completed thesis or dissertation, the standalone Publication License is the right product — a flat one-time payment ($49–$249 by participant count), uploaded at <a href="https://atlas.adherence.cc?publish=1" style="color:var(--gold);">atlas.adherence.cc?publish=1</a>, with your PUB key and Letter of Permission issued instantly. If your study was <strong>grant-funded, institutionally funded, or contract-funded</strong>, publication rights are priced by study duration rather than a flat rate. Email <a href="mailto:info@adherence.cc?subject=Publication%20Rights%20%E2%80%93%20Funded%20Study%20Inquiry" style="color:var(--blue);">info@adherence.cc</a> with your study title, funding source, IRB number, and data-collection dates. A workspace subscription covers both data collection and publication rights — if you collected data without subscribing, the publication fee reflects the duration of that coverage.</div>
+    <div class="faq-a">It depends on how your study was funded and whether your institution permits data sharing. If you are a <strong>student or self-funded researcher</strong> with a completed thesis or dissertation, the standalone Publication License is the right product — a flat one-time payment ($49–$249 by participant count), uploaded at <a href="https://atlas.adherence.cc?publish=1" style="color:var(--gold);">atlas.adherence.cc?publish=1</a>, with your PUB key and Letter of Permission issued instantly. If your study was <strong>grant-funded, institutionally funded, or contract-funded</strong>, publication rights are priced by study duration rather than a flat rate. Email <a href="mailto:info@adherence.cc?subject=Publication%20Rights%20%E2%80%93%20Funded%20Study%20Inquiry" style="color:var(--blue);">info@adherence.cc</a> with your study title, funding source, IRB number, and data-collection dates. If your <strong>institution or national regulations prohibit sharing raw patient data externally</strong> (common in China, MENA countries, and other jurisdictions with strict clinical data export controls), the Data-Privacy Publication License applies — no data upload required. Email <a href="mailto:philip.morisky@adherence.cc?subject=Data-Privacy%20Publication%20License%20Request" style="color:var(--purple);">philip.morisky@adherence.cc</a> with your study title, institution, country, IRB number, participant count, and a copy of your manuscript methods section showing MMAS-8 use. Fee is $400 flat. A workspace subscription covers both data collection and publication rights — if you collected data without subscribing, the publication fee reflects the duration of that coverage.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">My hospital regulations do not allow me to share raw patient data outside our institution. Can I still get a publication authorization letter?</div>
+    <div class="faq-a">Yes. The <strong>Data-Privacy Publication License</strong> was created specifically for this situation. Researchers in jurisdictions where institutional or national regulations prohibit cross-border export of raw clinical data — including many hospitals in China, the Middle East, and other regions with strict clinical data management rules — are not required to upload their dataset. Instead, you submit your manuscript methods section or IRB protocol showing that MMAS-8 was used, along with your study title, institution, country, approximate participant count, IRB approval number, and a brief statement of the privacy restriction (e.g., "Hospital Clinical Data Management Regulations prohibit export of patient data"). The authorization letter issued explicitly acknowledges the declared data restriction, and the verification record at <strong>keys.adherence.cc/verify</strong> notes that participant count is self-declared under a declared privacy restriction. Journal editors and ethics committees consistently accept this path. Fee is $400 flat. Email <a href="mailto:philip.morisky@adherence.cc?subject=Data-Privacy%20Publication%20License%20Request&body=Study%20Title%3A%20%0AInstitution%20%2F%20Hospital%3A%20%0ACountry%3A%20%0AData%20Collection%20Period%3A%20%0AApproximate%20Participant%20Count%3A%20%0AIRB%20%2F%20Ethics%20Approval%20Number%3A%20%0APrivacy%20Restriction%20Statement%3A%20%0AManuscript%20Title%3A%20%0AJournal%20Submitting%20To%3A%20" style="color:var(--purple);">philip.morisky@adherence.cc</a> with the information above and attach your methods section or IRB protocol. Reviewed within 2 business days.</div>
   </div>
   <div class="faq-item">
     <div class="faq-q">How does a journal editor verify a Publication License?</div>
@@ -1172,38 +1175,6 @@ select.reg-input option:checked{background-color:#1a2d4a;color:#e8f0f8;}
       <a href="https://atlas.adherence.cc" class="result-btn">Open ATLAS &rarr;</a>
     </div>
 
-    <!-- TESSERA upsell -->
-    <div style="border-top:1px solid rgba(212,168,67,0.18);padding-top:28px;margin-top:28px;" id="tessera-upsell">
-      <div style="font-family:var(--font-m);font-size:0.52rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:8px;">Scala Carta Foundation &middot; TESSERA GRC</div>
-      <div style="font-family:var(--font-d);font-size:1.35rem;font-weight:300;color:var(--bright);line-height:1.25;margin-bottom:10px;">Want more than a key?<br/>Join the consortium your research belongs in.</div>
-      <p style="font-size:0.80rem;color:var(--muted);line-height:1.72;margin-bottom:18px;">TESSERA membership adds your scientific identity to the global adherence network: a mosaic tile on the live world map, a letter of support for grant applications, consortium affiliation on your publications, and access to the Research Exchange. Your workspace carries over — no second payment today.</p>
-
-      <!-- Tier info populated by JS -->
-      <div id="tessera-tier-chip" style="margin-bottom:20px;"></div>
-
-      <!-- Apply state -->
-      <div id="tessera-apply-wrap">
-        <button id="tessera-apply-btn" onclick="_applyToTessera()"
-          style="width:100%;font-family:var(--font-m);font-size:0.70rem;letter-spacing:0.14em;text-transform:uppercase;
-                 padding:14px 24px;border-radius:9px;cursor:pointer;border:none;
-                 background:rgba(212,168,67,0.14);border:1px solid rgba(212,168,67,0.40);color:var(--gold);
-                 transition:all 0.18s;margin-bottom:10px;"
-          onmouseover="this.style.background='rgba(212,168,67,0.24)'" onmouseout="this.style.background='rgba(212,168,67,0.14)'">
-          Apply to TESSERA &rarr;
-        </button>
-        <p style="font-size:0.70rem;color:var(--muted);text-align:center;margin:0;line-height:1.6;">No payment due today &middot; Application reviewed in 3–5 business days &middot; Membership terms discussed after approval</p>
-      </div>
-
-      <!-- Post-submit confirmation -->
-      <div id="tessera-applied-msg" style="display:none;background:rgba(46,201,138,0.06);border:1px solid rgba(46,201,138,0.25);border-radius:9px;padding:16px 18px;text-align:center;">
-        <div style="font-size:1.3rem;margin-bottom:6px;">✓</div>
-        <div style="font-family:var(--font-m);font-size:0.70rem;letter-spacing:0.12em;text-transform:uppercase;color:#2ec98a;margin-bottom:6px;">Application submitted</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin:0;line-height:1.6;">We will review your application and be in touch within 3 business days. Watch for an email from the Scala Carta Foundation.</p>
-      </div>
-
-      <!-- Error -->
-      <div id="tessera-apply-err" style="display:none;font-size:0.76rem;color:#ef4444;margin-top:10px;text-align:center;"></div>
-    </div>
   </div>
 </div>
 <div class="result-screen" id="screen-seat-success">
@@ -1598,31 +1569,6 @@ function setResearcherPath(role) { setClinicianPath(role); }
   if (params.get('status') === 'success') {
     document.getElementById('screen-success').classList.add('active');
     window.history.replaceState({}, '', window.location.pathname);
-    // Populate TESSERA tier chip from registration data saved before Stripe redirect
-    try {
-      const reg = JSON.parse(sessionStorage.getItem('_tessera_reg') || '{}');
-      const chipEl = document.getElementById('tessera-tier-chip');
-      if (chipEl && reg.tier) {
-        const TESSERA_MAP = {
-          student:    { label: 'Student Affiliate',    color: '#8b6ff5', border: 'rgba(139,111,245,0.35)', bg: 'rgba(139,111,245,0.07)', addOn: '$99/yr add-on',    benefits: 'Mosaic tile · letter of support · research exchange · consortium credential' },
-          researcher: { label: 'Research Affiliate',   color: '#2ec98a', border: 'rgba(46,201,138,0.35)',  bg: 'rgba(46,201,138,0.07)',  addOn: '$299/yr add-on',   benefits: 'Mosaic tile · letter of support · 3 seats · publication pathway · exchange' },
-          pi:         { label: 'Validation Partner',   color: '#06b6d4', border: 'rgba(6,182,212,0.35)',   bg: 'rgba(6,182,212,0.07)',   addOn: 'Contact us',       benefits: '10 seats · co-authorship · grant letters · advisory access · summit invitation' },
-        };
-        const t = TESSERA_MAP[reg.tier] || TESSERA_MAP.researcher;
-        chipEl.innerHTML = `
-          <div style="background:${t.bg};border:1px solid ${t.border};border-radius:9px;padding:14px 16px;display:flex;align-items:flex-start;gap:14px;">
-            <div style="flex:1;">
-              <div style="font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.16em;text-transform:uppercase;color:${t.color};margin-bottom:5px;">Your TESSERA tier</div>
-              <div style="font-family:var(--font-d);font-size:1.1rem;font-weight:300;color:var(--bright);margin-bottom:4px;">${t.label}</div>
-              <div style="font-size:0.74rem;color:var(--muted);line-height:1.55;">${t.benefits}</div>
-            </div>
-            <div style="text-align:right;flex-shrink:0;">
-              <div style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:${t.color};">${t.addOn}</div>
-              <div style="font-size:0.64rem;color:var(--muted);margin-top:3px;">billed after approval</div>
-            </div>
-          </div>`;
-      }
-    } catch(_) {}
   }
   if (params.get('status') === 'cancel') {
     document.getElementById('screen-cancel').classList.add('active');
@@ -1641,6 +1587,51 @@ function setResearcherPath(role) { setClinicianPath(role); }
 // Clinical roles — same UX as pharmacist: no study title, practice name for institution
 const CLINICAL_ROLES = new Set(['pharmacist','np','pa','rn','md','care_coordinator']);
 
+// Student code state — applied from the Researcher · Student pane
+let _studentCodeApplied = false;
+let _studentCodeValue = '';
+
+function applyStudentCode() {
+  const input    = document.getElementById('stu-code-input');
+  const code     = (input?.value || '').trim().toUpperCase();
+  const feedback = document.getElementById('stu-code-feedback');
+  const priceEl  = document.getElementById('res-price-display');
+  const annualEl = document.getElementById('res-price-annual');
+  const keyFmtEl = document.getElementById('res-key-fmt');
+  const labelEl  = document.getElementById('res-tier-label');
+  const btnText  = document.getElementById('res-btn-text');
+
+  // Pattern: STU- followed by 2-10 alphanumeric chars, followed by -YYYY
+  const valid = /^STU-[A-Z0-9]{2,10}-\d{4}$/.test(code);
+
+  if (valid) {
+    _studentCodeApplied = true;
+    _studentCodeValue   = code;
+    if (feedback) { feedback.textContent = '✓ Student code applied — $19/month'; feedback.style.color = 'var(--green)'; }
+    if (priceEl)  priceEl.textContent  = '$19';
+    if (annualEl) annualEl.textContent = '$199/year · cancel anytime';
+    if (keyFmtEl) keyFmtEl.textContent = 'STU-[INST]-XXXX-2027';
+    if (labelEl)  labelEl.textContent  = 'Researcher · Student';
+    if (btnText)  btnText.textContent  = 'Get Student Key';
+  } else {
+    _studentCodeApplied = false;
+    _studentCodeValue   = '';
+    if (code && feedback) { feedback.textContent = '✗ Code not recognized — contact your supervisor or philip.morisky@adherence.cc'; feedback.style.color = '#ef4444'; }
+    else if (feedback)    feedback.textContent = '';
+    if (priceEl)  priceEl.textContent  = '$49';
+    if (annualEl) annualEl.textContent = '$499/year · cancel anytime';
+    if (keyFmtEl) keyFmtEl.textContent = 'RES-[INST]-XXXX-2027';
+    if (labelEl)  labelEl.textContent  = 'Researcher';
+    if (btnText)  btnText.textContent  = 'Get Researcher Key';
+  }
+}
+
+// Routes Researcher · Student checkout based on whether a code was applied
+function startResearcherCheckout() {
+  _pendingRole = 'researcher';
+  startCheckout(_studentCodeApplied ? 'student' : 'researcher');
+}
+
 // Step 1: Button click opens registration modal
 function startCheckout(tier) {
   _pendingTier = tier;
@@ -1650,7 +1641,7 @@ function startCheckout(tier) {
   const pill = document.getElementById('reg-tier-pill');
   const p    = ROLE_PROFILES[_pendingRole] || ROLE_PROFILES['pharmacist'];
   const resLabel = isClinical ? (p.label + ' · $49/mo') : 'Researcher · $49/mo';
-  const labels   = { student: 'Student · $19/mo', researcher: resLabel, pi: 'Investigator · $149/mo' };
+  const labels   = { student: (_studentCodeApplied ? 'Researcher · Student · $19/mo' : 'Researcher · $49/mo'), researcher: resLabel, pi: 'Investigator · $149/mo' };
   pill.textContent = labels[tier] || tier;
   // Pill colour: use 'clinician' class for clinical roles, 'researcher' for research role
   const pillClass = (tier === 'researcher' && isClinical) ? 'clinician' : tier;
@@ -1753,8 +1744,8 @@ function checkIntendedUse() {
 
   const warnings = {
     student: {
-      funded_research: 'The Student tier is intended for thesis and coursework studies. Funded research under a grant or institutional budget requires the PI · Multi-Site tier ($149/mo). Selecting the wrong tier may result in your permission letter being invalid for grant reporting or journal submission.',
-      commercial:      'Commercial or industry-sponsored research requires the PI · Multi-Site tier ($149/mo) or an Institution contract. Student keys are not valid for commercial use and will not be honoured in journal or IRB submissions.',
+      funded_research: 'If your work is funded by a grant or institutional budget, the PI · Investigator tier ($149/mo) provides IRB-grade export headers, CONSORT flow, sub-workspace management, and a permission letter appropriate for grant reporting.',
+      commercial:      'Commercial or industry-sponsored research should use the PI · Investigator tier ($149/mo) or an Institution contract to ensure your permission letter covers commercial application.',
     },
     researcher: {
       funded_research: 'If your work is funded by a grant or institutional budget, the PI · Multi-Site tier ($149/mo) provides IRB-grade export headers, sub-workspace management, and a permission letter appropriate for grant reporting.',
@@ -1834,7 +1825,8 @@ async function submitRegistration() {
         institution,
         study_title,
         intended_use,
-        role: _pendingTier === 'researcher' ? _pendingRole : _pendingTier,
+        role: (_pendingTier === 'researcher' || _pendingTier === 'student') ? _pendingRole : _pendingTier,
+        ...(_pendingTier === 'student' && _studentCodeApplied ? { student_code: _studentCodeValue } : {}),
         ...(isPi ? { irb_protocol, irb_board, study_start, study_end, num_sites, funding_source, grant_num } : {}),
         ...(_parentPi ? { parent_pi: _parentPi } : {}),
         success_url: window.location.origin + window.location.pathname + '?status=success',
@@ -1851,13 +1843,6 @@ async function submitRegistration() {
     document.getElementById('reg-modal').classList.remove('active');
 
     if (url) {
-      // Save registration data so the success screen can pre-fill the TESSERA application
-      try {
-        sessionStorage.setItem('_tessera_reg', JSON.stringify({
-          name, email, institution, study_title,
-          tier: _pendingTier, role: _pendingRole,
-        }));
-      } catch(_) {}
       window.location.href = url;
     } else {
       throw new Error('No checkout URL returned');
@@ -1869,83 +1854,6 @@ async function submitRegistration() {
       : 'Could not start checkout. Please try again or email info@adherence.cc');
     btn.disabled    = false;
     btn.textContent = 'Continue to Payment →';
-  }
-}
-
-// ── TESSERA Application from Success Screen ──────────────────────────────────
-
-let _keysDb = null;
-function _getKeysDb() {
-  if (_keysDb) return _keysDb;
-  try {
-    firebase.app('keys-page');
-    _keysDb = firebase.database(firebase.app('keys-page'));
-  } catch(_) {
-    _keysDb = firebase.database(firebase.initializeApp({
-      apiKey:            'AIzaSyBRUEGRPaIWHMlzn0lT9otbJQEYZs4Br1A',
-      authDomain:        'adherence-project-2026.firebaseapp.com',
-      databaseURL:       'https://adherence-project-2026-default-rtdb.firebaseio.com',
-      projectId:         'adherence-project-2026',
-      storageBucket:     'adherence-project-2026.firebasestorage.app',
-      messagingSenderId: '222566948658',
-      appId:             '1:222566948658:web:85528e19dd039c199a412b',
-    }, 'keys-page'));
-  }
-  return _keysDb;
-}
-
-// Tier number for consortium_applications (matches sa-consortium.js _CONS_TIERS)
-const _TESSERA_TIER_NUM = { student: 4, researcher: 3, pi: 2 };
-
-async function _applyToTessera() {
-  const btn    = document.getElementById('tessera-apply-btn');
-  const errEl  = document.getElementById('tessera-apply-err');
-  errEl.style.display = 'none';
-
-  let reg = {};
-  try { reg = JSON.parse(sessionStorage.getItem('_tessera_reg') || '{}'); } catch(_) {}
-
-  if (!reg.email) {
-    errEl.textContent = 'Registration data not found. Please email info@scalacartafoundation.org to apply manually.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Submitting…';
-
-  const tierNum = _TESSERA_TIER_NUM[reg.tier] || 3;
-  const ref = 'TES-' + Date.now().toString(36).toUpperCase();
-
-  const payload = {
-    name:            reg.name         || '',
-    first_name:      (reg.name || '').split(' ')[0] || '',
-    last_name:       (reg.name || '').split(' ').slice(1).join(' ') || '',
-    email:           reg.email        || '',
-    contact_email:   reg.email        || '',
-    institution:     reg.institution  || '',
-    study_title:     reg.study_title  || '',
-    tier:            tierNum,
-    role:            reg.role         || reg.tier || '',
-    status:          'pending',
-    applied_at:      Date.now(),
-    application_ref: ref,
-    tessera_id:      null,
-    source:          'keys-checkout-success',
-    atlas_key_tier:  reg.tier         || '',
-    atlas_key_role:  reg.role         || '',
-  };
-
-  try {
-    await _getKeysDb().ref('consortium_applications').push(payload);
-    sessionStorage.removeItem('_tessera_reg');
-    document.getElementById('tessera-apply-wrap').style.display = 'none';
-    document.getElementById('tessera-applied-msg').style.display = 'block';
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'Apply to TESSERA →';
-    errEl.textContent = 'Submission failed — please email info@scalacartafoundation.org to apply.';
-    errEl.style.display = 'block';
   }
 }
 
@@ -2501,6 +2409,163 @@ function updatePmpm(tier) {
   if (el) el.textContent = '= $' + pmpm + ' / patient / month';
 }
 window.updatePmpm = updatePmpm;
+
+// ── Data-Privacy Publication License modal ────────────────────────────────────
+
+function openPubPrivacyModal() {
+  document.getElementById('pubPrivacyModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePubPrivacyModal() {
+  document.getElementById('pubPrivacyModal').style.display = 'none';
+  document.body.style.overflow = '';
+  document.getElementById('pubPrivacyError').textContent = '';
+}
+
+async function submitPubPrivacy(e) {
+  e.preventDefault();
+  const btn = document.getElementById('pubPrivacySubmitBtn');
+  const err = document.getElementById('pubPrivacyError');
+  err.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Redirecting to Stripe…';
+
+  const body = {
+    name:               document.getElementById('ppName').value.trim(),
+    email:              document.getElementById('ppEmail').value.trim(),
+    institution:        document.getElementById('ppInstitution').value.trim(),
+    country:            document.getElementById('ppCountry').value.trim(),
+    collection_start:   document.getElementById('ppStart').value.trim(),
+    collection_end:     document.getElementById('ppEnd').value.trim(),
+    n_participants:     document.getElementById('ppN').value.trim(),
+    irb_number:         document.getElementById('ppIrb').value.trim(),
+    privacy_statement:  document.getElementById('ppPrivacy').value.trim(),
+    manuscript_title:   document.getElementById('ppManuscript').value.trim(),
+    journal:            document.getElementById('ppJournal').value.trim(),
+  };
+
+  if (!body.name || !body.email || !body.institution || !body.manuscript_title || !body.privacy_statement) {
+    err.textContent = 'Please fill in all required fields.';
+    btn.disabled = false;
+    btn.textContent = 'Proceed to Payment →';
+    return;
+  }
+
+  try {
+    const res  = await fetch('https://fv3y62xuce6w3t37oj73x5gzcq0uwdqo.lambda-url.us-east-1.on.aws/pub-privacy-checkout', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) {
+      err.textContent = data.error || 'Checkout failed. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Proceed to Payment →';
+      return;
+    }
+    window.location.href = data.url;
+  } catch(ex) {
+    err.textContent = 'Network error. Please try again.';
+    btn.disabled = false;
+    btn.textContent = 'Proceed to Payment →';
+  }
+}
+
+// Handle Stripe return URLs
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('pub_success')) {
+    document.getElementById('pubSuccessBanner').style.display = 'block';
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  if (params.get('pub_cancel')) {
+    document.getElementById('pubCancelBanner').style.display = 'block';
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+})();
+
+window.openPubPrivacyModal = openPubPrivacyModal;
+window.closePubPrivacyModal = closePubPrivacyModal;
+window.submitPubPrivacy = submitPubPrivacy;
 </script>
+
+<!-- Data-Privacy Publication License Modal -->
+<div id="pubPrivacyModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#0d1829;border:1px solid rgba(139,111,245,0.3);border-top:3px solid rgba(139,111,245,0.7);border-radius:12px;padding:36px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
+    <button onclick="closePubPrivacyModal()" style="position:absolute;top:14px;right:18px;background:none;border:none;color:rgba(200,220,240,0.4);font-size:1.3rem;cursor:pointer;line-height:1;">&#x2715;</button>
+    <div style="font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(139,111,245,0.65);margin-bottom:12px;">Data-Privacy Pathway</div>
+    <div style="font-family:var(--font-d);font-size:1.4rem;font-weight:300;color:#fff;margin-bottom:8px;">Data-Privacy Publication License</div>
+    <p style="font-size:0.80rem;color:rgba(200,220,240,0.55);line-height:1.65;margin:0 0 24px;">No raw data required. Your declared privacy restriction will be noted on the letter. $400 one-time.</p>
+    <form onsubmit="submitPubPrivacy(event)" novalidate>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Full Name <span style="color:rgba(139,111,245,0.7);">*</span></label>
+          <input id="ppName" type="text" required placeholder="Dr. Jane Smith" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+        </div>
+        <div>
+          <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Email <span style="color:rgba(139,111,245,0.7);">*</span></label>
+          <input id="ppEmail" type="email" required placeholder="you@hospital.edu" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Institution / Hospital <span style="color:rgba(139,111,245,0.7);">*</span></label>
+          <input id="ppInstitution" type="text" required placeholder="General Hospital" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+        </div>
+        <div>
+          <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Country</label>
+          <input id="ppCountry" type="text" placeholder="China" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Collection Start</label>
+          <input id="ppStart" type="text" placeholder="Jan 2023" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+        </div>
+        <div>
+          <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Collection End</label>
+          <input id="ppEnd" type="text" placeholder="Dec 2023" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+        </div>
+        <div>
+          <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Participant Count</label>
+          <input id="ppN" type="number" min="1" placeholder="248" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">IRB / Ethics Approval Number</label>
+        <input id="ppIrb" type="text" placeholder="e.g. IRB-2023-0041" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Privacy Restriction Statement <span style="color:rgba(139,111,245,0.7);">*</span></label>
+        <textarea id="ppPrivacy" required rows="2" placeholder="e.g. Hospital Clinical Data Management Regulations prohibit cross-border transfer of patient data." style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.80rem;outline:none;font-family:inherit;resize:vertical;line-height:1.55;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"></textarea>
+        <div style="font-size:0.62rem;color:rgba(200,220,240,0.3);margin-top:3px;">This statement will appear verbatim on the letter issued to you.</div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Manuscript Title <span style="color:rgba(139,111,245,0.7);">*</span></label>
+        <input id="ppManuscript" type="text" required placeholder="Full manuscript title as it will appear in the journal" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+      </div>
+      <div style="margin-bottom:22px;">
+        <label style="font-family:var(--font-m);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;color:rgba(200,220,240,0.4);display:block;margin-bottom:5px;">Journal Submitting To</label>
+        <input id="ppJournal" type="text" placeholder="e.g. Journal of Clinical Pharmacy and Therapeutics" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:9px 11px;color:#e0ecf8;font-size:0.83rem;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(139,111,245,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"/>
+      </div>
+      <div id="pubPrivacyError" style="color:rgba(245,80,80,0.85);font-size:0.76rem;margin-bottom:12px;min-height:18px;"></div>
+      <button id="pubPrivacySubmitBtn" type="submit" style="width:100%;padding:13px;background:rgba(139,111,245,0.15);border:1px solid rgba(139,111,245,0.4);color:rgba(139,111,245,0.95);font-family:var(--font-m);font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;border-radius:7px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(139,111,245,0.25)'" onmouseout="this.style.background='rgba(139,111,245,0.15)'">Proceed to Payment →</button>
+      <div style="font-size:0.62rem;color:rgba(200,220,240,0.25);text-align:center;margin-top:10px;">$400 one-time · Stripe secure checkout · Letter delivered by email within minutes</div>
+    </form>
+  </div>
+</div>
+
+<!-- Success / cancel banners for pub-privacy Stripe return -->
+<div id="pubSuccessBanner" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#0d2818;border:1px solid rgba(32,178,100,0.4);border-radius:10px;padding:16px 28px;color:rgba(32,200,120,0.9);font-family:var(--font-m);font-size:0.76rem;letter-spacing:0.06em;z-index:9998;max-width:500px;text-align:center;">
+  Payment successful. Your Data-Privacy Publication License letter is on its way to your inbox.
+  <button onclick="this.parentElement.style.display='none'" style="display:block;margin:8px auto 0;background:none;border:none;color:rgba(32,200,120,0.5);cursor:pointer;font-size:0.70rem;">Dismiss</button>
+</div>
+<div id="pubCancelBanner" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a0d0d;border:1px solid rgba(200,60,60,0.35);border-radius:10px;padding:16px 28px;color:rgba(220,100,100,0.85);font-family:var(--font-m);font-size:0.76rem;letter-spacing:0.06em;z-index:9998;max-width:400px;text-align:center;">
+  Payment cancelled. No charge was made.
+  <button onclick="this.parentElement.style.display='none'" style="display:block;margin:8px auto 0;background:none;border:none;color:rgba(220,100,100,0.4);cursor:pointer;font-size:0.70rem;">Dismiss</button>
+</div>
+
 </body>
 </html>

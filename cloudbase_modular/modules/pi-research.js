@@ -167,6 +167,7 @@ async function initPiResearchPanel() {
 
       // Cache records globally for site matrix and activity feed
       window._piAllRecords = records;
+      if (typeof piRenderOverviewKpis === 'function') piRenderOverviewKpis(records);
       if (typeof renderPiSiteMatrix === 'function') renderPiSiteMatrix(window._piSiteMatrixData || [], records);
       if (typeof renderPiActivityFeed === 'function') renderPiActivityFeed(records, window._piAmendmentsCache || []);
 
@@ -279,6 +280,201 @@ async function initPiResearchPanel() {
     var _piPanelDmsp = document.getElementById('pi-research-panel');
     if (_piPanelDmsp) _piPanelDmsp.appendChild(_dmspContainer);
   }
+
+  // Network Benchmark — inject after DMSP card
+  _piRenderNetworkBenchmark();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NETWORK BENCHMARK PANEL — PI tier
+// Lets PIs compare their cohort against the anonymised global ATLAS pool,
+// filtered by medical condition. Data served from /benchmark_cache (updated
+// every 6 hours by the Cloudflare scheduled worker). Individual records are
+// never exposed; minimum cell size n ≥ 20 enforced server-side.
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _piNetBenchCondition = '';   // currently selected condition slug
+
+function _piNetBenchSlug(condition) {
+  return condition.replace(/[.$#[\]/]/g, '_').substring(0, 120);
+}
+
+function _piRenderNetworkBenchmark() {
+  if (document.getElementById('pi-net-bench-wrap')) return; // already injected
+  const panel = document.getElementById('pi-research-panel');
+  if (!panel) return;
+
+  const wrap = document.createElement('div');
+  wrap.id = 'pi-net-bench-wrap';
+  wrap.style.cssText = 'margin-top:20px;';
+  wrap.innerHTML = `
+    <div style="background:rgba(46,201,138,0.03);border:1px solid rgba(46,201,138,0.18);border-top:2px solid rgba(46,201,138,0.4);border-radius:10px;overflow:hidden;">
+      <!-- Header -->
+      <div style="padding:14px 20px 10px;border-bottom:1px solid rgba(46,201,138,0.12);display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(46,201,138,0.75);margin-bottom:3px;">Network Benchmark</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.15rem;font-weight:300;color:var(--text);">Your Cohort vs. Similar Patients Globally</div>
+          <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);margin-top:2px;">Anonymised aggregates · min n = 20 · updated every 6 hours</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--strata);flex-shrink:0;"></div>
+            <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);">Your Cohort</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.18);flex-shrink:0;"></div>
+            <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);">ATLAS Network</span>
+          </div>
+        </div>
+      </div>
+      <!-- Filter bar -->
+      <div style="padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(0,0,0,0.12);">
+        <div style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);">Condition:</div>
+        <select id="pi-nb-cond-sel" onchange="_piNetBenchLoad(this.value)"
+          style="font-family:var(--font-mono);font-size:0.78rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--text);border-radius:6px;padding:5px 10px;min-width:250px;outline:none;cursor:pointer;">
+          <option value="">— Select a condition to compare —</option>
+        </select>
+        <div id="pi-nb-meta" style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);"></div>
+      </div>
+      <!-- Content area -->
+      <div id="pi-nb-content" style="padding:20px;">
+        <div style="font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);text-align:center;padding:24px 0;">
+          Select a condition above to compare your cohort against the ATLAS network.
+        </div>
+      </div>
+    </div>`;
+  panel.appendChild(wrap);
+
+  // Populate condition dropdown from benchmark_cache
+  database.ref('benchmark_cache/condition_index').once('value', snap => {
+    const idx = snap.val() || {};
+    const sel = document.getElementById('pi-nb-cond-sel');
+    if (!sel) return;
+    Object.entries(idx)
+      .sort((a, b) => b[1].n - a[1].n)
+      .forEach(([slug, info]) => {
+        const opt = document.createElement('option');
+        opt.value = slug;
+        opt.textContent = `${info.label}  (n = ${info.n.toLocaleString()})`;
+        sel.appendChild(opt);
+      });
+    // If study has a condition set, auto-select it
+    const studyCond = workspaceProfile && workspaceProfile.condition;
+    if (studyCond) {
+      const slug = _piNetBenchSlug(studyCond);
+      if (idx[slug]) { sel.value = slug; _piNetBenchLoad(slug); }
+    }
+  });
+}
+
+function _piNetBenchLoad(slug) {
+  _piNetBenchCondition = slug;
+  const content = document.getElementById('pi-nb-content');
+  const meta    = document.getElementById('pi-nb-meta');
+  if (!content) return;
+
+  if (!slug) {
+    content.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);text-align:center;padding:24px 0;">Select a condition above.</div>';
+    if (meta) meta.textContent = '';
+    return;
+  }
+
+  content.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);padding:16px 0;">Loading network data…</div>';
+
+  database.ref(`benchmark_cache/by_condition/${slug}/mmas8`).once('value', snap => {
+    const cached = snap.val();
+    if (!cached || !cached.n) {
+      content.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);padding:16px 0;">No network data available for this condition (n < 20 — privacy floor).</div>';
+      if (meta) meta.textContent = '';
+      return;
+    }
+    if (meta) meta.textContent = `Network: ${cached.n.toLocaleString()} anonymised records`;
+
+    // Get this PI's cohort records for MMAS
+    const cohortRecs = (window._piAllRecords || []).filter(r => typeof r.score === 'number');
+    const cohortN    = cohortRecs.length;
+    const cohortMean = cohortN ? cohortRecs.reduce((a, r) => a + (r.score||0), 0) / cohortN : null;
+    const cohortSD   = cohortN > 1
+      ? Math.sqrt(cohortRecs.reduce((s, r) => s + Math.pow((r.score||0) - cohortMean, 2), 0) / (cohortN - 1))
+      : 0;
+    const cohortDist = Array(9).fill(0);
+    cohortRecs.forEach(r => {
+      const b = (r.score||0) >= 8 ? 8 : Math.max(0, Math.min(7, Math.floor(r.score||0)));
+      cohortDist[b]++;
+    });
+    const cohortHighPct = cohortN ? Math.round(cohortDist[8] / cohortN * 100) : null;
+
+    const globalMean    = cached.mean;
+    const globalSD      = cached.sd;
+    const globalDist    = cached.dist  || Array(9).fill(0);
+    const globalHighPct = Math.round((cached.high_pct || 0) * 100);
+    const globalMedian  = cached.med != null ? Math.round(cached.med) : (() => {
+      let cum = 0;
+      for (let i = 0; i <= 8; i++) { cum += globalDist[i]; if (cum >= cached.n / 2) return i; }
+      return 4;
+    })();
+
+    // Stat cards
+    const diff      = cohortMean != null ? cohortMean - globalMean : null;
+    const isAbove   = diff != null && diff >= 0;
+    const diffColor = diff != null ? (isAbove ? 'var(--optimal)' : '#ef4444') : 'var(--dim)';
+
+    // Distribution chart
+    const maxPct = Math.max(
+      ...cohortDist.map(v => v / (cohortN || 1)),
+      ...globalDist.map(v => v / cached.n),
+      0.01
+    );
+    const bars = Array.from({length: 9}, (_, i) => {
+      const cPct = cohortN ? cohortDist[i] / cohortN : 0;
+      const gPct = globalDist[i] / cached.n;
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+        <div style="display:flex;gap:2px;align-items:flex-end;height:100px;width:100%;">
+          <div style="flex:1;background:var(--strata);height:${Math.round(cPct/maxPct*100)}px;border-radius:2px 2px 0 0;transition:height 0.3s;" title="Your cohort: ${Math.round(cPct*100)}%"></div>
+          <div style="flex:1;background:rgba(255,255,255,0.18);height:${Math.round(gPct/maxPct*100)}px;border-radius:2px 2px 0 0;" title="Network: ${Math.round(gPct*100)}%"></div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--dim);">${i}</div>
+      </div>`;
+    }).join('');
+
+    content.innerHTML = `
+      <!-- Stat cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:18px;">
+        ${diff !== null ? `
+        <div style="background:rgba(255,255,255,0.02);border:1px solid ${diffColor}33;border-radius:10px;padding:14px 16px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,${diffColor}08,transparent 65%);"></div>
+          <div style="font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">vs Network Mean</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.2rem;font-weight:300;color:${diffColor};line-height:1;">${isAbove?'↑':'↓'} ${Math.abs(diff).toFixed(2)}</div>
+          <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--muted);margin-top:4px;">pts ${isAbove?'above':'below'} ${globalMean.toFixed(2)} ± ${globalSD != null ? globalSD.toFixed(2) : '—'}</div>
+        </div>` : ''}
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(78,156,245,0.18);border-radius:10px;padding:14px 16px;text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">Your Cohort</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.2rem;font-weight:300;color:var(--base);line-height:1;">${cohortMean != null ? cohortMean.toFixed(2) : '—'}</div>
+          <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--muted);margin-top:4px;">${cohortN} patients · ±${cohortSD.toFixed(2)} SD${cohortHighPct != null ? ' · ' + cohortHighPct + '% high' : ''}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px;text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">Network</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.2rem;font-weight:300;color:var(--bright);line-height:1;">${globalMean.toFixed(2)}</div>
+          <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--muted);margin-top:4px;">${cached.n.toLocaleString()} records · ±${globalSD != null ? globalSD.toFixed(2) : '—'} SD · ${globalHighPct}% high</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(139,111,245,0.15);border-radius:10px;padding:14px 16px;text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">Network Median</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.2rem;font-weight:300;color:var(--mvmt);line-height:1;">${globalMedian}</div>
+          <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--muted);margin-top:4px;">MMAS-8 score / 8</div>
+        </div>
+      </div>
+      <!-- Distribution chart -->
+      <div style="display:flex;gap:4px;align-items:flex-end;padding:0 0 4px;">
+        ${bars}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.65rem;color:var(--dim);padding:0 2px;margin-top:2px;margin-bottom:12px;">
+        <span>0 — Non-Adherent</span><span>MMAS-8 Score</span><span>8 — Highly Adherent</span>
+      </div>
+      <!-- Privacy disclosure -->
+      <div style="background:rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.06);border-radius:7px;padding:10px 14px;font-family:var(--font-mono);font-size:0.65rem;color:rgba(107,128,153,0.7);line-height:1.7;">
+        Network data: ${cached.n.toLocaleString()} anonymised records from across the ATLAS platform with this condition. Individual records, workspace identities, and institution codes are not accessible. This aggregate is updated every 6 hours. Publishable with citation: "ATLAS Network Benchmark, Adherence Cartography (${new Date().getFullYear()})."
+      </div>`;
+  });
 }
 
 // ── NIH DMSP Generator Functions ─────────────────────────────────────────────
@@ -1677,7 +1873,7 @@ function switchPiTab(tab) {
     btn.style.color             = isActive ? 'var(--base)' : 'var(--dim)';
     btn.style.borderBottomColor = isActive ? 'var(--base)' : 'transparent';
   });
-  ['overview', 'enrollment', 'governance', 'outcomes', 'team', 'lab', 'extcomp', 'psychometrics'].forEach(function(t) {
+  ['overview', 'records', 'team', 'trends', 'governance', 'research', 'enrollment', 'outcomes', 'analytics', 'longitudinal', 'lab', 'extcomp', 'psychometrics'].forEach(function(t) {
     var panel = document.getElementById('pi-tab-panel-' + t);
     if (panel) panel.style.display = t === tab ? '' : 'none';
   });
@@ -1710,17 +1906,173 @@ function switchPiTab(tab) {
     var psyPanel = document.getElementById('pi-tab-panel-psychometrics');
     if (psyPanel) _piInitPsychometrics(psyPanel);
   }
-  // Lazy-init team tab on first open — mirror quota bar + site list
-  if (tab === 'team' && !window._piTeamLoaded) {
-    window._piTeamLoaded = true;
-    // Mirror site data into team panel
-    var quotaSrc = document.getElementById('pi-quota-bar');
-    var quotaTgt = document.getElementById('pi-quota-bar-team');
-    if (quotaSrc && quotaTgt) quotaTgt.textContent = quotaSrc.textContent;
-    var listSrc = document.getElementById('pi-site-list');
-    var listTgt = document.getElementById('pi-site-list-team');
-    if (listSrc && listTgt) listTgt.innerHTML = listSrc.innerHTML;
+  // Lazy-init Analytics: DOM-move inst-tab-panel-analytics into PI analytics container
+  if (tab === 'analytics') {
+    var instAn = document.getElementById('inst-tab-panel-analytics');
+    var piAn   = document.getElementById('pi-tab-panel-analytics');
+    if (instAn && piAn && !piAn.contains(instAn)) {
+      piAn.innerHTML = '';
+      piAn.appendChild(instAn);
+    }
+    if (instAn) instAn.style.display = '';
   }
+  if (tab === 'trends') {
+    switchPiTrendsTab('analytics');
+  }
+  if (tab === 'research') {
+    switchPiResearchTab('study');
+  }
+  if (tab === 'team') {
+    piRenderSitesTab();
+  }
+  // Lazy-init Records tab — render unified patients view
+  if (tab === 'records') {
+    piRenderPatientsTab();
+  }
+  // Lazy-init Longitudinal: DOM-move traj-panel into PI longitudinal container
+  if (tab === 'longitudinal') {
+    var trajPan = document.getElementById('traj-panel');
+    var piLong  = document.getElementById('pi-tab-panel-longitudinal');
+    if (trajPan && piLong && !piLong.contains(trajPan)) {
+      piLong.innerHTML = '';
+      piLong.appendChild(trajPan);
+    }
+    if (trajPan) {
+      trajPan.style.display = '';
+      trajPan.style.marginBottom = '0';
+    }
+    // Re-render trajectory cards from full cross-site dataset
+    var allMmas = window.dashMmasData || window._rppMmasData || [];
+    if (typeof renderTrajectoryCards === 'function') renderTrajectoryCards(allMmas);
+  }
+  if (tab === 'governance') {
+    if (typeof loadPiAuditLog === 'function') loadPiAuditLog();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PI RECORDS TAB — multi-site patient records viewer
+// ══════════════════════════════════════════════════════════════════
+
+function switchPiRecordsTab(type) {
+  ['map', 'mmas', 'peacs'].forEach(function(t) {
+    var panel = document.getElementById('pi-rec-panel-' + t);
+    var btn   = document.getElementById('pi-rec-tab-' + t);
+    if (panel) panel.style.display = t === type ? '' : 'none';
+    if (btn) {
+      btn.style.background = t === type ? 'rgba(78,156,245,0.12)' : 'none';
+      btn.style.color      = t === type ? 'var(--base)' : 'var(--dim)';
+    }
+  });
+}
+
+function piRenderAllRecords() {
+  piPopulateRecordsSiteFilters();
+  piRenderMapRecords();
+  piRenderMmasRecords();
+  piRenderPeacsRecords();
+}
+
+function piPopulateRecordsSiteFilters() {
+  var mapRecs  = window._mapRecords || [];
+  var mmasRecs = (window.dashMmasData || window._rppMmasData || []).filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined; });
+  var mapSites  = Array.from(new Set(mapRecs.map(function(r) { return r.institution_code; }).filter(Boolean).map(function(s) { return s.toUpperCase(); }))).sort();
+  var mmasSites = Array.from(new Set(mmasRecs.map(function(r) { return r.institution_code || r._ws_display; }).filter(Boolean).map(function(s) { return s.toUpperCase(); }))).sort();
+  var s1 = document.getElementById('pi-map-site-filter');
+  if (s1) s1.innerHTML = '<option value="">All Sites</option>' + mapSites.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('');
+  var s2 = document.getElementById('pi-mmas-site-filter');
+  if (s2) s2.innerHTML = '<option value="">All Sites</option>' + mmasSites.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('');
+}
+
+function piRenderMapRecords() {
+  var tbody = document.getElementById('pi-map-records-tbody');
+  if (!tbody) return;
+  var recs = (window._mapRecords || []).slice();
+  var search = ((document.getElementById('pi-map-search') || {}).value || '').toLowerCase();
+  var site   = ((document.getElementById('pi-map-site-filter') || {}).value || '').toUpperCase();
+  if (search) recs = recs.filter(function(r) { return (r.institution_code || '').toLowerCase().indexOf(search) >= 0 || (r.patient_id || r.session_id || r.respondent_id || '').toLowerCase().indexOf(search) >= 0; });
+  if (site)   recs = recs.filter(function(r) { return (r.institution_code || '').toUpperCase() === site; });
+  recs.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+  if (!recs.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--dim);padding:20px;font-family:var(--font-mono);font-size:0.80rem;">No MAP records found.</td></tr>'; return; }
+  var _mA = function(r) { return ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3; };
+  var _mE = function(r) { return ((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3; };
+  var _mC = function(r) { return 0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2; };
+  tbody.innerHTML = recs.map(function(r, i) {
+    var a = _mA(r), e = _mE(r), c = _mC(r);
+    var pe = Math.pow(Math.max(0, a * e * c), 1/3);
+    var tl = r.traffic_light || (pe >= 0.7 ? 'green' : pe >= 0.4 ? 'amber' : 'red');
+    var tlColor = tl === 'green' ? 'var(--strata)' : tl === 'amber' ? '#f59e0b' : '#ef4444';
+    var date = r.timestamp ? new Date(r.timestamp).toLocaleDateString() : (r.date_submitted || '—');
+    var ws = (r.institution_code || 'Unknown').toUpperCase();
+    var patient = r.patient_id || r.session_id || r.respondent_id || '—';
+    var addScore = r.score != null ? r.score : r.additive_score != null ? r.additive_score : '—';
+    return '<tr>' +
+      '<td style="color:var(--dim);">' + (i+1) + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.74rem;">' + ws + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.74rem;color:var(--muted);">' + patient + '</td>' +
+      '<td style="color:' + tlColor + ';font-size:1.1rem;text-align:center;">●</td>' +
+      '<td style="text-align:right;font-family:var(--font-mono);">' + (isFinite(pe) ? pe.toFixed(3) : '—') + '</td>' +
+      '<td style="text-align:right;font-family:var(--font-mono);">' + addScore + '</td>' +
+      '<td style="text-align:right;font-family:var(--font-mono);font-size:0.76rem;">' + a.toFixed(2) + '</td>' +
+      '<td style="text-align:right;font-family:var(--font-mono);font-size:0.76rem;">' + e.toFixed(2) + '</td>' +
+      '<td style="text-align:right;font-family:var(--font-mono);font-size:0.76rem;">' + c.toFixed(2) + '</td>' +
+      '<td style="color:var(--dim);font-family:var(--font-mono);font-size:0.72rem;">' + date + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function piRenderMmasRecords() {
+  var tbody = document.getElementById('pi-mmas-records-tbody');
+  if (!tbody) return;
+  var all  = window.dashMmasData || window._rppMmasData || [];
+  var recs = all.filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined; });
+  var search = ((document.getElementById('pi-mmas-search') || {}).value || '').toLowerCase();
+  var site   = ((document.getElementById('pi-mmas-site-filter') || {}).value || '').toUpperCase();
+  if (search) recs = recs.filter(function(r) { return (r.institution_code || r._ws_display || '').toLowerCase().indexOf(search) >= 0 || (r.patient_id || r.session_id || r.respondent_id || '').toLowerCase().indexOf(search) >= 0; });
+  if (site)   recs = recs.filter(function(r) { return ((r.institution_code || r._ws_display || '').toUpperCase()) === site; });
+  recs = recs.slice().sort(function(a, b) { return (b.timestamp||0)-(a.timestamp||0); });
+  if (!recs.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--dim);padding:20px;font-family:var(--font-mono);font-size:0.80rem;">No MMAS-8 records found.</td></tr>'; return; }
+  tbody.innerHTML = recs.map(function(r, i) {
+    var score = r.score != null ? r.score : '—';
+    var scoreColor = typeof score === 'number' ? (score >= 6 ? 'var(--strata)' : score >= 4 ? '#f59e0b' : '#ef4444') : 'var(--muted)';
+    var date = r.timestamp ? new Date(r.timestamp).toLocaleDateString() : (r.date_submitted || '—');
+    var ws = (r.institution_code || r._ws_display || 'Unknown').toUpperCase();
+    var patient = r.patient_id || r.session_id || r.respondent_id || '—';
+    var country = r.country || '—';
+    var pattern = '—';
+    try { if (typeof classifyPattern === 'function') { var cp = classifyPattern(r); pattern = cp.intentional > cp.unintentional ? 'INA' : cp.unintentional > cp.intentional ? 'UNA' : score === 8 ? 'High' : 'Mixed'; } } catch(e2) {}
+    return '<tr>' +
+      '<td style="color:var(--dim);">' + (i+1) + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.74rem;">' + ws + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.74rem;color:var(--muted);">' + patient + '</td>' +
+      '<td style="color:' + scoreColor + ';font-family:var(--font-mono);font-weight:600;text-align:center;">' + score + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.72rem;">' + pattern + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);">' + country + '</td>' +
+      '<td style="color:var(--dim);font-family:var(--font-mono);font-size:0.72rem;">' + date + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function piRenderPeacsRecords() {
+  var tbody = document.getElementById('pi-peacs-records-tbody');
+  if (!tbody) return;
+  var recs = (window.dashPeacsData || window._rppPeacsData || []).slice().sort(function(a, b) { return (b.timestamp||0)-(a.timestamp||0); });
+  if (!recs.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:20px;font-family:var(--font-mono);font-size:0.80rem;">No PEACS records found.</td></tr>'; return; }
+  tbody.innerHTML = recs.map(function(r, i) {
+    var pe    = r.pe_score != null ? (+r.pe_score).toFixed(3) : '—';
+    var stage = r.stage || r.pe_stage || '—';
+    var date  = r.timestamp ? new Date(r.timestamp).toLocaleDateString() : (r.date_submitted || '—');
+    var ws    = (r.institution_code || r._ws_display || 'Unknown').toUpperCase();
+    var patient = r.patient_id || r.session_id || r.respondent_id || '—';
+    return '<tr>' +
+      '<td style="color:var(--dim);">' + (i+1) + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.74rem;">' + ws + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.74rem;color:var(--muted);">' + patient + '</td>' +
+      '<td style="font-family:var(--font-mono);text-align:right;">' + pe + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:0.72rem;">' + stage + '</td>' +
+      '<td style="color:var(--dim);font-family:var(--font-mono);font-size:0.72rem;">' + date + '</td>' +
+      '</tr>';
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -3259,3 +3611,326 @@ function renderPiSequentialAnalysis(records, target) {
 }
 
 window.renderPiSequentialAnalysis = renderPiSequentialAnalysis;
+
+// ── PI Overview KPI Strip ─────────────────────────────────────────────────────
+function piRenderOverviewKpis(records) {
+  records = records || window._piAllRecords || [];
+  var now = Date.now();
+  var thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+  // Total unique patients
+  var patientSet = {};
+  records.forEach(function(r) {
+    var pid = r.patient_number || r.patient_id || r.respondent_id || r.session_id;
+    if (pid) patientSet[String(pid).trim().toUpperCase()] = true;
+  });
+  var totalPatients = Object.keys(patientSet).length || records.length;
+
+  // This month
+  var thisMonth = records.filter(function(r) {
+    var ts = r.ts || r.timestamp || r.created_at || r.submitted_at || 0;
+    if (typeof ts === 'string') ts = new Date(ts).getTime();
+    return ts > thirtyDaysAgo;
+  }).length;
+
+  // Active sites (from site matrix data)
+  var siteData = window._piSiteMatrixData || [];
+  var activeSites = siteData.filter(function(s) { return (s.status || 'active') !== 'stalled'; }).length;
+  var totalSites  = siteData.length;
+
+  // Needs follow-up: red traffic light or low MMAS score
+  var flagged = records.filter(function(r) {
+    var isRed = r.traffic_light === 'red' || r.adherence_level === 'red';
+    var isLowMmas = r.tool !== 'map' && r.map_q1 === undefined && r.score != null && +r.score < 4;
+    var isLowPe   = (r.pe_score != null && +r.pe_score < 0.40) || (r.pe != null && +r.pe < 0.40);
+    return isRed || isLowMmas || isLowPe;
+  }).length;
+
+  var _set = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
+  _set('pi-kpi-total-patients', totalPatients);
+  _set('pi-kpi-total-patients-sub', 'across ' + (totalSites || '—') + ' site' + (totalSites !== 1 ? 's' : ''));
+  _set('pi-kpi-this-month', thisMonth);
+  _set('pi-kpi-active-sites', activeSites || '—');
+  _set('pi-kpi-active-sites-sub', 'of ' + (totalSites || '—') + ' total');
+  _set('pi-kpi-flagged', flagged);
+}
+window.piRenderOverviewKpis = piRenderOverviewKpis;
+
+// ── PI Patients Tab (unified view) ────────────────────────────────────────────
+function piRenderPatientsTab() {
+  var tbody = document.getElementById('pi-patients-tbody');
+  if (!tbody) return;
+
+  var search  = (document.getElementById('pi-patients-search')  || {}).value || '';
+  var siteFil = (document.getElementById('pi-patients-site')    || {}).value || '';
+  var riskFil = (document.getElementById('pi-patients-risk')    || {}).value || '';
+  search = search.toLowerCase();
+
+  // Merge MAP and MMAS records
+  var mapRecs  = (window._mapRecords || []).map(function(r) {
+    var pe = r.pe_score != null ? +r.pe_score : (r.pe != null ? +r.pe : null);
+    var tl = r.traffic_light || (pe == null ? '' : pe >= 0.65 ? 'green' : pe >= 0.40 ? 'amber' : 'red');
+    return { _type: 'MAP', _site: r.institution_code || r.workspace_key || '', _patient: r.patient_number || r.patient_id || r.session_id || '', _risk: tl, _score: pe, _date: r.ts || r.timestamp || r.created_at || 0, _raw: r };
+  });
+  var mmasRecs = (window.dashMmasData || []).filter(function(r) { return r.tool !== 'map' && r.map_q1 === undefined; }).map(function(r) {
+    var sc = r.score != null ? +r.score : null;
+    var tl = sc == null ? '' : sc >= 6 ? 'green' : sc >= 4 ? 'amber' : 'red';
+    return { _type: 'MMAS-8', _site: r.institution_code || r.workspace_key || '', _patient: r.patient_number || r.patient_id || r.respondent_id || '', _risk: tl, _score: sc, _date: r.ts || r.timestamp || r.created_at || 0, _raw: r };
+  });
+
+  var all = mapRecs.concat(mmasRecs).sort(function(a, b) {
+    var ta = typeof a._date === 'string' ? new Date(a._date).getTime() : +a._date || 0;
+    var tb = typeof b._date === 'string' ? new Date(b._date).getTime() : +b._date || 0;
+    return tb - ta;
+  });
+
+  // Populate site filter once
+  var siteEl = document.getElementById('pi-patients-site');
+  if (siteEl && siteEl.options.length <= 1) {
+    var siteSet = {};
+    all.forEach(function(r) { if (r._site) siteSet[r._site] = true; });
+    Object.keys(siteSet).sort().forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      siteEl.appendChild(opt);
+    });
+  }
+
+  // Filter
+  var filtered = all.filter(function(r) {
+    if (search && !(r._patient.toLowerCase().indexOf(search) !== -1 || r._site.toLowerCase().indexOf(search) !== -1)) return false;
+    if (siteFil && r._site !== siteFil) return false;
+    if (riskFil && r._risk !== riskFil) return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--dim);padding:24px;font-family:var(--font-mono);font-size:0.80rem;">No records match the current filters.</td></tr>';
+    return;
+  }
+
+  var riskDot = function(tl) {
+    var col = tl === 'green' ? '#10b981' : tl === 'amber' ? '#f59e0b' : tl === 'red' ? '#ef4444' : '#6b8099';
+    var label = tl === 'green' ? 'Stable' : tl === 'amber' ? 'Monitor' : tl === 'red' ? 'Needs Attention' : '—';
+    return '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:' + col + ';flex-shrink:0;"></span><span style="font-family:var(--font-mono);font-size:0.72rem;color:' + col + ';">' + label + '</span></span>';
+  };
+
+  var fmtDate = function(ts) {
+    if (!ts) return '—';
+    var d = typeof ts === 'string' ? new Date(ts) : new Date(+ts);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  var fmtScore = function(r) {
+    if (r._score == null) return '<span style="color:var(--dim);">—</span>';
+    if (r._type === 'MAP') return '<span style="font-family:var(--font-mono);font-size:0.82rem;">' + r._score.toFixed(3) + '</span>';
+    return '<span style="font-family:var(--font-mono);font-size:0.82rem;">' + r._score.toFixed(1) + ' / 8</span>';
+  };
+
+  tbody.innerHTML = filtered.slice(0, 500).map(function(r, i) {
+    var bg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)';
+    var typeColor = r._type === 'MAP' ? 'var(--pe)' : 'var(--base)';
+    return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:' + bg + ';">' +
+      '<td style="padding:7px 10px;font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">' + (i + 1) + '</td>' +
+      '<td style="padding:7px 10px;font-family:var(--font-mono);font-size:0.74rem;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (r._site || '—') + '</td>' +
+      '<td style="padding:7px 10px;font-family:var(--font-mono);font-size:0.74rem;color:var(--text);">' + (r._patient || '—') + '</td>' +
+      '<td style="padding:7px 10px;">' + riskDot(r._risk) + '</td>' +
+      '<td style="padding:7px 10px;text-align:right;">' + fmtScore(r) + '</td>' +
+      '<td style="padding:7px 10px;"><span style="font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.08em;background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:' + typeColor + ';border-radius:4px;padding:2px 6px;">' + r._type + '</span></td>' +
+      '<td style="padding:7px 10px;font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">' + fmtDate(r._date) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+window.piRenderPatientsTab = piRenderPatientsTab;
+
+// ── PI Sites Tab ──────────────────────────────────────────────────────────────
+function piRenderSitesTab() {
+  var body = document.getElementById('pi-sites-tab-body');
+  if (!body) return;
+
+  var sites = window._piSiteMatrixData || [];
+  var allRecs = window._piAllRecords || [];
+
+  if (!sites.length) {
+    body.innerHTML = '<div style="padding:32px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">No sites found. Invite sites from the + Add Site button above.</div>';
+    return;
+  }
+
+  var fmtDate = function(ts) {
+    if (!ts) return 'Never';
+    var d = new Date(typeof ts === 'number' ? ts : +ts);
+    if (isNaN(d.getTime())) return '—';
+    var diff = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (diff < 60) return diff + 'm ago';
+    if (diff < 1440) return Math.floor(diff / 60) + 'h ago';
+    if (diff < 10080) return Math.floor(diff / 1440) + 'd ago';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  body.innerHTML = sites.map(function(s) {
+    var wsKey = (s.workspace_key || s.code || '').toUpperCase();
+    var siteRecs = allRecs.filter(function(r) {
+      return (r.institution_code || r.workspace_key || '').toUpperCase() === wsKey;
+    });
+    var n = s.count || siteRecs.length;
+    var statusColor = s.status === 'active' ? '#10b981' : s.status === 'low' ? '#f59e0b' : '#ef4444';
+    var statusLabel = s.status === 'active' ? 'Active' : s.status === 'low' ? 'Low Activity' : 'Stalled';
+
+    // Mean score
+    var scores = siteRecs.map(function(r) {
+      return r.pe_score != null ? +r.pe_score : (r.pe != null ? +r.pe : (r.score != null ? +r.score / 8 : null));
+    }).filter(function(v) { return v != null; });
+    var meanScore = scores.length ? (scores.reduce(function(a, b) { return a + b; }, 0) / scores.length) : null;
+    var meanLabel = meanScore != null ? meanScore.toFixed(3) : '—';
+
+    // Risk breakdown
+    var redN = siteRecs.filter(function(r) { return r.traffic_light === 'red' || (r.score != null && +r.score < 4 && r.tool !== 'map'); }).length;
+
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:16px 20px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">' +
+        '<div style="display:flex;align-items:center;gap:12px;">' +
+          '<div style="width:8px;height:8px;border-radius:50%;background:' + statusColor + ';flex-shrink:0;box-shadow:0 0 6px ' + statusColor + ';"></div>' +
+          '<div>' +
+            '<div style="font-family:var(--font-mono);font-size:0.82rem;font-weight:600;color:var(--text);">' + (s.name || wsKey || 'Unknown Site') + '</div>' +
+            '<div style="font-family:var(--font-mono);font-size:0.66rem;color:var(--dim);margin-top:2px;">' + (wsKey || '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:20px;">' +
+          '<div style="text-align:center;">' +
+            '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.4rem;font-weight:300;color:var(--bright);">' + n + '</div>' +
+            '<div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);">Patients</div>' +
+          '</div>' +
+          '<div style="text-align:center;">' +
+            '<div style="font-family:var(--font-mono);font-size:1rem;color:var(--text);">' + meanLabel + '</div>' +
+            '<div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);">Mean Score</div>' +
+          '</div>' +
+          '<div style="text-align:center;">' +
+            '<div style="font-family:var(--font-mono);font-size:1rem;color:' + (redN > 0 ? '#ef4444' : 'var(--text)') + ';">' + redN + '</div>' +
+            '<div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);">Flagged</div>' +
+          '</div>' +
+          '<div style="text-align:right;">' +
+            '<div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);">' + fmtDate(s.lastActive || s.last_active) + '</div>' +
+            '<div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);">Last Active</div>' +
+          '</div>' +
+          '<span style="font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.08em;text-transform:uppercase;border:1px solid ' + statusColor + ';color:' + statusColor + ';border-radius:20px;padding:2px 9px;">' + statusLabel + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+window.piRenderSitesTab = piRenderSitesTab;
+
+// ── PI Trends Tab sub-nav ─────────────────────────────────────────────────────
+function switchPiTrendsTab(tab) {
+  // Analytics sub-panel: DOM-move inst-tab-panel-analytics
+  if (tab === 'analytics') {
+    var instAn = document.getElementById('inst-tab-panel-analytics');
+    var body = document.getElementById('pi-trends-analytics-body');
+    if (instAn && body && !body.contains(instAn)) {
+      body.innerHTML = '';
+      body.appendChild(instAn);
+    }
+    if (instAn) instAn.style.display = '';
+  }
+
+  // Trajectories sub-panel: DOM-move traj-panel
+  if (tab === 'trajectories') {
+    var trajPan = document.getElementById('traj-panel');
+    var trajBody = document.getElementById('pi-trends-traj-body');
+    if (trajPan && trajBody && !trajBody.contains(trajPan)) {
+      trajBody.innerHTML = '';
+      trajBody.appendChild(trajPan);
+    }
+    if (trajPan) { trajPan.style.display = ''; trajPan.style.marginBottom = '0'; }
+    var allMmas = window.dashMmasData || window._rppMmasData || [];
+    if (typeof renderTrajectoryCards === 'function') renderTrajectoryCards(allMmas);
+  }
+
+  var tabs = ['analytics', 'trajectories'];
+  tabs.forEach(function(t) {
+    var btn = document.getElementById('pi-trends-btn-' + t);
+    var panel = document.getElementById('pi-trends-' + (t === 'analytics' ? 'analytics' : 'traj') + '-body');
+    if (btn) {
+      btn.style.background = t === tab ? 'rgba(78,156,245,0.12)' : 'none';
+      btn.style.color = t === tab ? 'var(--base)' : 'var(--dim)';
+    }
+    if (panel) panel.style.display = t === tab ? '' : 'none';
+  });
+}
+window.switchPiTrendsTab = switchPiTrendsTab;
+
+// ── PI Research Tab sub-nav ───────────────────────────────────────────────────
+function switchPiResearchTab(tab) {
+  // Study sub-panel: DOM-move enrollment + outcomes panels
+  if (tab === 'study') {
+    var studyPanel = document.getElementById('pi-res-panel-study');
+    if (studyPanel) {
+      var enroll = document.getElementById('pi-tab-panel-enrollment');
+      var outcomes = document.getElementById('pi-tab-panel-outcomes');
+      if (enroll && !studyPanel.contains(enroll)) studyPanel.appendChild(enroll);
+      if (outcomes && !studyPanel.contains(outcomes)) studyPanel.appendChild(outcomes);
+      if (enroll) enroll.style.display = '';
+      if (outcomes) outcomes.style.display = '';
+      // Also move protocol amendments
+      var amendEl = document.getElementById('pi-amendment-list');
+      if (amendEl && !studyPanel.contains(amendEl)) {
+        var amendWrap = document.createElement('div');
+        amendWrap.className = 'pi-lock-section';
+        amendWrap.style.marginTop = '14px';
+        amendWrap.innerHTML = '<div class="pi-heatmap-hdr" style="margin-bottom:8px;">Protocol Amendments</div>';
+        amendWrap.appendChild(amendEl);
+        studyPanel.appendChild(amendWrap);
+      }
+    }
+  }
+
+  // Psychometrics
+  if (tab === 'psych') {
+    var psychSrc = document.getElementById('pi-tab-panel-psychometrics');
+    var psychDst = document.getElementById('pi-res-panel-psych');
+    if (psychSrc && psychDst && !psychDst.contains(psychSrc)) {
+      psychDst.innerHTML = '';
+      psychDst.appendChild(psychSrc);
+    }
+    if (psychSrc) psychSrc.style.display = '';
+    if (typeof _piInitPsychometrics === 'function') _piInitPsychometrics(psychSrc);
+  }
+
+  // Instrument Lab
+  if (tab === 'lab') {
+    var labSrc = document.getElementById('pi-tab-panel-lab');
+    var labDst = document.getElementById('pi-res-panel-lab');
+    if (labSrc && labDst && !labDst.contains(labSrc)) {
+      labDst.innerHTML = '';
+      labDst.appendChild(labSrc);
+    }
+    if (labSrc) labSrc.style.display = '';
+    if (typeof _saRenderLab === 'function') _saRenderLab(labSrc);
+  }
+
+  // Methods
+  if (tab === 'methods') {
+    var methSrc = document.getElementById('pi-tab-panel-extcomp');
+    var methDst = document.getElementById('pi-res-panel-methods');
+    if (methSrc && methDst && !methDst.contains(methSrc)) {
+      methDst.innerHTML = '';
+      methDst.appendChild(methSrc);
+    }
+    if (methSrc) methSrc.style.display = '';
+    if (typeof _saRenderExtComp === 'function') _saRenderExtComp(methSrc);
+  }
+
+  var resTabs = ['study', 'psych', 'lab', 'methods'];
+  var panelIds = { study: 'pi-res-panel-study', psych: 'pi-res-panel-psych', lab: 'pi-res-panel-lab', methods: 'pi-res-panel-methods' };
+  resTabs.forEach(function(t) {
+    var btn = document.getElementById('pi-res-btn-' + t);
+    var panel = document.getElementById(panelIds[t]);
+    if (btn) {
+      btn.style.background = t === tab ? 'rgba(78,156,245,0.12)' : 'none';
+      btn.style.color = t === tab ? 'var(--base)' : 'var(--dim)';
+    }
+    if (panel) panel.style.display = t === tab ? '' : 'none';
+  });
+}
+window.switchPiResearchTab = switchPiResearchTab;

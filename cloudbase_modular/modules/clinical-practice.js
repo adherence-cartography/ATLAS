@@ -145,30 +145,44 @@ function rppMergePeacs(peacsRecords) {
   _rppRebuild();
 }
 
+function rppMergeMap(mapRecords) {
+  window._rppMapData = mapRecords || [];
+  _rppRebuild();
+}
+
 // Merge both data sources and re-render
 function _rppRebuild() {
   const _t = (typeof ATLAS_STRINGS !== 'undefined' && ATLAS_STRINGS[mmasCurrentLang]) || (typeof ATLAS_STRINGS !== 'undefined' && ATLAS_STRINGS.en) || {};
-  const mmas  = window._rppMmasData;
-  const peacs = window._rppPeacsData;
-  if (!mmas.length && !peacs.length) {
+  const mmas  = window._rppMmasData  || [];
+  const peacs = window._rppPeacsData || [];
+  const map   = window._rppMapData   || [];
+  if (!mmas.length && !peacs.length && !map.length) {
     const tbody = document.getElementById('rpp-tbody');
     if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--dim);padding:20px;font-family:var(--font-mono);font-size:0.90rem;">' + (_t.empty_no_records_submit || 'No records yet. Submit your first assessment above.') + '</td></tr>';
     return;
   }
 
   const byPid = {};
+  const _initPid = pid => ({ pid, mmas: [], peacs: [], map: [], lastTs: 0 });
 
   mmas.forEach(r => {
     const pid = (r.patient_number || '').toString().trim().toUpperCase() || 'UNASSIGNED';
-    if (!byPid[pid]) byPid[pid] = { pid, mmas: [], peacs: [], lastTs: 0 };
+    if (!byPid[pid]) byPid[pid] = _initPid(pid);
     byPid[pid].mmas.push(r);
     if ((r.timestamp || 0) > byPid[pid].lastTs) byPid[pid].lastTs = r.timestamp;
   });
 
   peacs.forEach(r => {
     const pid = (r.patient_number || '').toString().trim().toUpperCase() || 'UNASSIGNED';
-    if (!byPid[pid]) byPid[pid] = { pid, mmas: [], peacs: [], lastTs: 0 };
+    if (!byPid[pid]) byPid[pid] = _initPid(pid);
     byPid[pid].peacs.push(r);
+    if ((r.timestamp || 0) > byPid[pid].lastTs) byPid[pid].lastTs = r.timestamp;
+  });
+
+  map.forEach(r => {
+    const pid = (r.patient_number || '').toString().trim().toUpperCase() || 'UNASSIGNED';
+    if (!byPid[pid]) byPid[pid] = _initPid(pid);
+    byPid[pid].map.push(r);
     if ((r.timestamp || 0) > byPid[pid].lastTs) byPid[pid].lastTs = r.timestamp;
   });
 
@@ -233,6 +247,34 @@ function _rppLatestMmas(p) {
   return [...p.mmas].sort((a,b) => (b.timestamp||0) - (a.timestamp||0))[0]?.score || 0;
 }
 
+// ── MAP domain scorer used throughout _rppRender ─────────────────────────────
+// Reads both map_q{n} (study records) and plain q{n} (pharmacy kiosk records).
+// Context-Guard applies floor: Cg = 0.5 + 0.5×C per TPE specification.
+// Returns null when no question data is present in the record.
+function _mapDomains(rec) {
+  const _q = n => {
+    const v = rec['map_q'+n] != null ? rec['map_q'+n] : rec['q'+n];
+    return v != null ? +v : null;
+  };
+  const q1=_q(1),q2=_q(2),q3=_q(3),q4=_q(4),q5=_q(5),q6=_q(6),q7=_q(7),q8=_q(8);
+  if (q1===null && q2===null && q5===null) return null;
+  const arch = ((1-(q2??0))+(1-(q3??0))+(1-(q6??0)))/3;
+  const exec = ((1-(q1??0))+(q5??0)+(1-(q8??0)))/3;
+  const ctx  = 0.5 + 0.5*((1-(q4??0))+(1-(q7??0)))/2;  // Context-Guard floor at 0.5
+  const pe   = Math.pow(Math.max(0, arch*exec*ctx), 1/3);
+  return { arch, exec, ctx, pe, q1,q2,q3,q4,q5,q6,q7,q8 };
+}
+
+// Derive MAP phenotype code from computed domain scores
+function _mapPhenoCode(d) {
+  if (!d) return 'UNA';
+  if (d.pe >= 0.85) return 'A';
+  if (d.arch < 0.55 && d.arch <= d.exec) return 'INA';
+  if (d.exec < 0.55 && d.exec < d.arch)  return 'UNA';
+  if (d.pe >= 0.55) return 'PA';
+  return d.arch < d.exec ? 'INA' : 'UNA';
+}
+
 function _rppRender() {
   const tbody    = document.getElementById('rpp-tbody');
   const empty    = document.getElementById('rpp-empty');
@@ -271,6 +313,18 @@ function _rppRender() {
     if (nextBtn)  nextBtn.disabled = page >= totalPages - 1;
   }
 
+  // Detect MAP-only dataset and update column headers accordingly
+  const _allPatients = window._rppFiltered || [];
+  const _isMapOnlyDataset = _allPatients.length > 0 && _allPatients.every(p => !p.mmas.length && (p.map||[]).length > 0);
+  const thead = document.querySelector('#researcher-patient-panel table thead tr');
+  if (thead) {
+    const ths = thead.querySelectorAll('th');
+    if (ths.length >= 4) {
+      ths[2].textContent = _isMapOnlyDataset ? 'MAP PE' : 'MMAS-8';
+      ths[3].textContent = _isMapOnlyDataset ? 'Phenotype' : 'PEACS';
+    }
+  }
+
   const timeAgo = ts => {
     if (!ts) return '—';
     const d = Math.floor((Date.now() - ts) / 1000);
@@ -290,10 +344,12 @@ function _rppRender() {
 
   tbody.innerHTML = rows.map((p, localIdx) => {
     const idx = start + localIdx; // global index — stable across pages for detail toggle IDs
-    const mmasSorted  = [...p.mmas].sort((a, b) => (a.timestamp||0) - (b.timestamp||0));
+    const mmasSorted   = [...p.mmas].sort((a, b) => (a.timestamp||0) - (b.timestamp||0));
     const peacssSorted = [...p.peacs].sort((a, b) => (a.timestamp||0) - (b.timestamp||0));
-    const latestMmas  = mmasSorted[mmasSorted.length - 1];
-    const latestPeacs = peacssSorted[peacssSorted.length - 1];
+    const mapSorted    = [...(p.map||[])].sort((a, b) => (a.timestamp||0) - (b.timestamp||0));
+    const latestMmas   = mmasSorted[mmasSorted.length - 1];
+    const latestPeacs  = peacssSorted[peacssSorted.length - 1];
+    const latestMap    = mapSorted[mapSorted.length - 1];
 
     // MMAS display — recompute from items to correct historical q8 index-vs-score bug
     const mmasScore = latestMmas ? _recomputeMMASScore(latestMmas) : 0;
@@ -309,22 +365,41 @@ function _rppRender() {
       : `<span style="color:var(--dim);font-size:0.90rem;">—</span>`;
 
     // Coverage pill
-    const both = p.mmas.length && p.peacs.length;
-    const coverageColor = both ? 'var(--optimal)' : 'var(--moderate)';
-    const coverageLabel = both ? 'Both' : p.mmas.length ? 'MMAS' : 'PEACS';
+    const hasMapRec = (p.map || []).length > 0;
+    const hasMmasRec = p.mmas.length > 0;
+    const hasPeacsRec = p.peacs.length > 0;
+    const hasAny = hasMmasRec || hasMapRec || hasPeacsRec;
+    const both = (hasMmasRec || hasMapRec) && hasPeacsRec;
+    const coverageColor = both ? 'var(--optimal)' : hasAny ? 'var(--moderate)' : 'var(--poor)';
+    const coverageLabel = both
+      ? (hasMmasRec && hasMapRec ? 'Full' : hasMapRec ? 'MAP+PEACS' : 'MMAS+PEACS')
+      : hasMmasRec && hasMapRec ? 'MMAS+MAP'
+      : hasMapRec ? 'MAP'
+      : hasMmasRec ? 'MMAS'
+      : hasPeacsRec ? 'PEACS'
+      : 'None';
     const coverageCell  = `<span style="font-family:var(--font-mono);font-size:0.88rem;padding:2px 7px;border-radius:8px;background:${coverageColor}18;color:${coverageColor};border:1px solid ${coverageColor}44;">${coverageLabel}</span>`;
 
-    // Pattern from latest MMAS
+    // MAP domain scores for this patient's latest MAP record
+    const latestMapDom = latestMap ? _mapDomains(latestMap) : null;
+    const mapPhenoCode = _mapPhenoCode(latestMapDom);
+
+    // Pattern — for MAP records derive from domain scores; fall back to MMAS pattern
     let pat = 'una';
     if (mmasScore >= 8) pat = 'high';
-    else if (latestMmas?.q1 !== undefined) {
+    else if (latestMap && latestMapDom) {
+      pat = mapPhenoCode === 'A' ? 'high'
+          : mapPhenoCode === 'INA' ? 'ina'
+          : mapPhenoCode === 'PA'  ? 'una'  // PA shows as UNA (partial)
+          : 'una';
+    } else if (latestMmas?.q1 !== undefined) {
       try {
         const { intentional, unintentional } = classifyPattern(latestMmas);
         pat = intentional > unintentional ? 'ina' : unintentional > intentional ? 'una' : 'mixed';
       } catch(e) {}
     }
 
-    // MMAS trend sparkline
+    // MMAS trend sparkline or MAP PE trend
     let trendCell = '<td style="text-align:center;color:var(--dim);font-size:0.90rem;">—</td>';
     if (mmasSorted.length >= 2) {
       const first = _recomputeMMASScore(mmasSorted[0]), last = mmasScore;
@@ -344,9 +419,31 @@ function _rppRender() {
           <span style="font-size:0.88rem;color:${tColor};font-weight:600;">${tIcon}</span>
         </div>
       </td>`;
+    } else if (mapSorted.length >= 2) {
+      // MAP PE trend across visits
+      const firstDom = _mapDomains(mapSorted[0]);
+      const lastDom  = latestMapDom;
+      if (firstDom && lastDom) {
+        const delta  = lastDom.pe - firstDom.pe;
+        const tColor = delta > 0.04 ? '#10b981' : delta < -0.04 ? '#ef4444' : '#6b8099';
+        const tIcon  = delta > 0.04 ? '↑' : delta < -0.04 ? '↓' : '→';
+        const pts    = mapSorted.map(r => _mapDomains(r)?.pe ?? 0);
+        const W = 44, H = 16;
+        const minS = Math.min(...pts), maxS = Math.max(...pts), range = maxS - minS || 0.01;
+        const coords = pts.map((s, i) => `${(i/(pts.length-1||1)*W).toFixed(1)},${(H-(s-minS)/range*H).toFixed(1)}`).join(' ');
+        trendCell = `<td style="text-align:center;">
+          <div style="display:inline-flex;align-items:center;gap:3px;">
+            <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+              <polyline points="${coords}" fill="none" stroke="${tColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="${((pts.length-1)/(pts.length-1||1)*W).toFixed(1)}" cy="${(H-(lastDom.pe-minS)/range*H).toFixed(1)}" r="2" fill="${tColor}"/>
+            </svg>
+            <span style="font-size:0.88rem;color:${tColor};font-weight:600;">${tIcon}</span>
+          </div>
+        </td>`;
+      }
     }
 
-    const condition = latestMmas?.condition || latestPeacs?.condition || '—';
+    const condition = latestMmas?.condition || latestPeacs?.condition || latestMap?.condition || '—';
     const condShort = condition.length > 22 ? condition.slice(0,20)+'…' : condition;
 
     // ── Expanded detail row ───────────────────────────────────────────────
@@ -391,14 +488,30 @@ function _rppRender() {
       <td style="padding:10px 14px;font-family:var(--font-mono);font-size:0.71rem;color:var(--bright);font-weight:500;">${p.pid}</td>
       <td style="padding:10px;text-align:center;">${coverageCell}</td>
       <td style="padding:10px;text-align:center;">
-        ${mmasCell}
         ${(() => {
-          if (!latestMmas) return '';
-          const risk = _computePatientRisk(latestMmas);
-          return `<span style="display:inline-block;margin-left:6px;color:${risk.color};font-size:0.75rem;vertical-align:middle;" title="Adherence Risk: ${risk.level}">● ${risk.level}</span>`;
+          if (latestMmas) {
+            const risk = _computePatientRisk(latestMmas);
+            return mmasCell + `<span style="display:inline-block;margin-left:6px;color:${risk.color};font-size:0.75rem;vertical-align:middle;" title="Adherence Risk: ${risk.level}">● ${risk.level}</span>`;
+          }
+          if (latestMapDom) {
+            const peC = latestMapDom.pe >= 0.75 ? '#10b981' : latestMapDom.pe >= 0.55 ? '#f59e0b' : '#ef4444';
+            return `<span style="font-family:var(--font-mono);font-size:0.86rem;font-weight:600;color:${peC};">${latestMapDom.pe.toFixed(3)}</span><span style="font-family:var(--font-mono);font-size:0.86rem;color:var(--dim);margin-left:3px;">${mapSorted.length}×</span>`;
+          }
+          return `<span style="color:var(--dim);font-size:0.90rem;">—</span>`;
         })()}
       </td>
-      <td style="padding:10px;text-align:center;">${peacsCell}</td>
+      <td style="padding:10px;text-align:center;">
+        ${(() => {
+          if (latestPeacs) return peacsCell;
+          if (latestMapDom) {
+            const MAP_P = typeof MAP_PHENOTYPE !== 'undefined' ? MAP_PHENOTYPE : null;
+            const pd = MAP_P ? MAP_P[mapPhenoCode] : null;
+            if (pd) return `<span style="display:inline-flex;align-items:center;gap:3px;font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.07em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:${pd.bg};border:1px solid ${pd.border};color:${pd.color};white-space:nowrap;">${pd.icon} ${pd.code||mapPhenoCode}</span>`;
+            return `<span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--dim);">${mapPhenoCode}</span>`;
+          }
+          return `<span style="color:var(--dim);font-size:0.90rem;">—</span>`;
+        })()}
+      </td>
       <td style="padding:10px;text-align:center;">${patLabels[pat] || '—'}</td>
       ${trendCell}
       <td style="padding:10px;font-family:var(--font-mono);font-size:0.86rem;color:var(--muted);" title="${condition}">${condShort}</td>
@@ -440,6 +553,207 @@ function _rppRender() {
             </div>`).join('')}
           </div>`;
         })()}
+        ${(() => {
+          // ── MAP Assessment Detail ────────────────────────────────────────────
+          if (!latestMap) return '';
+
+          // Use shared helper (reads map_q{n} OR q{n}; applies Cg floor at 0.5)
+          const _qv = (rec, n) => {
+            const v = rec['map_q' + n] != null ? rec['map_q' + n] : rec['q' + n];
+            return v != null ? +v : null;
+          };
+          const computeDomains = (rec) => _mapDomains(rec);
+
+          const dom = _mapDomains(latestMap) || {};
+          const pe   = dom.pe   ?? null;
+          const arch = dom.arch ?? null;
+          const exec = dom.exec ?? null;
+          const ctx  = dom.ctx  ?? null;
+
+          const peColor  = pe   == null ? '#6b8099' : pe   >= 0.75 ? '#10b981' : pe   >= 0.55 ? '#f59e0b' : '#ef4444';
+          const domColor = v => v == null ? '#6b8099' : v >= 0.65 ? '#10b981' : v >= 0.45 ? '#f59e0b' : '#ef4444';
+          const fmt3 = v => v != null ? v.toFixed(3) : '—';
+
+          const MAP_Q = [
+            { n:'Q1', label:'Forget to take medications',                         domain:'Execution',     reversed:false },
+            { n:'Q2', label:'Chose to skip a dose',                               domain:'Architecture',  reversed:false },
+            { n:'Q3', label:'Reduced dose or stopped without telling doctor',     domain:'Architecture',  reversed:false },
+            { n:'Q4', label:'Hard to keep up when routine changes',               domain:'Context-Guard', reversed:false },
+            { n:'Q5', label:'Took last dose as directed',                         domain:'Execution',     reversed:true  },
+            { n:'Q6', label:'Think about pausing when feeling better',            domain:'Architecture',  reversed:false },
+            { n:'Q7', label:'Medication routine is a big challenge',              domain:'Context-Guard', reversed:false },
+            { n:'Q8', label:'Trouble taking as prescribed (typical week)',        domain:'Execution',     reversed:false, scale:true },
+          ];
+          const Q8_LABELS = { 0:'Never', 0.25:'Rarely', 0.5:'Sometimes', 0.75:'Usually', 1:'Always' };
+
+          // Returns { text, color } display for a question value
+          const qDisplay = (q, val) => {
+            if (val == null) return { text:'—', color:'var(--dim)' };
+            let text, color;
+            if (q.scale) {
+              const nearKey = Object.keys(Q8_LABELS).reduce((a,b) => Math.abs(b-val) < Math.abs(a-val) ? b : a, 0);
+              text = Q8_LABELS[nearKey] || val.toFixed(2);
+              color = val > 0.5 ? '#ef4444' : val > 0.25 ? '#f59e0b' : '#10b981';
+            } else if (q.reversed) {
+              text = val >= 0.5 ? 'Yes' : 'No';
+              color = val < 0.5 ? '#ef4444' : '#10b981';
+            } else {
+              text = val > 0.5 ? 'Yes' : 'No';
+              color = val > 0.5 ? '#ef4444' : '#10b981';
+            }
+            return { text, color };
+          };
+
+          // Q1-Q8 grid cards for the latest visit
+          const qGrid = MAP_Q.map((q, i) => {
+            const val = _qv(latestMap, i+1);
+            const { text, color } = qDisplay(q, val);
+            if (val == null) return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;opacity:0.45;"><div style="font-family:var(--font-mono);font-size:0.56rem;color:var(--dim);">${q.n} · ${q.domain}</div><div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">${q.label}</div><div style="font-family:var(--font-mono);font-size:0.82rem;color:var(--dim);margin-top:4px;">—</div></div>`;
+            return `<div style="background:var(--bg);border:1px solid ${color}44;border-left:3px solid ${color};border-radius:6px;padding:8px 10px;">
+              <div style="font-family:var(--font-mono);font-size:0.56rem;color:var(--dim);">${q.n} · ${q.domain}</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">${q.label}</div>
+              <div style="font-family:var(--font-mono);font-size:0.82rem;font-weight:600;color:${color};margin-top:4px;">${text}</div>
+            </div>`;
+          }).join('');
+
+          // ── Longitudinal trajectory table (shown when 2+ visits exist) ────────
+          let trajectoryHTML = '';
+          if (mapSorted.length >= 2) {
+            const visits = mapSorted.slice(-Math.min(mapSorted.length, 4)); // up to 4 most recent, chronological
+            const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'2-digit'}) : '—';
+
+            // Arrow between consecutive visit values; goodDir: +1 means higher=better, -1 means lower=better
+            const deltaArrow = (prev, curr, goodDir) => {
+              if (prev == null || curr == null) return '';
+              const d = (curr - prev) * goodDir;
+              if (Math.abs(d) < 0.01) return '<span style="color:var(--dim);font-size:0.62rem;"> =</span>';
+              return d > 0
+                ? '<span style="color:#10b981;font-size:0.65rem;"> ↑</span>'
+                : '<span style="color:#ef4444;font-size:0.65rem;"> ↓</span>';
+            };
+
+            // Question rows
+            const qRows = MAP_Q.map((q, qi) => {
+              const vals = visits.map(v => _qv(v, qi+1));
+              const goodDir = q.reversed ? 1 : -1;
+              return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                <td style="padding:4px 8px;white-space:nowrap;font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);">${q.n}</td>
+                <td style="padding:4px 8px;font-size:0.70rem;color:var(--muted);white-space:nowrap;">${q.label}</td>
+                ${vals.map((val, vi) => {
+                  const { text, color } = qDisplay(q, val);
+                  const arrow = vi > 0 ? deltaArrow(vals[vi-1], val, goodDir) : '';
+                  return `<td style="padding:4px 10px;text-align:center;font-family:var(--font-mono);font-size:0.72rem;font-weight:600;color:${color};">${text}${arrow}</td>`;
+                }).join('')}
+              </tr>`;
+            }).join('');
+
+            // Domain score rows
+            const domKeys = [
+              { label:'Architecture', key:'arch' },
+              { label:'Execution',    key:'exec' },
+              { label:'Ctx-Guard',    key:'ctx'  },
+              { label:'PE Score',     key:'pe'   },
+            ];
+            const domRows = domKeys.map(dk => {
+              const vals = visits.map(v => computeDomains(v)?.[dk.key] ?? null);
+              return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                <td style="padding:4px 8px;" colspan="2"><span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;">${dk.label}</span></td>
+                ${vals.map((val, vi) => {
+                  const color = domColor(val);
+                  const arrow = vi > 0 ? deltaArrow(vals[vi-1], val, 1) : '';
+                  return `<td style="padding:4px 10px;text-align:center;font-family:var(--font-mono);font-size:0.72rem;font-weight:600;color:${color};">${fmt3(val)}${arrow}</td>`;
+                }).join('')}
+              </tr>`;
+            }).join('');
+
+            trajectoryHTML = `<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+              <div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:#d4a843;margin-bottom:10px;">Adherence Trajectory · ${visits.length} visits</div>
+              <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;">
+                  <thead><tr>
+                    <th style="padding:4px 8px;font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);text-align:left;border-bottom:1px solid var(--border);" colspan="2"></th>
+                    ${visits.map((v, vi) => `<th style="padding:4px 10px;font-family:var(--font-mono);font-size:0.60rem;text-align:center;border-bottom:1px solid var(--border);color:${vi===visits.length-1?'var(--base)':'var(--dim)'};">
+                      ${vi===visits.length-1?'<span style="color:#d4a843;">&#9733;</span> ':''}Visit ${vi+1}<br>
+                      <span style="font-size:0.56rem;font-weight:400;opacity:0.7;">${fmtDate(v.timestamp)}</span>
+                    </th>`).join('')}
+                  </tr></thead>
+                  <tbody>
+                    ${qRows}
+                    <tr><td colspan="${2+visits.length}" style="padding:4px 0;border-top:1px solid rgba(255,255,255,0.1);"></td></tr>
+                    ${domRows}
+                  </tbody>
+                </table>
+              </div>
+            </div>`;
+          }
+
+          // SDoH fields — skip questions, scores, gateway metadata, and system fields
+          const SKIP_FIELDS = new Set([
+            // Question responses (shown in Q grid above)
+            'map_q1','map_q2','map_q3','map_q4','map_q5','map_q6','map_q7','map_q8',
+            'q1','q2','q3','q4','q5','q6','q7','q8',
+            // Scores and phenotype labels (computed and shown above; gateway values unreliable)
+            'pe_score','pe','arch_score','exec_score','ctx_score','a','e','c',
+            'score','additive_score','additive score','pe score','low_adherence','low adherence',
+            'map_phenotype','phenotype','peacs_phenotype','peacs phenotype',
+            'traffic_light','adherence_level',
+            // System / identity fields
+            'tool','timestamp','patient_number','workspace_key','institution_code',
+            'session_id','uid','user_id','respondent_id','id',
+            'created_at','ts','submitted_at',
+            // Gateway technical metadata
+            'source','upload_source','assessment_mode','data_tier','instrument_type',
+            'role','alert_sent','gcc_mode','language',
+            // Study fields (shown in study source panel above)
+            'study_title','pi_name','study_institution',
+            // Raw coordinates (not useful in clinical view)
+            'latitude','longitude','country_iso2',
+          ]);
+          const sdohEntries = Object.entries(latestMap).filter(([k,v]) => !SKIP_FIELDS.has(k) && v != null && v !== '' && !k.startsWith('_'));
+          const sdohHTML = sdohEntries.length ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+            <div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Patient Profile &amp; SDoH</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">${sdohEntries.map(([k,v]) => `<div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-family:var(--font-mono);font-size:0.70rem;"><span style="color:var(--dim);">${_esc(k.replace(/_/g,' '))}:</span> <span style="color:var(--text);">${_esc(String(v))}</span></div>`).join('')}</div>
+          </div>` : '';
+
+          // Compute phenotype from domain scores; do NOT use stored gateway label (unreliable)
+          const detailPhenoCode = _mapPhenoCode(dom || null);
+          const phenoBadge = (() => {
+            const MAP_P = typeof MAP_PHENOTYPE !== 'undefined' ? MAP_PHENOTYPE : null;
+            const pd = MAP_P ? MAP_P[detailPhenoCode] : null;
+            if (pd) return (typeof mapPhenotypeBadge === 'function')
+              ? mapPhenotypeBadge(detailPhenoCode, false)
+              : `<span style="font-family:var(--font-mono);font-size:0.62rem;padding:2px 8px;border-radius:4px;background:${pd.bg};border:1px solid ${pd.border};color:${pd.color};margin-left:10px;">${pd.icon} ${pd.label}</span>`;
+            return '';
+          })();
+
+          return `<div style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;margin-bottom:12px;">
+              <span style="font-family:var(--font-mono);font-size:0.90rem;letter-spacing:0.1em;text-transform:uppercase;color:#d4a843;">MAP Assessment · ${mapSorted.length} visit${mapSorted.length!==1?'s':''}</span>${phenoBadge}
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+              <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;">
+                <div style="font-family:var(--font-mono);font-size:0.54rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">PE Score</div>
+                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.4rem;font-weight:300;color:${peColor};">${fmt3(pe)}</div>
+              </div>
+              <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;">
+                <div style="font-family:var(--font-mono);font-size:0.54rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Architecture</div>
+                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.4rem;font-weight:300;color:${domColor(arch)};">${fmt3(arch)}</div>
+              </div>
+              <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;">
+                <div style="font-family:var(--font-mono);font-size:0.54rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Execution</div>
+                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.4rem;font-weight:300;color:${domColor(exec)};">${fmt3(exec)}</div>
+              </div>
+              <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;">
+                <div style="font-family:var(--font-mono);font-size:0.54rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Context-Guard</div>
+                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.4rem;font-weight:300;color:${domColor(ctx)};">${fmt3(ctx)}</div>
+              </div>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Latest Visit · Question Responses</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">${qGrid}</div>
+            ${trajectoryHTML}
+            ${sdohHTML}
+          </div>`;
+        })()}
         <div style="display:grid;grid-template-columns:${p.mmas.length && p.peacs.length ? '1fr 1fr' : '1fr'};gap:16px;">
           ${p.mmas.length ? `<div>
             <div style="font-family:var(--font-mono);font-size:0.90rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--base);margin-bottom:8px;">MMAS-8 History (${p.mmas.length} visit${p.mmas.length!==1?'s':''})</div>
@@ -461,8 +775,16 @@ function _rppRender() {
           </div>` : ''}
         </div>
         ${(() => {
-          if (!latestMmas) return '';
-          try { return _renderMAPProtocolPanelHTML(latestMmas); } catch(e) { return ''; }
+          if (latestMmas) {
+            try { return _renderMAPProtocolPanelHTML(latestMmas); } catch(e) { return ''; }
+          }
+          if (latestMap) {
+            // Derive phenotype from computed domain scores; never use stored gateway label
+            const _pd = _mapDomains(latestMap);
+            const _pc = _mapPhenoCode(_pd);
+            try { return _renderMAPProtocolPanelHTML(latestMap, _pc); } catch(e) { return ''; }
+          }
+          return '';
         })()}
       </td>
     </tr>`;
@@ -472,7 +794,54 @@ function _rppRender() {
 // ── Print a patient's latest MMAS record as a clinical result card ────────────
 function _rppPrintRecord(p) {
   const latestMmas = [...p.mmas].sort((a, b) => (a.timestamp||0) - (b.timestamp||0)).slice(-1)[0];
-  if (!latestMmas) { showToast('No MMAS record to print for this patient.', 2500); return; }
+  const latestMap  = [...(p.map||[])].sort((a, b) => (a.timestamp||0) - (b.timestamp||0)).slice(-1)[0];
+
+  // MAP-only path
+  if (!latestMmas && latestMap) {
+    const pe   = latestMap.pe_score ?? latestMap.pe;
+    const arch = latestMap.arch_score ?? latestMap.a;
+    const exec = latestMap.exec_score ?? latestMap.e;
+    const ctx  = latestMap.ctx_score  ?? latestMap.c;
+    const peColor = pe == null ? '#4e9cf5' : pe >= 0.75 ? '#10b981' : pe >= 0.55 ? '#f59e0b' : '#ef4444';
+    const fmt3 = v => v != null ? (+v).toFixed(3) : '—';
+    const date = new Date(latestMap.timestamp || Date.now()).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+    const phenotype = latestMap.map_phenotype || latestMap.phenotype || 'PA';
+    const phColors = { INA:'#ef4444', UNA:'#f59e0b', PA:'#3b82f6', A:'#10b981' };
+    const phColor  = phColors[phenotype] || '#6b8099';
+    const pePct = pe != null ? Math.round(+pe * 100) : 0;
+    const existing = document.getElementById('print-result-card');
+    if (existing) existing.remove();
+    const card = document.createElement('div');
+    card.id = 'print-result-card';
+    card.style.display = 'none';
+    card.innerHTML = `
+      <div class="prc-brand">Adherence Cartography · ATLAS · MAP Assessment</div>
+      <div class="prc-title">Patient Adherence Record · ${_esc(p.pid)}</div>
+      <div class="prc-sub">Assessment date: ${date} · Condition: ${_esc(latestMap.condition||'—')} · Drug: ${_esc(latestMap.drug_name||'—')} · Workspace: ${_esc(currentWorkspace||'—')}</div>
+      <div class="prc-score" style="color:${peColor}">${fmt3(pe)}</div>
+      <div class="prc-level" style="color:${peColor}">Predictive Emergence (PE) Score</div>
+      <div class="prc-pattern">Phenotype: <strong style="color:${phColor}">${_esc(phenotype)}</strong> · Architecture: ${fmt3(arch)} · Execution: ${fmt3(exec)} · Context-Guard: ${fmt3(ctx)}</div>
+      <div class="prc-bar-row">
+        <div style="flex:${pePct};background:${peColor};"></div>
+        <div style="flex:${100-pePct};background:#f3f4f6;"></div>
+      </div>
+      <div class="prc-bar-label">${pePct}% of maximum PE score (1.000)</div>
+      <div style="margin:12px 0;font-size:0.80rem;color:#444;">Age: ${_esc(latestMap.age_range||'—')} · Gender: ${_esc(latestMap.gender||'—')}</div>
+      <div class="prc-footer">
+        <div>
+          <div>Adherence Cartography · Adherence Inc. · 100 Oceangate, 12th Floor, Long Beach, CA 90802</div>
+          <div>info@adherence.cc · atlas.adherence.cc</div>
+          <div class="prc-ip">MAP is intellectual property of Adherence Cartography. ATLAS is the intellectual property of Adherence Cartography. Permission required for use.</div>
+        </div>
+      </div>`;
+    document.body.appendChild(card);
+    document.body.classList.add('printing-result');
+    window.print();
+    setTimeout(() => { document.body.classList.remove('printing-result'); const c = document.getElementById('print-result-card'); if (c) c.remove(); }, 1000);
+    return;
+  }
+
+  if (!latestMmas) { showToast('No assessment record to print for this patient.', 2500); return; }
   const score = _recomputeMMASScore(latestMmas);
   const cat   = typeof getAdherenceCategory === 'function' ? getAdherenceCategory(score) : { color:'#4e9cf5', label:'—' };
   const date  = new Date(latestMmas.timestamp || Date.now()).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
@@ -514,9 +883,9 @@ function _rppPrintRecord(p) {
  * @param {Object} record - assessment record with q1-q8 or map_q* fields
  * @returns {string} HTML string
  */
-function _renderMAPProtocolPanelHTML(record) {
+function _renderMAPProtocolPanelHTML(record, overridePhenotype) {
   if (!record) return '';
-  const phenotype = (typeof deriveMAPPhenotype === 'function') ? deriveMAPPhenotype(record) : 'PA';
+  const phenotype = overridePhenotype || ((typeof deriveMAPPhenotype === 'function') ? deriveMAPPhenotype(record) : 'PA');
   const MAP_P = (typeof MAP_PHENOTYPE !== 'undefined') ? MAP_PHENOTYPE : null;
   const p = MAP_P ? MAP_P[phenotype] : null;
   if (!p) return '';
@@ -743,9 +1112,13 @@ async function _rppGenerateCounseling(idx) {
   if (!p) return;
 
   const mmasSorted = [...p.mmas].sort((a, b) => (a.timestamp||0) - (b.timestamp||0));
+  const mapSorted  = [...(p.map||[])].sort((a, b) => (a.timestamp||0) - (b.timestamp||0));
   const latestMmas = mmasSorted[mmasSorted.length - 1];
-  if (!latestMmas) {
-    if (typeof showToast === 'function') showToast('No MMAS record available for this patient.', 2500);
+  const latestMap  = mapSorted[mapSorted.length - 1];
+  const sourceRecord = latestMmas || latestMap;
+
+  if (!sourceRecord) {
+    if (typeof showToast === 'function') showToast('No assessment record available for this patient.', 2500);
     return;
   }
 
@@ -758,23 +1131,36 @@ async function _rppGenerateCounseling(idx) {
   outputDiv.innerHTML = `<div style="background:var(--surface2,#1a1a2e);border:1px solid var(--border,#333);border-radius:6px;padding:1rem;margin-top:0.75rem;"><span style="font-size:0.875rem;color:var(--muted);">Generating brief…</span></div>`;
   if (btn) btn.disabled = true;
 
-  // Gather patient data
-  const mmasScore = _recomputeMMASScore(latestMmas);
+  // Gather patient data — handle both MMAS and MAP source records
+  const mmasScore = latestMmas ? _recomputeMMASScore(latestMmas) : null;
+  const isMapRecord = !latestMmas && !!latestMap;
 
-  // MAP domain scores — use map_q* for MAP records, q* for MMAS records
-  const _q = (f) => +(latestMmas['map_'+f] ?? latestMmas[f] ?? 0);
-  const archScore = (_q('q2') + _q('q3') + _q('q6')) / 3;
-  const execScore = (_q('q1') + _q('q5') + _q('q8')) / 3;
-  const ctxScore  = 0.5 + 0.5 * ((_q('q4') + _q('q7')) / 2);
+  // Domain scores from MAP record fields (stored directly) or derived from question responses
+  const _qSrc = isMapRecord ? latestMap : latestMmas;
+  const archScore = isMapRecord
+    ? (_qSrc.arch_score ?? _qSrc.a ?? null)
+    : ((_qSrc['map_q2']??_qSrc['q2']??0) + (_qSrc['map_q3']??_qSrc['q3']??0) + (_qSrc['map_q6']??_qSrc['q6']??0)) / 3;
+  const execScore = isMapRecord
+    ? (_qSrc.exec_score ?? _qSrc.e ?? null)
+    : ((_qSrc['map_q1']??_qSrc['q1']??0) + (_qSrc['map_q5']??_qSrc['q5']??0) + (_qSrc['map_q8']??_qSrc['q8']??0)) / 3;
+  const ctxScore = isMapRecord
+    ? (_qSrc.ctx_score ?? _qSrc.c ?? null)
+    : 0.5 + 0.5 * (((_qSrc['map_q4']??_qSrc['q4']??0) + (_qSrc['map_q7']??_qSrc['q7']??0)) / 2);
+  const peScore = isMapRecord ? (_qSrc.pe_score ?? _qSrc.pe ?? null) : null;
 
-  // MAP phenotype (from stored field or derived)
-  let phenotype = latestMmas.map_phenotype || latestMmas.phenotype || 'PA';
+  // Phenotype
+  let phenotype = sourceRecord.map_phenotype || sourceRecord.phenotype || 'PA';
   try {
-    if (typeof deriveMAPPhenotype === 'function') phenotype = deriveMAPPhenotype(latestMmas);
+    if (typeof deriveMAPPhenotype === 'function') phenotype = deriveMAPPhenotype(sourceRecord);
   } catch(e) {}
 
+  // Build prompt reflecting whichever tool was used
+  const scoreInfo = isMapRecord
+    ? `MAP Assessment:\n- PE Score: ${peScore != null ? (+peScore).toFixed(3) : '—'}\n- Architecture domain: ${archScore != null ? (+archScore).toFixed(3) : '—'}\n- Execution domain: ${execScore != null ? (+execScore).toFixed(3) : '—'}\n- Context-Guard domain: ${ctxScore != null ? (+ctxScore).toFixed(3) : '—'}\n- MAP Phenotype: ${phenotype}`
+    : `MMAS-8 Score: ${mmasScore.toFixed(2)}/8\n- Architecture domain: ${(+archScore).toFixed(2)}\n- Execution domain: ${(+execScore).toFixed(2)}\n- Context domain: ${(+ctxScore).toFixed(2)}\n- MAP Phenotype: ${phenotype}`;
+
   const systemPrompt = 'You are a clinical pharmacist AI assistant. Generate a brief, practical counseling script (3-5 sentences) for a pharmacist speaking with a patient about medication adherence. Be empathetic, specific to the identified adherence pattern, and suggest one concrete actionable intervention. Use plain language — no clinical jargon.';
-  const userPrompt = `Patient adherence profile:\n- MMAS-8 Score: ${mmasScore.toFixed(2)}/8\n- MAP Phenotype: ${phenotype}\n- Architecture domain (beliefs/motivation): ${archScore.toFixed(2)}\n- Execution domain (habits/routine): ${execScore.toFixed(2)}\n- Context domain (environment/access): ${ctxScore.toFixed(2)}\n\nGenerate a pharmacist counseling script for this specific patient.`;
+  const userPrompt = `Patient adherence profile:\n- ${scoreInfo}\n- Condition: ${sourceRecord.condition||'—'}\n- Drug: ${sourceRecord.drug_name||'—'}\n\nGenerate a pharmacist counseling script for this specific patient.`;
 
   const scriptText = await _clinicCallAI(userPrompt, systemPrompt);
   if (btn) btn.disabled = false;
@@ -913,8 +1299,8 @@ function _resUpdateAnalytics() {
     // INA / UNA / Mixed — use MAP classifier for map records, MMAS classifier for MMAS records
     if (s < 8) {
       try {
-        const _isMap = latest.tool === 'map' || latest.map_q1 !== undefined;
-        const _hasItems = _isMap ? (latest.map_q1 !== undefined) : (latest.q1 !== undefined);
+        const _isMap = latest.tool === 'map' || latest.map_q1 !== undefined || latest.q1 !== undefined;
+        const _hasItems = _isMap ? (latest.map_q1 !== undefined || latest.q1 !== undefined) : (latest.q1 !== undefined);
         if (_hasItems) {
           const { intentional, unintentional } = _isMap ? classifyMapPattern(latest) : classifyPattern(latest);
           if (intentional > unintentional) nINA++;
@@ -938,7 +1324,7 @@ function _resUpdateAnalytics() {
 
   // ── MAP Additive + MAP PE metrics ──────────────────────────────────────────
   const _allRecs = (typeof dashMmasData !== 'undefined' ? dashMmasData : []);
-  const mapRecs  = _allRecs.filter(r => r.tool === 'map' || r.map_q1 !== undefined);
+  const mapRecs  = _allRecs.filter(r => r.tool === 'map' || r.map_q1 !== undefined || r.q1 !== undefined);
   {
     const mapScores = mapRecs.map(r => +r.score || 0).filter(v => v > 0);
     const mapAdditiveAvg = mapScores.length ? mapScores.reduce((a, b) => a + b, 0) / mapScores.length : null;
@@ -2031,8 +2417,8 @@ function _cpoUpdate() {
     const latest = [...p.mmas].sort((a,b) => (b.timestamp||0) - (a.timestamp||0))[0];
     if ((latest.score ?? 0) >= 8) return;
     try {
-      const _isMap = latest.tool === 'map' || latest.map_q1 !== undefined;
-      const _hasItems = _isMap ? (latest.map_q1 !== undefined) : (latest.q1 !== undefined);
+      const _isMap = latest.tool === 'map' || latest.map_q1 !== undefined || latest.q1 !== undefined;
+      const _hasItems = _isMap ? (latest.map_q1 !== undefined || latest.q1 !== undefined) : (latest.q1 !== undefined);
       if (!_hasItems) return;
       const { intentional, unintentional } = _isMap ? classifyMapPattern(latest) : classifyPattern(latest);
       if (intentional > unintentional) nINA++;
@@ -2077,7 +2463,7 @@ function _cpoUpdate() {
   }
 
   // ── PE Domain practice priority ───────────────────────────────────────────
-  // Architecture (A) = mean(Q2,Q3,Q6); Execution (E) = mean(Q1,Q4,Q5,Q8); Context (C) = Q7
+  // Architecture (A) = mean(Q2,Q3,Q6); Execution (E) = mean(Q1,Q5,Q8); Context-Guard (Cg) = 0.5+0.5*mean(Q4,Q7)
   let sumA = 0, sumE = 0, sumC = 0, nDomain = 0;
   patients.forEach(p => {
     p.mmas.forEach(r => {
@@ -2102,7 +2488,7 @@ function _cpoUpdate() {
     const domains = [
       { name:'Architecture', val:mA, color:'rgba(212,168,67,0.80)',  sub:'Beliefs & decisions (Q2,Q3,Q6)' },
       { name:'Execution',    val:mE, color:'rgba(78,156,245,0.80)',   sub:'Behavioral reliability (Q1,Q5,Q8)' },
-      { name:'Context',      val:mC, color:'rgba(46,201,138,0.80)',   sub:'Medication burden (Q7)' },
+      { name:'Context-Guard',val:mC, color:'rgba(46,201,138,0.80)',   sub:'Burden & friction (Q4, Q7)' },
     ];
     dbEl.innerHTML = domains.map(d => `
       <div class="cpo-domain-row">
@@ -2187,7 +2573,7 @@ function rppExportCSV() {
       } else {
         try {
           const _isMap = latestMmas.tool === 'map' || latestMmas.map_q1 !== undefined;
-          if (_isMap && latestMmas.map_q1 !== undefined) {
+          if (_isMap && (latestMmas.map_q1 !== undefined || latestMmas.q1 !== undefined)) {
             const { intentional, unintentional } = classifyMapPattern(latestMmas);
             patternLabel = intentional > unintentional ? 'INA' : unintentional > intentional ? 'UNA' : 'Mixed';
           } else if (!_isMap && latestMmas.q1 !== undefined) {
@@ -2869,33 +3255,114 @@ function renderClinWorklist() {
     const sfBadge = sfRec ? _clinsfBadge(sfRec) : '';
     const sfFlags = sfRec ? _clinDomainFlags(sfRec) : '';
 
-    // Score cell helper: show score + small count badge if any records
-    const scorePill = (str, color, count, dim) =>
-      count > 0
-        ? `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-             <span style="font-family:var(--font-mono);font-size:0.88rem;font-weight:600;color:${color};">${str}</span>
-             <span style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);">×${count}</span>
-           </div>`
-        : `<span style="font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">—</span>`;
+    // MAP domain values (with raw-item fallback for cards without stored domain fields)
+    let _rArch = mapRec ? (mapRec.domain_arch ?? mapRec.pe_arch ?? mapRec.arch_score ?? null) : null;
+    let _rExec = mapRec ? (mapRec.domain_exec ?? mapRec.pe_exec ?? mapRec.exec_score ?? null) : null;
+    let _rCtx  = mapRec ? (mapRec.domain_ctx  ?? mapRec.pe_ctx  ?? mapRec.ctx_score  ?? null) : null;
+    if (mapRec && (_rArch === null || _rExec === null || _rCtx === null) && mapRec.map_q1 !== undefined) {
+      const _q1=+(mapRec.map_q1||0), _q2=+(mapRec.map_q2||0), _q3=+(mapRec.map_q3||0),
+            _q4=+(mapRec.map_q4||0), _q5=+(mapRec.map_q5||0), _q6=+(mapRec.map_q6||0),
+            _q7=+(mapRec.map_q7||0), _q8r=mapRec.map_q8;
+      const _q8 = typeof _q8r === 'number' && _q8r > 1
+        ? ({0:1,1:0.75,2:0.5,3:0.25,4:0}[_q8r] ?? 0.5) : +(_q8r||0);
+      if (_rArch === null) _rArch = (_q2 + _q3 + _q6) / 3;
+      if (_rExec === null) _rExec = (_q1 + _q5 + _q8) / 3;
+      if (_rCtx  === null) _rCtx  = 0.5 + 0.5 * ((_q4 + _q7) / 2);
+    }
 
-    return `<div style="display:grid;grid-template-columns:minmax(110px,2fr) 90px 90px 90px 80px 100px 80px;gap:0;padding:10px 20px;border-bottom:1px solid var(--border);align-items:center;background:${rowBg};cursor:pointer;transition:background 0.12s;"
+    // Mini domain bars for the card
+    const _mb = (lbl, val) => {
+      if (val === null) return '';
+      const pct = Math.round(val * 100);
+      const c = val >= 0.70 ? '#10b981' : val >= 0.50 ? '#f59e0b' : '#ef4444';
+      return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+        <span style="font-family:var(--font-mono);font-size:0.52rem;color:var(--dim);width:9px;">${lbl}</span>
+        <div style="flex:1;height:3px;background:var(--border);border-radius:2px;min-width:36px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${c};border-radius:2px;"></div>
+        </div>
+        <span style="font-family:var(--font-mono);font-size:0.52rem;color:${c};width:26px;text-align:right;">${val.toFixed(2)}</span>
+      </div>`;
+    };
+    const miniDomainHtml = (_rArch !== null || _rExec !== null || _rCtx !== null)
+      ? `<div style="margin-top:5px;">${_mb('A',_rArch)}${_mb('E',_rExec)}${_mb('C',_rCtx)}</div>` : '';
+
+    // Lowest-domain counseling signal
+    let focusHtml = '';
+    {
+      const _fds = [];
+      if (_rArch !== null) _fds.push({name:'Architecture', val:_rArch, color:'rgba(212,168,67,0.85)'});
+      if (_rExec !== null) _fds.push({name:'Execution',    val:_rExec, color:'rgba(139,111,245,0.85)'});
+      if (_rCtx  !== null) _fds.push({name:'Context',      val:_rCtx,  color:'rgba(46,201,138,0.85)'});
+      _fds.sort((a,b) => a.val - b.val);
+      if (_fds.length && _fds[0].val < 0.70) {
+        const _lf = _fds[0];
+        focusHtml = `<div style="margin-top:5px;font-family:var(--font-mono);font-size:0.54rem;letter-spacing:0.10em;color:${_lf.color};">&#9654; ${_lf.name.toUpperCase()} FOCUS · ${Math.round(_lf.val*100)}%</div>`;
+      }
+    }
+
+    // Condition chip (SDoH, no PII)
+    const _condition = mapRec?.condition || mmasRec?.condition || '';
+    const condHtml = _condition
+      ? `<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:2px;">${_condition}</div>` : '';
+
+    // Total assessment count across all instruments
+    const totalAssessments = mapCount + mmasCount + peCount;
+    const wsLabel = (typeof isPIMode === 'function' && isPIMode())
+      ? (mapRec?.workspace || mmasRec?.workspace || '') : '';
+
+    return `<div style="padding:12px 20px;border-bottom:1px solid var(--border);background:${rowBg};cursor:pointer;transition:background 0.12s;"
       onmouseover="this.style.background='rgba(255,255,255,0.03)'"
       onmouseout="this.style.background='${rowBg}'"
       onclick="openClinPatientBrief('${p.pid}')">
-      <div style="display:flex;flex-direction:column;gap:2px;pointer-events:none;">
-        <div style="font-family:var(--font-mono);font-size:0.84rem;font-weight:600;color:var(--text);">${p.pid}</div>
-        ${sfBadge ? `<div style="margin-top:1px;">${sfBadge}</div>` : ''}
-        ${sfFlags}
-        <div style="font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);">${_clinTimeAgo(lastTs)}</div>
-        ${(typeof isPIMode === 'function' && isPIMode()) ? `<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:1px;">${_clinLatest(_clinMapRecs(p))?.workspace || _clinLatest(_clinMmasRecs(p))?.workspace || '—'}</div>` : ''}
-      </div>
-      <div style="text-align:right;pointer-events:none;">${scorePill(mapStr, mapMeta.color, mapCount)}</div>
-      <div style="text-align:right;pointer-events:none;">${scorePill(mmasStr, mmasColor, mmasCount)}</div>
-      <div style="text-align:right;pointer-events:none;">${scorePill(peStr, peMeta.color, peCount)}</div>
-      <div style="text-align:center;pointer-events:none;">${statusBadge}</div>
-      <div style="pointer-events:none;"></div>
-      <div style="text-align:right;" onclick="event.stopPropagation()">
-        <button onclick="openClinPatientBrief('${p.pid}')" style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.22);color:var(--base);border-radius:5px;padding:4px 10px;cursor:pointer;white-space:nowrap;transition:all 0.15s;" onmouseover="this.style.background='rgba(78,156,245,0.18)'" onmouseout="this.style.background='rgba(78,156,245,0.08)'">Brief →</button>
+      <div style="display:grid;grid-template-columns:minmax(140px,2fr) minmax(120px,1.4fr) minmax(110px,1fr) 80px;gap:16px;align-items:start;">
+
+        <!-- Identity -->
+        <div style="pointer-events:none;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-family:var(--font-mono);font-size:0.86rem;font-weight:600;color:var(--text);">${p.pid}</span>
+            ${statusBadge}
+          </div>
+          ${sfBadge ? `<div style="margin-top:3px;">${sfBadge}</div>` : ''}
+          ${condHtml}
+          <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--dim);margin-top:3px;">${_clinTimeAgo(lastTs)} · ${totalAssessments} assessment${totalAssessments!==1?'s':''}</div>
+          ${wsLabel ? `<div style="font-family:var(--font-mono);font-size:0.56rem;color:var(--dim);margin-top:1px;">${wsLabel}</div>` : ''}
+          ${sfFlags}
+        </div>
+
+        <!-- MAP PE + domain bars -->
+        <div style="pointer-events:none;">
+          <div style="display:flex;align-items:baseline;gap:6px;">
+            <span style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);">MAP PE</span>
+            <span style="font-family:var(--font-mono);font-size:0.94rem;font-weight:700;color:${mapMeta.color};">${mapCount > 0 ? mapStr : '—'}</span>
+            ${mapCount > 0 ? `<span style="font-family:var(--font-mono);font-size:0.56rem;color:var(--dim);">×${mapCount}</span>` : ''}
+          </div>
+          ${miniDomainHtml}
+          ${focusHtml}
+        </div>
+
+        <!-- MMAS + PEACS -->
+        <div style="pointer-events:none;display:flex;flex-direction:column;gap:6px;">
+          <div>
+            <div style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-bottom:1px;">MMAS-8</div>
+            <div style="display:flex;align-items:baseline;gap:5px;">
+              <span style="font-family:var(--font-mono);font-size:0.84rem;font-weight:600;color:${mmasColor};">${mmasCount > 0 ? mmasStr : '—'}</span>
+              ${mmasCount > 0 ? `<span style="font-family:var(--font-mono);font-size:0.54rem;color:var(--dim);">×${mmasCount}</span>` : ''}
+            </div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-bottom:1px;">PEACS</div>
+            <div style="display:flex;align-items:baseline;gap:5px;">
+              <span style="font-family:var(--font-mono);font-size:0.84rem;font-weight:600;color:${peMeta.color};">${peCount > 0 ? peStr : '—'}</span>
+              ${peCount > 0 ? `<span style="font-family:var(--font-mono);font-size:0.54rem;color:var(--dim);">×${peCount}</span>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- Action -->
+        <div style="text-align:right;align-self:center;" onclick="event.stopPropagation()">
+          <button onclick="openClinPatientBrief('${p.pid}')" style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.22);color:var(--base);border-radius:5px;padding:6px 12px;cursor:pointer;white-space:nowrap;transition:all 0.15s;" onmouseover="this.style.background='rgba(78,156,245,0.18)'" onmouseout="this.style.background='rgba(78,156,245,0.08)'">Brief →</button>
+        </div>
+
       </div>
     </div>`;
   }).join('');
@@ -3196,14 +3663,14 @@ function _renderClinSessionResult() {
 
   // Item responses
   const _mapItemDefs2 = [
-    { key:'map_q1', label:'Forgets doses',                type:'UNA' },
-    { key:'map_q2', label:'Careless about taking',        type:'INA' },
-    { key:'map_q3', label:'Stops — side effects',         type:'INA' },
-    { key:'map_q4', label:'Routine change / environment', type:'NEU' },
-    { key:'map_q5', label:'Controlled yesterday',         type:'NEU' },
-    { key:'map_q6', label:'Stops — feels worse',          type:'INA' },
-    { key:'map_q7', label:'Burden / daily hassle',        type:'NEU' },
-    { key:'map_q8', label:'Difficulty remembering',       type:'UNA' },
+    { key:'map_q1', label:'Forgets doses',                  type:'UNA' },
+    { key:'map_q2', label:'Chose to skip a dose',           type:'INA' },
+    { key:'map_q3', label:'Reduced or stopped on own',      type:'INA' },
+    { key:'map_q4', label:'Routine change disrupts',        type:'NEU' },
+    { key:'map_q5', label:'Last dose as directed',          type:'NEU' },
+    { key:'map_q6', label:'Pauses when feeling better',     type:'INA' },
+    { key:'map_q7', label:'Routine is a big challenge',     type:'NEU' },
+    { key:'map_q8', label:'Trouble taking as prescribed',   type:'UNA' },
   ];
   let itemsHtml = '';
   if (mapRec && mapRec.map_q1 !== undefined) {
@@ -3684,12 +4151,24 @@ function openClinPatientBrief(pid) {
   const peMeta    = _clinScoreMeta(peScore);
   const peCount   = peacsRecs.length;
 
-  // MAP domain bars (Architecture / Execution / Context)
+  // MAP domain bars (Architecture / Execution / Context-Guard)
+  let mapArch = null, mapExec = null, mapCtx = null;
   let mapDomainHtml = '';
   if (mapRec) {
-    const arch = mapRec.domain_arch ?? mapRec.pe_arch ?? mapRec.arch_score ?? null;
-    const exec = mapRec.domain_exec ?? mapRec.pe_exec ?? mapRec.exec_score ?? null;
-    const ctx  = mapRec.domain_ctx  ?? mapRec.pe_ctx  ?? mapRec.ctx_score  ?? null;
+    mapArch = mapRec.domain_arch ?? mapRec.pe_arch ?? mapRec.arch_score ?? null;
+    mapExec = mapRec.domain_exec ?? mapRec.pe_exec ?? mapRec.exec_score ?? null;
+    mapCtx  = mapRec.domain_ctx  ?? mapRec.pe_ctx  ?? mapRec.ctx_score  ?? null;
+    // Fallback: compute from raw item responses when stored domain fields are absent
+    if ((mapArch === null || mapExec === null || mapCtx === null) && mapRec.map_q1 !== undefined) {
+      const _q1=+(mapRec.map_q1||0), _q2=+(mapRec.map_q2||0), _q3=+(mapRec.map_q3||0),
+            _q4=+(mapRec.map_q4||0), _q5=+(mapRec.map_q5||0), _q6=+(mapRec.map_q6||0),
+            _q7=+(mapRec.map_q7||0), _q8r=mapRec.map_q8;
+      const _q8 = typeof _q8r === 'number' && _q8r > 1
+        ? ({0:1,1:0.75,2:0.5,3:0.25,4:0}[_q8r] ?? 0.5) : +(_q8r||0);
+      if (mapArch === null) mapArch = (_q2 + _q3 + _q6) / 3;
+      if (mapExec === null) mapExec = (_q1 + _q5 + _q8) / 3;
+      if (mapCtx  === null) mapCtx  = 0.5 + 0.5 * ((_q4 + _q7) / 2);
+    }
     const domBar = (label, val, color) => {
       if (val === null) return '';
       const pct = Math.round(val * 100);
@@ -3703,16 +4182,42 @@ function openClinPatientBrief(pid) {
         </div>
       </div>`;
     };
-    const hasAny = arch !== null || exec !== null || ctx !== null;
+    const hasAny = mapArch !== null || mapExec !== null || mapCtx !== null;
     if (hasAny) {
-      const archColor = arch !== null ? (arch >= 0.70 ? '#10b981' : arch >= 0.50 ? '#f59e0b' : '#ef4444') : 'var(--dim)';
-      const execColor = exec !== null ? (exec >= 0.70 ? '#10b981' : exec >= 0.50 ? '#f59e0b' : '#ef4444') : 'var(--dim)';
-      const ctxColor  = ctx  !== null ? (ctx  >= 0.70 ? '#10b981' : ctx  >= 0.50 ? '#f59e0b' : '#ef4444') : 'var(--dim)';
+      const archColor = mapArch !== null ? (mapArch >= 0.70 ? '#10b981' : mapArch >= 0.50 ? '#f59e0b' : '#ef4444') : 'var(--dim)';
+      const execColor = mapExec !== null ? (mapExec >= 0.70 ? '#10b981' : mapExec >= 0.50 ? '#f59e0b' : '#ef4444') : 'var(--dim)';
+      const ctxColor  = mapCtx  !== null ? (mapCtx  >= 0.70 ? '#10b981' : mapCtx  >= 0.50 ? '#f59e0b' : '#ef4444') : 'var(--dim)';
       mapDomainHtml = `<div style="margin-top:10px;">
-        ${domBar('Architecture', arch, archColor)}
-        ${domBar('Execution', exec, execColor)}
-        ${domBar('Context', ctx, ctxColor)}
+        ${domBar('Architecture', mapArch, archColor)}
+        ${domBar('Execution', mapExec, execColor)}
+        ${domBar('Context-Guard', mapCtx, ctxColor)}
       </div>`;
+    }
+  }
+
+  // Intervention target card — lowest domain drives counseling directive
+  let interventionCardHtml = '';
+  if (mapRec && (mapArch !== null || mapExec !== null || mapCtx !== null)) {
+    const _iDomains = [];
+    if (mapArch !== null) _iDomains.push({ name:'Architecture', val:mapArch, q:'Q2 · Q3 · Q6',
+      color:'rgba(212,168,67,0.85)', bg:'rgba(212,168,67,0.05)', border:'rgba(212,168,67,0.25)',
+      counsel:'Patient beliefs and intentional decisions are the primary barrier. Explore concerns about medication necessity, perceived side effects, or feeling well without it. Motivational dialogue — not reminders — is the intervention.' });
+    if (mapExec !== null) _iDomains.push({ name:'Execution', val:mapExec, q:'Q1 · Q5 · Q8',
+      color:'rgba(139,111,245,0.85)', bg:'rgba(139,111,245,0.05)', border:'rgba(139,111,245,0.25)',
+      counsel:'Patient intends to take their medication but is failing on habit and routine. A pill organizer, phone alarm, or routine anchor (e.g. linking to meals) is the appropriate intervention. Reminders are effective here.' });
+    if (mapCtx !== null) _iDomains.push({ name:'Context-Guard', val:mapCtx, q:'Q4 · Q7',
+      color:'rgba(46,201,138,0.85)', bg:'rgba(46,201,138,0.05)', border:'rgba(46,201,138,0.25)',
+      counsel:'Environmental or situational barriers are limiting adherence. Identify cost, access, schedule disruption, or medication burden and connect the patient with support resources directly.' });
+    if (_iDomains.length && mapArch !== 1 && mapExec !== 1 && mapCtx !== 1) {
+      _iDomains.sort((a, b) => a.val - b.val);
+      const _low = _iDomains[0];
+      if (_low.val < 0.90) {
+        const _pct = Math.round(_low.val * 100);
+        interventionCardHtml = `<div style="padding:14px 20px;border-bottom:1px solid var(--border);background:${_low.bg};border-left:3px solid ${_low.color};">
+          <div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:${_low.color};margin-bottom:6px;">&#9654; Counsel: ${_low.name} &middot; ${_pct}% &middot; ${_low.q}</div>
+          <div style="font-size:0.84rem;color:var(--text);line-height:1.65;">${_low.counsel}</div>
+        </div>`;
+      }
     }
   }
 
@@ -3740,13 +4245,13 @@ function openClinPatientBrief(pid) {
   if (mapRec && mapRec.map_q1 !== undefined) {
     const _mapItemLabels = [
       { key:'map_q1', label:'Forgets doses',                type:'UNA' },
-      { key:'map_q2', label:'Careless about taking',        type:'INA' },
-      { key:'map_q3', label:'Stops — side effects',         type:'INA' },
-      { key:'map_q4', label:'Routine change / environment', type:'NEU' },
-      // map_q5 neutral — not shown as barrier
-      { key:'map_q6', label:'Stops — feels worse',          type:'INA' },
-      { key:'map_q7', label:'Burden / daily hassle',        type:'NEU' },
-      { key:'map_q8', label:'Difficulty remembering',       type:'UNA' },
+      { key:'map_q2', label:'Chose to skip a dose',         type:'INA' },
+      { key:'map_q3', label:'Reduced or stopped on own',    type:'INA' },
+      { key:'map_q4', label:'Routine change disrupts',      type:'NEU' },
+      // Q5 positive indicator — not shown as barrier
+      { key:'map_q6', label:'Pauses when feeling better',   type:'INA' },
+      { key:'map_q7', label:'Routine is a big challenge',   type:'NEU' },
+      { key:'map_q8', label:'Trouble taking as prescribed', type:'UNA' },
     ];
     const failed = _mapItemLabels.filter(({ key }) => {
       const v = mapRec[key];
@@ -3821,14 +4326,14 @@ function openClinPatientBrief(pid) {
 
   // SDoH + MAP item responses section (collapsible)
   const _mapItemDefs = [
-    { key:'map_q1', label:'Forgets doses',                type:'UNA' },
-    { key:'map_q2', label:'Careless about taking',        type:'INA' },
-    { key:'map_q3', label:'Stops — side effects',         type:'INA' },
-    { key:'map_q4', label:'Routine change / environment', type:'NEU' },
-    { key:'map_q5', label:'Controlled yesterday',         type:'NEU' },
-    { key:'map_q6', label:'Stops — feels worse',          type:'INA' },
-    { key:'map_q7', label:'Burden / daily hassle',        type:'NEU' },
-    { key:'map_q8', label:'Difficulty remembering',       type:'UNA' },
+    { key:'map_q1', label:'Forgets doses',                  type:'UNA' },
+    { key:'map_q2', label:'Chose to skip a dose',           type:'INA' },
+    { key:'map_q3', label:'Reduced or stopped on own',      type:'INA' },
+    { key:'map_q4', label:'Routine change disrupts',        type:'NEU' },
+    { key:'map_q5', label:'Last dose as directed',          type:'NEU' },
+    { key:'map_q6', label:'Pauses when feeling better',     type:'INA' },
+    { key:'map_q7', label:'Routine is a big challenge',     type:'NEU' },
+    { key:'map_q8', label:'Trouble taking as prescribed',   type:'UNA' },
   ];
   let sdohSectionHtml = '';
   if (mapRec) {
@@ -3865,9 +4370,9 @@ function openClinPatientBrief(pid) {
       sdohSectionHtml = '<div style="border-bottom:1px solid var(--border);">'
         + '<button onclick="(function(btn){var body=btn.nextElementSibling;var open=body.style.display!==\'none\';body.style.display=open?\'none\':\'\';btn.querySelector(\'.cbchev\').style.transform=open?\'rotate(0deg)\':\' rotate(180deg)\';})(this)" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:none;border:none;cursor:pointer;font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);">'
         + '<span>Patient Data · SDoH &amp; Item Responses</span>'
-        + '<span class="cbchev" style="display:inline-block;transition:transform 0.2s;">&#9662;</span>'
+        + '<span class="cbchev" style="display:inline-block;transition:transform 0.2s;transform:rotate(180deg);">&#9662;</span>'
         + '</button>'
-        + '<div style="display:none;padding:0 20px 16px;">'
+        + '<div style="padding:0 20px 16px;">'
         + sdohChipsHtml
         + itemRowsHtml
         + '</div></div>';
@@ -3945,6 +4450,9 @@ function openClinPatientBrief(pid) {
         </div>
 
       </div>
+
+      <!-- Intervention target card -->
+      ${interventionCardHtml}
 
       <!-- SDoH + MAP item responses (collapsible) -->
       ${sdohSectionHtml}
@@ -4193,6 +4701,8 @@ function cpCloseIntervention() {
 }
 
 async function cpSaveIntervention() {
+  const saveBtn = document.getElementById('cp-intv-save-btn');
+  const origText = saveBtn ? saveBtn.textContent : '';
   const type = document.getElementById('cp-intv-type')?.value;
   const note = document.getElementById('cp-intv-note')?.value?.trim();
   const followup = document.getElementById('cp-intv-followup')?.value;
@@ -4201,8 +4711,9 @@ async function cpSaveIntervention() {
     if (errEl) errEl.style.display = 'block';
     return;
   }
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
   const patientNum = _cpCurrentIntvPatient;
-  if (!patientNum) return;
+  if (!patientNum) { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = origText; } return; }
 
   const workspaceKey = window._currentWorkspaceKey || sessionStorage.getItem('_wsKey') || 'unknown';
   const record = {
@@ -4235,6 +4746,7 @@ async function cpSaveIntervention() {
     // Show brief success toast if available
     if (typeof showToast === 'function') showToast('Intervention logged.', 'success');
   } catch (err) {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = origText; }
     console.error('[ATLAS] Intervention save error:', err);
     const errEl = document.getElementById('cp-intv-err');
     if (errEl) { errEl.textContent = 'Save failed. Check your connection.'; errEl.style.display = 'block'; }

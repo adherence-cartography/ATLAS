@@ -50,7 +50,11 @@ function loadMmasCohortData() {
   // downloading the entire assessments table on every dashboard load.
   // NOTE: firebase/database.rules.json requires ".indexOn": ["institution_code"] on the
   // assessments node for this orderByChild query to run efficiently on the server.
-  const mmasRef = isSuperAdmin()
+  // PI and institution modes need all child workspace records, not just their own.
+  // The server-side institution_code filter would exclude pharmacy/clinician records
+  // (which carry institution_code = PHRM_KEY, not PI_KEY). Client-side allowedWS
+  // filtering handles scoping after the full read.
+  const mmasRef = (isSuperAdmin() || isInstitutionMode() || isPIMode())
     ? database.ref('assessments')
     : database.ref('assessments').orderByChild('institution_code').equalTo(currentWorkspace);
 
@@ -109,15 +113,18 @@ function _finishMmasLoad(dashMmasData) {
   renderMmasDashboard(dashMmasData, isInstitutionMode());
   document.getElementById('mmas-last-updated').textContent = (_t.status_updated || 'Updated') + ' ' + new Date().toLocaleTimeString();
   if (!isInstitutionMode() && !isSuperAdmin() && currentWorkspace && currentWorkspace !== 'EXPLORER') {
-    rppBuild(dashMmasData);
+    const _rppMmasOnly = dashMmasData.filter(r => r.tool !== 'map' && r.map_q1 === undefined);
+    const _rppMapOnly  = dashMmasData.filter(r => r.tool === 'map' || r.map_q1 !== undefined);
+    rppBuild(_rppMmasOnly);
+    if (typeof rppMergeMap === 'function') rppMergeMap(_rppMapOnly);
   }
   setTimeout(() => {
     renderAPE(dashMmasData);
     renderPEDomainAnalysis(dashMmasData);
     renderStratification();
     renderTrajectoryCards(dashMmasData);
-    if (isInstitutionMode() || isSuperAdmin()) renderBenchmarking(dashMmasData);
-    if (isInstitutionMode()) renderInstitutionDashboard();
+    if (isInstitutionMode() || isSuperAdmin() || isPIMode()) renderBenchmarking(dashMmasData);
+    if (isInstitutionMode() || isPIMode()) renderInstitutionDashboard();
   }, 200);
   _corrDataReady.mmas = true;
   _maybeRenderCorrelation();
@@ -310,7 +317,7 @@ function _renderMapRecordsTab(records) {
       const pid = r.patient_number||('PAT-'+rowN);
       return `<tr style="cursor:pointer;" onclick="showPatientRecordByKey(${JSON.stringify((r.user_id||'')+"|"+(r.timestamp||'0'))})">
         <td style="color:var(--dim);font-size:0.82rem;">${rowN}</td>
-        <td style="color:${cat.color};font-weight:600;">${r.score.toFixed(2)}</td>
+        <td style="color:${cat.color};font-weight:600;">${(r.score != null ? (+r.score).toFixed(2) : '—')}</td>
         <td style="color:var(--base);font-family:var(--font-mono);">${a.toFixed(2)}</td>
         <td style="color:var(--mvmt);font-family:var(--font-mono);">${e.toFixed(2)}</td>
         <td style="color:var(--strata);font-family:var(--font-mono);">${c.toFixed(2)}</td>
@@ -341,7 +348,7 @@ function exportMapCSV() {
   const header = 'patient_number,score,arch,exec,ctx,pattern,condition,country,timestamp';
   const rows = records.map(r=>[
     r.patient_number||'',
-    r.score.toFixed(2),
+    (r.score != null ? (+r.score).toFixed(2) : '—'),
     _mapArch(r).toFixed(2),
     _mapExec(r).toFixed(2),
     _mapCtx(r).toFixed(2),
@@ -561,7 +568,7 @@ function renderMmasDashboard(records, isInstitution) {
             apeBadge = `<td title="${label} (${pct}% probability)"><span style="font-size:0.82rem;padding:2px 7px;border-radius:8px;background:${c}18;color:${c};border:1px solid ${c}35;white-space:nowrap;">${ico} ${label}</span></td>`;
           }
         }
-        return `<tr style="cursor:pointer;" onclick="showPatientRecordByKey(${JSON.stringify(r.user_id+'|'+r.timestamp)})"><td>${_esc(r.patient_number)||('PAT-'+((_page*PAGE_SIZE)+i+1))}${zBadge}${sBadge}</td><td style="color:${cat.color};font-weight:600;">${r.score.toFixed(2)}</td><td>${patMap[pat]}</td>${apeBadge}<td>${_esc(r.country)||'Unknown'}</td><td>${d}</td>${trajCell}</tr>`;
+        return `<tr style="cursor:pointer;" onclick="showPatientRecordByKey(${JSON.stringify(r.user_id+'|'+r.timestamp)})"><td>${_esc(r.patient_number)||('PAT-'+((_page*PAGE_SIZE)+i+1))}${zBadge}${sBadge}</td><td style="color:${cat.color};font-weight:600;">${(r.score != null ? (+r.score).toFixed(2) : '—')}</td><td>${patMap[pat]}</td>${apeBadge}<td>${_esc(r.country)||'Unknown'}</td><td>${d}</td>${trajCell}</tr>`;
       }).join('');
 
       // Update pagination controls
@@ -619,7 +626,7 @@ function loadPeacsCohortData() {
 
   // PERF: For non-superadmin roles, use server-side filtering by institution_code to avoid
   // downloading the entire peacs_assessments table on every dashboard load.
-  const peacsRef = isSuperAdmin()
+  const peacsRef = (isSuperAdmin() || isInstitutionMode() || isPIMode())
     ? database.ref('peacs_assessments')
     : database.ref('peacs_assessments').orderByChild('institution_code').equalTo(currentWorkspace);
 

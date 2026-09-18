@@ -94,14 +94,14 @@ const _MMAS_LABELS = [
   'Frequency of difficulty remembering',
 ];
 const _MAP_LABELS = [
-  'Takes medication at scheduled times [Execution]',
-  'Has a system/routine for taking medication [Architecture]',
-  'Plans medication around daily schedule [Architecture]',
-  'Takes medication even when away from home [Context]',
-  'Remembers to take medication without reminders [Execution]',
-  'Has contingency plan if dose is missed [Architecture]',
-  'Environment supports consistent medication-taking [Context]',
-  'Rarely misses doses due to competing priorities [Execution]',
+  'Forgets to take medications [Execution]',
+  'Intentionally skipped a dose in past 2 weeks [Architecture]',
+  'Reduced or stopped dose without telling doctor [Architecture]',
+  'Routine disruption impairs medication-taking [Context]',
+  'Took last dose as directed [Execution]',
+  'Considers reducing medication when feeling better [Architecture]',
+  'Medication routine feels like a big challenge [Context]',
+  'Weekly trouble taking all medications as prescribed [Execution]',
 ];
 const _MMAS_SHORT = ['Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8'];
 const _MAP_SHORT  = ['Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8'];
@@ -126,8 +126,8 @@ function _saRenderPsychometrics(container) {
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
       <span style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-right:6px;">Instrument</span>
       ${[
-        { id:'mmas',  label:'MMAS-8', n: (_saCache.mmas||[]).filter(r=>r.tool!=='map'&&r.map_q1===undefined).length },
-        { id:'map',   label:'MAP',    n: (_saCache.mmas||[]).filter(r=>r.map_q1!==undefined).length },
+        { id:'mmas',  label:'MMAS-8', n: (_saCache.mmas||[]).filter(r=>r.tool!=='map'&&r.map_q1===undefined&&r.q1===undefined).length },
+        { id:'map',   label:'MAP',    n: (_saCache.mmas||[]).filter(r=>r.map_q1!==undefined||(r.q1!==undefined&&r.tool==='map')).length },
         { id:'peacs', label:'PEACS',  n: (_saCache.peacs||[]).length },
       ].map(s=>`
         <button id="sa-psy-inst-${s.id}" onclick="_saPsySetInstrument('${s.id}')"
@@ -156,6 +156,8 @@ function _saPsySetInstrument(inst) {
   _saPsyInstrument = inst;
   _saPsyGroup      = 'overview';
   _saPsyTab        = null;
+  const _saMain = document.getElementById('sa-main');
+  if (_saMain) _saMain.scrollTop = 0;
   ['mmas','map','peacs'].forEach(id => {
     const b = document.getElementById('sa-psy-inst-'+id);
     if (!b) return;
@@ -248,7 +250,10 @@ function _saPsySetTab(tabId) {
 function _saPsyDispatch() {
   const body = document.getElementById('sa-psy-body');
   if (!body) return;
-  body.innerHTML = `<div style="color:${_C.muted};font-size:0.86rem;padding:40px 0;text-align:center;">Computing…</div>`;
+  // Reset scroll so new content is visible from the top of the panel
+  const _saMain = document.getElementById('sa-main');
+  if (_saMain) _saMain.scrollTop = 0;
+  body.innerHTML = `<div style="color:${_C.muted};font-size:0.86rem;padding:40px 0;text-align:center;min-height:60vh;">Computing…</div>`;
 
   setTimeout(() => {
     const inst  = _saPsyInstrument;
@@ -339,7 +344,20 @@ function _psyLogit(p) { p=Math.max(0.001,Math.min(0.999,p)); return Math.log(p/(
 
 function _saPsyComputeItems(inst) {
   const prefix = inst === 'map' ? 'map_q' : 'q';
-  const raw = (_saCache.mmas||[]).filter(r => r[prefix+'1'] !== undefined);
+  let raw = inst === 'map'
+    ? (_saCache.mmas||[]).filter(r => r.map_q1 !== undefined || (r.q1 !== undefined && r.tool === 'map'))
+    : (_saCache.mmas||[]).filter(r => r[prefix+'1'] !== undefined);
+  // Normalize pharmacy records that store items as q1-q8 instead of map_q1-map_q8
+  if (inst === 'map') {
+    raw = raw.map(r => {
+      if (r.map_q1 === undefined && r.q1 !== undefined) {
+        const n = {...r};
+        for (let i = 1; i <= 8; i++) n['map_q'+i] = r['q'+i];
+        return n;
+      }
+      return r;
+    });
+  }
   const K = 8;
   if (raw.length < 30) return { insufficient:true, n:raw.length };
 
@@ -376,7 +394,7 @@ function _saPsyComputeItems(inst) {
   const oddT  = matrix.map(r=>r[0]+r[2]+r[4]+r[6]);
   const evenT = matrix.map(r=>r[1]+r[3]+r[5]+r[7]);
   const rHalf = _psyPearson(oddT,evenT);
-  const splitHalf = 2*rHalf/(1+Math.abs(rHalf));
+  const splitHalf = (1+rHalf)!==0 ? 2*rHalf/(1+rHalf) : 0;
 
   const loadings = rIT.map(r=>r*Math.sqrt(Math.max(0,alpha)));
   const sumL = loadings.reduce((s,l)=>s+l,0);
@@ -1398,8 +1416,8 @@ function _saPsyMapDomainQ8(container) {
   const d = _saPsyCache.map;
   if (!d || d.insufficient || !d.raw) { _psyInsuf(container,d||{insufficient:true,n:0},'MAP'); return; }
 
-  // Q8 is "Rarely misses doses due to competing priorities [Execution]"
-  // Scored 0–1, typically in ordinal steps: 0.0 / 0.25 / 0.50 / 0.75 / 1.0
+  // Q8: "In a typical week, how often do you have trouble taking all your medications as prescribed?" [Execution]
+  // Scored 0–1 ordinal: All the time=0.00, Often=0.25, Sometimes=0.50, Rarely=0.75, Never=1.00
   const q8vals = (d.raw||[]).map(r=>parseFloat(r.map_q8)||0).filter(v=>!isNaN(v));
   const ordinals = [
     {label:'Always misses',  v:0.00, c:'#ef4444'},
@@ -1416,7 +1434,7 @@ function _saPsyMapDomainQ8(container) {
   container.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div class="sa-panel">
-        <div style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:14px;">Q8 Distribution — "Rarely misses doses due to competing priorities"</div>
+        <div style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:14px;">Q8 Distribution — "How often do you have trouble taking all your medications as prescribed?"</div>
         <div style="display:flex;align-items:flex-end;gap:8px;height:120px;margin-bottom:10px;">
           ${buckets.map(b=>{
             const h=Math.max(4,(b.n/maxBucket)*120);
@@ -1439,13 +1457,13 @@ function _saPsyMapDomainQ8(container) {
         <div style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:14px;">Q8 Clinical Significance</div>
         <div style="font-size:0.80rem;color:${_C.muted};line-height:1.65;">
           <div style="margin-bottom:10px;"><span style="color:${_C.text};">Why Q8 matters</span><br>
-            Q8 is the <em>only ordinal item</em> in MMAS-8 and MAP. It asks directly about behavioral execution frequency — how often competing priorities disrupt medication-taking. This item is uniquely sensitive to lifestyle complexity and practical barriers.
+            Q8 is the <em>only ordinal item</em> in MAP. It asks directly about behavioral execution frequency — how often the patient has trouble taking all medications as prescribed in a typical week. This item is uniquely sensitive to lifestyle complexity and practical barriers.
           </div>
           <div style="margin-bottom:10px;"><span style="color:${_C.text};">Impact on Execution domain</span><br>
             Q8 contributes one third of the Execution (MVMT) score. In cohorts with low MAP PE, Q8 is often the primary Execution driver — a "sometimes misses" response alone drops Execution by ~0.17 points.
           </div>
           <div><span style="color:${_C.text};">Scoring</span><br>
-            Never misses = 1.0 (optimal) · Rarely = 0.75 · Sometimes = 0.50 · Often = 0.25 · Always = 0.00. These map directly to the MMAS-8 Q8 ordinal scale with ordinal-to-numeric conversion.
+            Never = 1.0 (optimal) · Rarely = 0.75 · Sometimes = 0.50 · Often = 0.25 · All the time = 0.00. Response options are MAP-specific and do not share the same option set as MMAS-8 Q8.
           </div>
         </div>
       </div>
@@ -1604,14 +1622,14 @@ function _saPsyMapPatternDrivers(container) {
   const thresh = 0.5;
 
   const items = [
-    {q:'map_q1',label:'Q1 — Scheduled timing',       domain:'Execution',    c:_C.purple},
-    {q:'map_q2',label:'Q2 — Has a routine/system',   domain:'Architecture', c:_C.blue},
-    {q:'map_q3',label:'Q3 — Plans around schedule',  domain:'Architecture', c:_C.blue},
-    {q:'map_q4',label:'Q4 — Takes when away',        domain:'Context',      c:_C.green},
-    {q:'map_q5',label:'Q5 — No reminders needed',    domain:'Execution',    c:_C.purple},
-    {q:'map_q6',label:'Q6 — Has contingency plan',   domain:'Architecture', c:_C.blue},
-    {q:'map_q7',label:'Q7 — Environment supports',   domain:'Context',      c:_C.green},
-    {q:'map_q8',label:'Q8 — Rarely misses (priority)',domain:'Execution',   c:_C.purple},
+    {q:'map_q1',label:'Q1 — Forgets to take medications',          domain:'Execution',    c:_C.purple},
+    {q:'map_q2',label:'Q2 — Intentionally skipped dose',           domain:'Architecture', c:_C.blue},
+    {q:'map_q3',label:'Q3 — Reduced/stopped dose without MD',      domain:'Architecture', c:_C.blue},
+    {q:'map_q4',label:'Q4 — Routine disruption affects adherence', domain:'Context',      c:_C.green},
+    {q:'map_q5',label:'Q5 — Took last dose as directed',           domain:'Execution',    c:_C.purple},
+    {q:'map_q6',label:'Q6 — Considers reducing when feeling better',domain:'Architecture',c:_C.blue},
+    {q:'map_q7',label:'Q7 — Routine feels like a big challenge',   domain:'Context',      c:_C.green},
+    {q:'map_q8',label:'Q8 — Weekly trouble taking medications',    domain:'Execution',    c:_C.purple},
   ];
 
   const missRates = items.map(item=>{
@@ -1944,7 +1962,7 @@ function _saPsyValidityContent(container) {
       <div style="font-size:0.74rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.amberDim};margin-bottom:10px;">Content Validity Interpretation</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:0.80rem;color:${_C.muted};line-height:1.65;">
         <div><span style="color:${_C.text};">CVI (this platform)</span><br>Proportion of items with corrected r<sub>it</sub> ≥ 0.30. Expert-rated CVI (Lawshe, 1975) requires independent SME panel ratings and is instrument-level evidence obtained prior to deployment.</div>
-        <div><span style="color:${_C.text};">Weak items (r<sub>it</sub> &lt; 0.25)</span><br>${d.weakItems.length?d.weakItems.map(x=>shorts[x.i]+' ('+x.r.toFixed(3)+')').join(', '):'None'} — items below threshold add noise without contributing to the construct measured.</div>
+        <div><span style="color:${_C.text};">Weak items (r<sub>it</sub> &lt; 0.25)</span><br>${d.weakItems.length?d.weakItems.map(x=>shorts[x.i]+' ('+x.r.toFixed(3)+')').join(', '):'None'} — items below threshold add noise without contributing to the construct measured. ${inst==='map'&&d.weakItems.some(x=>x.i===4)?'Note: Q5 is the only positively-worded MAP item (asked in the adherent direction). A low or negative r<sub>it</sub> in small samples is expected and is not a scoring error.':''}</div>
         <div><span style="color:${_C.text};">Redundancy (r &gt; 0.70)</span><br>${d.redundantPairs.length?'Flagged pairs may be measuring identical behavior. Consider review in next instrument revision.':'No redundant item pairs detected at r > 0.70 threshold.'}</div>
       </div>
     </div>`;
@@ -2064,8 +2082,8 @@ function _saPsyValidityConstruct(container) {
   container.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;">
       ${fl('Architecture (Q2,Q3,Q6)',d.aveArch,d.crArch,_C.blue)}
-      ${fl('Execution (Q1,Q4,Q5,Q8)',d.aveExec,d.crExec,_C.purple)}
-      ${fl('Context (Q7)',           d.aveCtx, null,    _C.green)}
+      ${fl('Execution (Q1,Q5,Q8)',  d.aveExec,d.crExec,_C.purple)}
+      ${fl('Context (Q4,Q7)',       d.aveCtx, null,    _C.green)}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
       <div class="sa-panel">

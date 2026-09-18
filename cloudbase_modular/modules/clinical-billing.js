@@ -801,7 +801,11 @@ var _instBillingTabInited = false;
 function initInstBillingTab() {
   // Determine billing access — clinician roles or superadmin only (not researcher, not PI)
   var tier = ((workspaceProfile && (workspaceProfile.tier || workspaceProfile.role || workspaceProfile.contract_tier)) || '').toLowerCase();
-  var hasBilling = isSuperAdmin() || isClinician() || tier === 'institution';
+  var billingCountry = ((workspaceProfile && (workspaceProfile.institution_country || workspaceProfile.country || workspaceProfile.billing_country || '')) || '').toUpperCase().trim();
+  var _nonUSMode = !!(workspaceProfile && workspaceProfile.features &&
+    (workspaceProfile.features.gcc_mode || workspaceProfile.features.eu_mode || workspaceProfile.features.lgpd_mode));
+  var isUSAccount = !_nonUSMode && (!billingCountry || billingCountry === 'US' || billingCountry === 'USA');
+  var hasBilling = (isSuperAdmin() || isClinician() || tier === 'institution') && isUSAccount;
 
   var lockedNotice = document.getElementById('inst-billing-locked-notice');
   var billingTabs  = document.getElementById('billing-code-tabs');

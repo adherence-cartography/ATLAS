@@ -283,6 +283,57 @@ async function processBulkUpload(file) {
       let uploaded = 0, skipped = 0;
       const uploadedSubmissions = [];   // collects each success for longitudinal synthesis
 
+      // Controlled vocabulary normalization tables (keyed lowercase, values are canonical)
+      const _AGE_NORM = {
+        'under 18':'Under 18','<18':'Under 18',
+        '18-24':'18–24','18–24':'18–24',
+        '25-34':'25–34','25–34':'25–34',
+        '35-44':'35–44','35–44':'35–44',
+        '45-54':'45–54','45–54':'45–54',
+        '55-64':'55–64','55–64':'55–64',
+        '65-74':'65–74','65–74':'65–74',
+        '75+':'75+','75 and older':'75+','75 and over':'75+','75 or older':'75+','≥75':'75+',
+        'prefer not to say':'Prefer not to say',
+      };
+      const _EDU_NORM = {
+        'no formal education':'No formal education','none':'No formal education',
+        'primary school':'Primary school','primary':'Primary school','elementary':'Primary school',
+        'secondary school':'Secondary school','secondary':'Secondary school',
+        'high school':'Secondary school','high school diploma':'Secondary school',
+        'vocational/technical':'Vocational/Technical','vocational/ technical':'Vocational/Technical',
+        'vocational / technical':'Vocational/Technical','vocational':'Vocational/Technical',
+        'technical':'Vocational/Technical',
+        'some college':'Some college','some university':'Some college',
+        'some university / college':'Some college','some university/college':'Some college',
+        "bachelor's degree":"Bachelor's degree",'bachelor degree':"Bachelor's degree",
+        'bachelors degree':"Bachelor's degree",'bachelor':"Bachelor's degree",
+        'undergraduate':"Bachelor's degree",
+        'graduate degree':'Graduate degree',"master's degree":'Graduate degree',
+        'masters degree':'Graduate degree','masters':'Graduate degree',
+        'postgraduate':'Graduate degree','doctoral degree':'Graduate degree',
+        'doctorate':'Graduate degree','doctoral':'Graduate degree','phd':'Graduate degree',
+        'prefer not to say':'Prefer not to say',
+      };
+      const _ROUTE_NORM = {
+        'oral':'Oral','tablet':'Oral','capsule':'Oral','oral (tablet/capsule)':'Oral',
+        'sublingual':'Sublingual','buccal':'Buccal',
+        'iv':'Intravenous','intravenous':'Intravenous','intravenous (iv)':'Intravenous',
+        'im':'Intramuscular','intramuscular':'Intramuscular','intramuscular (im)':'Intramuscular',
+        'sc':'Subcutaneous','subcutaneous':'Subcutaneous','subcutaneous (sc)':'Subcutaneous',
+        'patch':'Transdermal','transdermal':'Transdermal','transdermal (patch)':'Transdermal',
+        'inhaled':'Inhalation','inhalation':'Inhalation','inhaler':'Inhalation',
+        'intranasal':'Intranasal','nasal':'Intranasal','nasal spray':'Intranasal',
+        'rectal':'Rectal','suppository':'Rectal','rectal (suppository)':'Rectal',
+        'ophthalmic':'Ophthalmic','eye drops':'Ophthalmic','ophthalmic (eye drops)':'Ophthalmic',
+        'otic':'Otic','ear drops':'Otic','otic (ear drops)':'Otic',
+        'topical':'Topical','cream':'Topical','gel':'Topical','topical (cream/gel)':'Topical',
+        'vaginal':'Vaginal','other':'Other',
+      };
+      function _normLookup(map, val) {
+        if (!val) return String(val || '');
+        return map[String(val).trim().toLowerCase()] || String(val).trim();
+      }
+
       for (const row of rowsToUpload) {
         // Date-first template (v2): col 0 = assessment date; all others shift right by 1.
         // Old template (v1): no date column; _dc offset = 0.
@@ -292,8 +343,11 @@ async function processBulkUpload(file) {
         const _rowSlice = row.slice(_dc);
         if (isNormative) _rowSlice.splice(2, 0, '');
         const [country, city, patientNum, condition, drugType, drugName,
-               drugStrength, route, gender, ageRange, education,
+               drugStrength, _routeRaw, gender, _ageRaw, _eduRaw,
                _q1, _q2, _q3, _q4, _q5, _q6, _q7, _q8freq] = _rowSlice;
+        const route     = _normLookup(_ROUTE_NORM, _routeRaw);
+        const ageRange  = _normLookup(_AGE_NORM,   _ageRaw);
+        const education = _normLookup(_EDU_NORM,   _eduRaw);
 
         function yesno(v, reversed) {
           if (typeof v === 'number') return v;

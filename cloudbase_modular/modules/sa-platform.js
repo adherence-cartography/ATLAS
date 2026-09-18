@@ -1,23 +1,24 @@
-// sa-platform.js — Platform Management: workspaces, campaigns, API keys, letters of permission, site banner, module paths, access requests, system
+// sa-platform.js — Platform Management: workspaces, campaigns, API keys, letters of permission, pharmacy gateway, site banner, module paths, access requests, system
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PLATFORM TAB — Administrative Oversight
-// Sub-sections: Workspaces · Campaigns · Internal Keys · Partner APIs · Letters · Site Banner · Module Paths · Requests · System
+// Sub-sections: Workspaces · Campaigns · Internal Keys · Partner APIs · Letters · Pharmacy Gateway · Site Banner · Module Paths · Requests · System
 // ══════════════════════════════════════════════════════════════════════════════
 
 let _saPlatTab = 'workspaces';
 let _saPlatWsAll = [];
 
 const _SA_PLAT_SUBS = [
-  { id: 'workspaces', label: '⬡ Workspaces'   },
-  { id: 'campaigns',  label: '◆ Campaigns'    },
-  { id: 'api',        label: '◈ Developer Keys' },
-  { id: 'partners',   label: '⬡ Partner APIs'  },
-  { id: 'letters',    label: '✉ Letters'      },
-  { id: 'banner',     label: '📢 Banner'       },
-  { id: 'modules',    label: '◫ Module Paths' },
-  { id: 'requests',   label: '◐ Requests'     },
-  { id: 'system',     label: '◉ System'       },
+  { id: 'workspaces', label: '⬡ Workspaces'      },
+  { id: 'campaigns',  label: '◆ Campaigns'       },
+  { id: 'api',        label: '◈ Developer Keys'  },
+  { id: 'partners',   label: '⬡ Partner APIs'    },
+  { id: 'letters',    label: '✉ Letters'         },
+  { id: 'pharmacy',   label: '⬡ Pharmacy Gateway' },
+  { id: 'banner',     label: '📢 Banner'          },
+  { id: 'modules',    label: '◫ Module Paths'    },
+  { id: 'requests',   label: '◐ Requests'        },
+  { id: 'system',     label: '◉ System'          },
 ];
 
 function _saRenderPlatform(container) {
@@ -57,6 +58,7 @@ function _saPlatNav(tab) {
     case 'api':        _saPlatApiKeys(body);    break;
     case 'partners':   (window.saPartnersInit ? window.saPartnersInit(body) : (body.innerHTML = `<div style="color:${_C.muted};padding:20px;">Partner API module not loaded.</div>`)); break;
     case 'letters':    _saPlatLetters(body);    break;
+    case 'pharmacy':   _saPlatPharmacy(body);      break;
     case 'banner':     _saPlatBanner(body);        break;
     case 'modules':    _saPlatModulePaths(body);  break;
     case 'requests':   _saPlatRequests(body);     break;
@@ -92,9 +94,17 @@ async function _saPlatWorkspaces(container) {
       .filter(k => !deletedKeys.has(k.key||''))
       .map(k => {
         const ws = wsMap[(k.key||'').toUpperCase()] || {};
-        return { ...k, ...(ws.name?{name:ws.name}:{}), ...(ws.institution?{institution:ws.institution}:{}),
+        return { ...k,
+          ...(ws.name              ? { name:               ws.name               } : {}),
+          ...(ws.email             ? { email:              ws.email              } : {}),
+          ...(ws.institution       ? { institution:        ws.institution        } : {}),
+          ...(ws.study_title       ? { study_title:        ws.study_title        } : {}),
+          ...(ws.peacs_dims        ? { peacs_dims:         ws.peacs_dims         } : {}),
+          ...(ws.role              ? { role:               ws.role               } : {}),
+          parent_institution: ws.parent_institution ?? k.parent_institution ?? null,
+          parent_pi:          ws.parent_pi          ?? k.parent_pi          ?? null,
           mmas: mmasCounts[(k.key||'').toUpperCase()]||0,
-          map: mapCounts[(k.key||'').toUpperCase()]||0,
+          map:  mapCounts[(k.key||'').toUpperCase()]||0,
           peacs: peacsCounts[(k.key||'').toUpperCase()]||0,
           lastActive: lastSeen[(k.key||'').toUpperCase()]||0,
           region: ws.region || null };
@@ -1597,5 +1607,264 @@ async function _saPlatSystem(container) {
         </div>
       </div>`;
   } catch(e) { container.innerHTML = `<div style="color:${_C.red};font-size:0.96rem;">Error: ${_saEsc(e.message)}</div>`; }
+}
+
+// ── Pharmacy Gateway ──────────────────────────────────────────────────────────
+
+async function _saPlatPharmacy(container) {
+  container.innerHTML = `
+    <div style="margin-bottom:18px;">
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:${_C.text};margin-bottom:4px;">Pharmacy Gateway</div>
+      <div style="font-size:0.84rem;color:${_C.muted};">Provision and manage site codes for pharmacy.html deployments. Each site code generates a unique bookmarkable URL for a pharmacy location.</div>
+    </div>
+
+    <div style="background:${_C.surface};border:1px solid ${_C.border};border-radius:10px;padding:18px;margin-bottom:20px;">
+      <div style="font-size:0.72rem;letter-spacing:0.2em;text-transform:uppercase;color:${_C.amber};margin-bottom:14px;">Provision New Site</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:10px;">
+        <div>
+          <label style="display:block;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">Site Name</label>
+          <input id="sa-ph-name" type="text" placeholder="e.g. Al Thiqa Specialty Pharmacy" style="width:100%;box-sizing:border-box;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:7px 10px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.92rem;outline:none;"/>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">Location Type</label>
+          <select id="sa-ph-type" style="width:100%;box-sizing:border-box;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:7px 10px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.92rem;outline:none;">
+            <option value="specialty">Specialty</option>
+            <option value="retail">Retail Community</option>
+            <option value="hospital">Hospital Outpatient</option>
+            <option value="clinical">Clinical Research</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">Region</label>
+          <select id="sa-ph-region" style="width:100%;box-sizing:border-box;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:7px 10px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.92rem;outline:none;">
+            <option value="uae">UAE (me-central-1)</option>
+            <option value="us">US (us-east-1)</option>
+            <option value="eu">EU (eu-central-1)</option>
+            <option value="brazil">Brazil (sa-east-1)</option>
+          </select>
+        </div>
+        <div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr auto;gap:10px;align-items:end;">
+        <div>
+          <label style="display:block;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:4px;">Site Code <span style="text-transform:none;letter-spacing:0;font-size:0.9em;">(PHRM-XXXXX format, uppercase)</span></label>
+          <input id="sa-ph-code" type="text" placeholder="PHRM-ALTHIQA-SPEC" maxlength="44"
+            oninput="this.value=this.value.toUpperCase()"
+            style="width:100%;box-sizing:border-box;background:${_C.bg2};border:1px solid ${_C.border};border-radius:6px;padding:7px 10px;color:${_C.amber};font-family:'IBM Plex Mono',monospace;font-size:0.92rem;outline:none;letter-spacing:0.08em;"/>
+        </div>
+        <button onclick="_saPlatProvisionPharmacy()"
+          style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 18px;border-radius:6px;cursor:pointer;background:${_C.amberFaint};border:1px solid ${_C.amberDim};color:${_C.amber};white-space:nowrap;transition:all 0.15s;"
+          onmouseover="this.style.background='rgba(212,168,67,0.18)'" onmouseout="this.style.background='${_C.amberFaint}'">
+          Provision Site
+        </button>
+      </div>
+      <div id="sa-ph-status" style="font-size:0.84rem;color:${_C.muted};margin-top:8px;min-height:16px;"></div>
+    </div>
+
+    <div id="sa-ph-list-wrap">
+      <div style="color:${_C.muted};font-size:0.9rem;padding:12px 0;">Loading sites…</div>
+    </div>`;
+
+  _saPlatPharmacyRefresh();
+}
+
+async function _saPlatPharmacyRefresh() {
+  const wrap = document.getElementById('sa-ph-list-wrap');
+  if (!wrap) return;
+  try {
+    const token = await _accGetToken();
+    const res = await fetch(LAMBDA_URL + '/pharmacy/list', {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    const sites = (data.sites || []).sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+    const baseUrl = window.location.origin + '/pharmacy.html?site=';
+    wrap.innerHTML = `
+      <div style="font-size:0.72rem;letter-spacing:0.2em;text-transform:uppercase;color:${_C.amber};margin-bottom:12px;">Provisioned Sites (${sites.length})</div>
+      <div style="overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;">
+          <thead><tr style="border-bottom:1px solid ${_C.borderB};">
+            ${['Site Code','Name','Type','Region','Created','Status','Pharmacy URL',''].map(h =>
+              `<th style="text-align:left;padding:8px 10px;font-size:0.68rem;letter-spacing:0.16em;text-transform:uppercase;color:${_C.dim};font-weight:400;white-space:nowrap;">${h}</th>`
+            ).join('')}
+          </tr></thead>
+          <tbody>
+            ${!sites.length
+              ? `<tr><td colspan="8" style="padding:24px;text-align:center;color:${_C.dim};font-size:0.90rem;">No pharmacy sites provisioned yet.</td></tr>`
+              : sites.map(s => {
+                  const url = baseUrl + _saEsc(s.siteCode);
+                  const created = s.created_at ? new Date(s.created_at).toLocaleDateString() : '—';
+                  const typeLabel = { specialty: 'Specialty', retail: 'Retail Community', hospital: 'Hospital Outpatient', clinical: 'Clinical Research' }[s.locationType] || s.locationType || '—';
+                  const regionLabel = { uae: 'UAE', us: 'US', eu: 'EU', brazil: 'Brazil' }[s.region] || s.region || '—';
+                  const isUAE = (s.siteCode || '').toUpperCase().startsWith('PHRM-ALTHIQA');
+                  return `
+                  <tr style="border-bottom:1px solid ${_C.border};transition:background 0.12s;" onmouseover="this.style.background='${_C.navy}'" onmouseout="this.style.background='transparent'">
+                    <td style="padding:9px 10px;font-size:0.82rem;color:${_C.amber};white-space:nowrap;">${_saEsc(s.siteCode)}</td>
+                    <td style="padding:9px 10px;font-size:0.88rem;color:${_C.text};">${_saEsc(s.siteName || '—')}</td>
+                    <td style="padding:9px 10px;font-size:0.82rem;color:${_C.muted};white-space:nowrap;">${_saEsc(typeLabel)}</td>
+                    <td style="padding:9px 10px;font-size:0.82rem;color:${_C.muted};white-space:nowrap;">${_saEsc(regionLabel)}</td>
+                    <td style="padding:9px 10px;font-size:0.82rem;color:${_C.dim};white-space:nowrap;">${created}</td>
+                    <td style="padding:9px 10px;">
+                      <span style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:${s.active ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.08)'};border:1px solid ${s.active ? _C.green : _C.red}44;color:${s.active ? _C.green : _C.red};">${s.active ? 'Active' : 'Revoked'}</span>
+                    </td>
+                    <td style="padding:9px 10px;">
+                      ${s.active ? `
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:0.76rem;color:${_C.dim};font-family:'IBM Plex Mono',monospace;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${url}">${url}</span>
+                        <button onclick="navigator.clipboard?.writeText('${url}').then(()=>showToast('URL copied.',2000))"
+                          style="font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;cursor:pointer;background:${_C.navy};border:1px solid ${_C.border};color:${_C.muted};white-space:nowrap;transition:all 0.15s;"
+                          onmouseover="this.style.borderColor='${_C.borderB}'" onmouseout="this.style.borderColor='${_C.border}'">Copy</button>
+                      </div>` : `<span style="font-size:0.76rem;color:${_C.dim};">—</span>`}
+                    </td>
+                    <td style="padding:9px 10px;white-space:nowrap;">
+                      ${s.active ? `
+                      <div style="display:flex;gap:6px;">
+                        <button onclick="_saPlatPharmacyToggleEdit('${_saEsc(s.siteCode)}')"
+                          style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:4px;cursor:pointer;background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.3);color:${_C.blue};transition:all 0.15s;white-space:nowrap;"
+                          onmouseover="this.style.background='rgba(78,156,245,0.18)'" onmouseout="this.style.background='rgba(78,156,245,0.08)'">Edit</button>
+                        <button onclick="_saPlatRevokePharmacy('${_saEsc(s.siteCode)}')"
+                          style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:4px;cursor:pointer;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);color:${_C.red};transition:all 0.15s;white-space:nowrap;"
+                          onmouseover="this.style.background='rgba(239,68,68,0.18)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'">Revoke</button>
+                      </div>` : ''}
+                    </td>
+                  </tr>
+                  <tr id="ph-edit-${_saEsc(s.siteCode)}" style="display:none;">
+                    <td colspan="8" style="padding:0;border-bottom:1px solid ${_C.border};">
+                      <div style="padding:14px 18px;background:${_C.bg2};display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;">
+                        <div>
+                          <label style="display:block;font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:3px;">Country <span style="color:${_C.red};">*</span></label>
+                          <input id="ph-geo-country-${_saEsc(s.siteCode)}" value="${isUAE ? 'United Arab Emirates' : ''}" placeholder="Country" style="width:170px;background:${_C.surface};border:1px solid ${_C.border};border-radius:5px;padding:5px 8px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+                        </div>
+                        <div>
+                          <label style="display:block;font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:3px;">City</label>
+                          <input id="ph-geo-city-${_saEsc(s.siteCode)}" value="" placeholder="City" style="width:130px;background:${_C.surface};border:1px solid ${_C.border};border-radius:5px;padding:5px 8px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+                        </div>
+                        <div>
+                          <label style="display:block;font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:3px;">ISO2</label>
+                          <input id="ph-geo-iso2-${_saEsc(s.siteCode)}" value="${isUAE ? 'AE' : ''}" placeholder="AE" maxlength="2" oninput="this.value=this.value.toUpperCase()" style="width:50px;background:${_C.surface};border:1px solid ${_C.border};border-radius:5px;padding:5px 8px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+                        </div>
+                        <div>
+                          <label style="display:block;font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:3px;">Latitude</label>
+                          <input id="ph-geo-lat-${_saEsc(s.siteCode)}" type="number" step="any" placeholder="24.4539" style="width:100px;background:${_C.surface};border:1px solid ${_C.border};border-radius:5px;padding:5px 8px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+                        </div>
+                        <div>
+                          <label style="display:block;font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:${_C.dim};margin-bottom:3px;">Longitude</label>
+                          <input id="ph-geo-lng-${_saEsc(s.siteCode)}" type="number" step="any" placeholder="54.3773" style="width:100px;background:${_C.surface};border:1px solid ${_C.border};border-radius:5px;padding:5px 8px;color:${_C.text};font-family:'IBM Plex Mono',monospace;font-size:0.82rem;outline:none;"/>
+                        </div>
+                        <div style="display:flex;gap:6px;align-self:flex-end;">
+                          <button onclick="_saPlatPharmacySaveGeo('${_saEsc(s.siteCode)}')"
+                            style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;padding:6px 14px;border-radius:5px;cursor:pointer;background:rgba(78,156,245,0.1);border:1px solid rgba(78,156,245,0.4);color:${_C.blue};white-space:nowrap;transition:all 0.15s;"
+                            onmouseover="this.style.background='rgba(78,156,245,0.2)'" onmouseout="this.style.background='rgba(78,156,245,0.1)'">Save &amp; Backfill</button>
+                          <button onclick="_saPlatPharmacyToggleEdit('${_saEsc(s.siteCode)}')"
+                            style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;padding:6px 14px;border-radius:5px;cursor:pointer;background:transparent;border:1px solid ${_C.border};color:${_C.muted};white-space:nowrap;transition:all 0.15s;"
+                            onmouseover="this.style.borderColor='${_C.borderB}'" onmouseout="this.style.borderColor='${_C.border}'">Cancel</button>
+                        </div>
+                        <div id="ph-edit-status-${_saEsc(s.siteCode)}" style="font-size:0.80rem;color:${_C.muted};flex:1;min-width:180px;align-self:flex-end;padding-bottom:8px;"></div>
+                      </div>
+                    </td>
+                  </tr>`;
+                }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    if (wrap) wrap.innerHTML = `<div style="color:${_C.red};font-size:0.9rem;">Error loading sites: ${_saEsc(e.message)}</div>`;
+  }
+}
+
+function _saPlatPharmacyToggleEdit(siteCode) {
+  const row = document.getElementById('ph-edit-' + siteCode);
+  if (!row) return;
+  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
+async function _saPlatPharmacySaveGeo(siteCode) {
+  const st = document.getElementById('ph-edit-status-' + siteCode);
+  if (st) { st.textContent = 'Saving…'; st.style.color = _C.muted; }
+
+  const country      = (document.getElementById('ph-geo-country-' + siteCode)?.value || '').trim();
+  const city         = (document.getElementById('ph-geo-city-'    + siteCode)?.value || '').trim() || null;
+  const country_iso2 = (document.getElementById('ph-geo-iso2-'    + siteCode)?.value || '').trim().toUpperCase() || null;
+  const latitude     = parseFloat(document.getElementById('ph-geo-lat-' + siteCode)?.value) || null;
+  const longitude    = parseFloat(document.getElementById('ph-geo-lng-' + siteCode)?.value) || null;
+
+  if (!country) {
+    if (st) { st.textContent = 'Country is required.'; st.style.color = _C.red; }
+    return;
+  }
+
+  try {
+    const token = await _accGetToken();
+    const res = await fetch(LAMBDA_URL + '/pharmacy/patch-geo', {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ sites: [{ siteCode, country, city, country_iso2, latitude, longitude }] })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    const r = (data.results || [])[0] || {};
+    if (st) {
+      st.textContent = r.ssm === 'ok'
+        ? `Saved. ${r.firebasePatched ?? 0} Firebase record(s) backfilled.`
+        : `SSM error: ${r.ssm}`;
+      st.style.color = r.ssm === 'ok' ? _C.green : _C.red;
+    }
+  } catch(e) {
+    if (st) { st.textContent = 'Error: ' + e.message; st.style.color = _C.red; }
+  }
+}
+
+async function _saPlatProvisionPharmacy() {
+  const siteName    = (document.getElementById('sa-ph-name')?.value || '').trim();
+  const locationType = document.getElementById('sa-ph-type')?.value || 'specialty';
+  const region      = document.getElementById('sa-ph-region')?.value || 'uae';
+  const siteCode    = (document.getElementById('sa-ph-code')?.value || '').trim().toUpperCase();
+  const st          = document.getElementById('sa-ph-status');
+
+  if (!siteName) { if (st) { st.textContent = 'Site name is required.'; st.style.color = _C.red; } return; }
+  if (!siteCode) { if (st) { st.textContent = 'Site code is required.'; st.style.color = _C.red; } return; }
+  if (!/^PHRM-[A-Z0-9][A-Z0-9-]{1,38}$/.test(siteCode)) {
+    if (st) { st.textContent = 'Invalid format. Use PHRM- followed by uppercase letters, digits, or hyphens (e.g. PHRM-ALTHIQA-SPEC).'; st.style.color = _C.red; }
+    return;
+  }
+
+  if (st) { st.textContent = 'Provisioning…'; st.style.color = _C.muted; }
+
+  try {
+    const token = await _accGetToken();
+    const res = await fetch(LAMBDA_URL + '/pharmacy/provision', {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ siteName, locationType, region, siteCode })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Provision failed');
+    if (st) { st.textContent = '✓ Site ' + siteCode + ' provisioned.'; st.style.color = _C.green; }
+    ['sa-ph-name', 'sa-ph-code'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    setTimeout(() => _saPlatPharmacyRefresh(), 600);
+  } catch(e) {
+    if (st) { st.textContent = 'Error: ' + e.message; st.style.color = _C.red; }
+  }
+}
+
+async function _saPlatRevokePharmacy(siteCode) {
+  if (!confirm('Revoke pharmacy site ' + siteCode + '?\n\nThe bookmarkable URL will stop working immediately. This cannot be undone.')) return;
+  try {
+    const token = await _accGetToken();
+    const res = await fetch(LAMBDA_URL + '/pharmacy/revoke', {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ siteCode })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Revoke failed');
+    showToast('Site ' + siteCode + ' revoked.', 3000);
+    _saPlatPharmacyRefresh();
+  } catch(e) {
+    showToast('Error: ' + e.message, 4000);
+  }
 }
 

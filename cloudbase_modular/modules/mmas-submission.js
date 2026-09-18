@@ -8,56 +8,14 @@
  * @returns {void}
  */
 function initMmasMap() {
-  if (mmasMapInited) { ensureMapbox().then(()=>{ setTimeout(()=>mmasMapInstance&&mmasMapInstance.resize(),100); }); return; }
-  mmasMapInited = true;
-
-  // Timeout fallback — if Mapbox doesn't load in 8 seconds, show a graceful message
-  const _mapTimeout = setTimeout(() => {
-    const mc = document.getElementById('mmas-map');
-    if (mc && !mmasMapInited) {
-      mc.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:24px;text-align:center;">' +
-        '<span style="font-size:1.8rem;">📍</span>' +
-        '<div style="font-family:var(--font-mono);font-size:0.75rem;color:var(--muted);">Map unavailable on this connection</div>' +
-        '<button onclick="initMmasMap()" style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.3);color:var(--base);padding:8px 18px;border-radius:8px;cursor:pointer;">↺ Retry</button>' +
-        '</div>';
-    }
-  }, 8000);
-
-  ensureMapbox().then(() => {
-    clearTimeout(_mapTimeout);
-    mapboxgl.accessToken = ATLAS_MAPBOX_TOKEN;
-    mmasMapInstance = new mapboxgl.Map({
-      container: 'mmas-map',
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [0,20], zoom:2, projection:'globe'
-    });
-    mmasMapInstance.addControl(new mapboxgl.NavigationControl());
-
-    mmasMapInstance.on('load', () => {
-      const fog = window._mapboxFog || {
-        color: '#04091c', 'high-color': '#0d1a3a',
-        'horizon-blend': 0.06, 'space-color': '#010408', 'star-intensity': 0.4
-      };
-      mmasMapInstance.setFog(fog);
-      if (!window._mmasMapRotInt) {
-        window._mmasMapRotInt = setInterval(() => {
-          if (!spectatorActive && mmasMapInstance.getZoom() < 3) {
-            const c = mmasMapInstance.getCenter(); c.lng += 0.3; if (c.lng > 180) c.lng = -180; mmasMapInstance.setCenter(c);
-          }
-        }, 1500);
-      }
-      mmasMapInstance.on('movestart', () => { if (window._mmasMapRotInt) { clearInterval(window._mmasMapRotInt); window._mmasMapRotInt = null; } });
-      if (!mmasListening) loadMmasMapData();
-    });
-  }).catch(() => {
-    clearTimeout(_mapTimeout);
-    const mc = document.getElementById('mmas-map');
-    if (mc) mc.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:24px;text-align:center;">' +
-      '<span style="font-size:1.8rem;">📍</span>' +
-      '<div style="font-family:var(--font-mono);font-size:0.75rem;color:var(--muted);">Map could not be loaded</div>' +
-      '<button onclick="initMmasMap()" style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.3);color:var(--base);padding:8px 18px;border-radius:8px;cursor:pointer;">↺ Retry</button>' +
-      '</div>';
-  });
+  if (typeof isSuperAdmin === 'function' && isSuperAdmin()) {
+    // Superadmin: go directly to Mission Control Global Atlas pre-filtered to MMAS-8
+    if (typeof saTab === 'function') saTab('globe');
+    setTimeout(() => { if (typeof saGlobeFilter === 'function') saGlobeFilter('mmas'); }, 600);
+  } else {
+    // All other workspace roles: open the Global Atlas overlay (loads its own Firebase data)
+    if (typeof wsOpenGlobeOverlay === 'function') wsOpenGlobeOverlay();
+  }
 }
 
 /**
@@ -65,34 +23,9 @@ function initMmasMap() {
  * then starts the live listener for subsequent submissions.
  * @returns {void}
  */
-function loadMmasMapData() {
-  mmasListening = true;
-  mmasTotal=0; mmasCountries=new Set(); mmasCountryData={}; mmasMarkersMap={};
-  database.ref('mapData').once('value', snap => {
-    const data = snap.val();
-    if (data) Object.values(data).forEach(a => addMmasMarker(a));
-    listenMmasLive();
-  });
-}
+function loadMmasMapData() {}
 
-/**
- * Attaches a Firebase onChildAdded listener to /mapData, adding only new records
- * submitted after the listener was registered. Guards against duplicate attachment.
- * @returns {void}
- */
-function listenMmasLive() {
-  // Remove existing listener before re-registering
-  if (window._mmasLiveListenerRef) {
-    database.ref('mapData').off('child_added', window._mmasLiveListenerRef);
-    window._mmasLiveListenerRef = null;
-  }
-  window._mmasLiveListenerActive = true;
-  const since = Date.now();
-  window._mmasLiveListenerRef = database.ref('mapData').on('child_added', snap => {
-    const a = snap.val();
-    if (a.timestamp > since) addMmasMarker(a);
-  });
-}
+function listenMmasLive() {}
 
 function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
@@ -102,7 +35,7 @@ function buildMmasPopupHTML(records, idx) {
   const total = records.length;
   const inaItems = (a.q1!==undefined) ? [
     ...['q1','q2','q3','q4','q6','q7','q8'].filter(k=>a[k]===0),
-    ...(a.q5===1 ? ['q5'] : [])
+    ...(a.q5===0 ? ['q5'] : [])
   ].map(k=>'Q'+(parseInt(k.replace('q','')))).sort((x,y)=>parseInt(x.slice(1))-parseInt(y.slice(1))) : [];
   const {intentional=0,unintentional=0} = (a.q1!==undefined) ? classifyPattern(a) : {};
   const pattern = (a.q1!==undefined) ? (intentional>unintentional?'INA':unintentional>intentional?'UNA':a.score>=8?'High Adherence':'Mixed') : '—';
@@ -576,6 +509,7 @@ function _showMilestoneFlash(milestone, total) {
 // Day  → satellite-streets (bright satellite with labels)
 // Night → navigation-night (dark vector — better contrast for adherence dots at night)
 let _spectatorIsDay = true;
+let _spectatorFlat  = false;
 function toggleSpectatorDayNight() {
   if (!spectatorMap) return;
   _spectatorIsDay = !_spectatorIsDay;
@@ -590,6 +524,7 @@ function toggleSpectatorDayNight() {
       'horizon-blend': 0.06, 'space-color': '#010408', 'star-intensity': 0.4
     };
     try { spectatorMap.setFog(fog); } catch(e) {}
+    try { spectatorMap.setProjection(_spectatorFlat ? 'mercator' : 'globe'); } catch(e) {}
     _initSpectatorLayers();
     _updateSpectatorSource();
     _initPartnerLayers();
@@ -597,6 +532,15 @@ function toggleSpectatorDayNight() {
   });
   const btn = document.getElementById('cine-daynight-btn');
   if (btn) btn.textContent = _spectatorIsDay ? '🌙 Night' : '☀️ Day';
+}
+
+function toggleSpectatorProjection() {
+  if (!spectatorMap) return;
+  _spectatorFlat = !_spectatorFlat;
+  spectatorMap.setProjection(_spectatorFlat ? 'mercator' : 'globe');
+  if (_spectatorFlat) spectatorMap.flyTo({ center: [0, 20], zoom: 1.5, duration: 1200 });
+  const btn = document.getElementById('cine-projection-btn');
+  if (btn) btn.textContent = _spectatorFlat ? '⬤ Globe' : '⊞ Flat Map';
 }
 
 // ══════════════════════════════════════════════

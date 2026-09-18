@@ -2952,6 +2952,54 @@ function rebuildPeacsConditionDropdown() {
   });
 }
 
+// Filters the condition select in-place based on a search query.
+// Rebuilds the <optgroup>/<option> tree from _CONDITION_GROUPS so display:none on
+// <option> elements (which some browsers ignore) is never needed.
+function filterConditionDropdown(query, selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel || typeof _CONDITION_GROUPS === 'undefined') return;
+  const q = query.trim().toLowerCase();
+  const prevSelected = new Set(Array.from(sel.selectedOptions).map(o => o.value));
+  sel.innerHTML = '';
+  if (!q) {
+    const ph = document.createElement('option');
+    ph.value = ''; ph.textContent = '— Select condition —';
+    sel.appendChild(ph);
+    _CONDITION_GROUPS.forEach(group => {
+      const og = document.createElement('optgroup');
+      og.label = group.en;
+      group.items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.en; opt.textContent = item.en;
+        if (prevSelected.has(item.en)) opt.selected = true;
+        og.appendChild(opt);
+      });
+      sel.appendChild(og);
+    });
+    return;
+  }
+  let hasResults = false;
+  _CONDITION_GROUPS.forEach(group => {
+    const matches = group.items.filter(item => item.en.toLowerCase().includes(q));
+    if (!matches.length) return;
+    hasResults = true;
+    const og = document.createElement('optgroup');
+    og.label = group.en;
+    matches.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.en; opt.textContent = item.en;
+      if (prevSelected.has(item.en)) opt.selected = true;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  if (!hasResults) {
+    const opt = document.createElement('option');
+    opt.value = ''; opt.textContent = '— No matches —'; opt.disabled = true;
+    sel.appendChild(opt);
+  }
+}
+
 // Called after renderPeacsAssessment() HTML is injected into the DOM.
 // Populates the condition dropdown, auto-fills location, and pre-fills session SDoH.
 function initPeacsSdohSection() {
@@ -2962,6 +3010,14 @@ function initPeacsSdohSection() {
   const setVal = (id, val) => { const el = document.getElementById(id); if (el && val && !el.value) el.value = val; };
   setVal('p-sdoh-country', loc.country || '');
   setVal('p-sdoh-city',    loc.city    || '');
+  // Re-apply after a short delay in case a browser extension overwrites the values
+  // immediately after page interaction (LastPass, 1Password, etc. are known to do this).
+  if (loc.country || loc.city) {
+    setTimeout(() => {
+      setVal('p-sdoh-country', loc.country || '');
+      setVal('p-sdoh-city',    loc.city    || '');
+    }, 300);
+  }
 
   // Pre-fill patient number from session / MMAS field
   const pid = window._sessionData?.patientId || window._sessionPatientId
@@ -3206,6 +3262,19 @@ function _dimAgoStr(rec) {
   return Math.round(days) + ' days ago';
 }
 
+// Module-level so peacsPatientIdChanged can update badges in-place without a full re-render.
+function _peacsDimStatusBadge(dim) {
+  const rec = window._peacsDimCache[dim];
+  const interval = PEACS_INTERVALS[dim];
+  if (!rec) return `<span style="font-family:'IBM Plex Mono\',monospace;font-size:0.90rem;padding:2px 8px;border:1px solid rgba(245,158,11,0.4);color:rgba(245,158,11,0.9);background:rgba(245,158,11,0.06);">First visit</span>`;
+  const daysAgo = Math.round(_peacsDimAge(rec));
+  const daysLeft = Math.ceil(interval - _peacsDimAge(rec));
+  if (daysLeft > 0) {
+    return `<span style="font-family:'IBM Plex Mono\',monospace;font-size:0.90rem;padding:2px 8px;border:1px solid rgba(46,201,138,0.35);color:rgba(46,201,138,0.9);background:rgba(46,201,138,0.06);">Last taken ${daysAgo}d ago · recommended again in ${daysLeft}d</span>`;
+  }
+  return `<span style="font-family:'IBM Plex Mono\',monospace;font-size:0.90rem;padding:2px 8px;border:1px solid rgba(245,158,11,0.4);color:rgba(245,158,11,0.9);background:rgba(245,158,11,0.06);">Last taken ${daysAgo}d ago · recommended interval: ${interval}d</span>`;
+}
+
 // ── Modified renderPeacsAssessment ──────────────────────────────────────────
 function renderPeacsAssessment() {
   _buildMapInference();    // derive pre-selections from MAP answers
@@ -3213,19 +3282,7 @@ function renderPeacsAssessment() {
   _buildGeoInference();    // derive pre-selections from Overpass API geolocation result
   const L = PEACS_QUESTIONS[peacsCurrentLang] || PEACS_QUESTIONS.en;
 
-  // Dimension status badges
-  function dimStatusBadge(dim) {
-    const rec = window._peacsDimCache[dim];
-    const due = window._peacsDimDue[dim];
-    const interval = PEACS_INTERVALS[dim];
-    if (!rec) return `<span style="font-family:'IBM Plex Mono\',monospace;font-size:0.90rem;padding:2px 8px;border:1px solid rgba(245,158,11,0.4);color:rgba(245,158,11,0.9);background:rgba(245,158,11,0.06);">First visit</span>`;
-    const daysAgo = Math.round(_peacsDimAge(rec));
-    const daysLeft = Math.ceil(interval - _peacsDimAge(rec));
-    if (daysLeft > 0) {
-      return `<span style="font-family:'IBM Plex Mono\',monospace;font-size:0.90rem;padding:2px 8px;border:1px solid rgba(46,201,138,0.35);color:rgba(46,201,138,0.9);background:rgba(46,201,138,0.06);">Last taken ${daysAgo}d ago · recommended again in ${daysLeft}d</span>`;
-    }
-    return `<span style="font-family:'IBM Plex Mono\',monospace;font-size:0.90rem;padding:2px 8px;border:1px solid rgba(245,158,11,0.4);color:rgba(245,158,11,0.9);background:rgba(245,158,11,0.06);">Last taken ${daysAgo}d ago · recommended interval: ${interval}d</span>`;
-  }
+  const dimStatusBadge = (dim) => `<span id="peacs-dim-status-${dim}">${_peacsDimStatusBadge(dim)}</span>`;
 
   // Render a dimension section — always interactive, interval is advisory only
   function dimSection(dim, qs, label, acronym, intro, dotClass, introBg, introBorder) {
@@ -3269,17 +3326,19 @@ function renderPeacsAssessment() {
         <div class="sdoh-grid">
           <div class="sdoh-field">
             <label class="sdoh-label">Country</label>
-            <input class="sdoh-input" id="p-sdoh-country" type="text" placeholder="e.g., United States" autocomplete="country"/>
-            <span class="sdoh-note">Auto-detected. Edit if incorrect.</span>
+            <input class="sdoh-input" id="p-sdoh-country" type="text" placeholder="e.g., United States" autocomplete="country-name" readonly
+              onfocus="this.removeAttribute('readonly')" onblur="this.setAttribute('readonly','')"/>
+            <span class="sdoh-note">Auto-detected. Click to edit.</span>
           </div>
           <div class="sdoh-field">
             <label class="sdoh-label">City</label>
-            <input class="sdoh-input" id="p-sdoh-city" type="text" placeholder="e.g., Long Beach" autocomplete="address-level2"/>
+            <input class="sdoh-input" id="p-sdoh-city" type="text" placeholder="e.g., Long Beach" autocomplete="address-level2" readonly
+              onfocus="this.removeAttribute('readonly')" onblur="this.setAttribute('readonly','')"/>
           </div>
           <div class="sdoh-field">
             <label class="sdoh-label">Patient Number <span class="sdoh-optional">optional</span></label>
             <input class="sdoh-input" id="p-sdoh-patient-num" type="text" placeholder="Auto-generated"
-              oninput="peacsPatientIdChanged(this.value)"/>
+              autocomplete="off" data-lpignore="true" data-form-type="other" onblur="peacsPatientIdChanged(this.value)"/>
             <span class="sdoh-note">Links to this patient's dimension history and prior visits.</span>
           </div>
           <div class="sdoh-field">
@@ -3289,6 +3348,7 @@ function renderPeacsAssessment() {
           </div>
           <div class="sdoh-field sdoh-full">
             <label class="sdoh-label">Medical Condition Being Treated <span class="sdoh-optional">optional</span></label>
+            <input type="text" id="p-sdoh-condition-search" class="sdoh-input" placeholder="Search conditions…" autocomplete="off" oninput="filterConditionDropdown(this.value,'p-sdoh-condition')" style="margin-bottom:6px;"/>
             <select class="sdoh-select" id="p-sdoh-condition" multiple size="5" style="height:auto;min-height:120px;"></select>
             <div id="p-sdoh-condition-display" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.18);border-radius:8px;font-size:0.84rem;color:var(--muted);line-height:1.6;"></div>
             <input class="sdoh-input" id="p-sdoh-condition-other" type="text" placeholder="Please specify condition" style="display:none;margin-top:8px;"/>
@@ -3392,10 +3452,8 @@ function renderPeacsAssessment() {
   </div>`;
 }
 
-// Called when patient ID field changes — load their dimension history
-let _peacsPatIdTimer = null;
+// Called when patient ID field loses focus — load their dimension history
 function peacsPatientIdChanged(val) {
-  clearTimeout(_peacsPatIdTimer);
   const id = val.trim();
   if (!id) {
     window._peacsDimCache = { base: null, mvmt: null, strata: null };
@@ -3404,23 +3462,31 @@ function peacsPatientIdChanged(val) {
     updatePeacsFloater();
     return;
   }
-  _peacsPatIdTimer = setTimeout(async () => {
+  (async () => {
     await loadPeacsDimensions(id);
-    // Reset answers, then pre-fill valid dims
+    // Reset answers, then pre-fill valid dims from cache
     peacsState.base={}; peacsState.mvmt={}; peacsState.strata={};
     _preFillFromCache();
-    // Re-render assessment with updated due/not-due status
-    const content = document.getElementById('peacs-tab-content');
-    if (content && document.querySelector('#peacs-tab-bar .tab-btn.active')?.dataset.tab === 'assess') {
-      const savedId = id;
-      content.innerHTML = renderPeacsAssessment();
-      // Restore patient ID in the new input
-      const inp = document.getElementById('peacs-patient-id');
-      if (inp) inp.value = savedId;
-    }
+    // Update only the dimension status badges in-place — no full re-render,
+    // so SDoH fields (country, city, etc.) are never destroyed.
+    ['base','mvmt','strata'].forEach(dim => {
+      const el = document.getElementById('peacs-dim-status-' + dim);
+      if (el) el.innerHTML = _peacsDimStatusBadge(dim);
+    });
+    // Apply pre-filled answers to existing question buttons
+    ['base','mvmt','strata'].forEach(dim => {
+      Object.entries(peacsState[dim] || {}).forEach(([qid, val]) => {
+        document.querySelectorAll(`.peacs-q-opt[data-id="${qid}"]`).forEach(b => b.classList.remove('selected'));
+        const btn = document.querySelector(`.peacs-q-opt[data-id="${qid}"][data-val="${val}"]`);
+        if (btn) {
+          btn.classList.add('selected');
+          btn.closest('.peacs-q-card')?.classList.add('answered');
+        }
+      });
+    });
     updatePeacsFloater();
     _applyMapInferenceToPeacsState();
-  }, 600); // debounce 600ms
+  })();
 }
 
 // ── Modified submitPeacs ──────────────────────────────────────────────────
@@ -3718,6 +3784,7 @@ function retakePeacs() {
   peacsState.base={}; peacsState.mvmt={}; peacsState.strata={};
   window._peacsDimCache = { base: null, mvmt: null, strata: null };
   window._peacsDimDue   = _defaultPeacsDimDue();
+  window._peacsForcedRerender = true;
   document.querySelectorAll('#peacs-tab-bar .tab-btn').forEach(b => b.classList.remove('active'));
   switchPeacsTab('assess');
 }
@@ -3737,6 +3804,28 @@ function switchPeacsTab(tab) {
   content.style.display='block';
 
   if (tab === 'assess') {
+    const _formRendered = !!document.getElementById('p-sdoh-section');
+
+    // If the form is already showing and this is not an intentional retake/reset,
+    // skip the full innerHTML replacement so the user's typed values are preserved.
+    if (_formRendered && !window._peacsForcedRerender) {
+      console.trace('[PEACS] switchPeacsTab(assess) called while form already rendered — skipping re-render. Check stack above for the trigger.');
+      const _curPatId = window._sessionData?.patientId || window._sessionPatientId
+        || document.getElementById('p-sdoh-patient-num')?.value.trim() || '';
+      if (_curPatId) {
+        loadPeacsDimensions(_curPatId).then(() => {
+          _preFillFromCache();
+          ['base','mvmt','strata'].forEach(dim => {
+            const el = document.getElementById('peacs-dim-status-' + dim);
+            if (el) el.innerHTML = _peacsDimStatusBadge(dim);
+          });
+          updatePeacsFloater();
+        });
+      }
+      return;
+    }
+    window._peacsForcedRerender = false;
+
     // Load dimensions for known patient ID before rendering
     const patId = window._sessionData?.patientId || window._sessionPatientId
       || document.getElementById('p-sdoh-patient-num')?.value.trim()

@@ -36,6 +36,7 @@ const _saCache = { mmas: [], peacs: [], map: [], workspaces: {} };
 let _saCurrentRole = 'superadmin'; // resolved from auth token at open time
 
 const _C = {
+  ink:'#070e1d',
   bg:'#070e1d', bg2:'#0a1527', surface:'#0d1b2e',
   border:'rgba(212,168,67,0.12)', borderB:'rgba(212,168,67,0.26)',
   amber:'#d4a843', amberDim:'rgba(212,168,67,0.55)', amberFaint:'rgba(212,168,67,0.09)',
@@ -57,6 +58,7 @@ function _saInjectStyles() {
   s.textContent = `
     /* ── ATLAS Design Tokens ── dark (Mission Control) ── */
     :root {
+      --mc-ink:#070e1d;
       --mc-bg:#070e1d;       --mc-bg2:#0a1527;      --mc-surface:#0d1b2e;
       --mc-border:rgba(212,168,67,0.12);  --mc-border-b:rgba(212,168,67,0.26);
       --mc-amber:#d4a843;    --mc-amber-dim:rgba(212,168,67,0.55); --mc-amber-faint:rgba(212,168,67,0.09);
@@ -67,6 +69,7 @@ function _saInjectStyles() {
     }
     /* ── light theme — clinical / patient / PI paths ── */
     [data-atlas-theme="light"] {
+      --mc-ink:#faf8f4;
       --mc-bg:#faf8f4;       --mc-bg2:#f3ede3;      --mc-surface:#ffffff;
       --mc-border:rgba(180,140,60,0.18);  --mc-border-b:rgba(180,140,60,0.38);
       --mc-amber:#b8882e;    --mc-amber-dim:rgba(184,136,46,0.65); --mc-amber-faint:rgba(184,136,46,0.07);
@@ -105,6 +108,7 @@ function _saResolveColors(el) {
   const s = getComputedStyle(el || document.documentElement);
   const g = k => s.getPropertyValue('--mc-'+k).trim();
   Object.assign(_C, {
+    ink:        g('ink'),
     bg:         g('bg'),          bg2:        g('bg2'),
     surface:    g('surface'),
     border:     g('border'),      borderB:    g('border-b'),
@@ -229,6 +233,7 @@ function _saInjectShell() {
   // Temporarily apply the opening theme to _C so the HTML is rendered with correct colors
   if (_globalTheme === 'light') {
     Object.assign(_C, {
+      ink:'#faf8f4',
       bg:'#faf8f4', bg2:'#f3ede3', surface:'#ffffff',
       border:'rgba(180,140,60,0.18)', borderB:'rgba(180,140,60,0.38)',
       amber:'#b8882e', amberDim:'rgba(184,136,46,0.65)', amberFaint:'rgba(184,136,46,0.07)',
@@ -462,6 +467,11 @@ function saTab(tabId) {
 
   const main = document.getElementById('sa-main');
   if (!main) return;
+
+  // Reset inline styles the globe tab may have set on the shared container
+  main.style.padding  = '24px 28px';
+  main.style.overflow = 'auto';
+  main.style.position = '';
 
   switch (tabId) {
     case 'command':  _saRenderCommand(main);  break;

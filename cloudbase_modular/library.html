@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>ATLAS · Translation Library · Adherence Cartography</title>
-<meta name="description" content="Free download: MMAS-8, MAP, and PEACS assessment translations in 40+ languages. Open-access clinical tools from the ATLAS platform."/>
+<meta name="description" content="MMAS-8, MAP, and PEACS assessment translations in 40+ languages. Available for review and reference. Clinical or research use requires formal authorization from Adherence LLC."/>
 <meta name="robots" content="index, follow"/>
 <link rel="canonical" href="https://atlas.adherence.cc/library.html"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -187,6 +187,23 @@ body{background:var(--ink);color:var(--text);font-family:var(--font-body);min-he
   color:var(--muted);font-size:0.92rem;
 }
 
+/* ── Authorization Notice ── */
+.auth-notice{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:14px 32px;
+  background:rgba(212,168,67,0.05);
+  border-top:1px solid rgba(212,168,67,0.15);
+  border-bottom:1px solid rgba(212,168,67,0.15);
+}
+.auth-notice-icon{font-size:1rem;color:rgba(212,168,67,0.75);flex-shrink:0;margin-top:2px;}
+.auth-notice-title{
+  font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:rgba(212,168,67,0.75);margin-bottom:4px;
+}
+.auth-notice-body{font-size:0.86rem;color:var(--muted);line-height:1.6;}
+.auth-notice-body a{color:var(--base);text-decoration:none;}
+.auth-notice-body a:hover{text-decoration:underline;}
+
 /* ── Responsive ── */
 @media(max-width:640px){
   .lib-header{padding:14px 18px;}
@@ -205,7 +222,7 @@ body{background:var(--ink);color:var(--text);font-family:var(--font-body);min-he
   <div class="header-brand">
     <div class="header-badge"><div class="header-dot"></div>ATLAS · Adherence Cartography</div>
     <div class="header-title">Translation <em>Library</em></div>
-    <div class="header-sub">Open-Access Clinical Instruments</div>
+    <div class="header-sub">Instrument Reference Library</div>
   </div>
   <div class="header-right">
     <a class="header-home" href="/">Return to ATLAS</a>
@@ -217,15 +234,23 @@ body{background:var(--ink);color:var(--text);font-family:var(--font-body);min-he
 </header>
 
 <section class="lib-hero">
-  <div class="hero-eyebrow">Open Access · Adherence Cartography</div>
+  <div class="hero-eyebrow">Reference Library · Adherence Cartography</div>
   <h1 class="hero-title">Clinical Instrument <em>Translations</em></h1>
-  <p class="hero-desc">Download validated translations of ATLAS assessment instruments for face-to-face and paper-based administration. All translations are freely available with no login required, in support of equitable access to adherence measurement globally.</p>
+  <p class="hero-desc">Browse and download validated translations of ATLAS assessment instruments for review and reference. All clinical, research, or commercial use of any instrument or translation requires a formal authorization from Adherence LLC and an executed letter of permission prior to deployment.</p>
   <div class="hero-stats">
-    <div class="hero-stat"><span class="hero-stat-num" id="stat-langs">42</span><span class="hero-stat-label">Languages</span></div>
+    <div class="hero-stat"><span class="hero-stat-num" id="stat-langs">43</span><span class="hero-stat-label">Languages</span></div>
     <div class="hero-stat"><span class="hero-stat-num" id="stat-instruments">3</span><span class="hero-stat-label">Instruments</span></div>
     <div class="hero-stat"><span class="hero-stat-num">PDF</span><span class="hero-stat-label">Format</span></div>
   </div>
 </section>
+
+<div class="auth-notice">
+  <div class="auth-notice-icon">⚠</div>
+  <div>
+    <div class="auth-notice-title">For Review &amp; Reference Only</div>
+    <p class="auth-notice-body">Access to this library is provided for instrument review and reference purposes. All use of any instrument or translation in a clinical, research, regulatory, or commercial context requires a formal authorization from Adherence LLC and an executed letter of permission. To obtain authorization, contact <a href="mailto:philip.morisky@adherence.cc">philip.morisky@adherence.cc</a>.</p>
+  </div>
+</div>
 
 <div class="lib-controls">
   <div class="lib-tabs" role="tablist">
@@ -256,7 +281,7 @@ body{background:var(--ink);color:var(--text);font-family:var(--font-body);min-he
 </main>
 
 <footer class="lib-footer">
-  <p class="footer-note">MMAS-8 translations are used under license from Donald E. Morisky, ScD, ScM, MSPH. Clinical use requires appropriate licensing. These resources are provided to support global adherence research and clinical practice.</p>
+  <p class="footer-note">MMAS-8 is the intellectual property of Donald E. Morisky, ScD, ScM, MSPH; licensed through Adherence LLC. All instruments and translations in this library are provided for review and reference only. Clinical, research, or commercial use requires a formal authorization and an executed letter of permission from Adherence LLC — contact philip.morisky@adherence.cc.</p>
   <div class="footer-brand">ATLAS · Adherence Cartography</div>
 </footer>
 
@@ -282,6 +307,7 @@ const LANGUAGES = [
   { slug:'Korean',              en:'Korean',                native:'한국어',             code:'ko',    rtl:false },
   { slug:'Kurdish',             en:'Kurdish',               native:'Kurdî',             code:'ku',    rtl:false },
   { slug:'Latvian',             en:'Latvian',               native:'Latviešu',          code:'lv',    rtl:false },
+  { slug:'Marathi',             en:'Marathi',               native:'मराठी',             code:'mr',    rtl:false },
   { slug:'Nepalese',            en:'Nepalese',              native:'नेपाली',            code:'ne',    rtl:false },
   { slug:'Norwegian',           en:'Norwegian',             native:'Norsk',             code:'no',    rtl:false },
   { slug:'Persian',             en:'Persian',               native:'فارسی',             code:'fa',    rtl:true  },

@@ -22,7 +22,7 @@ import {
   readPermissionRegistry, writePermissionRegistry, generateCertNum,
   generatePermissionLetter, findByStripeCustomer, findByStripeSubscription,
   updateWorkspaceProfile, revokeWorkspaceCertRegistry, sendLetterEmailStandalone,
-  respond, corsHeaders, handleIssueKey,
+  respond, corsHeaders, handleIssueKey, issuePubPrivacyLicenseFromWebhook,
 } from './index.mjs';
 
 // ── Stripe config ─────────────────────────────────────────────────────────────
@@ -44,8 +44,9 @@ function getPriceInfo(priceId) {
   return map[priceId] || null;
 }
 
-const STRIPE_PRICE_GAI_STANDARD = process.env.STRIPE_PRICE_GAI_STANDARD || '';
-const STRIPE_PRICE_GAI_ANNUAL   = process.env.STRIPE_PRICE_GAI_ANNUAL   || '';
+const STRIPE_PRICE_GAI_STANDARD  = process.env.STRIPE_PRICE_GAI_STANDARD  || '';
+const STRIPE_PRICE_GAI_ANNUAL    = process.env.STRIPE_PRICE_GAI_ANNUAL    || '';
+const STRIPE_PRICE_PUB_PRIVACY   = process.env.STRIPE_PRICE_PUB_PRIVACY   || '';
 
 // ── Stripe HTTPS helper ───────────────────────────────────────────────────────
 function stripeRequest(path, method, payload) {
@@ -141,6 +142,56 @@ async function handleCreateCheckoutSession(rawBody, headers) {
   }
 }
 
+// ── ROUTE: POST /pub-privacy-checkout ────────────────────────────────────────
+async function handlePubPrivacyCheckout(rawBody, headers) {
+  const origin = headers?.origin || headers?.Origin || '';
+  let body = {};
+  try { body = typeof rawBody === 'string' ? JSON.parse(rawBody) : (rawBody || {}); } catch(_) {}
+
+  const { name, email, institution, country, collection_start, collection_end,
+          n_participants, irb_number, privacy_statement, manuscript_title, journal } = body;
+
+  if (!STRIPE_PRICE_PUB_PRIVACY) {
+    return respond(500, { error: 'Data-Privacy license price not configured on server.' }, origin);
+  }
+  if (!name || !email || !institution || !manuscript_title) {
+    return respond(400, { error: 'Missing required fields: name, email, institution, manuscript_title' }, origin);
+  }
+
+  const truncate = (s, n) => s ? s.slice(0, n) : '';
+
+  const params = {
+    'mode':                                'payment',
+    'payment_method_types[]':              'card',
+    'line_items[0][price]':                STRIPE_PRICE_PUB_PRIVACY,
+    'line_items[0][quantity]':             '1',
+    'customer_email':                      email.trim().toLowerCase(),
+    'success_url':                         `https://keys.adherence.cc?pub_success=1&session_id={CHECKOUT_SESSION_ID}`,
+    'cancel_url':                          `https://keys.adherence.cc?pub_cancel=1`,
+    'metadata[license_type]':              'pub_privacy',
+    'metadata[name]':                      truncate(name, 490),
+    'metadata[email]':                     truncate(email.trim().toLowerCase(), 490),
+    'metadata[institution]':               truncate(institution, 490),
+    'metadata[country]':                   truncate(country || '', 490),
+    'metadata[collection_start]':          truncate(collection_start || '', 490),
+    'metadata[collection_end]':            truncate(collection_end   || '', 490),
+    'metadata[n_participants]':            String(parseInt(n_participants || '0', 10) || 0),
+    'metadata[irb_number]':                truncate(irb_number || '', 490),
+    'metadata[privacy_statement]':         truncate(privacy_statement || '', 490),
+    'metadata[manuscript_title]':          truncate(manuscript_title, 490),
+    'metadata[journal]':                   truncate(journal || '', 490),
+  };
+
+  try {
+    const session = await stripeRequest('/v1/checkout/sessions', 'POST', params);
+    if (session.error) return respond(400, { error: session.error.message }, origin);
+    return respond(200, { url: session.url }, origin);
+  } catch(e) {
+    console.error('[pub-privacy-checkout]', e.message);
+    return respond(500, { error: 'Stripe error: ' + e.message }, origin);
+  }
+}
+
 // ── ROUTE: POST /gai-checkout ─────────────────────────────────────────────────
 async function handleGAICheckout(rawBody, headers) {
   const origin = headers?.origin || headers?.Origin || '';
@@ -224,6 +275,11 @@ async function onCheckoutComplete(session) {
   const inst_type   = meta.inst_type    || null;  // 'academic' | 'health' | 'amc' — only present for institution checkouts
 
   if (!email) { console.warn('[checkout.complete] No email on session', session.id); return; }
+
+  // Route data-privacy publication license to its own issuer
+  if (meta.license_type === 'pub_privacy') {
+    return issuePubPrivacyLicenseFromWebhook(meta, session.id);
+  }
 
   await handleIssueKey({
     name, email, institution, role, study_title, intended_use,
@@ -626,6 +682,7 @@ export async function handleStripeRoutes(path, method, rawBody, headers) {
   if (path.startsWith('/institution-checkout'))     return handleInstCheckout(rawBody, headers);
   if (path.startsWith('/seat-checkout'))            return handleSeatCheckout(rawBody, headers);
   if (path.startsWith('/gai-checkout'))             return handleGAICheckout(rawBody, headers);
+  if (path.startsWith('/pub-privacy-checkout'))     return handlePubPrivacyCheckout(rawBody, headers);
   if (path.startsWith('/send-magic-link'))          return handleSendMagicLink(rawBody, headers);
 
   const origin = headers?.origin || headers?.Origin || '';

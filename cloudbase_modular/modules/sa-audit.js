@@ -161,10 +161,15 @@ function _alApplyFilter() {
   if (search) {
     const q = search.toLowerCase();
     result = result.filter(e =>
-      (e.actor_email || '').toLowerCase().includes(q) ||
-      (e.record_id   || '').toLowerCase().includes(q) ||
-      (e.actor_uid   || '').toLowerCase().includes(q) ||
-      (e.workspace   || '').toLowerCase().includes(q)
+      (e.actor_email    || '').toLowerCase().includes(q) ||
+      (e.record_id      || '').toLowerCase().includes(q) ||
+      (e.actor_uid      || '').toLowerCase().includes(q) ||
+      (e.workspace      || '').toLowerCase().includes(q) ||
+      (e.client_ip      || '').toLowerCase().includes(q) ||
+      (e.client_country || '').toLowerCase().includes(q) ||
+      (e.client_city    || '').toLowerCase().includes(q) ||
+      (e.client_region  || '').toLowerCase().includes(q) ||
+      (e.client_org     || '').toLowerCase().includes(q)
     );
   }
   if (dateFrom) {
@@ -221,13 +226,16 @@ function _alRenderTable() {
     const ws     = _saEsc(e.workspace || '—');
     const tbl    = _saEsc(e.table || '—');
     const rid    = _saEsc(e.record_id || '—');
+    const _loc   = [e.client_city, e.client_region, e.client_country].filter(Boolean).join(', ');
+    const _org   = e.client_org  ? ' · ' + e.client_org : '';
+    const ipStr  = e.client_ip ? _saEsc(e.client_ip) + (_loc ? ' <span style="opacity:0.55;">'+_saEsc(_loc + _org)+'</span>' : '') : '';
     const drawerIdVal = 'al-drawer-' + absIdx;
     return `
       <tr class="al-row" onclick="_alToggleDrawer('${drawerIdVal}')">
         <td style="font-size:0.74rem;white-space:nowrap;">${_saEsc(ts)} UTC</td>
         <td><span class="${badgeClass(e.action)}">${_saEsc(e.action || '—')}</span></td>
         <td style="font-size:0.78rem;">${tbl}</td>
-        <td style="font-size:0.78rem;">${actor}</td>
+        <td style="font-size:0.78rem;">${actor}${ipStr ? '<br><span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.65rem;color:'+_C.dim+';">'+ipStr+'</span>' : ''}</td>
         <td style="font-size:0.78rem;">${ws}</td>
         <td style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:${_C.dim};">${hash}</td>
         <td><button class="al-drawer-toggle" onclick="event.stopPropagation();_alToggleDrawer('${drawerIdVal}')">▼</button></td>

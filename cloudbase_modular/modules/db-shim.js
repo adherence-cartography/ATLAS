@@ -9,6 +9,7 @@
 //   us-east-1     (Virginia)   — default for all non-residency workspaces
 //   me-central-1  (Abu Dhabi)  — UAE PDPL: ALTHIQA-* workspaces
 //   eu-central-1  (Frankfurt)  — EU GDPR:  workspaceProfile.region === 'eu'
+//   sa-east-1     (São Paulo)  — Brazil LGPD: workspaceProfile.region === 'br'
 //
 // Write strategy:
 //
@@ -16,7 +17,7 @@
 //   Every write goes to BOTH Firebase (existing reads stay intact) AND DynamoDB
 //   (regional data residency). Controlled by the absence of the dyna_only flag.
 //
-// Phase 2 — dyna_only (active for ALTHIQA/UAE workspaces):
+// Phase 2 — dyna_only (active for ALTHIQA/UAE workspaces and Brazil/EU residency workspaces):
 //   When workspaceProfile.dyna_only === true:
 //     • Writes go ONLY to DynamoDB (Firebase writes are suppressed).
 //     • .once() reads on DYNA_PATHS are served from DynamoDB via atlasDB.query().
@@ -42,16 +43,19 @@
   // ── Config ──────────────────────────────────────────────────────────────────
   // UAE workspaces (ALTHIQA-*) → me-central-1 (Abu Dhabi, UAE) — UAE PDPL
   // EU workspaces (profile.region === 'eu') → eu-central-1 (Frankfurt) — GDPR
+  // Brazil workspaces (profile.region === 'br') → sa-east-1 (São Paulo) — LGPD
   // All other workspaces → us-east-1 (Virginia, default)
-  const LAMBDA_URL_UAE = '/lambda-proxy-uae';
-  const LAMBDA_URL_EU  = '/lambda-proxy-eu';
-  const LAMBDA_URL_US  = '/lambda-proxy';
+  const LAMBDA_URL_UAE    = '/lambda-proxy-uae';
+  const LAMBDA_URL_EU     = '/lambda-proxy-eu';
+  const LAMBDA_URL_BRAZIL = '/lambda-proxy-brazil';
+  const LAMBDA_URL_US     = '/lambda-proxy';
 
   function _lambdaUrl() {
     const ws = (typeof currentWorkspace !== 'undefined') ? currentWorkspace : '';
     if (ws && ws.startsWith('ALTHIQA')) return LAMBDA_URL_UAE;
     const region = (typeof workspaceProfile !== 'undefined' && workspaceProfile) ? workspaceProfile.region : null;
     if (region === 'eu') return LAMBDA_URL_EU;
+    if (region === 'br') return LAMBDA_URL_BRAZIL;
     return LAMBDA_URL_US;
   }
 
@@ -140,6 +144,7 @@
   // ── DynamoDB write (fire-and-forget) ─────────────────────────────────────────
   // Never blocks the UI — errors are logged but don't throw.
   async function _dynaWrite(op, workspaceKey, data, extras) {
+    if (!workspaceKey) return; // no workspace context — DynamoDB is workspace-scoped, skip
     let token;
     try {
       token = await _getToken();

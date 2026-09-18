@@ -153,6 +153,12 @@ function setAppLanguage(lang) {
     // Entry lang label
     var entryLangLbl = document.getElementById('entry-lang-label');
     if (entryLangLbl) entryLangLbl.textContent = t.langLabel || enT.langLabel;
+
+    // Entry paths heading and subtitle
+    var pathsHeading = document.getElementById('entry-paths-heading');
+    if (pathsHeading) pathsHeading.textContent = t.chooseYourPath || enT.chooseYourPath;
+    var pathsSub = document.getElementById('entry-paths-sub');
+    if (pathsSub) pathsSub.textContent = t.pathsSubtitle || enT.pathsSubtitle;
   }
 
   // ── 2. CONSENT SCREEN ──────────────────────────────────────────────────
@@ -1328,7 +1334,17 @@ function _renderStudentReviewTable(resetPage) {
   try {
     var rows = (typeof dashMmasData !== 'undefined' && Array.isArray(dashMmasData) ? dashMmasData : []);
     if (!rows.length) {
-      el.innerHTML = '<div style="padding:24px;text-align:center;font-family:\'IBM Plex Mono\',monospace;font-size:0.78rem;color:#94a3b8;">' + (_t.empty_no_records_start || 'No records yet — start a session or import data.') + '</div>';
+      el.innerHTML = `<div style="padding:28px 20px;border:1px solid rgba(78,156,245,0.18);border-radius:12px;background:rgba(78,156,245,0.04);text-align:center;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(78,156,245,0.55);margin-bottom:10px;">Getting Started</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:#e8f0f8;margin-bottom:12px;">Your study workspace is ready</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:#6b8099;line-height:1.7;max-width:380px;margin:0 auto 20px;">
+          Collect your first assessments using the QR code in Settings, administer MAP or MMAS-8 sessions, or import existing data from the Publish tab.
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button onclick="document.getElementById('tab-publish')?.click()" style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 16px;background:rgba(78,156,245,0.1);border:1px solid rgba(78,156,245,0.35);border-radius:6px;color:rgba(78,156,245,0.9);cursor:pointer;">Import Data</button>
+          <button onclick="document.getElementById('tab-settings')?.click()" style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#6b8099;cursor:pointer;">Open Settings</button>
+        </div>
+      </div>`;
       return;
     }
     if (resetPage) window._stuPage = 0;
@@ -1459,7 +1475,7 @@ function _stuExportPEACS() {
 // convergent validity in the student psychometric validation module.
 // MAP records: q1 is defined (item-level data stored)
 // MMAS-8 records: q1 === undefined (only total score stored)
-// Domain mapping per TPE spec: Arch=Q2,Q3,Q6 · Exec=Q1,Q4,Q5,Q8 · Ctx=Q7
+// Domain mapping per TPE spec: Arch=Q2,Q3,Q6 · Exec=Q1,Q5,Q8 · Ctx=Q4,Q7
 function _updateStudentValidationPanel() {
   try {
     var placeholder = document.getElementById('stu-val-placeholder');
@@ -1511,8 +1527,8 @@ function _updateStudentValidationPanel() {
 
     var _ALL  = ['q1','q2','q3','q4','q5','q6','q7','q8'];
     var _ARCH = ['q2','q3','q6'];
-    var _EXEC = ['q1','q4','q5','q8'];
-    // q7 is Context (single item — α not computable, show N/A)
+    var _EXEC = ['q1','q5','q8'];
+    // q4 and q7 are Context-Guard (2-item subscale — α computable but not shown in this panel)
 
     var alphaAll  = _alpha(mapRows, _ALL);
     var alphaArch = _alpha(mapRows, _ARCH);
@@ -1524,7 +1540,7 @@ function _updateStudentValidationPanel() {
 
     // ── Corrected item-total correlations ─────────────────────────────────
     // r_it = Pearson r between item and (total − item)
-    var domainOf = { q1:'Exec',q2:'Arch',q3:'Arch',q4:'Exec',q5:'Exec',q6:'Arch',q7:'Ctx',q8:'Exec' };
+    var domainOf = { q1:'Exec',q2:'Arch',q3:'Arch',q4:'Ctx',q5:'Exec',q6:'Arch',q7:'Ctx',q8:'Exec' };
     var domColor  = { Arch:'#d4a843', Exec:'#4e9cf5', Ctx:'#059669' };
     var itcGrid = document.getElementById('stu-val-itc-grid');
     if (itcGrid) {

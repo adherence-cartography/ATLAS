@@ -123,24 +123,14 @@ function _saObsRunSDoH() {
 function _saObsComputeRiskCounts() {
   let high = 0, moderate = 0, low = 0;
   (_saCache.mmas || []).forEach(r => {
-    const hasMap = r.map_q1 !== undefined;
-    if (hasMap) {
-      // Composite 0-1 via MAP PE formula
-      const pe = Math.pow(Math.max(0,
-        ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3 *
-        ((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3 *
-        (0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2)
-      ), 1/3);
-      if (pe < 0.50)        high++;
-      else if (pe < 0.75)   moderate++;
-      else                  low++;
-    } else {
-      const score = r.score != null ? +r.score : null;
-      if (score == null) return;
-      if (score < 6)        high++;
-      else if (score < 8)   moderate++;
-      else                  low++;
-    }
+    // Pharmacy records (tool:'map') and records with map_q1 are MAP instrument — skip MMAS risk buckets
+    const isMap = r.map_q1 !== undefined || r.tool === 'map';
+    if (isMap) return;
+    const score = r.score != null ? +r.score : null;
+    if (score == null) return;
+    if (score < 6)        high++;
+    else if (score < 8)   moderate++;
+    else                  low++;
   });
   return { high, moderate, low };
 }
@@ -149,18 +139,22 @@ function _saObsBuildStream() {
   const now = Date.now();
   const rows = [];
   (_saCache.mmas||[]).forEach(r => {
-    if (r.map_q1 !== undefined) return; // MAP instrument handled below
+    if (r.map_q1 !== undefined || r.tool === 'map') return; // MAP instrument handled below
     rows.push({ inst:'MMAS-8', col:_C.blue, ts:r.timestamp||0,
       score: r.score!=null ? +r.score : null,
       normScore: r.score!=null ? +r.score/8 : null,
       workspace: r.institution_code||r.workspace||'—',
       country: r.country||'—', lat:r.latitude, lon:r.longitude });
   });
-  (_saCache.mmas||[]).filter(r=>r.map_q1!==undefined).forEach(r => {
+  (_saCache.mmas||[]).filter(r => r.map_q1 !== undefined || r.tool === 'map').forEach(r => {
+    // Records with map_q1 fields: compute PE from individual question scores.
+    // Pharmacy records (tool:'map', q1-q8, pe_score pre-computed): use pe_score directly.
+    const peScore = r.map_q1 !== undefined
+      ? Math.pow(Math.max(0,((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3*((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3*(0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2)),1/3)
+      : (r.pe_score != null ? +r.pe_score : null);
     rows.push({ inst:'MAP', col:_C.green, ts:r.timestamp||0,
-      score: Math.pow(Math.max(0,((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3*((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3*(0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2)),1/3),
-      normScore: Math.pow(Math.max(0,((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3*((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3*(0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2)),1/3),
-      workspace: r.institution_code||r.workspace||'—',
+      score: peScore, normScore: peScore,
+      workspace: r.institution_code||r.workspace_key||r.workspace||'—',
       country: r.country||'—', lat:r.latitude, lon:r.longitude });
   });
   (_saCache.peacs||[]).forEach(r => {
@@ -168,6 +162,14 @@ function _saObsBuildStream() {
       score: r.pe!=null ? +r.pe : null,
       normScore: r.pe!=null ? +r.pe : null,
       workspace: r.institution_code||r.workspace||'—',
+      country: r.country||'—', lat:r.latitude, lon:r.longitude });
+  });
+  // map_assessments node: records from submitMAPAssessment — never written to assessments
+  (_saCache.mapA||[]).forEach(r => {
+    rows.push({ inst:'MAP', col:_C.green, ts:r.timestamp||0,
+      score:     r.pe_score!=null ? +r.pe_score : null,
+      normScore: r.pe_score!=null ? +r.pe_score : null,
+      workspace: r.workspace_key||r.institution_code||'—',
       country: r.country||'—', lat:r.latitude, lon:r.longitude });
   });
   return rows.sort((a,b)=>b.ts-a.ts);
@@ -1087,7 +1089,7 @@ function _saObsBenchmarkCompute(callback, optIn) {
   };
 
   // If _saCache already has data, compute immediately
-  if ((_saCache.mmas || []).length || (_saCache.peacs || []).length) {
+  if ((_saCache.mmas || []).length || (_saCache.peacs || []).length || (_saCache.mapA || []).length) {
     _finish();
     return;
   }
@@ -1101,9 +1103,9 @@ function _saObsBenchmarkCompute(callback, optIn) {
     </div>`;
   }
 
-  const todo = { mmas: false, peacs: false };
+  const todo = { mmas: false, peacs: false, mapA: false };
   const _check = () => {
-    if (todo.mmas && todo.peacs) _finish();
+    if (todo.mmas && todo.peacs && todo.mapA) _finish();
   };
 
   database.ref('assessments').once('value', s => {
@@ -1113,6 +1115,10 @@ function _saObsBenchmarkCompute(callback, optIn) {
   database.ref('peacs_assessments').once('value', s => {
     _saCache.peacs = s.val() ? Object.values(s.val()) : [];
     todo.peacs = true; _check();
+  });
+  database.ref('map_assessments').once('value', s => {
+    _saCache.mapA = s.val() ? Object.values(s.val()) : [];
+    todo.mapA = true; _check();
   });
 }
 

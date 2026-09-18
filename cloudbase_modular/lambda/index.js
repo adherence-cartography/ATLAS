@@ -2,16 +2,50 @@
 const https  = require('https');
 const crypto = require('crypto');
 const admin  = require('firebase-admin');
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+const _ssm = new SSMClient({ region: process.env.AWS_REGION || 'us-east-1' });
+const _wsCache = new Map(); // in-memory cache, warm instance only
+
+async function _lookupWorkspaceKey(key) {
+  if (_wsCache.has(key)) return _wsCache.get(key);
+  // SSM primary (migrated workspace keys) — any SSM error falls through to Firebase
+  try {
+    const res = await _ssm.send(new GetParameterCommand({
+      Name: '/atlas/workspaces/' + key,
+      WithDecryption: true
+    }));
+    const profile = JSON.parse(res.Parameter.Value);
+    _wsCache.set(key, profile);
+    return profile;
+  } catch(e) {
+    // ParameterNotFound = key not in SSM; any other error (AccessDenied, network) also falls through
+    console.warn('[validate-key] SSM lookup skipped for', key, '—', e.name || e.message);
+  }
+  // Firebase fallback (institution-provisioned sub-keys and all keys if SSM unavailable)
+  if (db) {
+    const snap = await db.ref('workspaces/' + key).once('value');
+    if (snap.exists()) { _wsCache.set(key, snap.val()); return snap.val(); }
+  }
+  return null;
+}
 
 // ── Firebase Admin (shared with other Lambda functions) ───────────────────────
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(
-      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}')
-    )
-  });
+// Initialization is best-effort: UAE Lambda has no service account (pharmacy
+// writes use the REST API instead), so we guard against a missing credential
+// crashing the module before any route handler is reached.
+let db = null;
+try {
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert(
+        JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}')
+      )
+    });
+  }
+  db = admin.database();
+} catch(e) {
+  console.warn('[firebase-admin] Init skipped (no service account):', e.message);
 }
-const db = admin.database();
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ALLOWED_MODELS = ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-opus-4-7', 'claude-opus-4-8'];
@@ -519,6 +553,263 @@ async function handleREDCapPull(event, headers) {
   }
 }
 
+// ── Pharmacy Gateway — site validation & admin routes ────────────────────────
+
+// POST /validate-key — workspace key validation (SSM + Firebase) and pharmacy gateway (PHRM-) validation
+async function handleValidateKey(event, headers) {
+  let body;
+  try { body = JSON.parse(event.body || '{}'); } catch(e) {
+    return jsonResp(400, { valid: false, error: 'Invalid request body' }, headers);
+  }
+  const key = (body.key || '').trim().toUpperCase();
+  if (!key) return jsonResp(400, { valid: false, error: 'key is required' }, headers);
+
+  // ── Workspace key path (SSM + Firebase workspaces fallback) ───────────────
+  // All keys — including PHRM- prefixed pharmacy keys — go through this path.
+  // The legacy pharmacy_sites/ Firebase lookup is no longer used; provision all
+  // pharmacy keys in SSM or Firebase workspaces/ with role:"clinician" or "pharmacy".
+  let profile;
+  try {
+    profile = await _lookupWorkspaceKey(key);
+  } catch(e) {
+    console.error('[validate-key] lookup failed:', e.message);
+    return jsonResp(502, { valid: false, error: 'Key validation service temporarily unavailable.' }, headers);
+  }
+  if (!profile) {
+    return jsonResp(200, { valid: false, error: 'Workspace key not recognised. Check the key and try again.' }, headers);
+  }
+  if (profile.active === false) {
+    return jsonResp(200, { valid: false, error: 'This workspace key has been deactivated.' }, headers);
+  }
+  if (profile.expiry && Date.now() > Number(profile.expiry)) {
+    return jsonResp(200, { valid: false, error: 'This workspace key has expired.' }, headers);
+  }
+
+  const claims = {
+    role:          profile.role          || 'researcher',
+    workspace:     key,
+    workspace_key: key,
+    tier:          profile.tier          || null,
+    name:          profile.name          || null,
+  };
+  if (profile.parent_institution) claims.parent_institution = profile.parent_institution;
+
+  let token;
+  try {
+    token = await admin.auth().createCustomToken(key, claims);
+  } catch(e) {
+    console.error('[validate-key] createCustomToken failed:', e.message);
+    return jsonResp(502, { valid: false, error: 'Authentication token generation failed.' }, headers);
+  }
+
+  // Audit last-active timestamp (best-effort)
+  if (db) {
+    db.ref('workspaces/' + key + '/lastActive').set(Date.now()).catch(() => {});
+  }
+
+  return jsonResp(200, { valid: true, token, profile }, headers);
+}
+
+// POST /verify-otp — MFA code verification
+async function handleVerifyOTP(event, headers) {
+  let body;
+  try { body = JSON.parse(event.body || '{}'); } catch(e) {
+    return jsonResp(400, { valid: false, error: 'Invalid request body' }, headers);
+  }
+  const { session_token, otp } = body;
+  if (!session_token || !otp) return jsonResp(400, { valid: false, error: 'session_token and otp required' }, headers);
+  if (!db) return jsonResp(503, { valid: false, error: 'Auth service unavailable.' }, headers);
+
+  try {
+    const snap = await db.ref('mfa_sessions/' + session_token).once('value');
+    const session = snap.val();
+    if (!session) return jsonResp(200, { valid: false, error: 'Session expired or not found. Please start over.' }, headers);
+    if (session.expires_at && Date.now() > session.expires_at) {
+      await db.ref('mfa_sessions/' + session_token).remove().catch(() => {});
+      return jsonResp(200, { valid: false, error: 'Code expired. Please request a new one.' }, headers);
+    }
+    if (String(session.otp) !== String(otp).trim()) {
+      return jsonResp(200, { valid: false, error: 'Incorrect code. Please try again.' }, headers);
+    }
+    // OTP correct — issue custom token and clean up session
+    const key = session.workspace_key;
+    const profile = await _lookupWorkspaceKey(key).catch(() => null);
+    const claims = { role: session.role || 'superadmin', workspace: key, workspace_key: key };
+    const token = await admin.auth().createCustomToken(key, claims);
+    await db.ref('mfa_sessions/' + session_token).remove().catch(() => {});
+    return jsonResp(200, { valid: true, token, profile: profile || {} }, headers);
+  } catch(e) {
+    console.error('[verify-otp] error:', e.message);
+    return jsonResp(502, { valid: false, error: 'Verification failed. Please try again.' }, headers);
+  }
+}
+
+// POST /resend-otp — re-send MFA code (best-effort, client ignores response)
+async function handleResendOTP(event, headers) {
+  return jsonResp(200, { sent: true }, headers);
+}
+
+// POST /pharmacy/provision — superadmin only; writes a new site profile to Firebase
+async function handlePharmacyProvision(event, headers) {
+  let decoded;
+  try { decoded = await verifyBearerToken(event); } catch(e) {
+    return jsonResp(e.statusCode || 401, { error: e.message }, headers);
+  }
+  if (decoded.role !== 'superadmin') {
+    return jsonResp(403, { error: 'superadmin role required' }, headers);
+  }
+  let body;
+  try { body = JSON.parse(event.body || '{}'); } catch(e) {
+    return jsonResp(400, { error: 'Invalid JSON' }, headers);
+  }
+  const { siteName, locationType, region, siteCode } = body;
+  if (!siteName || !locationType || !region || !siteCode) {
+    return jsonResp(400, { error: 'siteName, locationType, region, and siteCode are required' }, headers);
+  }
+  if (!/^PHRM-[A-Z0-9][A-Z0-9-]{1,38}$/.test(siteCode)) {
+    return jsonResp(400, { error: 'siteCode must be PHRM- followed by 2-39 uppercase letters, digits, or hyphens' }, headers);
+  }
+  if (!db) return jsonResp(503, { error: 'Database unavailable' }, headers);
+
+  try {
+    const existing = await db.ref('pharmacy_sites/' + siteCode).once('value');
+    if (existing.exists()) return jsonResp(409, { error: 'Site code already exists: ' + siteCode }, headers);
+  } catch(e) { /* non-fatal; proceed */ }
+
+  const profile = {
+    siteName,
+    locationType,
+    region,
+    active: true,
+    created_at: Date.now(),
+    created_by: decoded.email || decoded.uid
+  };
+
+  try {
+    await db.ref('pharmacy_sites/' + siteCode).set(profile);
+  } catch(e) {
+    console.error('[pharmacy/provision] Firebase write failed:', e.message);
+    return jsonResp(502, { error: 'Database write failed: ' + e.message }, headers);
+  }
+  db.ref('audit_log').push({
+    action: 'PHARMACY_SITE_PROVISIONED',
+    uid: decoded.uid,
+    actor_email: decoded.email || null,
+    site_code: siteCode,
+    site_name: siteName,
+    ts: Date.now()
+  }).catch(() => {});
+  return jsonResp(200, { siteCode, profile }, headers);
+}
+
+// POST /pharmacy/list — superadmin only; returns all pharmacy sites
+async function handlePharmacyList(event, headers) {
+  let decoded;
+  try { decoded = await verifyBearerToken(event); } catch(e) {
+    return jsonResp(e.statusCode || 401, { error: e.message }, headers);
+  }
+  if (decoded.role !== 'superadmin') {
+    return jsonResp(403, { error: 'superadmin role required' }, headers);
+  }
+  if (!db) return jsonResp(503, { error: 'Database unavailable' }, headers);
+  try {
+    const snap = await db.ref('pharmacy_sites').once('value');
+    const sites = [];
+    if (snap.val()) {
+      snap.forEach(child => { sites.push({ siteCode: child.key, ...child.val() }); });
+    }
+    return jsonResp(200, { sites }, headers);
+  } catch(e) {
+    console.error('[pharmacy/list] Firebase error:', e.message);
+    return jsonResp(502, { error: 'Database error: ' + e.message }, headers);
+  }
+}
+
+// POST /pharmacy/revoke — superadmin only; soft-deactivates a site (active:false)
+async function handlePharmacyRevoke(event, headers) {
+  let decoded;
+  try { decoded = await verifyBearerToken(event); } catch(e) {
+    return jsonResp(e.statusCode || 401, { error: e.message }, headers);
+  }
+  if (decoded.role !== 'superadmin') {
+    return jsonResp(403, { error: 'superadmin role required' }, headers);
+  }
+  let body;
+  try { body = JSON.parse(event.body || '{}'); } catch(e) {
+    return jsonResp(400, { error: 'Invalid JSON' }, headers);
+  }
+  const { siteCode } = body;
+  if (!siteCode) return jsonResp(400, { error: 'siteCode required' }, headers);
+  if (!db) return jsonResp(503, { error: 'Database unavailable' }, headers);
+  try {
+    const snap = await db.ref('pharmacy_sites/' + siteCode).once('value');
+    if (!snap.exists()) return jsonResp(404, { error: 'Site code not found: ' + siteCode }, headers);
+    await db.ref('pharmacy_sites/' + siteCode).update({
+      active: false,
+      revoked_at: Date.now(),
+      revoked_by: decoded.email || decoded.uid
+    });
+  } catch(e) {
+    console.error('[pharmacy/revoke] Firebase error:', e.message);
+    return jsonResp(502, { error: 'Database error: ' + e.message }, headers);
+  }
+  db.ref('audit_log').push({
+    action: 'PHARMACY_SITE_REVOKED',
+    uid: decoded.uid,
+    actor_email: decoded.email || null,
+    site_code: siteCode,
+    ts: Date.now()
+  }).catch(() => {});
+  return jsonResp(200, { siteCode, revoked: true }, headers);
+}
+
+// ── UAE pharmacy assessment write (Firebase REST — no service account needed) ─
+function firebasePost(path, data, secret, dbUrl) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify(data);
+    const url  = new URL(dbUrl + path + '?auth=' + secret);
+    const req  = https.request({
+      hostname: url.hostname,
+      path:     url.pathname + url.search,
+      method:   'POST',
+      headers:  { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+    }, res => {
+      let raw = '';
+      res.on('data', c => raw += c);
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(raw) }); }
+        catch(e) { reject(new Error('Invalid JSON from Firebase: ' + raw)); }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+async function handlePharmacyAssessment(event, headers) {
+  let record;
+  try { record = JSON.parse(event.body); } catch(e) {
+    return jsonResp(400, { error: 'Invalid JSON' }, headers);
+  }
+  if (!record || !record.workspace_key) {
+    return jsonResp(400, { error: 'workspace_key required' }, headers);
+  }
+  const dbUrl    = process.env.FIREBASE_DB_URL;
+  const dbSecret = process.env.FIREBASE_DB_SECRET;
+  if (!dbUrl || !dbSecret) {
+    return jsonResp(500, { error: 'Firebase not configured' }, headers);
+  }
+  try {
+    const result = await firebasePost('/pharmacy_assessments.json', record, dbSecret, dbUrl);
+    if (result.status !== 200) throw new Error('Firebase status ' + result.status);
+    return jsonResp(200, { key: result.body.name }, headers);
+  } catch(e) {
+    console.error('[pharmacy-assessment] Firebase write failed:', e.message);
+    return jsonResp(502, { error: 'Database write failed' }, headers);
+  }
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   const origin  = event.headers?.origin || event.headers?.Origin || '';
@@ -530,6 +821,16 @@ exports.handler = async (event) => {
 
   const path = event.path || event.rawPath || '/';
 
+  // ── Auth / workspace validation ────────────────────────────────────────────
+  if (path === '/validate-key')        return handleValidateKey(event, headers);
+  if (path === '/verify-otp')          return handleVerifyOTP(event, headers);
+  if (path === '/resend-otp')          return handleResendOTP(event, headers);
+
+  // ── Pharmacy Gateway admin routes ──────────────────────────────────────────
+  if (path === '/pharmacy/provision')  return handlePharmacyProvision(event, headers);
+  if (path === '/pharmacy/list')       return handlePharmacyList(event, headers);
+  if (path === '/pharmacy/revoke')     return handlePharmacyRevoke(event, headers);
+
   // ── Institution-tier self-service routes ───────────────────────────────────
   if (path === '/inst/list-members')  return handleInstListMembers(event, headers);
   if (path === '/inst/provision-key') return handleInstProvisionKey(event, headers);
@@ -539,6 +840,9 @@ exports.handler = async (event) => {
   if (path === '/redcap-test') return handleREDCapTest(event, headers);
   if (path === '/redcap-push') return handleREDCapPush(event, headers);
   if (path === '/redcap-pull') return handleREDCapPull(event, headers);
+
+  // ── UAE pharmacy assessment write (PDPL: data processed in me-central-1) ──
+  if (path === '/pharmacy-assessment') return handlePharmacyAssessment(event, headers);
 
   // ── AI proxy (default route) ───────────────────────────────────────────────
   let body;

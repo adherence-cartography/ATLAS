@@ -227,6 +227,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         <button class="lang-btn" onclick="setUILanguage('fr');(function(s){if(s)s.value='fr';})(document.getElementById('lang-select-entry'));renderPatientLanguage('fr');">FR</button>
         <button class="lang-btn" onclick="setUILanguage('de');(function(s){if(s)s.value='de';})(document.getElementById('lang-select-entry'));renderPatientLanguage('de');">DE</button>
         <button class="lang-btn" onclick="setUILanguage('pt');(function(s){if(s)s.value='pt';})(document.getElementById('lang-select-entry'));renderPatientLanguage('pt');">PT</button>
+        <button class="lang-btn" data-lang="it" onclick="setUILanguage('it');(function(s){if(s)s.value='it';})(document.getElementById('lang-select-entry'));renderPatientLanguage('it');">IT</button>
       </div>
     </div>
 
@@ -277,13 +278,32 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
       <!-- Syncs with #atlas-lang-selector button group (UI language) above -->
       <select id="lang-select-entry" style="font-family:'IBM Plex Mono',monospace;font-size:0.90rem;background:#0e1a2e;border:1px solid rgba(212,168,67,0.2);padding:6px 10px;color:#c8d8ea;outline:none;cursor:pointer;max-width:240px;appearance:auto;" onchange="renderPatientLanguage(this.value);setUILanguage(this.value);(function(v){document.querySelectorAll('#atlas-lang-selector .lang-btn').forEach(function(b){b.classList.toggle('active',b.textContent.trim().toLowerCase()===v.toLowerCase());});})(this.value);">
         <option value="en">English (Default)</option>
+        <option value="it">Italiano</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="pt">Português</option>
+        <option value="el">Ελληνικά</option>
+        <option value="pl">Polski</option>
+        <option value="ar">العربية</option>
+        <option value="zh">中文</option>
+        <option value="zh-TW">繁體中文</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+        <option value="ru">Русский</option>
+        <option value="tr">Türkçe</option>
+        <option value="hi">हिन्दी</option>
+        <option value="id">Bahasa Indonesia</option>
+        <option value="sw">Kiswahili</option>
+        <option value="af">Afrikaans</option>
+        <option value="uk">Українська</option>
       </select>
     </div>
 
     <!-- ── FOUR PATHS ── -->
     <div class="entry-paths">
-      <div class="entry-paths-label">Choose your path</div>
-      <div style="font-size:0.83rem;color:var(--muted);line-height:1.65;max-width:520px;margin:-4px auto 16px;text-align:center;letter-spacing:0.01em;">Patients receive their adherence profile. Researchers run their cohorts. Institutions operate at scale. Each path is its own portal.</div>
+      <div class="entry-paths-label" id="entry-paths-heading">Choose your path</div>
+      <div id="entry-paths-sub" style="font-size:0.83rem;color:var(--muted);line-height:1.65;max-width:520px;margin:-4px auto 16px;text-align:center;letter-spacing:0.01em;">Patients receive their adherence profile. Researchers run their cohorts. Institutions operate at scale. Each path is its own portal.</div>
       <div class="path-grid">
 
         <div class="path-card patient" id="btn-patient" tabindex="0" role="button" aria-label="Patient: Complete the MAP medication adherence assessment and receive your personal adherence profile" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"  >
@@ -440,7 +460,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         <div class="consent-section-tag">Purpose · What this study collects</div>
         <div class="consent-section-title">Why we ask</div>
         <div class="consent-section-body" id="consent-purpose-body">
-          The ATLAS platform is a global, community-based research infrastructure measuring medication adherence using the MMAS-8 (Morisky Medication Adherence Scale) developed by Philip Morisky. Your responses contribute to real-time population health mapping across more than 150 countries. No names, email addresses, or identifying personal information are collected at any point.
+          The ATLAS platform is a global, community-based research infrastructure measuring medication adherence using the MMAS-8 (Morisky Medication Adherence Scale) developed by Donald E. Morisky, ScD, MSPH, PhD. Your responses contribute to real-time population health mapping across more than 150 countries. No names, email addresses, or identifying personal information are collected at any point.
         </div>
       </div>
 
@@ -877,7 +897,10 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     <div class="ticker-track"><div class="ticker-inner" id="cine-ticker-inner"><span class="ticker-item">Awaiting live submissions from around the world…</span></div></div>
   </div>
   <!-- Night Mode toggle -->
-  <button id="cine-daynight-btn" onclick="toggleSpectatorDayNight()" style="position:absolute;bottom:52px;left:50%;transform:translateX(-50%);z-index:20;font-family:'IBM Plex Mono',monospace;font-size:0.90rem;letter-spacing:0.18em;text-transform:uppercase;background:rgba(2,6,18,0.8);border:1px solid rgba(212,168,67,0.2);color:rgba(212,168,67,0.5);border-radius:2px;padding:7px 20px;cursor:pointer;backdrop-filter:blur(8px);transition:all 0.25s;" onmouseover="this.style.borderColor='rgba(212,168,67,0.5)';this.style.color='rgba(212,168,67,0.9)'" onmouseout="this.style.borderColor='rgba(212,168,67,0.2)';this.style.color='rgba(212,168,67,0.5)'">🌙 Night Mode</button>
+  <div style="position:absolute;bottom:52px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;">
+    <button id="cine-daynight-btn" onclick="toggleSpectatorDayNight()" style="font-family:'IBM Plex Mono',monospace;font-size:0.90rem;letter-spacing:0.18em;text-transform:uppercase;background:rgba(2,6,18,0.8);border:1px solid rgba(212,168,67,0.2);color:rgba(212,168,67,0.5);border-radius:2px;padding:7px 20px;cursor:pointer;backdrop-filter:blur(8px);transition:all 0.25s;" onmouseover="this.style.borderColor='rgba(212,168,67,0.5)';this.style.color='rgba(212,168,67,0.9)'" onmouseout="this.style.borderColor='rgba(212,168,67,0.2)';this.style.color='rgba(212,168,67,0.5)'">🌙 Night Mode</button>
+    <button id="cine-projection-btn" onclick="toggleSpectatorProjection()" style="font-family:'IBM Plex Mono',monospace;font-size:0.90rem;letter-spacing:0.18em;text-transform:uppercase;background:rgba(2,6,18,0.8);border:1px solid rgba(78,156,245,0.2);color:rgba(78,156,245,0.5);border-radius:2px;padding:7px 20px;cursor:pointer;backdrop-filter:blur(8px);transition:all 0.25s;" onmouseover="this.style.borderColor='rgba(78,156,245,0.5)';this.style.color='rgba(78,156,245,0.9)'" onmouseout="this.style.borderColor='rgba(78,156,245,0.2)';this.style.color='rgba(78,156,245,0.5)'">⊞ Flat Map</button>
+  </div>
   <!-- Wall inscription — permanent base engraving -->
   <div id="wall-inscription">Not a dose. A duration.</div>
 </div>
@@ -1273,6 +1296,46 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         </label>
         <div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--dim);margin-top:8px;line-height:1.6;">When enabled, Edit and Delete controls appear on child student records within the PI's dashboard. Applies only to records where <code>parent_pi</code> matches this key.</div>
       </div>
+
+      <!-- Physical Location — geocodes address to lat/lng, pins workspace on global map -->
+      <div style="border:1px solid var(--border2);border-radius:8px;overflow:hidden;">
+        <div style="padding:10px 14px;background:rgba(16,185,129,0.04);border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:8px;">
+          <div style="width:3px;height:12px;background:#10b981;border-radius:2px;flex-shrink:0;"></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(16,185,129,0.8);">Physical Location</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;color:var(--dim);margin-left:4px;">optional — pins this workspace on the global map</span>
+        </div>
+        <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label class="acc-label">Street Address</label>
+            <input id="km-edit-site-address" type="text" class="acc-input" placeholder="e.g. 123 Main St"/>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label class="acc-label">City</label>
+              <input id="km-edit-site-city" type="text" class="acc-input" placeholder="City"/>
+            </div>
+            <div>
+              <label class="acc-label">Country</label>
+              <input id="km-edit-site-country" type="text" class="acc-input" placeholder="Country"/>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <button onclick="_kmGeocode()" type="button" style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);color:#10b981;border-radius:6px;padding:6px 14px;cursor:pointer;transition:all 0.15s;flex-shrink:0;" onmouseover="this.style.background='rgba(16,185,129,0.16)'" onmouseout="this.style.background='rgba(16,185,129,0.08)'">⊕ Geocode Address</button>
+            <span id="km-edit-geocode-status" style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--dim);line-height:1.4;"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label class="acc-label">Latitude <span style="opacity:0.5;">(auto)</span></label>
+              <input id="km-edit-site-lat" type="text" class="acc-input" placeholder="—" readonly style="color:var(--dim);cursor:default;background:rgba(255,255,255,0.02);"/>
+            </div>
+            <div>
+              <label class="acc-label">Longitude <span style="opacity:0.5;">(auto)</span></label>
+              <input id="km-edit-site-lng" type="text" class="acc-input" placeholder="—" readonly style="color:var(--dim);cursor:default;background:rgba(255,255,255,0.02);"/>
+            </div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:var(--dim);line-height:1.6;">Geocoding uses OpenStreetMap Nominatim. Once saved, the site appears on the ATLAS global map as a verified pharmacy pin visible to all workspace users.</div>
+        </div>
+      </div>
     </div>
 
     <div style="display:flex;gap:10px;align-items:center;">
@@ -1391,47 +1454,97 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
 
     <div style="font-family:var(--font-mono);font-size:0.71rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(212,168,67,0.6);margin-bottom:10px;">Global Adherence Index · Industry Intelligence</div>
     <div style="font-family:var(--font-display);font-size:2rem;font-weight:300;color:var(--bright);margin-bottom:8px;">Subscribe to <span data-tip="Global Adherence Index — composite 0–1 score combining MMAS-8, MAP, and PEACS">GAI</span> Reports</div>
-    <p style="font-size:0.88rem;color:var(--muted);line-height:1.75;margin-bottom:28px;">Population-level medication adherence intelligence — quarterly and annual benchmarks used by HEOR teams, pharma companies, health ministries, and payers. All data is de-identified and aggregate. No individual records are ever distributed.</p>
+    <p style="font-size:0.88rem;color:var(--muted);line-height:1.75;margin-bottom:10px;">Population-level medication adherence intelligence drawn from real prospective clinical assessments across 90+ countries — not claims data, not patient surveys. Built from MMAS-8, MAP, and PEACS submissions by active ATLAS subscribers. Used by HEOR teams, medical affairs, health ministries, and payers for benchmarking, market access dossiers, regulatory evidence, and strategic planning. All data is de-identified and aggregate. No individual records are ever distributed.</p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px;">
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.76rem;color:var(--dim);"><span style="color:var(--optimal);">●</span> Prospective clinical data — not claims, not surveys</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.76rem;color:var(--dim);"><span style="color:var(--optimal);">●</span> HIPAA-compliant · TLS encrypted · de-identified at source</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.76rem;color:var(--dim);"><span style="color:var(--optimal);">●</span> INA vs. UNA distinction — the split that changes intervention strategy</div>
+    </div>
 
     <!-- Tier cards -->
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px;">
 
       <!-- Standard -->
-      <label id="gai-tier-standard" onclick="selectGAITier('standard')" style="display:flex;align-items:flex-start;gap:14px;padding:16px 18px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;transition:all 0.18s;">
-        <input type="radio" name="gai-tier" value="standard" style="margin-top:3px;accent-color:var(--pe);"/>
+      <label id="gai-tier-standard" onclick="selectGAITier('standard')" style="display:flex;align-items:flex-start;gap:14px;padding:18px 20px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;transition:all 0.18s;">
+        <input type="radio" name="gai-tier" value="standard" style="margin-top:4px;accent-color:var(--pe);flex-shrink:0;"/>
         <div style="flex:1;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
             <span style="font-family:var(--font-mono);font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--bright);">GAI Standard</span>
             <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--pe);">$5,000 / yr</span>
           </div>
-          <div style="font-size:0.82rem;color:var(--muted);line-height:1.6;">Quarterly PDF snapshot · Global + top-25 country breakdown · INA/UNA/High adherence rates · Condition-level analysis · PEACS Predictive Emergence benchmarks · <strong style="color:var(--text);">4 reports/year</strong></div>
+          <div style="font-size:0.78rem;color:rgba(212,168,67,0.65);font-family:var(--font-mono);letter-spacing:0.08em;margin-bottom:8px;">4 quarterly reports · delivered within 10 business days of quarter close</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Global composite GAI score (0–1) with tier classification and quarter-over-quarter delta</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Top-25 country breakdown: INA rate, UNA rate, high-adherence prevalence per country</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Condition-level analysis across cardiovascular, diabetes, oncology, respiratory, HIV/AIDS, musculoskeletal, and mental health</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; PEACS Predictive Emergence benchmarks — Optimal/Good/Moderate/Poor/Critical distribution by therapeutic area</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; INA vs. UNA ratio per condition — the primary input for intervention design and formulary decisions</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Methodology appendix: instrument definitions, scoring formulas, data provenance, record count</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; PDF formatted for payer presentations, HEOR dossier inclusion, and market access submissions</div>
+          </div>
         </div>
       </label>
 
-      <!-- Annual -->
-      <label id="gai-tier-annual" onclick="selectGAITier('annual')" style="display:flex;align-items:flex-start;gap:14px;padding:16px 18px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;transition:all 0.18s;">
-        <input type="radio" name="gai-tier" value="annual" style="margin-top:3px;accent-color:var(--pe);"/>
+      <!-- Annual Deep-Dive -->
+      <label id="gai-tier-annual" onclick="selectGAITier('annual')" style="display:flex;align-items:flex-start;gap:14px;padding:18px 20px;background:rgba(212,168,67,0.02);border:1px solid rgba(212,168,67,0.18);border-radius:10px;cursor:pointer;transition:all 0.18s;position:relative;">
+        <div style="position:absolute;top:-1px;right:16px;background:rgba(212,168,67,0.18);border:1px solid rgba(212,168,67,0.3);border-top:none;border-radius:0 0 6px 6px;padding:2px 10px;font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(212,168,67,0.85);">Most Purchased</div>
+        <input type="radio" name="gai-tier" value="annual" style="margin-top:4px;accent-color:var(--pe);flex-shrink:0;"/>
         <div style="flex:1;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
             <span style="font-family:var(--font-mono);font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--bright);">GAI Annual Deep-Dive</span>
             <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--pe);">$12,500 / yr</span>
           </div>
-          <div style="font-size:0.82rem;color:var(--muted);line-height:1.6;">Everything in Standard + full-year longitudinal trend analysis · therapeutic-area stratification · demographic subgroup segmentation · executive narrative + interactive data appendix · <strong style="color:var(--text);">1 comprehensive annual report</strong></div>
+          <div style="font-size:0.78rem;color:rgba(212,168,67,0.65);font-family:var(--font-mono);letter-spacing:0.08em;margin-bottom:8px;">4 quarterly reports + 1 comprehensive annual report with full narrative and data appendix</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Everything in GAI Standard, plus:</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Full 12-month longitudinal trend analysis with inflection point annotation — know when and why adherence shifted during the year</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Therapeutic-area stratification: dedicated deep-dive section per major condition cluster with PEACS phenotype distribution</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Demographic subgroup segmentation: age band (18–44 / 45–64 / 65+), care setting (outpatient / pharmacy / inpatient), OECD vs. LMIC</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; INA vs. UNA driver decomposition: Architecture, Execution, and Context domain analysis per condition — reveals what is actually causing non-adherence</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Executive narrative: C-suite and board-ready summary with strategic implications and recommended monitoring metrics</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Interactive data appendix: Excel pivot tables and PowerBI-compatible files for internal HEOR modeling</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Year-over-year GAI comparison against prior annual report — track the macro adherence trend across your therapeutic area</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Accepted as supporting evidence in HTA dossiers, regulatory submissions, and outcomes research publications</div>
+          </div>
         </div>
       </label>
 
       <!-- Enterprise -->
-      <label id="gai-tier-enterprise" onclick="selectGAITier('enterprise')" style="display:flex;align-items:flex-start;gap:14px;padding:16px 18px;background:rgba(212,168,67,0.03);border:1px solid rgba(212,168,67,0.15);border-radius:10px;cursor:pointer;transition:all 0.18s;">
-        <input type="radio" name="gai-tier" value="enterprise" style="margin-top:3px;accent-color:var(--pe);"/>
+      <label id="gai-tier-enterprise" onclick="selectGAITier('enterprise')" style="display:flex;align-items:flex-start;gap:14px;padding:18px 20px;background:rgba(212,168,67,0.03);border:1px solid rgba(212,168,67,0.2);border-radius:10px;cursor:pointer;transition:all 0.18s;">
+        <input type="radio" name="gai-tier" value="enterprise" style="margin-top:4px;accent-color:var(--pe);flex-shrink:0;"/>
         <div style="flex:1;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <span style="font-family:var(--font-mono);font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(212,168,67,0.85);">GAI Enterprise</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-family:var(--font-mono);font-size:0.84rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(212,168,67,0.9);">GAI Enterprise</span>
             <span style="font-family:var(--font-mono);font-size:0.88rem;color:rgba(212,168,67,0.85);">$25,000+ / yr</span>
           </div>
-          <div style="font-size:0.82rem;color:var(--muted);line-height:1.6;">Real-time API access to the live GAI dataset · custom country/condition filters · webhook push on data thresholds · dedicated account manager · SLA + IRB-ready data documentation · <strong style="color:var(--text);">custom scope</strong></div>
+          <div style="font-size:0.78rem;color:rgba(212,168,67,0.65);font-family:var(--font-mono);letter-spacing:0.08em;margin-bottom:8px;">Real-time live API · custom scope · dedicated account management · custom contract</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Real-time API access to the live ATLAS GAI dataset — RESTful, JSON, authenticated, updated continuously as assessments are submitted globally</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Custom country and condition filters built to your specification — scope the feed to the markets and therapeutic areas that drive your business decisions</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Webhook push: automated threshold alerts when adherence rates breach defined levels in your target populations — no manual checking</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Custom cohort design: define a population profile (age band + condition + geography + care setting) and receive a dedicated adherence data stream</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Everything in Annual Deep-Dive included annually</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Dedicated account manager + quarterly strategic review calls with adherence data interpretation</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; SLA: 99.9% API uptime, sub-200ms response time guarantee, documented incident response</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; IRB-ready data documentation package for regulatory submissions and health technology assessments</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; HL7 FHIR, CSV, and JSON export format options for EHR and BI system integration</div>
+            <div style="font-size:0.8rem;color:var(--muted);line-height:1.55;">&#9656; Custom scope negotiated at contract stage — pricing reflects volume, geography, and delivery format</div>
+          </div>
         </div>
       </label>
 
+    </div>
+
+    <!-- Data credibility note -->
+    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 16px;margin-bottom:20px;">
+      <div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Why GAI data is different</div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;">&#9656; <strong style="color:var(--text);">Prospective, clinical:</strong> every record is a real patient assessment submitted by a clinician or researcher — not a claims extract or retrospective database query</div>
+        <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;">&#9656; <strong style="color:var(--text);">Triadic instrument:</strong> combines MMAS-8 (gold-standard adherence), MAP (behavioral domain analysis), and PEACS (predictive phenotyping) — no other dataset captures all three</div>
+        <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;">&#9656; <strong style="color:var(--text);">INA vs. UNA distinction:</strong> most adherence datasets report non-adherence as a single rate; GAI separates intentional from unintentional — the two require opposite interventions</div>
+        <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;">&#9656; <strong style="color:var(--text);">Global coverage, real-world:</strong> 90+ countries, active clinical submission — not modeled or extrapolated from a narrow trial population</div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.05);font-size:0.72rem;color:var(--dim);line-height:1.5;">Academic researchers: the open-access TESSERA Normative Dataset — peer-reviewed, consortium co-authored, DOI-assigned — is published annually by the Scala Carta Foundation at <a href="https://scalacartafoundation.org" target="_blank" rel="noopener" style="color:rgba(212,168,67,0.55);text-decoration:none;">scalacartafoundation.org</a>. GAI and TESSERA draw from the same underlying data; GAI is commercial industry intelligence, TESSERA is open science.</div>
     </div>
 
     <!-- Contact fields -->
@@ -1483,7 +1596,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
   <div class="ar-modal-box">
     <div class="ar-header">
       <div class="ar-header-title">State of Global Adherence</div>
-      <div class="ar-header-sub">Adherence Inc. · Philip Morisky, ScD, MSPH, FAHA · Powered by ATLAS</div>
+      <div class="ar-header-sub">Adherence Inc. · Philip Morisky, MBA · Powered by ATLAS</div>
       <div class="ar-year-badge" id="ar-year-badge">2026 Annual Report</div>
     </div>
     <div class="ar-body" id="ar-body">
@@ -1578,6 +1691,46 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
           </div>
           <div id="ua-profile-msg" style="display:none;font-family:var(--font-mono);font-size:0.70rem;padding:6px 10px;border-radius:4px;"></div>
           <button onclick="_uaSaveProfile()" style="width:100%;padding:8px;font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(46,201,138,0.10);border:1px solid rgba(46,201,138,0.30);color:var(--strata);border-radius:4px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(46,201,138,0.18)'" onmouseout="this.style.background='rgba(46,201,138,0.10)'">Save Changes</button>
+        </div>
+      </div>
+
+      <!-- ── Site Location ── -->
+      <div style="margin-bottom:20px;">
+        <div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:8px;">
+          <span style="color:#10b981;">◉</span> Site Location
+          <span style="font-size:0.55rem;color:var(--dim);text-transform:none;letter-spacing:0;font-weight:400;">pins your pharmacy on the global map</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:4px;">Street Address</label>
+            <input id="ua-site-address" type="text" placeholder="123 Main St" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:var(--font-mono);font-size:0.80rem;border-radius:4px;"/>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <label style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:4px;">City</label>
+              <input id="ua-site-city" type="text" placeholder="City" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:var(--font-mono);font-size:0.80rem;border-radius:4px;"/>
+            </div>
+            <div>
+              <label style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:4px;">Country</label>
+              <input id="ua-site-country" type="text" placeholder="Country" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:var(--font-mono);font-size:0.80rem;border-radius:4px;"/>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button onclick="_uaGeocode()" style="padding:6px 12px;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);color:#10b981;border-radius:4px;cursor:pointer;transition:all 0.2s;flex-shrink:0;" onmouseover="this.style.background='rgba(16,185,129,0.16)'" onmouseout="this.style.background='rgba(16,185,129,0.08)'">⊕ Geocode</button>
+            <span id="ua-geo-status" style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);line-height:1.4;"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <label style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:4px;">Lat <span style="opacity:0.5;">(auto)</span></label>
+              <input id="ua-site-lat" type="text" readonly placeholder="—" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--dim);padding:8px 10px;font-family:var(--font-mono);font-size:0.78rem;border-radius:4px;cursor:default;"/>
+            </div>
+            <div>
+              <label style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:4px;">Lng <span style="opacity:0.5;">(auto)</span></label>
+              <input id="ua-site-lng" type="text" readonly placeholder="—" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--dim);padding:8px 10px;font-family:var(--font-mono);font-size:0.78rem;border-radius:4px;cursor:default;"/>
+            </div>
+          </div>
+          <div id="ua-location-msg" style="display:none;font-family:var(--font-mono);font-size:0.70rem;padding:6px 10px;border-radius:4px;"></div>
+          <button onclick="_uaSaveLocation()" style="width:100%;padding:8px;font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.30);color:#10b981;border-radius:4px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.18)'" onmouseout="this.style.background='rgba(16,185,129,0.10)'">Save Location</button>
         </div>
       </div>
 
@@ -2162,15 +2315,15 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         <div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding:5px 0 5px 10px;border-left:2px solid var(--border2);">MAP · Domain Adherence Intelligence</div>
         <div id="inst-map-section-analytics" style="margin-bottom:20px;">
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px;">
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-n-a">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">MAP Records</div></div>
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-add-a">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">Mean Additive</div></div>
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-pe-a">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">Mean MAP PE</div></div>
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-constraint-a">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">Primary Constraint</div></div>
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-ina-a">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">INA Pattern %</div></div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-n">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">MAP Records</div></div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-add">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">Mean Additive</div></div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-pe">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">Mean MAP PE</div></div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-constraint">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">Primary Constraint</div></div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--bright);line-height:1;" id="inst-kpi-map-ina">—</div><div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;">INA Pattern %</div></div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;">
             <div style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Domain Profile · Architecture · Execution · Context</div>
-            <div id="inst-map-domain-bars-a" style="display:flex;flex-direction:column;gap:8px;"><div style="font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">No MAP records yet.</div></div>
+            <div id="inst-map-domain-bars" style="display:flex;flex-direction:column;gap:8px;"><div style="font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">No MAP records yet.</div></div>
           </div>
         </div>
 
@@ -4090,7 +4243,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
             </div>
           </div>
           <button onclick="openClinNewSession()" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.32);color:var(--base);border-radius:6px;padding:7px 16px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:7px;" onmouseover="this.style.background='rgba(78,156,245,0.20)'" onmouseout="this.style.background='rgba(78,156,245,0.12)'">⊕ New Assessment</button>
-          <button id="dash-qr-btn" data-hide-observer onclick="openQRModal()" title="Patient QR code — scan to self-assess" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(46,201,138,0.08);border:1px solid rgba(46,201,138,0.28);color:#2ec98a;border-radius:6px;padding:7px 14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(46,201,138,0.18)'" onmouseout="this.style.background='rgba(46,201,138,0.08)'">📲 QR</button>
+          <button id="dash-qr-btn" data-hide-observer onclick="openPatientQR()" title="Patient QR code — scan to self-assess" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(46,201,138,0.08);border:1px solid rgba(46,201,138,0.28);color:#2ec98a;border-radius:6px;padding:7px 14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(46,201,138,0.18)'" onmouseout="this.style.background='rgba(46,201,138,0.08)'">📲 QR</button>
           <button onclick="openClinSettings()" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:7px 14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.color='var(--text)';this.style.borderColor='rgba(255,255,255,0.25)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border2)'">⚙</button>
         </div>
       </div>
@@ -4362,11 +4515,20 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
     </div><!-- /cpo-panel -->
 
     <!-- ── SPECTATOR BUTTON ── -->
-    <div style="margin-bottom:20px;">
+    <div style="margin-bottom:12px;">
       <button id="dash-spectator-btn" style="width:100%;padding:14px 24px;font-family:'IBM Plex Mono',monospace;font-size:0.71rem;letter-spacing:0.14em;text-transform:uppercase;background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.2);color:var(--base);border-radius:var(--rl);cursor:pointer;transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:12px;" onmouseover="this.style.background='rgba(78,156,245,0.12)';this.style.borderColor='rgba(78,156,245,0.35)'" onmouseout="this.style.background='rgba(78,156,245,0.06)';this.style.borderColor='rgba(78,156,245,0.2)'">
         <span style="font-size:1rem;">◉</span>
         <span data-i18n="watchLiveMap">Watch Live Global Map — Spectator Mode</span>
         <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:var(--dim);letter-spacing:0.08em;">MMAS-8 · Real-time</span>
+      </button>
+    </div>
+
+    <!-- ── GLOBAL ATLAS BUTTON ── -->
+    <div id="dash-globe-atlas-wrap" style="margin-bottom:20px;">
+      <button id="dash-globe-atlas-btn" onclick="try{wsOpenGlobeOverlay();}catch(e){alert('[ATLAS] '+e.message);}" style="width:100%;padding:14px 24px;font-family:'IBM Plex Mono',monospace;font-size:0.71rem;letter-spacing:0.14em;text-transform:uppercase;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.2);color:var(--base);border-radius:var(--rl);cursor:pointer;transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:12px;" onmouseover="this.style.background='rgba(212,168,67,0.12)';this.style.borderColor='rgba(212,168,67,0.4)'" onmouseout="this.style.background='rgba(212,168,67,0.06)';this.style.borderColor='rgba(212,168,67,0.2)'">
+        <span style="font-size:1rem;">⬡</span>
+        <span>Global Atlas — Instrument Map</span>
+        <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:0.80rem;color:var(--dim);letter-spacing:0.08em;">MMAS · MAP · PEACS</span>
       </button>
     </div>
 
@@ -4396,30 +4558,42 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         </div>
       </div>
 
-      <!-- PI Dashboard Tab Bar -->
-      <div id="pi-dash-tab-bar" style="display:flex;align-items:stretch;border-bottom:1px solid var(--border2);margin-bottom:20px;gap:0;overflow-x:auto;">
-        <button class="pi-dash-tab active" data-pi-tab="overview" onclick="switchPiTab('overview')" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid var(--base);color:var(--base);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Dashboard</button>
-        <button class="pi-dash-tab" data-pi-tab="enrollment" onclick="switchPiTab('enrollment')" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Enrollment</button>
-        <button class="pi-dash-tab" data-pi-tab="governance" onclick="switchPiTab('governance')" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Governance</button>
-        <button class="pi-dash-tab" data-pi-tab="outcomes" onclick="switchPiTab('outcomes')" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Outcomes</button>
-        <button class="pi-dash-tab" data-pi-tab="team" onclick="switchPiTab('team')" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;display:flex;align-items:center;gap:7px;">Team<span id="pi-team-tab-badge" style="display:none;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.08em;background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.3);color:var(--base);border-radius:10px;padding:1px 7px;"></span></button>
-        <button class="pi-dash-tab" data-pi-tab="lab" onclick="switchPiTab('lab')" style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Instr. Lab</button>
-        <button class="pi-dash-tab" data-pi-tab="extcomp"       onclick="switchPiTab('extcomp')"       style="font-family:var(--font-mono);font-size:0.80rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 22px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Method Comp.</button>
-      </div>
+      <!-- Hidden tab bar — kept in DOM for backward compat with switchPiTab() calls -->
+      <div id="pi-dash-tab-bar" style="display:none;"></div>
 
-      <!-- TAB PANEL: Overview (Dashboard) -->
-      <div id="pi-tab-panel-overview">
-        <!-- ══ RETENTION ALERT BANNER ══ -->
+      <!-- TAB PANEL: Overview (hidden — Overview content lives in the rail Overview tab) -->
+      <div id="pi-tab-panel-overview" style="display:none;">
+        <!-- Retention alert -->
         <div id="pi-retention-warn" class="pi-retention-warn" style="display:none;"></div>
 
-        <!-- P1: Data Quality Panel -->
+        <!-- KPI summary strip -->
+        <div id="pi-overview-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;">
+            <div style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Total Patients</div>
+            <div id="pi-kpi-total-patients" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2rem;font-weight:300;color:var(--bright);line-height:1;">—</div>
+            <div id="pi-kpi-total-patients-sub" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);margin-top:4px;">across all sites</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;">
+            <div style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">This Month</div>
+            <div id="pi-kpi-this-month" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2rem;font-weight:300;color:var(--bright);line-height:1;">—</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);margin-top:4px;">assessments</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;">
+            <div style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Active Sites</div>
+            <div id="pi-kpi-active-sites" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2rem;font-weight:300;color:var(--bright);line-height:1;">—</div>
+            <div id="pi-kpi-active-sites-sub" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);margin-top:4px;">of — total</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;">
+            <div style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Needs Follow-up</div>
+            <div id="pi-kpi-flagged" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2rem;font-weight:300;color:#ef4444;line-height:1;">—</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--dim);margin-top:4px;">high-risk patients</div>
+          </div>
+        </div>
+
+        <!-- Hidden containers — keep IDs in DOM for JS compatibility -->
         <div id="pi-data-quality-panel" class="pi-dq-panel" style="display:none"></div>
-
-        <!-- P2: Enrollment Velocity Card -->
         <div id="pi-velocity-card" class="pi-vel-card" style="display:none;margin-bottom:1.2rem"></div>
-
-        <!-- ══ STUDY VITALS STRIP — 3 panels ══════════════════════ -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;" id="pi-vitals-strip">
+        <div style="display:none;" id="pi-vitals-strip">
 
           <!-- Vitals 1: Enrollment Health -->
           <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:20px 22px;display:flex;flex-direction:column;gap:14px;">
@@ -4585,41 +4759,46 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
         </div>
       </div>
 
-      <!-- TAB PANEL: Governance -->
+      <!-- TAB PANEL: Reports -->
       <div id="pi-tab-panel-governance" style="display:none;">
-        <!-- Dataset Lock -->
-        <div class="pi-lock-section">
-          <div class="pi-heatmap-hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span>Dataset Lock · Frozen Snapshots</span>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button class="pi-lock-btn" id="pi-lock-btn" onclick="lockDataset()">⊘ Lock Current Dataset</button>
-            </div>
+
+        <!-- Sub-tab bar -->
+        <div style="display:flex;align-items:stretch;border-bottom:1px solid var(--border2);margin-bottom:18px;">
+          <button id="rpt-tab-benchmark" onclick="_rptSwitch('benchmark')" style="font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid var(--pe);color:var(--bright);padding:10px 20px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Site Benchmark</button>
+          <button id="rpt-tab-queue"      onclick="_rptSwitch('queue')"     style="font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 20px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Priority Queue</button>
+          <button id="rpt-tab-snapshot"   onclick="_rptSwitch('snapshot')"  style="font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.14em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:10px 20px;cursor:pointer;white-space:nowrap;transition:all 0.2s;margin-bottom:-1px;">Monthly Snapshot</button>
+          <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding-bottom:1px;">
+            <button onclick="window._rptExportCSV&&_rptExportCSV()" style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.25);color:var(--base);border-radius:5px;padding:5px 12px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(78,156,245,0.16)'" onmouseout="this.style.background='rgba(78,156,245,0.08)'">↓ Export CSV</button>
           </div>
-          <div style="font-size:0.76rem;color:var(--dim);margin-bottom:10px;">Each snapshot is an immutable copy of all records at that moment. Suitable for IRB submission, interim analysis handoff, or publication.</div>
-          <div id="pi-snapshot-list"><div style="color:var(--dim);font-family:var(--font-mono);font-size:0.78rem;">No snapshots yet.</div></div>
         </div>
 
-        <!-- Protocol Amendment Log -->
-        <div class="pi-lock-section" style="margin-top:12px;">
-          <div class="pi-heatmap-hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span>Protocol Amendment Log</span>
-            <button class="pi-lock-btn" onclick="openPiAmendmentModal()" style="border-color:rgba(78,156,245,0.3);color:rgba(78,156,245,0.8);">+ Log Amendment</button>
-          </div>
-          <div style="font-size:0.76rem;color:var(--dim);margin-bottom:10px;">IRB-submitted protocol amendments. Each entry is timestamped and immutable after saving.</div>
-          <div id="pi-amendment-list"><div style="color:var(--dim);font-family:var(--font-mono);font-size:0.78rem;">No amendments logged yet.</div></div>
+        <!-- Panel: Site Benchmark -->
+        <div id="rpt-panel-benchmark">
+          <div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Cross-Site Performance — ranked by mean PE, worst first</div>
+          <div id="rpt-benchmark-body" style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);">Waiting for cohort data…</div>
         </div>
 
-        <!-- Workspace Audit Log -->
-        <div class="pi-audit-section" style="margin-top:12px;">
-          <div class="pi-heatmap-hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span>Workspace Audit Log</span>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button class="pi-lock-btn" id="pi-audit-pdf-btn" style="border-color:rgba(78,156,245,0.3);color:rgba(78,156,245,0.8);display:none;" onclick="downloadAuditLogPDF()">↓ PDF</button>
-              <button class="pi-lock-btn" id="pi-audit-toggle-btn" style="border-color:rgba(78,156,245,0.2);color:rgba(78,156,245,0.55);min-width:72px;" onclick="togglePiAuditLog()">▶ Show</button>
-            </div>
+        <!-- Panel: Priority Queue -->
+        <div id="rpt-panel-queue" style="display:none;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+            <div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);flex:1;">Patients ranked by PE — worst first</div>
+            <select id="rpt-queue-site" onchange="window._rptRenderQueue&&_rptRenderQueue()" style="font-family:var(--font-mono);font-size:0.72rem;background:var(--card2);border:1px solid var(--border2);color:var(--muted);border-radius:5px;padding:4px 8px;outline:none;cursor:pointer;">
+              <option value="">All Sites</option>
+            </select>
+            <button onclick="window.print()" style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.25);color:var(--base);border-radius:5px;padding:5px 12px;cursor:pointer;">⎙ Print</button>
           </div>
-          <div id="pi-audit-log" style="display:none;"></div>
+          <div id="rpt-queue-body" style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);">Waiting for cohort data…</div>
         </div>
+
+        <!-- Panel: Monthly Snapshot -->
+        <div id="rpt-panel-snapshot" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);">Executive Summary — current vs prior month</div>
+            <button onclick="window.print()" style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.25);color:var(--base);border-radius:5px;padding:5px 12px;cursor:pointer;">⎙ Print</button>
+          </div>
+          <div id="rpt-snapshot-body" style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);">Waiting for cohort data…</div>
+        </div>
+
       </div>
 
       <!-- TAB PANEL: Outcomes -->
@@ -4628,6 +4807,55 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
           <div id="pi-outcomes-panel"></div>
         </div>
       </div>
+
+      <!-- TAB PANEL: Patients -->
+      <div id="pi-tab-panel-records" style="display:none;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <input id="pi-patients-search" type="text" placeholder="Search patient or site…" oninput="piRenderPatientsTab()" style="font-family:var(--font-mono);font-size:0.82rem;background:var(--card2);border:1px solid var(--border2);border-radius:5px;padding:5px 10px;color:var(--text);outline:none;flex:1;min-width:180px;"/>
+          <select id="pi-patients-site" onchange="piRenderPatientsTab()" style="font-family:var(--font-mono);font-size:0.82rem;background:var(--card2);border:1px solid var(--border2);color:var(--muted);border-radius:5px;padding:5px 8px;outline:none;cursor:pointer;"><option value="">All Sites</option></select>
+          <select id="pi-patients-risk" onchange="piRenderPatientsTab()" style="font-family:var(--font-mono);font-size:0.82rem;background:var(--card2);border:1px solid var(--border2);color:var(--muted);border-radius:5px;padding:5px 8px;outline:none;cursor:pointer;">
+            <option value="">All Risk Levels</option>
+            <option value="red">Needs Attention</option>
+            <option value="amber">Monitor</option>
+            <option value="green">Stable</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="records-table" style="width:100%;">
+            <thead><tr>
+              <th style="text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border2);">#</th>
+              <th style="text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border2);">Site</th>
+              <th style="text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border2);">Patient</th>
+              <th style="text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border2);">Risk</th>
+              <th style="text-align:right;padding:7px 10px;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border2);">Score</th>
+              <th style="text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border2);">Type</th>
+              <th style="text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border2);">Date</th>
+            </tr></thead>
+            <tbody id="pi-patients-tbody">
+              <tr><td colspan="7" style="text-align:center;color:var(--dim);padding:24px;font-family:var(--font-mono);font-size:0.80rem;">Loading patient records…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Hidden sub-tables kept in DOM for backward compatibility with existing render functions -->
+        <div style="display:none;">
+          <select id="pi-map-site-filter"></select>
+          <select id="pi-mmas-site-filter"></select>
+          <input id="pi-map-search" type="text"/>
+          <input id="pi-mmas-search" type="text"/>
+          <tbody id="pi-map-records-tbody"></tbody>
+          <tbody id="pi-mmas-records-tbody"></tbody>
+          <tbody id="pi-peacs-records-tbody"></tbody>
+          <button id="pi-rec-tab-map"></button>
+          <button id="pi-rec-tab-mmas"></button>
+          <button id="pi-rec-tab-peacs"></button>
+        </div>
+      </div>
+
+      <!-- TAB PANEL: Analytics (populated via DOM-move from inst-tab-panel-analytics) -->
+      <div id="pi-tab-panel-analytics" style="display:none;"></div>
+
+      <!-- TAB PANEL: Longitudinal (populated via DOM-move from traj-panel) -->
+      <div id="pi-tab-panel-longitudinal" style="display:none;"></div>
 
       <!-- TAB PANEL: Instrument Lab -->
       <div id="pi-tab-panel-lab" style="display:none;"></div>
@@ -4638,16 +4866,44 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
       <!-- TAB PANEL: Psychometrics -->
       <div id="pi-tab-panel-psychometrics" style="display:none;"></div>
 
-      <!-- TAB PANEL: Team -->
+      <!-- TAB PANEL: Sites -->
       <div id="pi-tab-panel-team" style="display:none;">
-        <div class="pi-provision-section">
-          <div class="pi-heatmap-hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span>Team Members &amp; Sites</span>
-            <button class="pi-lock-btn" id="pi-provision-btn" onclick="openProvisionModal()" style="border-color:rgba(78,156,245,0.3);color:rgba(78,156,245,0.8);">+ Invite Team Member</button>
-          </div>
-          <div class="pi-quota-bar" id="pi-quota-bar-team">Loading site quota…</div>
-          <div id="pi-site-list-team"><div style="color:var(--dim);font-family:var(--font-mono);font-size:0.78rem;">No child sites yet — invite your first team member above.</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);">Collection Sites · Performance Overview</div>
+          <button class="pi-lock-btn" id="pi-provision-btn" onclick="openProvisionModal()" style="border-color:rgba(78,156,245,0.3);color:rgba(78,156,245,0.8);">+ Add Site</button>
         </div>
+        <div id="pi-sites-tab-body" style="display:flex;flex-direction:column;gap:12px;">
+          <div style="padding:24px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">Loading sites…</div>
+        </div>
+        <!-- Hidden elements kept in DOM for backward compatibility -->
+        <div style="display:none;">
+          <div class="pi-quota-bar" id="pi-quota-bar-team"></div>
+          <div id="pi-site-list-team"></div>
+        </div>
+      </div>
+
+      <!-- TAB PANEL: Trends (always visible in Research rail tab) -->
+      <div id="pi-tab-panel-trends">
+        <div style="display:flex;gap:0;border:1px solid var(--border2);border-radius:6px;overflow:hidden;margin-bottom:18px;width:fit-content;">
+          <button id="pi-trends-btn-analytics" onclick="switchPiTrendsTab('analytics')" style="font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(78,156,245,0.12);border:none;border-right:1px solid var(--border2);color:var(--base);padding:7px 18px;cursor:pointer;">Adherence Analytics</button>
+          <button id="pi-trends-btn-trajectories" onclick="switchPiTrendsTab('trajectories')" style="font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;background:none;border:none;color:var(--dim);padding:7px 18px;cursor:pointer;">Patient Trajectories</button>
+        </div>
+        <div id="pi-trends-analytics-body"></div>
+        <div id="pi-trends-traj-body" style="display:none;"></div>
+      </div>
+
+      <!-- TAB PANEL: Research (always visible in Research rail tab) -->
+      <div id="pi-tab-panel-research">
+        <div style="display:flex;gap:0;border:1px solid var(--border2);border-radius:6px;overflow:hidden;margin-bottom:18px;width:fit-content;">
+          <button id="pi-res-btn-study" onclick="switchPiResearchTab('study')" style="font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;background:rgba(78,156,245,0.12);border:none;border-right:1px solid var(--border2);color:var(--base);padding:7px 18px;cursor:pointer;">Study</button>
+          <button id="pi-res-btn-psych" onclick="switchPiResearchTab('psych')" style="font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;background:none;border:none;border-right:1px solid var(--border2);color:var(--dim);padding:7px 18px;cursor:pointer;">Psychometrics</button>
+          <button id="pi-res-btn-lab" onclick="switchPiResearchTab('lab')" style="font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;background:none;border:none;border-right:1px solid var(--border2);color:var(--dim);padding:7px 18px;cursor:pointer;">Instrument Lab</button>
+          <button id="pi-res-btn-methods" onclick="switchPiResearchTab('methods')" style="font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;background:none;border:none;color:var(--dim);padding:7px 18px;cursor:pointer;">Methods</button>
+        </div>
+        <div id="pi-res-panel-study"></div>
+        <div id="pi-res-panel-psych" style="display:none;"></div>
+        <div id="pi-res-panel-lab" style="display:none;"></div>
+        <div id="pi-res-panel-methods" style="display:none;"></div>
       </div>
 
       <!-- PI Settings Modal -->
@@ -5433,6 +5689,33 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
       <span style="font-family:var(--font-mono);font-size:0.84rem;color:var(--dim);margin-left:auto;" id="icc-last-refresh">—</span>
       <button onclick="refreshCommandCenter()" style="font-family:var(--font-mono);font-size:0.88rem;letter-spacing:0.08em;text-transform:uppercase;background:none;border:1px solid var(--border);color:var(--dim);border-radius:6px;padding:4px 10px;cursor:pointer;">↻ Refresh</button>
     </div>
+
+    <!-- Pharmacy Alerts Panel — real-time, populated by prescriber_alerts/{workspace} -->
+    <div id="prescriber-alerts-panel" style="display:none;margin-bottom:16px;">
+      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-left:3px solid #ef4444;border-radius:var(--r);overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid rgba(239,68,68,0.12);">
+          <span style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:#ef4444;">&#9888; Pharmacy Alerts</span>
+          <span id="pa-badge" style="font-family:var(--font-mono);font-size:0.72rem;padding:2px 9px;border-radius:10px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.12);color:#ef4444;">—</span>
+          <button onclick="markAllPrescriberAlertsRead()" style="margin-left:auto;font-family:var(--font-mono);font-size:0.78rem;background:none;border:1px solid var(--border2);color:var(--dim);border-radius:5px;padding:3px 10px;cursor:pointer;white-space:nowrap;">✓ Mark all reviewed</button>
+        </div>
+        <div id="pa-list" style="max-height:420px;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+    </div>
+    <style>
+      .pa-card{background:var(--card2);border-radius:7px;padding:10px 14px;border:1px solid var(--border);}
+      .pa-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;}
+      .pa-tl-dot{font-size:0.85rem;flex-shrink:0;}
+      .pa-patient{font-family:var(--font-mono);font-size:0.82rem;color:var(--bright);}
+      .pa-cond{font-family:var(--font-mono);font-size:0.78rem;color:var(--muted);}
+      .pa-site{font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);}
+      .pa-ts{font-family:var(--font-mono);font-size:0.70rem;color:var(--dim);margin-left:auto;}
+      .pa-scores{font-family:var(--font-mono);font-size:0.78rem;color:var(--muted);margin-bottom:4px;}
+      .pa-insight{font-family:var(--font-mono);font-size:0.75rem;color:var(--text);font-style:italic;margin-bottom:6px;}
+      .pa-actions{display:flex;align-items:center;gap:8px;}
+      .pa-btn-review{font-family:var(--font-mono);font-size:0.74rem;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);color:#10b981;border-radius:4px;padding:3px 10px;cursor:pointer;}
+      .pa-btn-review:hover{background:rgba(16,185,129,0.16);}
+      .pa-reviewed{font-family:var(--font-mono);font-size:0.72rem;color:#10b981;}
+    </style>
 
     <!-- Collective Cohort Banner -->
     <div id="icc-collective-banner" style="background:linear-gradient(135deg,rgba(139,111,245,0.08) 0%,rgba(78,156,245,0.06) 100%);border:1px solid rgba(139,111,245,0.2);border-left:3px solid rgba(139,111,245,0.6);border-radius:var(--r);padding:16px 20px;margin-bottom:16px;">
@@ -7141,7 +7424,7 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.
 <script src="modules/longitudinal-map.js" defer></script><!-- Longitudinal MAP tracking, session trajectory, intervention effectiveness -->
 <script src="modules/maas-portal.js" defer></script><!-- MAP-as-a-Service API portal, developer documentation -->
 <script src="modules/dhis2-integration.js" defer></script><!-- DHIS2 connect/sync, metadata package download -->
-<script src="modules/map-certification.js" defer></script><!-- MAP certification hub, digital certificate, public directory -->
+<!-- map-certification.js removed — certification hub deferred for structured rollout -->
 <script src="modules/heor-module.js" defer></script><!-- HEOR cost-of-non-adherence calculator, phenotype ROI, evidence package -->
 <script src="modules/patient-portal-map.js" defer></script><!-- Clinical view of patient self-assessment history -->
 <script src="modules/equity-score.js" defer></script><!-- Equity-adjusted PE, CHW supervisor dashboard -->
@@ -7576,5 +7859,6 @@ MMAS-8 © MMAR LLC — used under licence.`;
     <div id="admin-preview-content" class="admin-prev-content">Loading preview...</div>
   </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </body>
 </html>

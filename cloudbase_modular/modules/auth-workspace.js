@@ -54,6 +54,37 @@
 /** @type {string} The ATLAS Lambda function URL for workspace key validation and auth flows. */
 const LAMBDA_URL = '/lambda-proxy';
 
+// ── Client audit metadata — IP, country, UA from Cloudflare edge trace ────────
+// Fetched once on load; included in every CFR-11 audit_log entry.
+window._auditMeta = { ip: null, country: null, colo: null, tls: null, ua: navigator.userAgent.slice(0, 220), city: null, region: null, asn: null, asOrg: null, latitude: null, longitude: null, timezone: null };
+(function _fetchAuditMeta() {
+  const traceP = fetch('/cdn-cgi/trace', { cache: 'no-store' }).then(r => r.text()).then(text => {
+    const kv = {};
+    text.trim().split('\n').forEach(function(line) {
+      const eq = line.indexOf('=');
+      if (eq > 0) kv[line.slice(0, eq)] = line.slice(eq + 1);
+    });
+    return kv;
+  });
+  const geoP = fetch('/api/geo', { cache: 'no-store' }).then(r => r.json()).catch(() => ({}));
+  Promise.all([traceP, geoP]).then(function([kv, geo]) {
+    window._auditMeta = {
+      ip:        kv.ip        || null,
+      country:   kv.loc       || null,
+      colo:      kv.colo      || null,
+      tls:       kv.tls       || null,
+      ua:        (kv.uag || navigator.userAgent).slice(0, 220),
+      city:      geo.city      || null,
+      region:    geo.region    || null,
+      asn:       geo.asn       || null,
+      asOrg:     geo.asOrg     || null,
+      latitude:  geo.latitude  || null,
+      longitude: geo.longitude || null,
+      timezone:  geo.timezone  || null,
+    };
+  }).catch(function() { /* retain UA-only fallback */ });
+})();
+
 /**
  * Validates a workspace key against the ATLAS Lambda backend and signs in via Firebase.
  * Handles three auth paths: immediate token (direct sign-in), MFA/OTP (session_token returned),
@@ -103,10 +134,13 @@ async function validateWorkspaceCode(code) {
       return null;
     }
     try {
-      await firebase.auth().signInWithCustomToken(data.token);
+      await Promise.race([
+        firebase.auth().signInWithCustomToken(data.token),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('auth_timeout')), 15000))
+      ]);
     } catch(authErr) {
-      console.error('[ATLAS] validateWorkspaceCode: Firebase signInWithCustomToken failed', authErr.code, authErr);
-      window._lastWsError = 'server_config_error';
+      console.error('[ATLAS] validateWorkspaceCode: Firebase signInWithCustomToken failed', authErr.code || authErr.message, authErr);
+      window._lastWsError = authErr.message === 'auth_timeout' ? 'auth_timeout' : 'server_config_error';
       return null;
     }
     return data.profile;
@@ -167,9 +201,9 @@ function setWorkspaceModalMode(mode) {
     if (subtitle) subtitle.textContent = T('resSubtitle') || T('wsSubtitle');
     if (block) block.innerHTML =
       '<div class="ws-benefits-label">Four key tiers — all include MAP</div>' +
-      '<div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--optimal)"></span><span><strong style="color:var(--bright)">Student ($0–$19/mo)</strong> — MAP + PEACS snapshot (BASE · MVMT · STRATA) · cohort isolation · CSV export (100/mo)</span></div>' +
+      '<div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--optimal)"></span><span><strong style="color:var(--bright)">Student ($19/mo with student code)</strong> — Full researcher workspace · MAP + PEACS + longitudinal · validation · APA citation · unlimited CSV export</span></div>' +
       '<div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--base)"></span><span><strong style="color:var(--bright)">Clinician — NP · PA · PharmD · MD ($49/mo)</strong> — MAP + MMAS-8 + PEACS · ZOE voice SOAP notes · MTM billing · Care Gaps · SDoH Analysis</span></div>' +
-      '<div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--mvmt)"></span><span><strong style="color:var(--bright)">Pharmacist · Researcher ($49/mo)</strong> — MAP + PEACS longitudinal (BASE · MVMT · STRATA) · unlimited cohort · ZOE voice · Sentinel alerts</span></div>' +
+      '<div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--mvmt)"></span><span><strong style="color:var(--bright)">Researcher ($49/mo)</strong> — MAP + PEACS longitudinal (BASE · MVMT · STRATA) · unlimited cohort · ZOE voice · Sentinel alerts · advanced analytics</span></div>' +
       '<div class="ws-benefit-row"><span class="ws-benefit-dot" style="background:var(--pe)"></span><span><strong style="color:var(--bright)">PI · Multi Site ($149/mo)</strong> — Everything above + bulk XLSM upload · IRB-grade export · PEACS population stratification · API access</span></div>' +
       '<div class="ws-benefit-row" style="opacity:0.5;"><span class="ws-benefit-dot" style="background:rgba(255,255,255,0.2)"></span><span>Population Health Command Center, multi-PI dashboard &amp; Sentinel triage — Institution tier only</span></div>' +
       '<div style="margin-top:14px;padding:14px 16px;background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.22);border-radius:10px;">' +
@@ -395,7 +429,9 @@ async function submitWorkspaceCode() {
 
   } else {
     btn.disabled = false; btn.innerHTML = 'Verify Access →'; btn.style.background = '';
-    err.textContent = (window._lastWsError === 'timeout')
+    err.textContent = (window._lastWsError === 'auth_timeout')
+      ? 'Authentication timed out — please refresh the page and try again.'
+      : (window._lastWsError === 'timeout')
       ? 'Verification is taking longer than expected. Please try again.'
       : (window._lastWsError === 'server_config_error')
         ? 'There was a server configuration issue. Please contact support if this persists.'
@@ -421,6 +457,17 @@ async function submitWorkspaceCode() {
         timestamp:     Date.now(),
         timestamp_utc: new Date().toISOString(),
         table:         'auth',
+        client_ip:     (window._auditMeta||{}).ip        || null,
+        client_country:(window._auditMeta||{}).country   || null,
+        cf_colo:       (window._auditMeta||{}).colo      || null,
+        client_city:   (window._auditMeta||{}).city      || null,
+        client_region: (window._auditMeta||{}).region    || null,
+        client_asn:    (window._auditMeta||{}).asn       || null,
+        client_org:    (window._auditMeta||{}).asOrg     || null,
+        client_lat:    (window._auditMeta||{}).latitude  || null,
+        client_lon:    (window._auditMeta||{}).longitude || null,
+        client_tz:     (window._auditMeta||{}).timezone  || null,
+        client_ua:     (window._auditMeta||{}).ua        || navigator.userAgent.slice(0,220),
       }).catch(function(){});
     }
   }
@@ -834,6 +881,7 @@ function _grantWorkspaceAccess(code, profile, opts) {
       database.ref('audit_log').push({
         cfr11:         true,
         action:        'LOGIN_SUCCESS',
+        uid:           _loginUser.uid,
         table:         'auth',
         actor_uid:     _loginUser.uid,
         actor_email:   _loginUser.email || '—',
@@ -842,6 +890,17 @@ function _grantWorkspaceAccess(code, profile, opts) {
         auth_method:   _fromMagicLink ? 'magic_link' : 'workspace_key',
         timestamp:     Date.now(),
         timestamp_utc: new Date().toISOString(),
+        client_ip:     (window._auditMeta||{}).ip     || null,
+        client_country:(window._auditMeta||{}).country || null,
+        cf_colo:       (window._auditMeta||{}).colo      || null,
+        client_city:   (window._auditMeta||{}).city      || null,
+        client_region: (window._auditMeta||{}).region    || null,
+        client_asn:    (window._auditMeta||{}).asn       || null,
+        client_org:    (window._auditMeta||{}).asOrg     || null,
+        client_lat:    (window._auditMeta||{}).latitude  || null,
+        client_lon:    (window._auditMeta||{}).longitude || null,
+        client_tz:     (window._auditMeta||{}).timezone  || null,
+        client_ua:     (window._auditMeta||{}).ua        || navigator.userAgent.slice(0,220),
       }).catch(function(){});
     }
   } catch(e) {}
@@ -860,20 +919,38 @@ function _grantWorkspaceAccess(code, profile, opts) {
     // Override Lambda SSM role with Firebase-stored role (fixes old keys issued as 'researcher')
     // Firebase is authoritative for role, region, and feature overrides.
     const _applyRoleAndEnter = (fbData) => {
-      const fbRole   = (fbData && typeof fbData === 'object') ? fbData.role   : fbData;
-      const fbRegion = (fbData && typeof fbData === 'object') ? fbData.region : null;
+      const fbRole        = (fbData && typeof fbData === 'object') ? fbData.role               : fbData;
+      const fbRegion      = (fbData && typeof fbData === 'object') ? fbData.region             : null;
+      const fbParentInst  = (fbData && typeof fbData === 'object') ? fbData.parent_institution : null;
+      const fbParentPi    = (fbData && typeof fbData === 'object') ? fbData.parent_pi          : null;
       if (fbRole && fbRole !== profile.role) {
         workspaceProfile.role = fbRole;
         profile.role = fbRole;
       }
+      // Merge parent_institution / parent_pi from Firebase so resolveAllowedWorkspaces()
+      // can discover sibling workspaces even when SSM doesn't have these fields.
+      if (fbParentInst && !workspaceProfile.parent_institution) {
+        workspaceProfile.parent_institution = fbParentInst;
+        profile.parent_institution = fbParentInst;
+      }
+      if (fbParentPi && !workspaceProfile.parent_pi) {
+        workspaceProfile.parent_pi = fbParentPi;
+        profile.parent_pi = fbParentPi;
+      }
+      // Bust the stale allowed-workspace sessionStorage cache so the next
+      // resolveAllowedWorkspaces() call runs fresh discovery (Path 4 included).
+      try { sessionStorage.removeItem('atlas_ws_allowed_' + code.toUpperCase()); } catch(e) {}
       // Derive feature flags from Firebase region — takes effect on next login
       // UAE → gcc_mode (GCC pharmacy: Encounters tab, no MTM billing, ADHICS/PDPL posture)
       // EU  → eu_mode  (GDPR data residency, eu-central-1 routing)
+      // BR  → lgpd_mode (LGPD data residency, sa-east-1 routing)
       const GCC_COUNTRIES = new Set(['uae','ae','sa','kw','bh','qa','om']);
       if (fbRegion && GCC_COUNTRIES.has(fbRegion.toLowerCase())) {
         workspaceProfile.features = Object.assign({}, workspaceProfile.features, { gcc_mode: true });
       } else if (fbRegion === 'eu') {
         workspaceProfile.features = Object.assign({}, workspaceProfile.features, { eu_mode: true });
+      } else if (fbRegion === 'br') {
+        workspaceProfile.features = Object.assign({}, workspaceProfile.features, { lgpd_mode: true });
       }
       const actualRole  = profile.role || 'researcher';
       const isInstRole  = actualRole === 'institution' || actualRole === 'superadmin' || actualRole === 'observer';
@@ -1197,19 +1274,17 @@ function enterResearcherDashboard() {
   if (window._onResearcherLogin) window._onResearcherLogin.forEach(fn => { try { fn(); } catch(e) {} });
 
   const bulkBtn = document.getElementById('dash-bulk-btn');
-  // Students use the Publish tab upload widget — hide the workspace bulk upload from them
-  if (bulkBtn) bulkBtn.style.display = ((isInstitution || isResearcher) && !isStudentRole && hasModule('assess_bulk')) ? '' : 'none';
+  if (bulkBtn) bulkBtn.style.display = ((isInstitution || isResearcher) && hasModule('assess_bulk')) ? '' : 'none';
   document.querySelectorAll('.mc-ghost-btn').forEach(btn => {
-    if (btn.textContent.includes('Template')) btn.style.display = ((isInstitution || isResearcher) && !isStudentRole) ? '' : 'none';
+    if (btn.textContent.includes('Template')) btn.style.display = (isInstitution || isResearcher) ? '' : 'none';
   });
-  // Students have their own export buttons in the student tab — hide the main export buttons
   document.querySelectorAll('#mmas-export-btn, #peacs-export-btn').forEach(b => {
-    if (b) b.style.display = (isResearcher && !isStudentRole && hasModule('export_csv')) ? '' : 'none';
+    if (b) b.style.display = (isResearcher && hasModule('export_csv')) ? '' : 'none';
   });
   const dashPeacsExport = document.getElementById('dash-export-btn');
-  if (dashPeacsExport) dashPeacsExport.style.display = (isResearcher && !isStudentRole && hasModule('export_csv')) ? '' : 'none';
+  if (dashPeacsExport) dashPeacsExport.style.display = (isResearcher && hasModule('export_csv')) ? '' : 'none';
   const qrBtn = document.getElementById('dash-qr-btn');
-  if (qrBtn) qrBtn.style.display = (isResearcher && !isStudentRole) ? '' : 'none'; // Patient QR: researcher + institution only
+  if (qrBtn) qrBtn.style.display = isResearcher ? '' : 'none'; // Patient QR: researcher + institution only
 
   const chip = document.querySelector('.dash-workspace-chip');
   const dot  = document.querySelector('.dash-workspace-dot');
@@ -1227,7 +1302,7 @@ function enterResearcherDashboard() {
   // View-As toolbar removed — use Impersonate Role in ATLAS Mission Control instead
 
   const irbBtn = document.getElementById('irb-cert-btn');
-  if (irbBtn) irbBtn.style.display = (isResearcher && !isStudentRole && hasModule('export_irb')) ? '' : 'none'; // session cert: researcher + institution
+  if (irbBtn) irbBtn.style.display = (isResearcher && hasModule('export_irb')) ? '' : 'none'; // session cert: researcher + institution
   const irbAggBtn = document.getElementById('irb-aggregate-btn');
   if (irbAggBtn) irbAggBtn.style.display = (isInstitution && hasModule('export_csv')) ? '' : 'none'; // aggregate export: institution only
 
@@ -1272,10 +1347,10 @@ function enterResearcherDashboard() {
     _applyInstTabGating();
   } else {
     if (instDash)  instDash.style.display  = 'none';
-    if (instrRow)  instrRow.style.display  = isStudentRole ? 'none' : '';
-    if (specBtn)   specBtn.style.display   = (isStudentRole || isPIResearcher()) ? 'none' : '';
-    if (recPanel)  recPanel.style.display  = isStudentRole ? 'none' : '';
-    if (pulseBar)  pulseBar.style.display  = isStudentRole ? 'none' : '';
+    if (instrRow)  instrRow.style.display  = '';
+    if (specBtn)   specBtn.style.display   = isPIResearcher() ? 'none' : '';
+    if (recPanel)  recPanel.style.display  = '';
+    if (pulseBar)  pulseBar.style.display  = '';
   }
 
   // ── MTM TAB: wire badge + suppress dash-body MTM panels for institution users ──
@@ -1320,10 +1395,10 @@ function enterResearcherDashboard() {
   const showRpp = !isInstitution && !isSuperAdmin() && !isObserverMode() && !!currentWorkspace
                   && currentWorkspace !== 'EXPLORER'
                   && window._wsMode !== 'explorer';
-  if (rpp) rpp.style.display = (showRpp && !isStudentRole) ? 'block' : 'none';
+  if (rpp) rpp.style.display = showRpp ? 'block' : 'none';
   // Research analytics panel mirrors researcher-patient-panel visibility
   const rapPanel = document.getElementById('res-analytics-panel');
-  if (rapPanel) rapPanel.style.display = (showRpp && !isStudentRole) ? 'block' : 'none';
+  if (rapPanel) rapPanel.style.display = showRpp ? 'block' : 'none';
   // Populate cohort name label
   const rapCohortName = document.getElementById('rap-cohort-name');
   if (rapCohortName && showRpp) {
@@ -1337,11 +1412,13 @@ function enterResearcherDashboard() {
   const showCPO  = showRpp && isClinician();
   if (cpoPanel) cpoPanel.style.display = showCPO ? 'block' : 'none';
 
-  // ── Clinical Billing tab badge — any clinician role ───────────────────────
+  // ── Clinical Billing tab badge — US accounts only ────────────────────────
   const _billingBadge = document.getElementById('inst-billing-tab-badge');
   if (_billingBadge) {
     const _tier = (workspaceProfile?.tier || workspaceProfile?.role || '').toLowerCase();
-    const _hasBilling = isSuperAdmin() || isClinician() || _tier === 'researcher' || _tier === 'pi' || _tier === 'institution';
+    const _billingNonUS = !!(workspaceProfile && workspaceProfile.features &&
+      (workspaceProfile.features.gcc_mode || workspaceProfile.features.eu_mode || workspaceProfile.features.lgpd_mode));
+    const _hasBilling = !_billingNonUS && (isSuperAdmin() || isClinician() || _tier === 'researcher' || _tier === 'pi' || _tier === 'institution');
     _billingBadge.style.display = _hasBilling ? 'inline' : 'none';
     if (isClinician()) _billingBadge.textContent = getClinicianLabel().split(' · ')[0];
   }
@@ -1359,7 +1436,7 @@ function enterResearcherDashboard() {
     if (_prevStudPanel) _prevStudPanel.remove();
   }
 
-  if (!_railAlreadyUp && showRpp && workspaceProfile?.role === 'student') {
+  if (!_railAlreadyUp && showRpp && false /* student now routes to researcher workspace */) {
     const _db = document.querySelector('#screen-dashboard .dash-body');
     if (_db) {
       // Hide panels that the student surface replaces
@@ -1430,6 +1507,7 @@ function enterResearcherDashboard() {
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                 <button onclick="enterSpectatorMode()" style="padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.2);color:#059669;border-radius:7px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(5,150,105,0.12)'" onmouseout="this.style.background='rgba(5,150,105,0.06)'">🌐 Global Map</button>
+                <button onclick="try{wsOpenGlobeOverlay();}catch(e){alert('[ATLAS] '+e.message);}" style="padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.25);color:#d4a843;border-radius:7px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(212,168,67,0.13)'" onmouseout="this.style.background='rgba(212,168,67,0.06)'">⬡ Atlas</button>
                 <button onclick="openStuGlossary()" style="padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(78,156,245,0.06);border:1px solid rgba(78,156,245,0.2);color:var(--base);border-radius:7px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(78,156,245,0.13)'" onmouseout="this.style.background='rgba(78,156,245,0.06)'">Glossary</button>
               </div>
             </div>
@@ -1627,12 +1705,12 @@ function enterResearcherDashboard() {
                 <div style="background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.15);border-top:2px solid #2563eb;border-radius:9px;padding:13px 15px;">
                   <div style="font-family:'IBM Plex Mono',monospace;font-size:0.48rem;letter-spacing:0.14em;text-transform:uppercase;color:#2563eb;margin-bottom:4px;">Execution</div>
                   <div id="stu-pe-exec-score" style="font-family:'IBM Plex Mono',monospace;font-size:1.6rem;font-weight:700;color:#2563eb;line-height:1;">—</div>
-                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.52rem;color:var(--dim);margin-top:3px;">Behavioral · Q1 Q4 Q5 Q8</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.52rem;color:var(--dim);margin-top:3px;">Behavioral · Q1 Q5 Q8</div>
                 </div>
                 <div style="background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.15);border-top:2px solid #7c3aed;border-radius:9px;padding:13px 15px;">
                   <div style="font-family:'IBM Plex Mono',monospace;font-size:0.48rem;letter-spacing:0.14em;text-transform:uppercase;color:#7c3aed;margin-bottom:4px;">Context</div>
                   <div id="stu-pe-ctx-score" style="font-family:'IBM Plex Mono',monospace;font-size:1.6rem;font-weight:700;color:#7c3aed;line-height:1;">—</div>
-                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.52rem;color:var(--dim);margin-top:3px;">Perceived burden · Q7</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.52rem;color:var(--dim);margin-top:3px;">Perceived burden · Q4 Q7</div>
                 </div>
               </div>
               <div id="stu-pe-constraint-label" style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--muted);margin-bottom:4px;"></div>
@@ -1712,7 +1790,7 @@ function enterResearcherDashboard() {
                 <button id="stu-export-peacs-btn" onclick="_stuExportPEACS()" class="stu-export-btn-peacs">↓ PEACS CSV</button>
               </div>
               <div id="stu-review-table" style="font-size:0.80rem;color:var(--muted);">Loading records…</div>
-              <div style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:0.56rem;color:var(--dim);">Student tier · up to 100 records / mo</div>
+              <div style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:0.56rem;color:var(--dim);">Student tier · unlimited assessment collection · up to 100 CSV exports / mo</div>
             </div>
           </div>
 
@@ -1769,7 +1847,7 @@ function enterResearcherDashboard() {
 
                   <!-- Execution domain -->
                   <div style="background:rgba(37,99,235,0.07);border:1px solid rgba(78,156,245,0.15);border-top:3px solid #4e9cf5;border-radius:9px;padding:14px 16px;">
-                    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:#2563eb;margin-bottom:8px;">Execution · Q1 Q4 Q5 Q8</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:#2563eb;margin-bottom:8px;">Execution · Q1 Q5 Q8</div>
                     <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px;">
                       <span id="stu-val-exec-val" style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;font-weight:700;color:#4e9cf5;line-height:1;">—</span>
                       <span style="font-family:'IBM Plex Mono',monospace;font-size:0.52rem;color:#2563eb;">avg domain score</span>
@@ -2725,13 +2803,15 @@ function enterResearcherDashboard() {
       // role-id-banner is the pinned header (shows clinician name + role chip).
       // clinician-dash-panel holds the full worklist + internal tab system.
       // MTM panels live separately in dash-body and move into the MTM tab.
+      // MTM and billing are US-only (Medicare Part D / Medi-Cal). Non-US region
+      // modes (gcc_mode, eu_mode, lgpd_mode) suppress the tab entirely.
+      var _clinIsUSOnly = !(workspaceProfile && workspaceProfile.features &&
+        (workspaceProfile.features.gcc_mode || workspaceProfile.features.eu_mode || workspaceProfile.features.lgpd_mode));
       var CLIN_RAIL_TABS = [
         { id: 'patients', icon: '⊕', label: 'Patients',
           elements: ['clinician-dash-panel'] },
-        { id: 'mtm',
-          icon:  (workspaceProfile && workspaceProfile.features && workspaceProfile.features.gcc_mode) ? '📋' : '⏱',
-          label: (workspaceProfile && workspaceProfile.features && workspaceProfile.features.gcc_mode) ? 'Encounters' : 'MTM',
-          elements: ['daily-intake-panel', 'mtm-timer-panel', 'mtm-audit-panel'] },
+        ...(_clinIsUSOnly ? [{ id: 'mtm', icon: '⏱', label: 'MTM',
+          elements: ['daily-intake-panel', 'mtm-timer-panel', 'mtm-audit-panel'] }] : []),
         { id: 'overview', icon: '◈', label: 'Overview',
           elements: ['cpo-panel'] },
         { id: 'tessera',  icon: '⬡', label: 'TESSERA',
@@ -2861,16 +2941,15 @@ function enterResearcherDashboard() {
   const citPanel = document.getElementById('res-citation-panel');
   if (citPanel) citPanel.style.display = 'none';
   // Pre-init quick-copy for researcher so it's ready when citation modal is opened
-  if (showRpp && !isClinician() && _roleForPE !== 'student') setTimeout(initCiteQuickCopy, 200);
+  if (showRpp && !isClinician()) setTimeout(initCiteQuickCopy, 200);
   // ── Researcher tools bar (Citation Guide + other end-of-study tools) ─────────
   const resToolsBar = document.getElementById('res-tools-bar');
   if (resToolsBar) {
-    resToolsBar.style.display = (showRpp && !isClinician() && _roleForPE !== 'student') ? '' : 'none';
+    resToolsBar.style.display = (showRpp && !isClinician()) ? '' : 'none';
   }
 
-  // Show/hide dash-level MMAS export button (not for students — they use the student tab export)
   const dashMmasExport = document.getElementById('dash-mmas-export-btn');
-  if (dashMmasExport) dashMmasExport.style.display = (isResearcher && !isStudentRole) ? '' : 'none';
+  if (dashMmasExport) dashMmasExport.style.display = isResearcher ? '' : 'none';
 
   // Remove any previously injected explorer banner and stale locked cards (session restore cleanup)
   const _eb = document.getElementById('explorer-upgrade-banner');
@@ -3177,11 +3256,11 @@ function enterResearcherDashboard() {
   const trajPanel  = document.getElementById('traj-panel');
   const benchPanel = document.getElementById('bench-panel');
 
-  // Students use the Publish tab — APE and advanced analytics panels are researcher/clinician/PI+
+  // APE and advanced analytics panels open to all research roles including student.
   // When role qualifies but module is disabled → show locked card instead of blank gap.
-  const _apeRoleOk  = showRpp && !isStudentRole;
-  const _resRoleOk  = isRes && !isStudentRole;
-  const _benchRoleOk = (isRes && !isStudentRole && (workspaceProfile?.role === 'pi')) || isInstitutionMode() || isSuperAdmin();
+  const _apeRoleOk  = showRpp;
+  const _resRoleOk  = isRes;
+  const _benchRoleOk = (isRes && (workspaceProfile?.role === 'pi')) || isInstitutionMode() || isSuperAdmin();
 
   if (apePanel) {
     if (_apeRoleOk && !hasModule('analytics_map'))          _showModuleLocked(apePanel, 'analytics_map');
@@ -3299,7 +3378,7 @@ function enterResearcherDashboard() {
     window.exportPeacsCSV      = () => showToast('Export not available in Observer mode.', 3000);
     window.exportInstitutionCSV= () => showToast('Export not available in Observer mode.', 3000);
     window.accExportGAI        = () => showToast('Export not available in Observer mode.', 3000);
-    window.openCommandCenter   = () => showToast('ATLAS Control requires superadmin access.', 3000);
+    window.openCommandCenter   = () => {};
     window.generateIRBCertificate = () => showToast('IRB certificates require researcher access.', 3000);
 
     atlasAuditLog('observer_dashboard_access', { workspace: currentWorkspace });
@@ -3357,7 +3436,7 @@ function enterResearcherDashboard() {
     if (_prevResHdr) _prevResHdr.remove();
     document.querySelectorAll('.res-mod-hdr').forEach(function(e) { e.remove(); });
 
-    const _isResWs = showRpp && !isStudentRole && !isClinician() && !isInstitutionMode() && !isObserverMode();
+    const _isResWs = showRpp && !isClinician() && !isInstitutionMode() && !isObserverMode();
     if (_isResWs) {
       const _db = document.querySelector('#screen-dashboard .dash-body');
       if (_db) {
@@ -3366,11 +3445,11 @@ function enterResearcherDashboard() {
         const _resInst  = (workspaceProfile && workspaceProfile.institution)  || '';
         const _resByline = _resName
           ? (_resInst ? _resName + ' · ' + _resInst : _resName)
-          : (_isPiWs ? 'Principal Investigator' : 'Researcher');
-        const _resRoleLabel   = _isPiWs ? 'PI Workspace · ATLAS' : 'Researcher Workspace · ATLAS';
-        const _resBarColor    = _isPiWs ? '#d4a843' : '#8b6ff5';
-        const _resBorderColor = _isPiWs ? 'rgba(212,168,67,0.40)' : 'rgba(139,111,245,0.40)';
-        const _resDisplayName = _resName || (_isPiWs ? 'Principal Investigator' : 'Researcher');
+          : (_isPiWs ? 'Principal Investigator' : isStudentRole ? 'Student Researcher' : 'Researcher');
+        const _resRoleLabel   = _isPiWs ? 'PI Workspace · ATLAS' : isStudentRole ? 'Student Workspace · ATLAS' : 'Researcher Workspace · ATLAS';
+        const _resBarColor    = _isPiWs ? '#d4a843' : isStudentRole ? '#2ec98a' : '#8b6ff5';
+        const _resBorderColor = _isPiWs ? 'rgba(212,168,67,0.40)' : isStudentRole ? 'rgba(46,201,138,0.40)' : 'rgba(139,111,245,0.40)';
+        const _resDisplayName = _resName || (_isPiWs ? 'Principal Investigator' : isStudentRole ? 'Student Researcher' : 'Researcher');
 
         // ── MODULE 1: Workspace Header ──────────────────────────────────
         const _resHdr = document.createElement('div');
@@ -3387,6 +3466,7 @@ function enterResearcherDashboard() {
               '<button onclick="openSessionModal()" class="stu-btn">⊕ New Session</button>' +
               '<button onclick="showCitationModal()" class="stu-btn">✦ Cite</button>' +
               '<button onclick="enterSpectatorMode()" style="padding:7px 14px;font-family:\'IBM Plex Mono\',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.2);color:#059669;border-radius:7px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background=\'rgba(5,150,105,0.12)\'" onmouseout="this.style.background=\'rgba(5,150,105,0.06)\'">🌐 Global Map</button>' +
+              '<button onclick="try{wsOpenGlobeOverlay();}catch(e){alert(\'[ATLAS] \'+e.message);}" style="padding:7px 14px;font-family:\'IBM Plex Mono\',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.25);color:#d4a843;border-radius:7px;cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background=\'rgba(212,168,67,0.13)\'" onmouseout="this.style.background=\'rgba(212,168,67,0.06)\'">⬡ Atlas</button>' +
             '</div>' +
           '</div>';
         // Hide role-id-banner — our workspace header replaces it for researcher/PI
@@ -3777,32 +3857,79 @@ function enterResearcherDashboard() {
           _target.parentNode.insertBefore(_mapMod, _target);
         })();
 
-        // ── MODULE · Psychometric Analysis — researcher / PI card ─────────────
+        // ── MODULE · Psychometric Analysis — full SA-grade instrument panel ──────
+        // Bridges researcher-scoped cohort data into _saCache then delegates to
+        // _saRenderPsychometrics() — the same engine used by Mission Control.
+        // Covers: MMAS-8, MAP, PEACS · Reliability, Items, Factor, IRT, Validity, Domains.
         (function() {
           var _target = document.getElementById('researcher-patient-panel') || document.getElementById('res-analytics-panel');
           if (!_target || !_target.parentNode) return;
           if (document.getElementById('res-mod-psycho')) return;
 
+          window._resLoadSAPsycho = function() {
+            if (window._resPsychoLoaded) return;
+            window._resPsychoLoaded = true;
+            var body = document.getElementById('res-psycho-body');
+            if (!body) return;
+            body.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;color:var(--dim);padding:8px 0;">Loading cohort data…</div>';
+
+            // Resolve the researcher's allowed workspace set first (own key + any child keys).
+            // allowedWS === null means superadmin (sees everything); a Set means scoped.
+            resolveAllowedWorkspaces().then(function(allowedWS) {
+              function _filterByWS(records) {
+                if (allowedWS === null) return records;
+                return records.filter(function(r) {
+                  var code = (r.institution_code || '').toUpperCase();
+                  return code && allowedWS.has(code);
+                });
+              }
+
+              // PEACS: prefer pre-filtered dashboard data; fall back to Firebase + filter.
+              var peacsFetch = (window.dashPeacsData && window.dashPeacsData.length)
+                ? Promise.resolve(window.dashPeacsData)
+                : (typeof database !== 'undefined'
+                    ? database.ref('peacs_assessments').once('value').then(function(snap) {
+                        return _filterByWS(snap.val() ? Object.values(snap.val()) : []);
+                      }).catch(function() { return []; })
+                    : Promise.resolve([]));
+
+              Promise.all([
+                typeof getCachedAssessments === 'function' ? getCachedAssessments() : Promise.resolve([]),
+                peacsFetch
+              ]).then(function(res) {
+                // Scope MMAS/MAP to this workspace hierarchy; PEACS already scoped above.
+                _saCache.mmas  = _filterByWS(res[0] || []);
+                _saCache.peacs = res[1] || [];
+                if (typeof _saRenderPsychometrics === 'function') {
+                  _saRenderPsychometrics(body);
+                } else {
+                  body.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;color:var(--dim);">Psychometrics module unavailable.</div>';
+                }
+              }).catch(function() {
+                var b2 = document.getElementById('res-psycho-body');
+                if (b2) b2.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;color:#ef4444;">Failed to load cohort data. Please refresh.</div>';
+              });
+            }).catch(function() {
+              var b2 = document.getElementById('res-psycho-body');
+              if (b2) b2.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;color:#ef4444;">Workspace scope could not be resolved. Please refresh.</div>';
+            });
+          };
+
           var _psychoMod = document.createElement('div');
           _psychoMod.id = 'res-mod-psycho';
           _psychoMod.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;';
           _psychoMod.innerHTML =
-            '<button onclick="(function(btn){var b=document.getElementById(\'res-psycho-body-wrap\');var open=b.style.display!==\'none\';b.style.display=open?\'none\':\'block\';btn.querySelector(\'.res-psycho-tog\').textContent=open?\'▶\':\'▼\';if(!open&&typeof resInitPsychoStats===\'function\')resInitPsychoStats();})(this)" style="width:100%;padding:13px 20px;text-align:left;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;">' +
-              '<div style="width:3px;height:14px;background:#b45309;border-radius:2px;flex-shrink:0;"></div>' +
+            '<button onclick="(function(btn){var b=document.getElementById(\'res-psycho-body-wrap\');var open=b.style.display!==\'none\';b.style.display=open?\'none\':\'block\';btn.querySelector(\'.res-psycho-tog\').textContent=open?\'▶\':\'▼\';if(!open)window._resLoadSAPsycho();})(this)" style="width:100%;padding:13px 20px;text-align:left;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;">' +
+              '<div style="width:3px;height:14px;background:#d4a843;border-radius:2px;flex-shrink:0;"></div>' +
               '<div style="flex:1;">' +
-                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">' + _resRoleLabel + ' · Statistics</div>' +
-                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Psychometric Analysis</div>' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">' + _resRoleLabel + ' · Psychometrics</div>' +
+                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Instrument Analysis</div>' +
               '</div>' +
+              '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.54rem;color:var(--dim);margin-right:8px;">MMAS-8 · MAP · PEACS</div>' +
               '<div class="res-psycho-tog" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.70rem;color:var(--dim);">▶</div>' +
             '</button>' +
             '<div id="res-psycho-body-wrap" style="display:none;border-top:1px solid var(--border);padding:18px 20px 22px;">' +
-              '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);">' +
-                '<button class="res-psycho-sub-btn" data-sub="reliability"    onclick="resPsychoSwitchSub(\'reliability\')"    style="font-family:\'IBM Plex Mono\',monospace;font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;padding:5px 13px;border-radius:5px;border:1px solid rgba(180,83,9,0.38);background:rgba(180,83,9,0.08);color:#b45309;cursor:pointer;transition:all 0.15s;">Reliability</button>' +
-                '<button class="res-psycho-sub-btn" data-sub="classification" onclick="resPsychoSwitchSub(\'classification\')" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;padding:5px 13px;border-radius:5px;border:1px solid var(--border2);background:var(--card2);color:var(--muted);cursor:pointer;transition:all 0.15s;">Classification</button>' +
-                '<button class="res-psycho-sub-btn" data-sub="effectsize"     onclick="resPsychoSwitchSub(\'effectsize\')"     style="font-family:\'IBM Plex Mono\',monospace;font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;padding:5px 13px;border-radius:5px;border:1px solid var(--border2);background:var(--card2);color:var(--muted);cursor:pointer;transition:all 0.15s;">Effect Size</button>' +
-                '<button class="res-psycho-sub-btn" data-sub="methods"        onclick="resPsychoSwitchSub(\'methods\')"        style="font-family:\'IBM Plex Mono\',monospace;font-size:0.62rem;letter-spacing:0.10em;text-transform:uppercase;padding:5px 13px;border-radius:5px;border:1px solid var(--border2);background:var(--card2);color:var(--muted);cursor:pointer;transition:all 0.15s;">Methods</button>' +
-              '</div>' +
-              '<div id="res-psycho-body" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;color:var(--dim);">Loading…</div>' +
+              '<div id="res-psycho-body" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;color:var(--dim);"></div>' +
             '</div>';
 
           _target.parentNode.insertBefore(_psychoMod, _target);
@@ -3879,104 +4006,6 @@ function enterResearcherDashboard() {
           }
         }
 
-        // ── MODULE 15: Validation & Reliability (PI only) ──────────────────
-        // Injects the psychometric validation panel: Cronbach α, domain reliability,
-        // corrected item-total correlations, and MAP vs MMAS-8 convergent validity.
-        // Reuses stu-val-* IDs — safe because PI and student are mutually exclusive.
-        if (_isPiWs) {
-          (function() {
-            if (document.getElementById('res-mod-validation')) return;
-            var _vtarget = document.getElementById('researcher-patient-panel') || document.getElementById('res-analytics-panel');
-            if (!_vtarget || !_vtarget.parentNode) return;
-
-            var _valMod = document.createElement('div');
-            _valMod.id = 'res-mod-validation';
-            _valMod.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;';
-            _valMod.innerHTML =
-              '<button onclick="(function(btn){var b=document.getElementById(\'res-val-body\');var open=b.style.display!==\'none\';b.style.display=open?\'none\':\'\';btn.querySelector(\'.res-val-tog\').textContent=open?\'▶\':\'▼\';})(this)" style="width:100%;padding:13px 20px;text-align:left;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;">' +
-                '<div style="width:3px;height:14px;background:#475569;border-radius:2px;flex-shrink:0;"></div>' +
-                '<div style="flex:1;">' +
-                  '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);">' + _resRoleLabel + ' · Validation</div>' +
-                  '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.76rem;font-weight:700;color:var(--bright);margin-top:1px;">Validation &amp; Reliability</div>' +
-                '</div>' +
-                '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.54rem;color:var(--dim);margin-right:8px;">Cronbach α · Item correlations · Convergent validity</div>' +
-                '<div class="res-val-tog" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.70rem;color:var(--dim);">▶</div>' +
-              '</button>' +
-              '<div id="res-val-body" style="display:none;border-top:1px solid var(--border);">' +
-                '<div id="stu-val-placeholder" style="padding:20px 24px;text-align:center;">' +
-                  '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.70rem;color:var(--dim);line-height:1.9;">Collect ≥ 10 MAP assessments to unlock psychometric statistics.<br>Results auto-update as your cohort grows.</div>' +
-                '</div>' +
-                '<div id="stu-validation-panel" style="display:none;padding:20px 24px;">' +
-                  '<div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:12px;margin-bottom:20px;align-items:start;">' +
-                    '<div style="background:var(--card2);border:1px solid var(--border);border-top:3px solid #475569;border-radius:9px;padding:14px 20px;text-align:center;min-width:100px;">' +
-                      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Cronbach α · MAP</div>' +
-                      '<div id="stu-val-alpha" style="font-family:\'IBM Plex Mono\',monospace;font-size:2.2rem;font-weight:700;color:var(--bright);line-height:1;letter-spacing:-0.03em;">—</div>' +
-                      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;color:var(--dim);margin-top:4px;">8 items · N=<span id="stu-val-map-n">—</span></div>' +
-                    '</div>' +
-                    '<div style="background:rgba(212,168,67,0.07);border:1px solid rgba(212,168,67,0.15);border-top:3px solid #d4a843;border-radius:9px;padding:14px 16px;">' +
-                      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:#b45309;margin-bottom:8px;">Architecture · Q2 Q3 Q6</div>' +
-                      '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px;">' +
-                        '<span id="stu-val-arch-val" style="font-family:\'IBM Plex Mono\',monospace;font-size:1.5rem;font-weight:700;color:#d4a843;line-height:1;">—</span>' +
-                        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;color:#b45309;">avg domain score</span>' +
-                      '</div>' +
-                      '<div style="height:5px;background:rgba(212,168,67,0.12);border-radius:3px;overflow:hidden;">' +
-                        '<div id="stu-val-arch-bar" style="height:100%;width:0%;background:#d4a843;border-radius:3px;transition:width 0.6s;"></div>' +
-                      '</div>' +
-                      '<div style="display:flex;justify-content:space-between;margin-top:4px;">' +
-                        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.46rem;color:var(--dim);">α=</span>' +
-                        '<span id="stu-val-alpha-arch" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;color:#b45309;font-weight:700;">—</span>' +
-                      '</div>' +
-                    '</div>' +
-                    '<div style="background:rgba(37,99,235,0.07);border:1px solid rgba(78,156,245,0.15);border-top:3px solid #4e9cf5;border-radius:9px;padding:14px 16px;">' +
-                      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:#2563eb;margin-bottom:8px;">Execution · Q1 Q4 Q5 Q8</div>' +
-                      '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px;">' +
-                        '<span id="stu-val-exec-val" style="font-family:\'IBM Plex Mono\',monospace;font-size:1.5rem;font-weight:700;color:#4e9cf5;line-height:1;">—</span>' +
-                        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;color:#2563eb;">avg domain score</span>' +
-                      '</div>' +
-                      '<div style="height:5px;background:rgba(78,156,245,0.12);border-radius:3px;overflow:hidden;">' +
-                        '<div id="stu-val-exec-bar" style="height:100%;width:0%;background:#4e9cf5;border-radius:3px;transition:width 0.6s;"></div>' +
-                      '</div>' +
-                      '<div style="display:flex;justify-content:space-between;margin-top:4px;">' +
-                        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.46rem;color:var(--dim);">α=</span>' +
-                        '<span id="stu-val-alpha-exec" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;color:#2563eb;font-weight:700;">—</span>' +
-                      '</div>' +
-                    '</div>' +
-                  '</div>' +
-                  '<div style="background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;margin-bottom:16px;">' +
-                    '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Corrected Item-Total Correlations (r<sub>it</sub>)</div>' +
-                    '<div style="display:flex;flex-direction:column;gap:5px;" id="stu-val-itc-grid">' +
-                      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.68rem;color:var(--dim);">Populating…</div>' +
-                    '</div>' +
-                  '</div>' +
-                  '<div style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.12);border-radius:9px;padding:14px 16px;">' +
-                    '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;letter-spacing:0.16em;text-transform:uppercase;color:#059669;margin-bottom:12px;">Convergent Validity · MAP vs MMAS-8 · N=<span id="stu-val-mmas-n">—</span> MMAS · <span id="stu-val-paired-n">—</span> matched pairs</div>' +
-                    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">' +
-                      '<div style="text-align:center;">' +
-                        '<div id="stu-val-r" style="font-family:\'IBM Plex Mono\',monospace;font-size:1.6rem;font-weight:700;color:#059669;line-height:1;">—</div>' +
-                        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;color:var(--muted);margin-top:3px;">Pearson r</div>' +
-                      '</div>' +
-                      '<div style="text-align:center;">' +
-                        '<div id="stu-val-agree-pct" style="font-family:\'IBM Plex Mono\',monospace;font-size:1.6rem;font-weight:700;color:#059669;line-height:1;">—</div>' +
-                        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;color:var(--muted);margin-top:3px;">Pattern agreement</div>' +
-                      '</div>' +
-                      '<div style="text-align:center;">' +
-                        '<div id="stu-val-extra-pct" style="font-family:\'IBM Plex Mono\',monospace;font-size:1.6rem;font-weight:700;color:#d97706;line-height:1;">—</div>' +
-                        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.52rem;color:var(--muted);margin-top:3px;">MAP detects extra non-adh</div>' +
-                      '</div>' +
-                    '</div>' +
-                    '<div id="stu-val-ctx-val" style="display:none;"></div>' +
-                    '<div id="stu-val-ctx-bar" style="display:none;"></div>' +
-                    '<div style="margin-top:10px;font-family:\'IBM Plex Mono\',monospace;font-size:0.56rem;color:var(--dim);line-height:1.7;">Requires same patient_number collected on both MAP and MMAS-8. Pearson r = convergent validity coefficient. Pattern agreement = % patients classified identically by both instruments.</div>' +
-                  '</div>' +
-                  '<div style="margin-top:12px;text-align:right;">' +
-                    '<button onclick="_stuExportValidationBundle()" style="font-family:\'IBM Plex Mono\',monospace;font-size:0.60rem;letter-spacing:0.10em;text-transform:uppercase;background:var(--card2);border:1px solid var(--border2);color:var(--muted);border-radius:7px;padding:6px 14px;cursor:pointer;" onmouseover="this.style.background=\'#e2e8f0\'" onmouseout="this.style.background=\'#f8fafc\'">↓ Export Paired Validation Dataset</button>' +
-                  '</div>' +
-                '</div>' +
-              '</div>';
-
-            _vtarget.parentNode.insertBefore(_valMod, _vtarget);
-          })();
-        }
 
         // ── MODULE · TESSERA GRC Grant Resource Center — researcher / PI card ──────
         (function() {
@@ -4091,14 +4120,6 @@ function enterResearcherDashboard() {
               loading: 'Loading DHIS2 integration\u2026'
             },
             {
-              id: 'res-mod-certification',
-              bodyId: 'res-certification-body',
-              color: '#d4a843',
-              eyebrow: 'MAP Certification',
-              title: 'Certification Hub',
-              loading: 'Loading certification hub\u2026'
-            },
-            {
               id: 'res-mod-portfolio',
               bodyId: 'res-portfolio-body',
               color: '#8b6ff5',
@@ -4171,24 +4192,22 @@ function enterResearcherDashboard() {
           //   Integrations = MaaS + DHIS2 + Pharmacy + Open Data (external service connectors)
           //   TESSERA      = consortium membership + LMIC training (global research community)
           var PI_RAIL_TABS = [
-            { id: 'overview',      icon: '⌂', label: 'Overview',
+            { id: 'overview',  icon: '⌂', label: 'Overview',
               elements: ['study-title-nudge', 'session-launcher-panel', 'dash-pulse-bar-ref'] },
-            { id: 'studies',       icon: '◈', label: 'Studies',
-              elements: ['pi-research-panel', 'res-mod-registry', 'res-mod-country-intel', 'res-mod-isr'] },
-            { id: 'analytics',     icon: '∿', label: 'Analytics',
-              elements: ['res-analytics-panel', 'res-advanced-accordion', 'res-mod-heor', 'res-mod-equity'] },
-            { id: 'analysis',      icon: '∑', label: 'Validate',
-              elements: ['res-mod-validation', 'res-mod-psycho'] },
-            { id: 'publications',  icon: '✦', label: 'Publish',
-              elements: ['res-mod-apa-gen', 'res-mod-predictor', 'res-mod-power', 'res-mod-certification'] },
-            { id: 'records',       icon: '≡', label: 'Records',
-              elements: ['res-records-banner', 'res-mod-cohort-map', 'researcher-patient-panel', 'res-tools-bar'] },
-            { id: 'longitudinal',  icon: '≋', label: 'Longitudinal',
-              elements: ['res-mod-longitudinal', 'res-mod-predictive'] },
-            { id: 'integrations',  icon: '⊕', label: 'Integrations',
-              elements: ['res-mod-maas', 'res-mod-dhis2', 'res-mod-pharmacy', 'res-mod-open-data'] },
-            { id: 'tessera',       icon: '⬡', label: 'TESSERA',
-              elements: ['res-mod-tessera', 'res-mod-lmic-training'] },
+            { id: 'patients',  icon: '≡', label: 'Patients',
+              elements: ['pi-tab-panel-records', 'researcher-patient-panel'] },
+            { id: 'sites',     icon: '◈', label: 'Sites',
+              elements: ['pi-tab-panel-team', 'res-mod-cohort-map'] },
+            { id: 'reports',   icon: '↓', label: 'Reports',
+              elements: ['pi-tab-panel-governance'] },
+            { id: 'research',  icon: '∿', label: 'Research',
+              elements: ['pi-research-panel',
+                         'res-analytics-panel', 'res-advanced-accordion', 'res-mod-heor', 'res-mod-equity',
+                         'res-records-banner', 'res-tools-bar', 'res-mod-longitudinal', 'res-mod-predictive',
+                         'res-mod-psycho', 'res-mod-apa-gen', 'res-mod-predictor',
+                         'res-mod-power', 'res-mod-maas', 'res-mod-dhis2',
+                         'res-mod-pharmacy', 'res-mod-open-data', 'res-mod-tessera', 'res-mod-lmic-training',
+                         'res-mod-registry', 'res-mod-country-intel', 'res-mod-isr'] },
           ];
           setTimeout(function() {
             if (typeof window._atlasInstallRail === 'function') {
@@ -4222,7 +4241,7 @@ function enterResearcherDashboard() {
                 '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">' +
                   _piOvKpi('pi-ov-enrolled',  'Enrolled',     '—', 'participants') +
                   _piOvKpi('pi-ov-velocity',  'Velocity',     '—', 'per week') +
-                  _piOvKpi('pi-ov-mmas',      'Mean MMAS-8',  '—', 'avg score / 8') +
+                  _piOvKpi('pi-ov-mmas',      'Additive Score',  '—', '0–8 adherence scale') +
                   _piOvKpi('pi-ov-pe',        'Mean PE',      '—', 'predictive emergence') +
                 '</div>' +
 
@@ -4275,7 +4294,7 @@ function enterResearcherDashboard() {
                       '<div id="pi-ov-fragility-n" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:2.2rem;font-weight:300;color:#f59e0b;line-height:1;">—</div>' +
                       '<div style="font-family:var(--font-mono);font-size:0.66rem;color:var(--dim);">patients</div>' +
                     '</div>' +
-                    '<div style="font-family:var(--font-mono);font-size:0.64rem;color:var(--dim);margin-top:4px;line-height:1.5;">MMAS-8 ≥ 6 · PE &lt; 0.65<br>hidden binding constraint</div>' +
+                    '<div style="font-family:var(--font-mono);font-size:0.64rem;color:var(--dim);margin-top:4px;line-height:1.5;">Additive &lt; 6 · PE &lt; 0.65<br>hidden binding constraint</div>' +
                   '</div>' +
 
                   // CONSORT numbers
@@ -4376,16 +4395,38 @@ function enterResearcherDashboard() {
               '</div>';
             }
 
+            // ── MAP domain computation from raw q1–q8 fields ─────────────
+            function _ovDom(r) {
+              var _q = function(n) {
+                var v = r['map_q'+n]; if (v != null) return +v;
+                v = r['q'+n]; return v != null ? +v : null;
+              };
+              var q1=_q(1),q2=_q(2),q3=_q(3),q4=_q(4),q5=_q(5),q6=_q(6),q7=_q(7),q8=_q(8);
+              if (q1===null && q2===null && q5===null) {
+                return {
+                  pe: r.pe!=null ? +r.pe : null,
+                  a:  r.a!=null  ? +r.a  : null,
+                  e:  r.e!=null  ? +r.e  : null,
+                  c:  r.c!=null  ? +r.c  : null,
+                  additive: r.score!=null ? +r.score : null
+                };
+              }
+              var _d = function(v) { return v !== null ? v : 0; };
+              var a  = ((1-_d(q2))+(1-_d(q3))+(1-_d(q6)))/3;
+              var e  = ((1-_d(q1))+_d(q5)+(1-_d(q8)))/3;
+              var c  = 0.5+0.5*((1-_d(q4))+(1-_d(q7)))/2;
+              var pe = Math.pow(Math.max(0,a*e*c),1/3);
+              var additive = (1-_d(q1))+(1-_d(q2))+(1-_d(q3))+(1-_d(q4))+_d(q5)+(1-_d(q6))+(1-_d(q7))+(1-_d(q8));
+              return { pe:pe, a:a, e:e, c:c, additive:additive };
+            }
+
             // ── Stability classification helper ───────────────────────────
             function _pisfClass(r) {
-              var pe = r.pe != null ? +r.pe : null;
-              var a  = r.a  != null ? +r.a  : null;
-              var e  = r.e  != null ? +r.e  : null;
-              var c  = r.c  != null ? +r.c  : null;
-              var sc = r.score != null ? +r.score : null;
+              var d  = _ovDom(r);
+              var pe = d.pe, a = d.a, e = d.e, c = d.c, sc = d.additive;
               if (pe === null) return 'unknown';
               if (a !== null && e !== null && c !== null && a < 0.55 && e < 0.55 && c < 0.55) return 'fragile';
-              if (sc !== null && sc >= 6 && pe < 0.65) return 'hidden';
+              if (sc !== null && sc < 6 && pe < 0.65) return 'hidden';
               if ((a !== null && a < 0.35) || (e !== null && e < 0.35) || (c !== null && c < 0.35)) return 'domain';
               if (pe >= 0.65 && (a == null || a >= 0.55) && (e == null || e >= 0.55) && (c == null || c >= 0.55)) return 'stable';
               return 'conditional';
@@ -4397,39 +4438,51 @@ function enterResearcherDashboard() {
               var _s = function(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
               var _sw = function(id, v) { var el = document.getElementById(id); if (el) el.style.width = v; };
 
+              // Pre-compute MAP domains for every record (reads q1–q8 / map_q1–map_q8)
+              var domains = records.map(function(r) { return _ovDom(r); });
+
               var count    = records.length;
               var now      = Date.now();
               var recent   = records.filter(function(r){ return (r.timestamp||0) > now - 8*7*24*3600*1000; });
               var velocity = (recent.length / 8).toFixed(1);
 
-              // MMAS-8 mean
-              var scoreRecs = records.filter(function(r){ return r.score != null; });
-              var meanMmas  = scoreRecs.length ? (scoreRecs.reduce(function(s,r){ return s+(+r.score); },0) / scoreRecs.length).toFixed(2) : '—';
+              // Additive score mean (0–8, higher = more adherent)
+              var addRecs  = domains.filter(function(d){ return d.additive!=null; });
+              var meanAdd  = addRecs.length ? (addRecs.reduce(function(s,d){ return s+d.additive; },0)/addRecs.length).toFixed(2) : '—';
 
               // PE mean
-              var peRecs   = records.filter(function(r){ return r.pe != null; });
-              var meanPe   = peRecs.length ? (peRecs.reduce(function(s,r){ return s+(+r.pe); },0) / peRecs.length).toFixed(3) : '—';
+              var peRecs   = domains.filter(function(d){ return d.pe!=null; });
+              var meanPe   = peRecs.length ? (peRecs.reduce(function(s,d){ return s+d.pe; },0)/peRecs.length).toFixed(3) : '—';
 
               // MAP domain means
-              var domRecs  = records.filter(function(r){ return r.a!=null && r.e!=null && r.c!=null; });
-              var meanA    = domRecs.length ? domRecs.reduce(function(s,r){ return s+(+r.a); },0)/domRecs.length : null;
-              var meanE    = domRecs.length ? domRecs.reduce(function(s,r){ return s+(+r.e); },0)/domRecs.length : null;
-              var meanC    = domRecs.length ? domRecs.reduce(function(s,r){ return s+(+r.c); },0)/domRecs.length : null;
+              var domRecs  = domains.filter(function(d){ return d.a!=null && d.e!=null && d.c!=null; });
+              var meanA    = domRecs.length ? domRecs.reduce(function(s,d){ return s+d.a; },0)/domRecs.length : null;
+              var meanE    = domRecs.length ? domRecs.reduce(function(s,d){ return s+d.e; },0)/domRecs.length : null;
+              var meanC    = domRecs.length ? domRecs.reduce(function(s,d){ return s+d.c; },0)/domRecs.length : null;
 
-              // Adherence distribution
+              // Adherence distribution (additive < 6 = low, 6–7.99 = moderate, 8 = high)
               var hiN=0, medN=0, lowN=0;
-              scoreRecs.forEach(function(r){ var sc=+r.score; if(sc<6)hiN++; else if(sc<8)medN++; else lowN++; });
+              addRecs.forEach(function(d){ var sc=d.additive; if(sc<6)hiN++; else if(sc<8)medN++; else lowN++; });
               var tot = hiN+medN+lowN || 1;
               var hiPct=Math.round(hiN/tot*100), medPct=Math.round(medN/tot*100), lowPct=100-hiPct-medPct;
 
-              // Fragility: MMAS≥6 but PE<0.65
-              var fragN = records.filter(function(r){ return r.score>=6 && r.pe!=null && (+r.pe)<0.65; }).length;
+              // Fragility: additive < 6 and PE < 0.65 (hidden binding constraint)
+              var fragN = domains.filter(function(d){ return d.additive!=null && d.additive<6 && d.pe!=null && d.pe<0.65; }).length;
 
-              // Stability band
-              var sfRecs = records.filter(function(r){ return r.pe != null; });
+              // Stability band — classify from computed domains directly
+              var sfDoms   = domains.filter(function(d){ return d.pe!=null; });
               var sfCounts = { stable:0, conditional:0, domain:0, hidden:0, fragile:0, unknown:0 };
-              sfRecs.forEach(function(r){ sfCounts[_pisfClass(r)]++; });
-              var sfTotal = sfRecs.length || 1;
+              sfDoms.forEach(function(d){
+                var pe=d.pe, a=d.a, e=d.e, c=d.c, sc=d.additive, cls;
+                if (pe===null) cls='unknown';
+                else if (a!==null && e!==null && c!==null && a<0.55 && e<0.55 && c<0.55) cls='fragile';
+                else if (sc!==null && sc<6 && pe<0.65) cls='hidden';
+                else if ((a!==null&&a<0.35)||(e!==null&&e<0.35)||(c!==null&&c<0.35)) cls='domain';
+                else if (pe>=0.65 && (a==null||a>=0.55) && (e==null||e>=0.55) && (c==null||c>=0.55)) cls='stable';
+                else cls='conditional';
+                sfCounts[cls]++;
+              });
+              var sfTotal = sfDoms.length || 1;
               function _sfPct(n) { return ((n/sfTotal)*100).toFixed(1)+'%'; }
               function _sfPctN(n) { return ((n/sfTotal)*100); }
 
@@ -4451,7 +4504,7 @@ function enterResearcherDashboard() {
               // Populate KPIs
               _s('pi-ov-enrolled-val', count.toLocaleString() + (tgt>0 ? ' / '+tgt : ''));
               _s('pi-ov-velocity-val', velocity);
-              _s('pi-ov-mmas-val',     meanMmas);
+              _s('pi-ov-mmas-val',     meanAdd);
               _s('pi-ov-pe-val',       meanPe);
 
               // Enrollment bar
@@ -4490,9 +4543,9 @@ function enterResearcherDashboard() {
 
               // CONSORT
               _s('pi-ov-c-assessed', (cd.assessed || count).toLocaleString());
-              _s('pi-ov-c-enrolled', (cd.enrolledN || scoreRecs.length).toLocaleString());
+              _s('pi-ov-c-enrolled', (cd.enrolledN || addRecs.length).toLocaleString());
               _s('pi-ov-c-ltfu',     (cd.ltfuN || 0).toLocaleString());
-              _s('pi-ov-c-analyzed', (cd.analyzedN || scoreRecs.length).toLocaleString());
+              _s('pi-ov-c-analyzed', (cd.analyzedN || addRecs.length).toLocaleString());
 
               // Stability band KPI labels
               _s('pi-ov-sf-stable',      sfCounts.stable + ' · ' + _sfPct(sfCounts.stable));
@@ -4513,7 +4566,342 @@ function enterResearcherDashboard() {
               _s('pi-ov-study-name', _wp2.study_title || _wp2.display_name || _wp2.name || '—');
               var _irbEl2 = document.getElementById('pi-ov-irb');
               if (_irbEl2 && _wp2.irb_protocol) _irbEl2.textContent = 'Protocol · ' + _wp2.irb_protocol;
+
+              // Refresh Reports tab with same cohort records
+              if (typeof window._piRefreshReports === 'function') window._piRefreshReports(records);
             };
+
+            // ══════════════════════════════════════════════════════════════
+            // REPORTS TAB — three sub-tab modules
+            // ══════════════════════════════════════════════════════════════
+
+            // ── Phenotype classifier (mirrors clinical-practice.js) ───────
+            function _rptPheno(d) {
+              if (!d || d.pe === null) return 'UNA';
+              if (d.pe >= 0.85) return 'A';
+              if (d.a < 0.55 && d.a <= d.e) return 'INA';
+              if (d.e < 0.55 && d.e < d.a)  return 'UNA';
+              if (d.pe >= 0.55) return 'PA';
+              return d.a < d.e ? 'INA' : 'UNA';
+            }
+
+            function _rptPeColor(pe) {
+              if (pe === null || pe === undefined) return 'var(--dim)';
+              if (pe < 0.55) return '#ef4444';
+              if (pe < 0.65) return '#f59e0b';
+              return '#2ec98a';
+            }
+
+            var _RPT_PHENO_COLORS = { A:'#2ec98a', PA:'#4e9cf5', INA:'#f59e0b', UNA:'#ef4444' };
+            var _RPT_PHENO_LABELS = { A:'Adherent', PA:'Part. Adherent', INA:'Intentional', UNA:'Unintentional' };
+
+            // ── Sub-tab switcher ─────────────────────────────────────────
+            window._rptSwitch = function(tab) {
+              ['benchmark','queue','snapshot'].forEach(function(t) {
+                var p = document.getElementById('rpt-panel-'+t);
+                var b = document.getElementById('rpt-tab-'+t);
+                if (p) p.style.display = (t === tab) ? '' : 'none';
+                if (b) {
+                  b.style.borderBottomColor = (t === tab) ? 'var(--pe)' : 'transparent';
+                  b.style.color = (t === tab) ? 'var(--bright)' : 'var(--dim)';
+                }
+              });
+            };
+
+            // ── CSV export ───────────────────────────────────────────────
+            window._rptExportCSV = function() {
+              var recs = window._rptRecords || [];
+              if (!recs.length) return;
+              var header = 'patient_id,site,condition,date,pe,architecture,execution,context_guard,additive,phenotype';
+              var rows = recs.map(function(r) {
+                var d = _ovDom(r);
+                return [
+                  r.patient_number || r.patient_id || '',
+                  r.institution_code || r.workspace_key || r.site || '',
+                  (r.condition || '').replace(/,/g,''),
+                  r.timestamp ? new Date(r.timestamp).toISOString().slice(0,10) : '',
+                  d.pe   != null ? d.pe.toFixed(3)   : '',
+                  d.a    != null ? d.a.toFixed(3)    : '',
+                  d.e    != null ? d.e.toFixed(3)    : '',
+                  d.c    != null ? d.c.toFixed(3)    : '',
+                  d.additive != null ? d.additive.toFixed(2) : '',
+                  _rptPheno(d)
+                ].join(',');
+              });
+              var csv = [header].concat(rows).join('\n');
+              var blob = new Blob([csv], { type: 'text/csv' });
+              var a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'atlas-cohort-' + new Date().toISOString().slice(0,10) + '.csv';
+              a.click();
+            };
+
+            // ── Master refresh (called by _piRefreshOverview) ─────────────
+            window._piRefreshReports = function(records) {
+              if (!records || !records.length) return;
+              window._rptRecords = records;
+              _rptRenderBenchmark(records);
+              _rptRenderQueue();
+              _rptRenderSnapshot(records);
+            };
+
+            // ── Site Benchmark ───────────────────────────────────────────
+            function _rptRenderBenchmark(records) {
+              var el = document.getElementById('rpt-benchmark-body');
+              if (!el) return;
+
+              // Group records by site identifier
+              var sites = {};
+              records.forEach(function(r) {
+                var key = r.institution_code || r.workspace_key || r.site || 'Main';
+                if (!sites[key]) sites[key] = [];
+                sites[key].push(r);
+              });
+              var siteKeys = Object.keys(sites);
+              if (!siteKeys.length) {
+                el.innerHTML = '<div style="color:var(--dim);padding:20px;font-family:var(--font-mono);font-size:0.78rem;">No site data available.</div>';
+                return;
+              }
+
+              var rows = siteKeys.map(function(key) {
+                var recs = sites[key];
+                var doms = recs.map(_ovDom);
+                var peArr  = doms.filter(function(d){ return d.pe != null; });
+                var domArr = doms.filter(function(d){ return d.a != null && d.e != null && d.c != null; });
+                var avg = function(arr, fn) { return arr.length ? arr.reduce(function(s,d){ return s+fn(d); },0)/arr.length : null; };
+                var ph = { A:0, PA:0, INA:0, UNA:0 };
+                doms.forEach(function(d){ ph[_rptPheno(d)]++; });
+                return {
+                  key: key, n: recs.length,
+                  pe: avg(peArr,  function(d){ return d.pe; }),
+                  a:  avg(domArr, function(d){ return d.a; }),
+                  e:  avg(domArr, function(d){ return d.e; }),
+                  c:  avg(domArr, function(d){ return d.c; }),
+                  ph: ph
+                };
+              });
+              rows.sort(function(a,b){ return (a.pe||0) - (b.pe||0); });
+
+              var mkBar = function(v, color) {
+                var pct = v != null ? Math.round(v*100) : 0;
+                return '<div style="display:flex;align-items:center;gap:6px;">' +
+                  '<div style="flex:1;height:4px;background:var(--border2);border-radius:2px;min-width:60px;">' +
+                    '<div style="width:'+pct+'%;height:100%;background:'+color+';border-radius:2px;"></div>' +
+                  '</div>' +
+                  '<span style="min-width:38px;text-align:right;font-family:var(--font-mono);font-size:0.72rem;color:'+color+';">' + (v != null ? v.toFixed(3) : '—') + '</span>' +
+                '</div>';
+              };
+
+              var mkPheno = function(ph) {
+                return ['A','PA','INA','UNA'].filter(function(c){ return ph[c]>0; }).map(function(c){
+                  return '<span style="color:'+_RPT_PHENO_COLORS[c]+';margin-right:6px;font-size:0.68rem;">'+c+' '+ph[c]+'</span>';
+                }).join('') || '<span style="color:var(--dim);">—</span>';
+              };
+
+              var th = 'text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border2);white-space:nowrap;';
+              var td = 'padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;';
+
+              var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">' +
+                '<thead><tr>' +
+                  '<th style="'+th+'">Site</th><th style="'+th+'">n</th>' +
+                  '<th style="'+th+'min-width:130px;">Mean PE</th>' +
+                  '<th style="'+th+'min-width:110px;">Architecture</th>' +
+                  '<th style="'+th+'min-width:110px;">Execution</th>' +
+                  '<th style="'+th+'min-width:110px;">Context-Guard</th>' +
+                  '<th style="'+th+'">Phenotype Mix</th>' +
+                '</tr></thead><tbody>';
+
+              rows.forEach(function(row) {
+                html += '<tr>' +
+                  '<td style="'+td+'font-family:var(--font-mono);font-size:0.78rem;color:var(--bright);font-weight:500;">' + row.key + '</td>' +
+                  '<td style="'+td+'font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);">' + row.n + '</td>' +
+                  '<td style="'+td+'">' + mkBar(row.pe, _rptPeColor(row.pe)) + '</td>' +
+                  '<td style="'+td+'">' + mkBar(row.a,  '#4e9cf5') + '</td>' +
+                  '<td style="'+td+'">' + mkBar(row.e,  '#8b6ff5') + '</td>' +
+                  '<td style="'+td+'">' + mkBar(row.c,  '#2ec98a') + '</td>' +
+                  '<td style="'+td+'">' + mkPheno(row.ph) + '</td>' +
+                '</tr>';
+              });
+              html += '</tbody></table></div>';
+              el.innerHTML = html;
+            }
+
+            // ── Priority Queue ───────────────────────────────────────────
+            window._rptRenderQueue = function() {
+              var records = window._rptRecords || [];
+              var el  = document.getElementById('rpt-queue-body');
+              var sel = document.getElementById('rpt-queue-site');
+              var siteFilter = sel ? sel.value : '';
+              if (!el) return;
+
+              // Latest record per patient
+              var patMap = {};
+              records.forEach(function(r) {
+                var pid = r.patient_number || r.patient_id || r.respondent_id || ('anon'+Math.random());
+                if (!patMap[pid] || (r.timestamp||0) > (patMap[pid].timestamp||0)) patMap[pid] = r;
+              });
+              var patients = Object.values(patMap);
+
+              // Populate site filter options once
+              if (sel && sel.options.length <= 1) {
+                var seen = {};
+                patients.forEach(function(r){
+                  var s = r.institution_code || r.workspace_key || r.site || '';
+                  if (s && !seen[s]) { seen[s]=1; var o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); }
+                });
+              }
+
+              if (siteFilter) {
+                patients = patients.filter(function(r){
+                  return (r.institution_code||r.workspace_key||r.site||'') === siteFilter;
+                });
+              }
+
+              var rows = patients.map(function(r){ var d=_ovDom(r); return {r:r,d:d,ph:_rptPheno(d)}; });
+              rows.sort(function(a,b){ return (a.d.pe||0)-(b.d.pe||0); });
+
+              if (!rows.length) {
+                el.innerHTML = '<div style="color:var(--dim);padding:20px;font-family:var(--font-mono);font-size:0.78rem;">No records found.</div>';
+                return;
+              }
+
+              var th = 'text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border2);';
+              var td = 'padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:var(--font-mono);font-size:0.74rem;vertical-align:middle;';
+
+              var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">' +
+                '<thead><tr>' +
+                  '<th style="'+th+'text-align:right;">#</th>' +
+                  '<th style="'+th+'">Patient</th><th style="'+th+'">Site</th>' +
+                  '<th style="'+th+'">PE</th><th style="'+th+'">Phenotype</th>' +
+                  '<th style="'+th+'">Condition</th><th style="'+th+'">Last Assessed</th>' +
+                '</tr></thead><tbody>';
+
+              rows.forEach(function(row, i) {
+                var r=row.r, d=row.d, ph=row.ph;
+                var pid  = r.patient_number || r.patient_id || '—';
+                var site = r.institution_code || r.workspace_key || r.site || '—';
+                var cond = r.condition || '—';
+                var ts   = r.timestamp ? new Date(r.timestamp) : null;
+                var dayAge = ts ? Math.floor((Date.now()-ts.getTime())/86400000) : null;
+                var dateStr = ts ? ts.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+                var ageStr  = dayAge !== null ? (dayAge===0?'Today':dayAge===1?'Yesterday':dayAge+'d ago') : '';
+                var pc = _RPT_PHENO_COLORS[ph] || 'var(--dim)';
+                html += '<tr>' +
+                  '<td style="'+td+'text-align:right;color:var(--dim);">'+(i+1)+'</td>' +
+                  '<td style="'+td+'color:var(--bright);">'+pid+'</td>' +
+                  '<td style="'+td+'color:var(--muted);">'+site+'</td>' +
+                  '<td style="'+td+'font-weight:600;color:'+_rptPeColor(d.pe)+';">'+(d.pe!=null?d.pe.toFixed(3):'—')+'</td>' +
+                  '<td style="'+td+'"><span style="color:'+pc+';background:'+pc+'22;border:1px solid '+pc+'44;border-radius:4px;padding:2px 7px;font-size:0.66rem;">'+(_RPT_PHENO_LABELS[ph]||ph)+'</span></td>' +
+                  '<td style="'+td+'color:var(--muted);">'+cond+'</td>' +
+                  '<td style="'+td+'color:var(--dim);">'+dateStr+(ageStr?' <span style="font-size:0.65rem;">('+ageStr+')</span>':'')+'</td>' +
+                '</tr>';
+              });
+              html += '</tbody></table></div>';
+              el.innerHTML = html;
+            };
+
+            // ── Monthly Snapshot ─────────────────────────────────────────
+            function _rptRenderSnapshot(records) {
+              var el = document.getElementById('rpt-snapshot-body');
+              if (!el) return;
+
+              var now   = new Date();
+              var curMs = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+              var prvMs = new Date(now.getFullYear(), now.getMonth()-1, 1).getTime();
+
+              var curRecs = records.filter(function(r){ return (r.timestamp||0) >= curMs; });
+              var prvRecs = records.filter(function(r){ return (r.timestamp||0) >= prvMs && (r.timestamp||0) < curMs; });
+
+              function _stats(recs) {
+                var doms = recs.map(_ovDom);
+                var peArr = doms.filter(function(d){ return d.pe!=null; });
+                var mean  = peArr.length ? peArr.reduce(function(s,d){ return s+d.pe; },0)/peArr.length : null;
+                var ph = {A:0,PA:0,INA:0,UNA:0};
+                doms.forEach(function(d){ ph[_rptPheno(d)]++; });
+                return { n:recs.length, mean:mean, ph:ph };
+              }
+
+              var cur = _stats(curRecs);
+              var prv = _stats(prvRecs);
+              var delta = (cur.mean!=null && prv.mean!=null) ? (cur.mean - prv.mean) : null;
+              var deltaStr  = delta===null ? '—' : (delta>=0?'+':'')+delta.toFixed(3);
+              var deltaColor = delta===null ? 'var(--dim)' : (delta>=0 ? '#2ec98a' : '#ef4444');
+
+              var mName  = now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+              var pmName = new Date(now.getFullYear(),now.getMonth()-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+
+              // Top 5 at-risk patients (all records, latest per patient, PE < 0.65)
+              var pm = {};
+              records.forEach(function(r){
+                var pid = r.patient_number||r.patient_id||('anon'+Math.random());
+                if (!pm[pid]||(r.timestamp||0)>(pm[pid].timestamp||0)) pm[pid]=r;
+              });
+              var atRisk = Object.values(pm).map(function(r){
+                var d=_ovDom(r); return {r:r,d:d,ph:_rptPheno(d)};
+              }).filter(function(x){ return x.d.pe!=null&&x.d.pe<0.65; })
+                .sort(function(a,b){ return a.d.pe-b.d.pe; }).slice(0,5);
+
+              var mkKpi = function(lbl, val, sub, color) {
+                return '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">' +
+                  '<div style="font-family:var(--font-mono);font-size:0.52rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">'+lbl+'</div>' +
+                  '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.8rem;font-weight:300;color:'+(color||'var(--bright)')+';line-height:1;">'+val+'</div>' +
+                  (sub?'<div style="font-family:var(--font-mono);font-size:0.60rem;color:var(--dim);margin-top:3px;">'+sub+'</div>':'') +
+                '</div>';
+              };
+
+              var mkPhenoRow = function(code, count, total) {
+                var c = _RPT_PHENO_COLORS[code]||'var(--dim)';
+                var pct = total ? Math.round(count/total*100) : 0;
+                return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
+                  '<div style="width:36px;font-family:var(--font-mono);font-size:0.66rem;color:'+c+';">'+code+'</div>' +
+                  '<div style="flex:1;height:4px;background:var(--border2);border-radius:2px;">' +
+                    '<div style="width:'+pct+'%;height:100%;background:'+c+';border-radius:2px;"></div>' +
+                  '</div>' +
+                  '<div style="font-family:var(--font-mono);font-size:0.66rem;color:var(--dim);min-width:28px;text-align:right;">'+count+'</div>' +
+                  '<div style="font-family:var(--font-mono);font-size:0.66rem;color:var(--dim);min-width:32px;text-align:right;">'+pct+'%</div>' +
+                '</div>';
+              };
+
+              var html =
+                '<div style="font-family:var(--font-mono);font-size:0.60rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">'+mName+'</div>' +
+                '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">' +
+                  mkKpi('Assessments', cur.n, 'prior month: '+prv.n) +
+                  mkKpi('Mean PE', cur.mean!=null?cur.mean.toFixed(3):'—', prv.mean!=null?'prior: '+prv.mean.toFixed(3):'—') +
+                  mkKpi('PE Delta', deltaStr, 'month over month', deltaColor) +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">' +
+                  '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">' +
+                    '<div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Phenotype Distribution — '+mName+'</div>' +
+                    mkPhenoRow('A',cur.ph.A,cur.n)+mkPhenoRow('PA',cur.ph.PA,cur.n)+mkPhenoRow('INA',cur.ph.INA,cur.n)+mkPhenoRow('UNA',cur.ph.UNA,cur.n) +
+                  '</div>' +
+                  '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">' +
+                    '<div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Phenotype Distribution — '+pmName+'</div>' +
+                    mkPhenoRow('A',prv.ph.A,prv.n)+mkPhenoRow('PA',prv.ph.PA,prv.n)+mkPhenoRow('INA',prv.ph.INA,prv.n)+mkPhenoRow('UNA',prv.ph.UNA,prv.n) +
+                  '</div>' +
+                '</div>' +
+                '<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid #ef4444;border-radius:10px;padding:14px 18px;">' +
+                  '<div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Patients Requiring Intervention (PE &lt; 0.65)</div>';
+
+              if (!atRisk.length) {
+                html += '<div style="font-family:var(--font-mono);font-size:0.78rem;color:#2ec98a;">No patients currently below PE 0.65.</div>';
+              } else {
+                atRisk.forEach(function(row, i) {
+                  var r=row.r, d=row.d, ph=row.ph;
+                  var pid  = r.patient_number||r.patient_id||'—';
+                  var cond = r.condition||'—';
+                  var pc = _RPT_PHENO_COLORS[ph]||'var(--dim)';
+                  html += '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+                    '<div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);min-width:18px;">'+(i+1)+'</div>' +
+                    '<div style="flex:1;font-family:var(--font-mono);font-size:0.78rem;color:var(--bright);">'+pid+'</div>' +
+                    '<div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">'+cond+'</div>' +
+                    '<div style="font-family:var(--font-mono);font-size:0.78rem;font-weight:600;color:'+_rptPeColor(d.pe)+';">PE '+d.pe.toFixed(3)+'</div>' +
+                    '<span style="color:'+pc+';background:'+pc+'22;border:1px solid '+pc+'44;border-radius:4px;padding:2px 7px;font-family:var(--font-mono);font-size:0.64rem;">'+ph+'</span>' +
+                  '</div>';
+                });
+              }
+              html += '</div>';
+              el.innerHTML = html;
+            }
 
           }, 800);
         } else {
@@ -4524,9 +4912,9 @@ function enterResearcherDashboard() {
             { id: 'analytics',     icon: '∿', label: 'Analytics',
               elements: ['res-analytics-panel', 'res-advanced-accordion', 'res-mod-heor'] },
             { id: 'publications',  icon: '✦', label: 'Publish',
-              elements: ['res-mod-apa-gen', 'res-mod-predictor', 'res-mod-power', 'res-mod-certification'] },
+              elements: ['res-mod-apa-gen', 'res-mod-predictor', 'res-mod-power'] },
             { id: 'analysis',      icon: '∑', label: 'Validate',
-              elements: ['res-mod-validation', 'res-mod-psycho'] },
+              elements: ['res-mod-psycho'] },
             { id: 'records',       icon: '≡', label: 'Records',
               elements: ['res-records-banner', 'res-mod-cohort-map', 'researcher-patient-panel'] },
             { id: 'research',      icon: '◈', label: 'Research',
@@ -4794,7 +5182,12 @@ function enterResearcherDashboard() {
         var el = elId === 'dash-pulse-bar-ref'
           ? document.querySelector('#screen-dashboard .dash-pulse-bar')
           : document.getElementById(elId);
-        if (el && el.parentNode) panel.appendChild(el);
+        if (el && el.parentNode) {
+          panel.appendChild(el);
+          // Elements start display:none in HTML to avoid flash before rail mounts.
+          // Once inside the rail panel the outer atlas-tab-* wrapper controls visibility.
+          if (el.style.display === 'none') el.style.display = '';
+        }
       });
 
       content.appendChild(panel);
@@ -4890,9 +5283,22 @@ function enterResearcherDashboard() {
       if (typeof database !== 'undefined') {
         database.ref('audit_log').push({
           cfr11: true, action: 'SESSION_TIMEOUT',
-          uid: user.uid, actor_email: user.email,
+          actor_uid:   user.uid,
+          actor_email: user.email || user.displayName || null,
+          workspace:   window._currentWorkspaceKey || null,
           timestamp: Date.now(),
-          timestamp_utc: new Date().toISOString(), table: 'session'
+          timestamp_utc: new Date().toISOString(), table: 'session',
+          client_ip:     (window._auditMeta||{}).ip        || null,
+          client_country:(window._auditMeta||{}).country   || null,
+          cf_colo:       (window._auditMeta||{}).colo      || null,
+          client_city:   (window._auditMeta||{}).city      || null,
+          client_region: (window._auditMeta||{}).region    || null,
+          client_asn:    (window._auditMeta||{}).asn       || null,
+          client_org:    (window._auditMeta||{}).asOrg     || null,
+          client_lat:    (window._auditMeta||{}).latitude  || null,
+          client_lon:    (window._auditMeta||{}).longitude || null,
+          client_tz:     (window._auditMeta||{}).timezone  || null,
+          client_ua:     (window._auditMeta||{}).ua        || navigator.userAgent.slice(0,220),
         }).catch(function(){});
       }
       firebase.auth().signOut().then(function() {

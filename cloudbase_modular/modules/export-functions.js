@@ -227,7 +227,6 @@ function openCommandCenter() {
   if (!user) { showToast('Not authenticated.', 2500); return; }
   user.getIdTokenResult(false).then(result => {
     if (result.claims?.role !== 'superadmin') {
-      showToast('ATLAS Control requires superadmin access.', 3000);
       const btn = document.getElementById('acc-open-btn');
       if (btn) btn.remove();
       const div = document.getElementById('acc-open-divider');

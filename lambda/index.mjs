@@ -1778,7 +1778,7 @@ export const handler = async (event) => {
   if (path.endsWith('/gai-inquiry'))   return handleGAIInquiry(body, origin);
   if (path.startsWith('/create-checkout-session') || path.startsWith('/send-magic-link') ||
       path.startsWith('/gai-checkout') || path.startsWith('/seat-checkout') ||
-      path.startsWith('/institution-checkout')) {
+      path.startsWith('/institution-checkout') || path.startsWith('/pub-privacy-checkout')) {
     return await handleStripeRoutes(path, method, event.body, event.headers);
   }
 
@@ -2763,4 +2763,205 @@ async function handleIssuePubLicense(body, origin) {
 
   console.log(`[issue-pub-license] ${licKey} issued for ${pi.trim()}`);
   return respond(201, { licKey, issuedDate: now }, origin);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ROUTE: pub_privacy publication license issuance (called from Stripe webhook)
+// Generates a PUB- key + letter noting self-declared count + privacy restriction.
+// ══════════════════════════════════════════════════════════════════════════════
+export async function issuePubPrivacyLicenseFromWebhook(meta, sessionId) {
+  const { name, email, institution, country, collection_start, collection_end,
+          n_participants, irb_number, privacy_statement, manuscript_title, journal } = meta;
+
+  if (!email || !name || !institution || !manuscript_title) {
+    console.error('[pub-privacy-webhook] Missing required metadata on session', sessionId);
+    return;
+  }
+
+  // Idempotency: check if we already wrote a record for this Stripe session
+  try {
+    const existing = await readPermissionRegistry('session:' + sessionId);
+    if (existing?.licKey) {
+      console.log('[pub-privacy-webhook] Idempotent: already issued', existing.licKey, 'for session', sessionId);
+      return;
+    }
+  } catch(_) {}
+
+  const a      = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const b      = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const c      = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const licKey = `PUB-${a}-${b}-${c}`;
+  const now    = Date.now();
+
+  const dateRange = collection_start && collection_end
+    ? `${collection_start} to ${collection_end}`
+    : (collection_start || 'As declared by applicant');
+
+  const record = {
+    certNum:            licKey,
+    key:                licKey,
+    name:               name.trim(),
+    institution:        institution.trim(),
+    country:            country            || null,
+    study_title:        manuscript_title.trim(),
+    irb:                irb_number         || null,
+    journal:            journal            || null,
+    n_validated:        0,
+    n_self_declared:    parseInt(n_participants || '0', 10) || 0,
+    date_range:         dateRange,
+    privacy_restricted: true,
+    privacy_statement:  privacy_statement  || null,
+    email:              email.trim().toLowerCase(),
+    role:               'publication_privacy',
+    issued_at:          now,
+    status:             'active',
+    key_type:           'publication_license_privacy',
+    stripe_session_id:  sessionId,
+    verify_url:         `${VERIFY_BASE_URL}?cert=${encodeURIComponent(licKey)}`,
+  };
+
+  try {
+    await writePermissionRegistry(licKey, record);
+    // Write session index for idempotency
+    await writePermissionRegistry('session:' + sessionId, { licKey, issued_at: now });
+  } catch(e) {
+    console.error('[pub-privacy-webhook] Registry write failed:', e.message);
+    return;
+  }
+
+  // Generate and email the privacy-restricted letter
+  try {
+    const letterHtml = generatePrivacyRestrictedLetter(record);
+    const letterB64  = Buffer.from(letterHtml).toString('base64');
+    const filename   = `ATLAS_PubPrivacyLicense_${licKey}.html`;
+    const boundary   = `----=_Part_${Date.now()}`;
+    const nDisplay   = record.n_self_declared > 0 ? String(record.n_self_declared) + ' (self-declared)' : 'Self-declared';
+    const emailHtml  = `<!DOCTYPE html><html><head><meta charset="utf-8"/></head>
+<body style="margin:0;padding:32px 20px;background:#060e1e;font-family:'IBM Plex Mono',Courier,monospace;color:#c8d8ea;">
+<div style="max-width:560px;margin:0 auto;border:1px solid rgba(139,111,245,0.22);border-top:3px solid rgba(139,111,245,0.75);border-radius:4px;padding:36px;">
+  <div style="font-size:0.78rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(139,111,245,0.7);margin-bottom:24px;">ADHERENCE CARTOGRAPHY · ATLAS</div>
+  <h1 style="font-family:Georgia,serif;font-size:1.75rem;font-weight:300;color:#fff;margin:0 0 20px;">Data-Privacy Publication License issued.</h1>
+  <p style="color:rgba(200,220,240,0.6);font-size:0.86rem;line-height:1.7;margin:0 0 20px;">Your MMAS-8 Data-Privacy Publication License has been issued. The formal letter is attached — open in any browser and print to PDF for journal submission.</p>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:3px;padding:14px 16px;margin-bottom:16px;font-size:0.72rem;line-height:1.8;">
+    <span style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(200,220,240,0.4);">License Key</span><br/>
+    <span style="font-family:'Courier New',monospace;font-size:0.88rem;color:rgba(139,111,245,0.9);letter-spacing:0.06em;">${licKey}</span>
+  </div>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:3px;padding:14px 16px;margin-bottom:16px;font-size:0.78rem;line-height:1.8;">
+    <span style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(200,220,240,0.4);">Manuscript</span><br/>
+    <span style="color:rgba(200,220,240,0.85);font-style:italic;">${manuscript_title.trim()}</span>
+  </div>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:3px;padding:14px 16px;margin-bottom:20px;font-size:0.72rem;line-height:1.8;">
+    <span style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(200,220,240,0.4);">Participant Count</span><br/>
+    <span style="color:rgba(200,220,240,0.7);">${nDisplay}</span>
+  </div>
+  <div style="background:rgba(139,111,245,0.06);border:1px solid rgba(139,111,245,0.2);border-radius:3px;padding:12px 14px;margin-bottom:20px;font-size:0.78rem;color:rgba(139,111,245,0.8);line-height:1.6;">
+    Open the attached HTML file in any browser and print to PDF for journal submission.<br/>The letter explicitly notes the declared data privacy restriction. Verifiable at keys.adherence.cc/verify.
+  </div>
+  <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:18px;font-size:0.72rem;line-height:1.9;color:rgba(255,255,255,0.2);">MMAS-8 © Donald E. Morisky · Licensed exclusively to Adherence Inc.<br/>ATLAS Platform © Adherence Cartography · info@adherence.cc</div>
+</div></body></html>`;
+    const rawMsg = [
+      `From: ATLAS Platform <${SES_FROM_EMAIL}>`,
+      `Reply-To: info@adherence.cc`,
+      `To: ${email.trim().toLowerCase()}`,
+      `Subject: MMAS-8 Data-Privacy Publication License · ${licKey}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      ``,
+      `--${boundary}`,
+      `Content-Type: text/html; charset=UTF-8`,
+      `Content-Transfer-Encoding: quoted-printable`,
+      ``,
+      emailHtml.replace(/[^\x00-\x7E]/g, ch => `=${ch.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0')}`),
+      ``,
+      `--${boundary}`,
+      `Content-Type: text/html; charset=UTF-8; name="${filename}"`,
+      `Content-Transfer-Encoding: base64`,
+      `Content-Disposition: attachment; filename="${filename}"`,
+      ``,
+      letterB64.match(/.{1,76}/g).join('\n'),
+      ``,
+      `--${boundary}--`,
+    ].join('\r\n');
+    await ses.send(new SendRawEmailCommand({ RawMessage: { Data: Buffer.from(rawMsg) } }));
+  } catch(e) {
+    console.error('[pub-privacy-webhook] Email failed (registry intact):', e.message);
+  }
+
+  console.log(`[pub-privacy-webhook] ${licKey} issued for ${name.trim()}`);
+}
+
+function generatePrivacyRestrictedLetter(record) {
+  const { name, institution, country, study_title, irb, journal, n_self_declared,
+          date_range, privacy_statement, licKey, certNum, issued_at, verify_url } = record;
+  const key      = licKey || certNum;
+  const date     = new Date(issued_at || Date.now()).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const verifyUrl = verify_url || `${VERIFY_BASE_URL}?cert=${encodeURIComponent(key)}`;
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/>
+<style>
+  body{font-family:Arial,sans-serif;font-size:12pt;color:#000;margin:0;padding:40px;}
+  .letterhead{border-bottom:3px solid #1a3a6b;padding-bottom:16px;margin-bottom:28px;display:flex;align-items:flex-start;justify-content:space-between;}
+  .org{font-size:14pt;font-weight:bold;color:#1a3a6b;letter-spacing:0.02em;}
+  .org-sub{font-size:10pt;color:#444;margin-top:2px;}
+  h1{font-size:15pt;font-weight:bold;text-align:center;letter-spacing:0.08em;margin:0 0 6px;}
+  .cert{font-size:10pt;text-align:center;color:#555;margin-bottom:6px;}
+  .cert-num{font-size:11pt;text-align:center;font-family:'Courier New',monospace;color:#1a3a6b;font-weight:bold;letter-spacing:0.06em;margin-bottom:28px;border:1px solid #c0cfe0;background:#f5f8ff;padding:8px 16px;display:inline-block;}
+  p{line-height:1.7;margin:0 0 14px;}
+  .section-title{font-weight:bold;margin-top:24px;margin-bottom:4px;}
+  .privacy-notice{background:#fff8e6;border-left:3px solid #c8860a;padding:10px 14px;font-size:10pt;line-height:1.6;margin:10px 0 16px;}
+  .citation{background:#f5f5f5;border-left:3px solid #1a3a6b;padding:10px 14px;font-size:10pt;line-height:1.6;margin:10px 0 16px;}
+  .footnote-req{background:#f5f5f5;border-left:3px solid #888;padding:10px 14px;font-size:10pt;margin:10px 0 16px;}
+  .sig-block{margin-top:40px;border-top:1px solid #ccc;padding-top:16px;}
+  .sig-name{font-weight:bold;font-size:12pt;}
+  .sig-title{font-size:10pt;color:#444;}
+  .verify-block{margin-top:32px;border-top:1px solid #ddd;padding-top:16px;font-size:9pt;color:#555;line-height:1.8;}
+  .verify-url{font-family:'Courier New',monospace;color:#1a3a6b;font-size:9pt;word-break:break-all;}
+  .watermark-note{font-size:8pt;color:#888;text-align:center;margin-top:16px;}
+</style>
+</head><body>
+<div class="letterhead">
+  <div>
+    <div class="org">ADHERENCE INC. · ADHERENCE CARTOGRAPHY</div>
+    <div class="org-sub">Licensed Steward of the MMAS-8 Intellectual Property · Long Beach, California</div>
+  </div>
+</div>
+<h1>DATA-PRIVACY PUBLICATION LICENSE</h1>
+<div class="cert">Certificate Number</div>
+<div style="text-align:center;margin-bottom:4px;"><span class="cert-num">${key}</span></div>
+<div class="cert">Issued: ${date}</div>
+<br/>
+<p>To Whom It May Concern:</p>
+<p>This letter confirms that <strong>${name}</strong> of <strong>${institution}${country ? ', ' + country : ''}</strong> is granted limited, non-transferable permission to use the Morisky Medication Adherence Scale, 8-item version (MMAS-8), for purposes of publication of the following completed research:</p>
+<p style="margin-left:24px;font-style:italic;font-weight:500;">"${study_title}"</p>
+${irb ? `<p>IRB / Ethics Approval: <strong>${irb}</strong></p>` : ''}
+${journal ? `<p>Target Journal: <em>${journal}</em></p>` : ''}
+<div class="section-title">Data Privacy Restriction — Declaration on Record</div>
+<div class="privacy-notice">
+  <strong>Notice to Journal Editors and Ethics Committees:</strong><br/>
+  This license is issued under the Data-Privacy pathway. The applicant has declared that their institution or applicable national regulations prohibit the export or cross-border sharing of raw patient data. The participant count recorded below is <strong>self-declared by the applicant</strong> and has not been independently validated through data upload. The declared restriction is on file with the issuer.<br/><br/>
+  Declared restriction: <em>${privacy_statement || 'Institutional or national data privacy regulations prohibit cross-border data sharing.'}</em><br/>
+  Declared participant count: <strong>${n_self_declared > 0 ? n_self_declared : 'Not specified'}</strong><br/>
+  Data collection period: <strong>${date_range || 'As declared by applicant'}</strong>
+</div>
+<p>Use is permitted for academic dissemination, including presentation and publication of findings, provided that the original validated wording, structure, and scoring of the MMAS-8 are strictly maintained, and appropriate attribution is included in all outputs. This permission applies solely to the study described above and does not transfer ownership or licensing rights.</p>
+<p><strong>License Validity:</strong> This is a permanent, non-expiring publication license issued as a one-time authorization. It does not cover ongoing data collection for new studies.</p>
+<div class="section-title">Intellectual Property Notice</div>
+<p>The MMAS-8 and its derivatives are protected intellectual property of Dr. Donald E. Morisky. All rights are reserved worldwide. © TX 8-632-533.</p>
+<div class="section-title">Required Citation</div>
+<div class="citation">Krousel-Wood M, Islam T, Webber LS, Re RN, Morisky DE, Muntner P. New medication adherence scale versus pharmacy fill rates in seniors with hypertension. <em>Am J Manag Care.</em> 2009 Jan;15(1):59-66.</div>
+<div class="section-title">Required Acknowledgment Footnote</div>
+<div class="footnote-req">MMAS-8® used with permission. www.moriskyscale.com</div>
+<div class="sig-block">
+  <div class="sig-name">Philip Morisky, MBA</div>
+  <div class="sig-title">Founder &amp; Chief Optimus, Adherence Inc.</div>
+  <div class="sig-title">info@adherence.cc · adherence.cc</div>
+</div>
+<div class="verify-block">
+  <strong>Certificate Verification</strong><br/>
+  This letter can be independently verified online. The verification record confirms the applicant name, institution, manuscript title, declared participant count, and the declared data privacy restriction. The participant count is noted as self-declared in the registry.<br/>
+  <span class="verify-url">${verifyUrl}</span><br/><br/>
+  This certificate is registered in the ATLAS Permission Registry. To report a suspected forgery, contact <strong>info@adherence.cc</strong>.
+</div>
+<div class="watermark-note">Certificate: ${key} · Permanent · Data-Privacy Pathway · adherence.cc</div>
+</body></html>`;
 }

@@ -9,6 +9,13 @@ firebase-fix
 firebase-fix/**
 node_modules
 node_modules/**
+lambda/
+lambda/**
+api/
+api/**
+firebase/
+firebase/**
+*.zip
 scripts/
 tests/
 docs/

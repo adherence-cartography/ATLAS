@@ -352,8 +352,8 @@ async function verifyFirebaseToken(request, env) {
       uid: payload.sub || payload.user_id,
       claims: {
         role:               payload.role || 'student',
-        workspace_key:      payload.workspace_key,
-        parent_institution: payload.parent_institution,
+        workspace_key:      payload.workspace_key || payload.workspace,
+        parent_institution: payload.parent_institution || payload.institution,
         tier:               payload.tier,
       }
     };
@@ -2122,9 +2122,12 @@ async function handleMaaSCreateKey(request, claims, env) {
 
 async function _dhis2DeriveKey(workspaceKey, env) {
   // SECURITY: DHIS2_ENC_SECRET must be set as a Wrangler secret (wrangler secret put DHIS2_ENC_SECRET).
-  // The fallback key is public source code — existing DHIS2 passwords were encrypted with it.
+  // NEVER use the default key in production — it is public source code.
   // After setting the secret, all DHIS2 connections must be re-saved to re-encrypt with the real key.
-  const secret = env.DHIS2_ENC_SECRET || 'atlas-dhis2-default-enc-secret-change-in-prod';
+  const secret = env.DHIS2_ENC_SECRET;
+  if (!secret || secret === 'atlas-dhis2-default-enc-secret-change-in-prod') {
+    throw new Error('DHIS2_ENC_SECRET is not configured — set via: wrangler secret put DHIS2_ENC_SECRET');
+  }
   const rawKey = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret), 'HKDF', false, ['deriveKey']
   );

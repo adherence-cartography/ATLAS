@@ -405,8 +405,8 @@ function zoeFinalize(){
 function _zoeScheduleFollowUp(scores, soap) {
   if (!currentWorkspace || window._wsMode === 'explorer') return;
   const totalScore = scores.reduce((a,b) => a + (b||0), 0);
-  const inaItems   = [2,5].filter(i => (scores[i]||0) < 1);
-  const unaItems   = [0,1,3,7].filter(i => (scores[i]||0) < 1);
+  const inaItems   = [1,2,5].filter(i => (scores[i]||0) < 1);
+  const unaItems   = [0,3,7].filter(i => (scores[i]||0) < 1);
   const isINA      = inaItems.length > unaItems.length;
   const hasClinFlag= soap && soap.clinical_flags && soap.clinical_flags.length > 0;
   const pid        = window._zoeSdohSnapshot?.patientNum || null;
@@ -717,8 +717,8 @@ async function generateZoeSOAP(){
   const totalScore=zoeScores.reduce((a,b)=>a+(b||0),0);
   const cat=getAdherenceCategory(totalScore);
   const inaItems=[],unaItems=[];
-  [0,1,3,7].forEach(i=>{if((zoeScores[i]||0)<1)unaItems.push('Q'+(i+1));});
-  [2,5].forEach(i=>{if((zoeScores[i]||0)<1)inaItems.push('Q'+(i+1));});
+  [0,3,7].forEach(i=>{if((zoeScores[i]||0)<1)unaItems.push('Q'+(i+1));});
+  [1,2,5].forEach(i=>{if((zoeScores[i]||0)<1)inaItems.push('Q'+(i+1));});
   // Q5 (index 4) and Q7 (index 6) are neutral — excluded from INA/UNA classification
   const pattern=inaItems.length>unaItems.length?'Intentional Non-Adherence (INA)':unaItems.length>inaItems.length?'Unintentional Non-Adherence (UNA)':totalScore>=8?'High Adherence':'Mixed Pattern';
 
@@ -1309,10 +1309,10 @@ function _injectSentinelUI() {
         <div style="display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;color:rgba(239,68,68,0.45);" onclick="event.stopPropagation()">
           <span>Alert at</span>
           <select id="sentinel-threshold-sel" onchange="sentinelSetThreshold(parseFloat(this.value))" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.22);color:rgba(239,68,68,0.8);font-family:'IBM Plex Mono',monospace;font-size:0.70rem;border-radius:4px;padding:2px 4px;cursor:pointer;outline:none;">
-            <option value="4">≤ 4.0</option>
-            <option value="5">≤ 5.0</option>
-            <option value="6" selected>≤ 6.0</option>
-            <option value="7">≤ 7.0</option>
+            <option value="4">≤ 4.0 — Critical</option>
+            <option value="5">≤ 5.0 — High Risk</option>
+            <option value="6" selected>≤ 6.0 — Moderate Risk</option>
+            <option value="7">≤ 7.0 — Low Risk</option>
           </select>
         </div>
         <div id="sentinel-badge" style="display:none;background:#ef4444;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;letter-spacing:0.08em;border-radius:20px;padding:2px 9px;font-weight:600;"></div>
@@ -2095,7 +2095,10 @@ function renderPEDomainAnalysis(records) {
   const thSort = (col, color) => `<th style="${thStyle(color)}" onclick="peDomainSort('${col}')" title="Sort by ${col}">`;
 
   content.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;padding-top:16px;">
+    <div style="display:flex;justify-content:flex-end;padding-top:12px;margin-bottom:4px;">
+      <button onclick="window.print()" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;padding:6px 14px;background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.28);border-radius:6px;color:rgba(212,168,67,0.75);cursor:pointer;transition:all 0.18s;" onmouseover="this.style.background='rgba(212,168,67,0.16)'" onmouseout="this.style.background='rgba(212,168,67,0.08)'">Print / Save PDF</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;padding-top:4px;">
       <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;">
         <div style="font-family:var(--font-mono);font-size:0.76rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Cohort PE Average</div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:300;color:var(--pe);line-height:1;margin-bottom:6px;">${isFinite(avgPE) ? avgPE.toFixed(3) : '—'}</div>
@@ -2104,17 +2107,17 @@ function renderPEDomainAnalysis(records) {
       <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;">
         <div style="font-family:var(--font-mono);font-size:0.76rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Primary Constraint Distribution</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;">
-          <div><div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--base);">${Math.round(cntA/n*100)}%</div><div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">Architecture</div></div>
-          <div><div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--mvmt);">${Math.round(cntE/n*100)}%</div><div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">Execution</div></div>
-          <div><div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--strata);">${Math.round(cntC/n*100)}%</div><div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">Context</div></div>
+          <div><div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--base);">${Math.round(cntA/n*100)}%</div><div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">Architecture</div><div style="font-family:var(--font-mono);font-size:0.60rem;color:rgba(107,128,153,0.6);">Beliefs &amp; Decisions</div></div>
+          <div><div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--mvmt);">${Math.round(cntE/n*100)}%</div><div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">Execution</div><div style="font-family:var(--font-mono);font-size:0.60rem;color:rgba(107,128,153,0.6);">Behavioral Reliability</div></div>
+          <div><div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--strata);">${Math.round(cntC/n*100)}%</div><div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);">Context</div><div style="font-family:var(--font-mono);font-size:0.60rem;color:rgba(107,128,153,0.6);">Burden &amp; Friction</div></div>
         </div>
       </div>
     </div>
     <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;">
       <div style="font-family:var(--font-mono);font-size:0.76rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Domain Averages</div>
       ${bar(avgA,'var(--base)','Architecture (A) · Q2, Q3, Q6 — Decisions & Beliefs')}
-      ${bar(avgE,'var(--mvmt)','Execution (E) · Q1, Q4, Q5, Q8 — Behavioral Reliability')}
-      ${bar(avgC,'var(--strata)','Context (C) · Q7 — Burden & Friction')}
+      ${bar(avgE,'var(--mvmt)','Execution (E) · Q1, Q5, Q8 — Behavioral Reliability')}
+      ${bar(avgC,'var(--strata)','Context-Guard (C) · Q4, Q7 — Burden & Friction')}
       <div style="margin-top:10px;padding:10px 12px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.2);border-radius:8px;font-family:var(--font-mono);font-size:0.78rem;color:var(--pe);">
         ◈ ${constraintHint}
       </div>
@@ -3543,8 +3546,8 @@ function _renderInstMapSection(allMmas, childMmas) {
     };
     domBars.innerHTML =
       bar('Architecture · Intentional Decision-Making', avgA, 'rgba(212,168,67,0.85)', 'Q2 Q3 Q6') +
-      bar('Execution · Behavioral Reliability',         avgE, 'rgba(78,156,245,0.85)',  'Q1 Q4 Q5 Q8') +
-      bar('Context · Perceived Burden & Access',        avgC, 'rgba(46,201,138,0.85)',  'Q7') +
+      bar('Execution · Behavioral Reliability',         avgE, 'rgba(78,156,245,0.85)',  'Q1 Q5 Q8') +
+      bar('Context-Guard · Burden & Access',            avgC, 'rgba(46,201,138,0.85)',  'Q4 Q7') +
       `<div style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px;display:flex;gap:18px;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.70rem;color:var(--muted);">
         <span>PE Composite: <strong style="color:var(--pe);">${avgPE?avgPE.toFixed(3):'—'}</strong></span>
         <span>Primary Constraint: <strong style="color:var(--poor);">${constLabel}</strong></span>
@@ -4043,8 +4046,20 @@ function renderInstitutionDashboard() {
 // ══════════════════════════════════════════════
 // FEATURE 6: SITE BENCHMARKING
 // ══════════════════════════════════════════════
+
+// Module-level state for condition filter
+let _benchCondFilter  = '';   // '' = all conditions (mapData), else slug key
+let _benchCohortRecs  = [];   // cached cohort records for filter re-renders
+
+// Called by the condition dropdown's onchange
+function _benchApplyFilter(slug) {
+  _benchCondFilter = slug;
+  renderBenchmarking(_benchCohortRecs);
+}
+
 /**
  * Renders the adherence benchmarking panel comparing cohort performance to global norms.
+ * Supports condition-specific filtering via the ATLAS benchmark_cache.
  * @param {Array<Object>} cohortRecords - MMAS-8 records for the current cohort
  * @returns {void}
  */
@@ -4053,7 +4068,46 @@ function renderBenchmarking(cohortRecords) {
   const insight = document.getElementById('bench-insight');
   if (!wrap || !cohortRecords || !cohortRecords.length) return;
 
-  // Cohort distribution in integer score buckets 0–8
+  _benchCohortRecs = cohortRecords;
+
+  // ── Inject condition filter bar (idempotent) ─────────────────────────────
+  if (!document.getElementById('bench-cond-bar')) {
+    const bar = document.createElement('div');
+    bar.id = 'bench-cond-bar';
+    bar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;padding:10px 0 0;';
+    bar.innerHTML = `
+      <div style="font-family:var(--font-mono);font-size:0.70rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);white-space:nowrap;">Compare to:</div>
+      <select id="bench-cond-select" onchange="_benchApplyFilter(this.value)"
+        style="font-family:var(--font-mono);font-size:0.78rem;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;min-width:240px;outline:none;cursor:pointer;">
+        <option value="">All Conditions — Global ATLAS Pool</option>
+      </select>
+      <div id="bench-cond-n" style="font-family:var(--font-mono);font-size:0.68rem;color:var(--dim);letter-spacing:0.06em;"></div>`;
+    const legend = wrap.parentElement && wrap.parentElement.querySelector('.bench-legend');
+    if (legend) legend.parentElement.insertBefore(bar, legend);
+    else if (wrap.parentElement) wrap.parentElement.insertBefore(bar, wrap.parentElement.firstChild);
+
+    // Populate dropdown from benchmark_cache condition index (sorted by n desc)
+    database.ref('benchmark_cache/condition_index').once('value', snap => {
+      const idx = snap.val() || {};
+      const sel = document.getElementById('bench-cond-select');
+      if (!sel) return;
+      Object.entries(idx)
+        .sort((a, b) => b[1].n - a[1].n)
+        .forEach(([slug, info]) => {
+          const opt = document.createElement('option');
+          opt.value = slug;
+          opt.textContent = `${info.label}  (n = ${info.n.toLocaleString()})`;
+          if (slug === _benchCondFilter) opt.selected = true;
+          sel.appendChild(opt);
+        });
+    });
+  } else {
+    // Sync dropdown to current filter state (handles programmatic re-renders)
+    const sel = document.getElementById('bench-cond-select');
+    if (sel) sel.value = _benchCondFilter;
+  }
+
+  // ── Cohort distribution ───────────────────────────────────────────────────
   const cohortDist = Array(9).fill(0);
   cohortRecords.forEach(r => {
     const sc = r.score||0; const bucket = sc>=8?8:Math.min(7,Math.max(0,Math.floor(sc)));
@@ -4061,7 +4115,27 @@ function renderBenchmarking(cohortRecords) {
   });
   const cohortTotal = cohortRecords.length || 1;
 
-  // Pull global distribution from Firebase mapData (public pool)
+  if (_benchCondFilter) {
+    // ── Condition-specific path: load from benchmark_cache ────────────────
+    database.ref(`benchmark_cache/by_condition/${_benchCondFilter}/mmas8`).once('value', snap => {
+      const cached = snap.val();
+      const nEl = document.getElementById('bench-cond-n');
+      if (!cached || !cached.n) {
+        if (nEl) nEl.textContent = 'No network data for this condition (n < 20)';
+        wrap.innerHTML = '<div style="padding:24px;font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">Insufficient network records for this condition. Minimum 20 required for privacy-preserving aggregation.</div>';
+        if (insight) insight.innerHTML = '';
+        return;
+      }
+      if (nEl) nEl.textContent = `Network: ${cached.n.toLocaleString()} anonymised records`;
+      _benchRenderFromStats(wrap, insight, cohortDist, cohortTotal, cohortRecords, cached);
+    });
+    return;
+  }
+
+  // ── All-conditions path: pull live from Firebase mapData (public pool) ────
+  const nEl = document.getElementById('bench-cond-n');
+  if (nEl) nEl.textContent = '';
+
   database.ref('mapData').once('value', snap => {
     const allData = snap.val() ? Object.values(snap.val()) : [];
     const globalDist = Array(9).fill(0);
@@ -4071,135 +4145,137 @@ function renderBenchmarking(cohortRecords) {
     });
     const globalTotal = allData.length || 1;
 
-    const maxPct = Math.max(
-      ...cohortDist.map(v=>v/cohortTotal),
-      ...globalDist.map(v=>v/globalTotal),
-      0.01
-    );
-
-    wrap.innerHTML = '';
-    for (let i=0; i<=8; i++) {
-      const cPct = cohortDist[i] / cohortTotal;
-      const gPct = globalDist[i] / globalTotal;
-      const bar = document.createElement('div');
-      bar.className = 'bench-bar-group';
-      bar.style.flexDirection = 'column';
-      bar.style.alignItems = 'center';
-      bar.innerHTML = `
-        <div style="display:flex;gap:2px;align-items:flex-end;height:160px;width:100%;">
-          <div class="bench-bar" style="background:var(--strata);height:${Math.round(cPct/maxPct*160)}px;" title="Your cohort: ${Math.round(cPct*100)}%"></div>
-          <div class="bench-bar" style="background:rgba(255,255,255,0.15);height:${Math.round(gPct/maxPct*160)}px;" title="Global: ${Math.round(gPct*100)}%"></div>
-        </div>
-        <div class="bench-bar-label">${i}</div>`;
-      wrap.appendChild(bar);
-    }
-
-    // ── Benchmark banner card ────────────────────────────────────────────────
-    const cohortAvg = cohortRecords.reduce((a,r)=>a+(r.score||0),0)/cohortTotal;
-    const globalAvg = allData.length ? allData.reduce((a,r)=>a+(r.score||0),0)/globalTotal : null;
-    const cohortHighPct = Math.round(cohortDist[8]/cohortTotal*100);
-    const globalHighPct = globalTotal > 0 ? Math.round(globalDist[8]/globalTotal*100) : null;
-
-    // Remove previous banner if any
-    const prevBanner = document.getElementById('bench-banner-card');
-    if (prevBanner) prevBanner.remove();
-
-    if (globalAvg !== null && wrap.parentElement) {
-      const diff = cohortAvg - globalAvg;
-      const isAbove = diff >= 0;
-      const absDiff = Math.abs(diff).toFixed(2);
-      const diffColor = isAbove ? 'var(--optimal)' : '#ef4444';
-      const arrow = isAbove ? '↑' : '↓';
-      const globalMedian = (() => {
-        // Approximate median from distribution
-        let cum = 0;
-        for (let i=0; i<=8; i++) {
-          cum += globalDist[i];
-          if (cum >= globalTotal/2) return i;
-        }
-        return 4;
-      })();
-      const cohortMedian = (() => {
-        let cum = 0;
-        for (let i=0; i<=8; i++) {
-          cum += cohortDist[i];
-          if (cum >= cohortTotal/2) return i;
-        }
-        return 4;
-      })();
-      const medDiff = cohortMedian - globalMedian;
-
-      // ── Pearson's second skewness coefficient: 3(mean−median)/SD ──────────
-      // Positive = right-skewed (tail toward high adherence, most patients at low end)
-      // Negative = left-skewed (tail toward low adherence, most patients at high end)
-      const cohortSD = cohortTotal > 1
-        ? Math.sqrt(cohortRecords.reduce((s,r)=>s+Math.pow((r.score||0)-cohortAvg,2),0)/(cohortTotal-1))
-        : 0;
-      const cohortSkew = cohortSD > 0
-        ? parseFloat((3 * (cohortAvg - cohortMedian) / cohortSD).toFixed(2))
-        : 0;
-      const skewLabel = cohortSkew > 0.5 ? 'Right-skewed'
-        : cohortSkew < -0.5 ? 'Left-skewed'
-        : 'Approximately symmetric';
-      const skewInterpretation = cohortSkew > 0.5
-        ? 'Most patients cluster at lower adherence; a small tail of high adherers pulls the mean up. Mean overstates typical patient experience.'
-        : cohortSkew < -0.5
-        ? 'Most patients cluster at high adherence; a small tail of poor adherers pulls the mean down. Median better represents typical patient experience.'
-        : 'Score distribution is approximately symmetric. Mean and median are aligned — both are reliable central tendency measures for this cohort.';
-      const skewColor = Math.abs(cohortSkew) > 0.5 ? '#f59e0b' : 'var(--optimal)';
-
-      const banner = document.createElement('div');
-      banner.id = 'bench-banner-card';
-      banner.style.cssText = 'margin-bottom:16px;';
-      banner.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px;">
-          <div style="background:rgba(255,255,255,0.02);border:1px solid ${diffColor}33;border-radius:12px;padding:16px 18px;text-align:center;position:relative;overflow:hidden;">
-            <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,${diffColor}0a,transparent 65%);"></div>
-            <div style="font-family:var(--font-mono);font-size:0.90rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">vs Global Mean</div>
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:${diffColor};line-height:1;">${arrow} ${absDiff}</div>
-            <div style="font-size:0.90rem;color:var(--muted);margin-top:4px;">points ${isAbove?'above':'below'} global average of <strong style="color:var(--bright);">${globalAvg.toFixed(2)}</strong></div>
-          </div>
-          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(78,156,245,0.2);border-radius:12px;padding:16px 18px;text-align:center;">
-            <div style="font-family:var(--font-mono);font-size:0.90rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Cohort Mean · SD</div>
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:var(--base);line-height:1;">${cohortAvg.toFixed(2)}</div>
-            <div style="font-size:0.90rem;color:var(--muted);margin-top:4px;">${cohortTotal} patient${cohortTotal!==1?'s':''} · ±${cohortSD.toFixed(2)} SD · ${cohortHighPct}% high adh.</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 18px;text-align:center;">
-            <div style="font-family:var(--font-mono);font-size:0.90rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Median Comparison</div>
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:${medDiff>=0?'var(--optimal)':'#ef4444'};line-height:1;">${medDiff>=0?'+':''}${medDiff}</div>
-            <div style="font-size:0.90rem;color:var(--muted);margin-top:4px;">vs global median of <strong style="color:var(--bright);">${globalMedian}</strong></div>
-          </div>
-          <div style="background:rgba(255,255,255,0.02);border:1px solid ${skewColor}33;border-radius:12px;padding:16px 18px;text-align:center;">
-            <div style="font-family:var(--font-mono);font-size:0.90rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Distribution Skew</div>
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:${skewColor};line-height:1;">${cohortSkew > 0 ? '+' : ''}${cohortSkew}</div>
-            <div style="font-size:0.90rem;color:var(--muted);margin-top:4px;">${skewLabel}</div>
-          </div>
-          ${globalHighPct !== null ? `<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(139,111,245,0.2);border-radius:12px;padding:16px 18px;text-align:center;">
-            <div style="font-family:var(--font-mono);font-size:0.90rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">High Adherence Rate</div>
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:var(--mvmt);line-height:1;">${cohortHighPct}%</div>
-            <div style="font-size:0.90rem;color:var(--muted);margin-top:4px;">vs global ${globalHighPct}% (MMAS-8 = 8.0)</div>
-          </div>` : ''}
-        </div>
-        <div class="bench-insight-strip" id="bench-insight-strip-auto">
-          Your cohort scores <strong style="color:${diffColor};">${absDiff} points ${isAbove?'above':'below'}</strong> the global ATLAS mean of <strong>${globalAvg.toFixed(2)}</strong>.
-          ${Math.abs(medDiff) > 0 ? `Median is ${medDiff > 0 ? 'higher' : 'lower'} than global by ${Math.abs(medDiff)} point${Math.abs(medDiff)!==1?'s':''}.` : 'Median aligns with global benchmark.'}
-          ${Math.abs(cohortSkew) > 0.5 ? ` Skew (${cohortSkew > 0 ? '+' : ''}${cohortSkew}): ${skewInterpretation}` : ''}
-          ${cohortHighPct > (globalHighPct||0)+5 ? ' 🟢 High adherence rate notably exceeds global benchmark.' : cohortHighPct < (globalHighPct||0)-5 ? ' 🔴 High adherence rate lags behind global benchmark — consider targeted intervention.' : ''}
-        </div>`;
-      wrap.parentElement.insertBefore(banner, wrap);
-    }
-
-    // Keep existing bench-insight element updated
-    if (insight) {
-      const cohortAvgF = cohortRecords.reduce((a,r)=>a+(r.score||0),0)/cohortTotal;
-      let txt = `Cohort mean: <strong style="color:var(--strata);">${cohortAvgF.toFixed(2)}</strong> / 8 · ${cohortTotal} patients`;
-      if (globalAvg !== null) {
-        const diff = cohortAvgF - globalAvg;
-        txt += ` · Global ATLAS mean: <strong>${globalAvg.toFixed(2)}</strong> · <strong style="color:${diff>=0?'var(--optimal)':'#ef4444'};">${Math.abs(diff).toFixed(2)} pts ${diff>=0?'above':'below'}</strong> global.`;
-      }
-      insight.innerHTML = txt;
-    }
+    // Delegate to shared renderer using mapData as the "cached" global stats
+    const globalMean = allData.length ? allData.reduce((a, r) => a + (r.score||0), 0) / allData.length : null;
+    const cachedFromMap = {
+      n:        allData.length,
+      mean:     globalMean,
+      sd:       null,        // not pre-computed for live mapData path; _benchRenderFromStats skips SD label
+      dist:     globalDist,
+      high_pct: globalDist[8] / globalTotal,
+      med:      null,        // computed from dist inside _benchRenderFromStats
+    };
+    _benchRenderFromStats(wrap, insight, cohortDist, cohortTotal, cohortRecords, cachedFromMap);
   });
+}
+
+// ── Shared chart+cards renderer for both the mapData and benchmark_cache paths ──
+// cached: { n, mean, sd, dist[9], high_pct, med }
+function _benchRenderFromStats(wrap, insight, cohortDist, cohortTotal, cohortRecords, cached) {
+  const globalDist  = cached.dist  || Array(9).fill(0);
+  const globalTotal = cached.n     || 1;
+  const globalAvg   = cached.mean  != null ? cached.mean   : null;
+  const globalHighPct = cached.high_pct != null ? Math.round(cached.high_pct * 100) : null;
+  const globalMedian  = cached.med  != null ? Math.round(cached.med) : (() => {
+    let cum = 0;
+    for (let i = 0; i <= 8; i++) {
+      cum += globalDist[i];
+      if (cum >= globalTotal / 2) return i;
+    }
+    return 4;
+  })();
+
+  const maxPct = Math.max(
+    ...cohortDist.map(v => v / cohortTotal),
+    ...globalDist.map(v => v / globalTotal),
+    0.01
+  );
+
+  wrap.innerHTML = '';
+  for (let i = 0; i <= 8; i++) {
+    const cPct = cohortDist[i] / cohortTotal;
+    const gPct = globalDist[i] / globalTotal;
+    const bar  = document.createElement('div');
+    bar.className = 'bench-bar-group';
+    bar.style.cssText = 'flex-direction:column;align-items:center;';
+    bar.innerHTML = `
+      <div style="display:flex;gap:2px;align-items:flex-end;height:160px;width:100%;">
+        <div class="bench-bar" style="background:var(--strata);height:${Math.round(cPct/maxPct*160)}px;" title="Your cohort: ${Math.round(cPct*100)}%"></div>
+        <div class="bench-bar" style="background:rgba(255,255,255,0.15);height:${Math.round(gPct/maxPct*160)}px;" title="Network: ${Math.round(gPct*100)}%"></div>
+      </div>
+      <div class="bench-bar-label">${i}</div>`;
+    wrap.appendChild(bar);
+  }
+
+  const cohortAvg    = cohortRecords.reduce((a, r) => a + (r.score||0), 0) / cohortTotal;
+  const cohortHighPc = Math.round(cohortDist[8] / cohortTotal * 100);
+  const cohortSD     = cohortTotal > 1
+    ? Math.sqrt(cohortRecords.reduce((s, r) => s + Math.pow((r.score||0) - cohortAvg, 2), 0) / (cohortTotal-1))
+    : 0;
+  const cohortMedian = (() => {
+    let cum = 0;
+    for (let i = 0; i <= 8; i++) {
+      cum += cohortDist[i];
+      if (cum >= cohortTotal / 2) return i;
+    }
+    return 4;
+  })();
+
+  const prevBanner = document.getElementById('bench-banner-card');
+  if (prevBanner) prevBanner.remove();
+
+  if (globalAvg !== null && wrap.parentElement) {
+    const diff      = cohortAvg - globalAvg;
+    const isAbove   = diff >= 0;
+    const absDiff   = Math.abs(diff).toFixed(2);
+    const diffColor = isAbove ? 'var(--optimal)' : '#ef4444';
+    const arrow     = isAbove ? '↑' : '↓';
+    const medDiff   = cohortMedian - globalMedian;
+    const cohortSkew = cohortSD > 0
+      ? parseFloat((3 * (cohortAvg - cohortMedian) / cohortSD).toFixed(2))
+      : 0;
+    const skewLabel = cohortSkew > 0.5 ? 'Right-skewed' : cohortSkew < -0.5 ? 'Left-skewed' : 'Approx. symmetric';
+    const skewColor = Math.abs(cohortSkew) > 0.5 ? '#f59e0b' : 'var(--optimal)';
+    const sdLabel   = cached.sd != null ? ` · ±${cached.sd.toFixed(2)} SD` : '';
+
+    const banner = document.createElement('div');
+    banner.id = 'bench-banner-card';
+    banner.style.cssText = 'margin-bottom:16px;';
+    banner.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px;">
+        <div style="background:rgba(255,255,255,0.02);border:1px solid ${diffColor}33;border-radius:12px;padding:16px 18px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,${diffColor}0a,transparent 65%);"></div>
+          <div style="font-family:var(--font-mono);font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">vs Network Mean</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:${diffColor};line-height:1;">${arrow} ${absDiff}</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">pts ${isAbove?'above':'below'} network avg <strong style="color:var(--bright);">${globalAvg.toFixed(2)}</strong>${sdLabel}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(78,156,245,0.2);border-radius:12px;padding:16px 18px;text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Cohort Mean · SD</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:var(--base);line-height:1;">${cohortAvg.toFixed(2)}</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">${cohortTotal} patients · ±${cohortSD.toFixed(2)} SD · ${cohortHighPc}% high adh.</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 18px;text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Median Δ</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:${medDiff>=0?'var(--optimal)':'#ef4444'};line-height:1;">${medDiff>=0?'+':''}${medDiff}</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">vs network median <strong style="color:var(--bright);">${globalMedian}</strong></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02);border:1px solid ${skewColor}33;border-radius:12px;padding:16px 18px;text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Distribution Skew</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:${skewColor};line-height:1;">${cohortSkew > 0 ? '+' : ''}${cohortSkew}</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">${skewLabel}</div>
+        </div>
+        ${globalHighPct !== null ? `<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(139,111,245,0.2);border-radius:12px;padding:16px 18px;text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">High Adherence Rate</div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2.4rem;font-weight:300;color:var(--mvmt);line-height:1;">${cohortHighPc}%</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">vs network ${globalHighPct}% (MMAS-8 = 8.0)</div>
+        </div>` : ''}
+        <div style="background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 16px;font-family:var(--font-mono);font-size:0.65rem;color:rgba(107,128,153,0.65);line-height:1.6;display:flex;align-items:center;">
+          Network data: ${cached.n.toLocaleString()} anonymised records from across the ATLAS platform. Individual records are not accessible. Minimum cell size: 20.
+        </div>
+      </div>
+      <div class="bench-insight-strip" style="font-size:0.85rem;color:var(--muted);">
+        Your cohort is <strong style="color:${diffColor};">${absDiff} pts ${isAbove?'above':'below'}</strong> the network mean of <strong>${globalAvg.toFixed(2)}</strong>.
+        ${Math.abs(medDiff) > 0 ? `Median is ${medDiff > 0 ? 'higher' : 'lower'} by ${Math.abs(medDiff)} pts.` : 'Medians aligned.'}
+        ${cohortHighPc > (globalHighPct||0)+5 ? ' High adherence rate notably exceeds network benchmark.' : cohortHighPc < (globalHighPct||0)-5 ? ' High adherence rate lags behind network benchmark — consider targeted intervention.' : ''}
+      </div>`;
+    wrap.parentElement.insertBefore(banner, wrap);
+  }
+
+  if (insight) {
+    const diff = globalAvg !== null ? cohortAvg - globalAvg : null;
+    insight.innerHTML = `Cohort mean: <strong style="color:var(--strata);">${cohortAvg.toFixed(2)}</strong> / 8 · ${cohortTotal} patients` +
+      (diff !== null ? ` · Network mean: <strong>${globalAvg.toFixed(2)}</strong> · <strong style="color:${diff>=0?'var(--optimal)':'#ef4444'};">${Math.abs(diff).toFixed(2)} pts ${diff>=0?'above':'below'}</strong> network.` : '');
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -4249,37 +4325,35 @@ function launchConfetti() {
 }
 
 // ══════════════════════════════════════════════
-// CHERRY 2: QR CODE GENERATOR (pure JS — no external lib)
+// CHERRY 2: QR CODE GENERATOR
 // ══════════════════════════════════════════════
 function _generateQR(containerId, url, size) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  // Minimal URL→dots QR using a pre-encoded matrix for adherence.cc
-  // For production, replace with qrcode.js library
-  // Here we render a stylised placeholder that looks like a QR
-  const canvas = document.createElement('canvas');
-  canvas.width = size; canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,size,size);
-  // Draw finder pattern top-left
-  const cell = size / 10;
-  function square(x,y,w,h,color){ ctx.fillStyle=color; ctx.fillRect(x*cell,y*cell,w*cell,h*cell); }
-  ctx.fillStyle='#000';
-  // Outer rings
-  [[0,0,7,7],[0,0,7,1],[0,6,7,1],[0,0,1,7],[6,0,1,7]].forEach(([x,y,w,h])=>square(x,y,w,h,'#000'));
-  square(1,1,5,5,'#fff'); square(2,2,3,3,'#000');
-  // Bottom-left finder
-  [[0,7,7,3],[0,7,7,1],[0,9,7,1],[0,7,1,3],[6,7,1,3]].forEach(([x,y,w,h])=>square(x,y,w,h,'#000'));
-  square(1,8,5,1,'#fff'); square(2,8,3,1,'#000');
-  // Top-right finder
-  [[7,0,3,7],[7,0,3,1],[7,6,3,1],[7,0,1,7],[9,0,1,7]].forEach(([x,y,w,h])=>square(x,y,w,h,'#000'));
-  square(8,1,1,5,'#fff'); square(8,2,1,3,'#000');
-  // Pseudo data dots
-  const pseudo=[[3,3],[4,4],[5,3],[3,5],[5,5],[4,7],[4,8],[3,8],[5,8],[7,3],[8,3],[7,4],[8,4],[7,5],[8,5],[7,8],[8,8],[9,7],[9,9],[3,9],[5,9]];
-  pseudo.forEach(([x,y])=>square(x,y,1,1,'#000'));
-  el.innerHTML='';
-  canvas.style.borderRadius='3px';
-  el.appendChild(canvas);
+  el.innerHTML = '';
+  if (!url) { el.innerHTML = '<span style="color:var(--dim);font-family:var(--font-mono);font-size:0.75rem;">No URL provided</span>'; return; }
+  const sz = size || 160;
+  if (typeof QRCode !== 'undefined') {
+    try {
+      new QRCode(el, { text: url, width: sz, height: sz, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    } catch(e) {
+      _qrFallback(el, url);
+    }
+  } else {
+    // QRCode lib not yet loaded — try once after a short delay, then fall back
+    setTimeout(() => {
+      if (typeof QRCode !== 'undefined') {
+        try { new QRCode(el, { text: url, width: sz, height: sz, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); }
+        catch(e) { _qrFallback(el, url); }
+      } else {
+        _qrFallback(el, url);
+      }
+    }, 800);
+  }
+}
+
+function _qrFallback(el, url) {
+  el.innerHTML = '<a href="' + url + '" target="_blank" rel="noopener" style="font-family:var(--font-mono);font-size:0.75rem;color:var(--base);word-break:break-all;">&#8599; ' + url + '</a>';
 }
 
 // ══════════════════════════════════════════════

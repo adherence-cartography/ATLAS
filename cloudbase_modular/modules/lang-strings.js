@@ -17,6 +17,8 @@ const ATLAS_STRINGS = {
   en: {
     // ── Entry screen ────────────────────────────────────────────────────
     langLabel: `Language`,
+    chooseYourPath: `Choose your path`,
+    pathsSubtitle: `Patients receive their adherence profile. Researchers run their cohorts. Institutions operate at scale. Each path is its own portal.`,
     entryTagline: `Not a dose. A duration.`,
     entryLiveTag: `Live Global Feed`,
     liveMMAS: `MMAS Submissions`, liveCountries: `Countries`, liveAvg: `Global Avg Score`, livePEACS: `PEACS Assessments`,
@@ -726,6 +728,8 @@ const ATLAS_STRINGS = {
 
   it: {
     langLabel: `Lingua`,
+    chooseYourPath: `Scegli il tuo percorso`,
+    pathsSubtitle: `I pazienti ricevono il loro profilo di aderenza. I ricercatori gestiscono le loro coorti. Le istituzioni operano su scala. Ogni percorso è il suo portale.`,
     entryTagline: `Non una dose. Una durata.`,
     entryLiveTag: `Feed Globale in Diretta`,
     patientLabel: `Percorso A · Paziente`,
@@ -906,7 +910,7 @@ const ATLAS_STRINGS = {
     noteMeds: `Adicione cada medicamento separadamente.`,
     genderOpts: [`— Selecionar —`, `Masculino`, `Feminino`, `Outro / Prefiro não dizer`],
     ageOpts: [`— Selecionar —`, `Menos de 18`, `18–24`, `25–34`, `35–44`, `45–54`, `55–64`, `65–74`, `75 ou mais`, `Prefiro não dizer`],
-    placeholderCountry: `ex. Portugal`, placeholderCity: `ex. Lisboa`,
+    placeholderCountry: `ex. Brasil`, placeholderCity: `ex. São Paulo`,
     placeholderConditionOther: `Por favor especifique`,
     submitBtn: `Submeter Avaliação`,
     submitNote: `Todas as 8 perguntas devem ser respondidas antes de submeter. · Anónimo · Seguro · Validado globalmente.`,
@@ -1049,7 +1053,7 @@ const ATLAS_STRINGS = {
     noteMeds: `أضف كل دواء بشكل منفصل.`,
     genderOpts: [`— اختر —`, `ذكر`, `أنثى`, `آخر / أفضل عدم الإجابة`],
     ageOpts: [`— اختر —`, `أقل من 18`, `18–24`, `25–34`, `35–44`, `45–54`, `55–64`, `65–74`, `75 فأكثر`, `أفضل عدم الإجابة`],
-    placeholderCountry: `مثال: المملكة العربية السعودية`, placeholderCity: `مثال: الرياض`,
+    placeholderCountry: `مثال: الإمارات العربية المتحدة`, placeholderCity: `مثال: أبوظبي`,
     placeholderConditionOther: `يرجى التحديد`,
     submitBtn: `إرسال التقييم`,
     submitNote: `يجب الإجابة على جميع الأسئلة الـ 8 قبل الإرسال. · مجهول · آمن · معتمد عالمياً.`,
@@ -5816,10 +5820,101 @@ var ATLAS_EXTRA3 = {
   },
 };
 
+// Add pt clinician workspace strings (Brazil pilot — same keys as ar block above)
+ATLAS_EXTRA3['pt'] = {
+  clin_patients_tab: `Pacientes`,
+  clin_encounters_tab: `Consultas`,
+  clin_overview_tab: `Visão Geral`,
+  clin_pharmacy_brief: `Resumo da Farmácia`,
+  clin_patient_consultation: `Consulta com Paciente`,
+  clin_status_stable: `Estável`,
+  clin_status_atrisk: `Em Risco`,
+  clin_status_overdue: `Atrasado`,
+  clin_status_new: `Novo`,
+  clin_log_intervention: `Registrar Intervenção`,
+  clin_print_summary: `Imprimir Resumo`,
+  clin_care_gaps: `Lacunas no Cuidado`,
+  clin_branch_filter: `Unidade / Local`,
+  clin_all_branches: `Todas as Unidades`,
+  peacs_next_start_base: `Iniciar: Sessão BASE (Estrutura · mensal)`,
+  peacs_next_mvmt: `Próxima: Sessão MVMT (Execução · semanal)`,
+  peacs_next_strata: `Próxima: Sessão STRATA (Contexto · trimestral)`,
+  peacs_complete: `Concluído · Reavaliação em 90 dias`,
+  map_architecture: `Estrutura`,
+  map_execution: `Execução`,
+  map_context: `Contexto`,
+  score_optimal: `Ótimo`,
+  score_good: `Bom`,
+  score_moderate: `Moderado`,
+  score_poor: `Fraco`,
+  score_critical: `Crítico`,
+  phenotype_intentional_resistor: `Resistente Intencional`,
+  phenotype_routine_forgetter: `Esquecimento por Rotina`,
+  phenotype_situational_skipper: `Omissão Situacional`,
+  phenotype_side_effect_avoider: `Evitador de Efeitos Adversos`,
+  phenotype_optimistic_stopper: `Interruptor Otimista`,
+  encounter_counseling_session: `Sessão de Aconselhamento Farmacêutico`,
+  encounter_adherence_assessment: `Avaliação de Adesão (MAP/PEACS)`,
+  encounter_refill_review: `Revisão de Dispensação e Recarga`,
+  encounter_patient_education: `Educação ao Paciente`,
+  encounter_specialist_referral: `Encaminhamento a Especialista`,
+  encounter_follow_up_call: `Ligação de Acompanhamento`,
+  encounter_medication_review: `Revisão Clínica de Medicamentos`,
+  encounter_home_delivery: `Coordenação de Entrega em Domicílio`,
+  encounter_insurance_auth: `Convênio / Autorização Prévia`,
+  encounter_other: `Outro`,
+  btn_start: `Iniciar`,
+  btn_done: `Concluído`,
+  btn_close: `Fechar`,
+  btn_save: `Salvar`,
+  btn_print: `Imprimir`,
+  btn_next: `Próximo`,
+  lbl_last_seen: `Última Visita`,
+  lbl_sessions: `Consultas`,
+  lbl_next_step: `Próximo Passo`,
+  lbl_intervention_history: `Histórico de Intervenções`,
+  lbl_patient_data: `Dados do Paciente`,
+  lbl_no_data: `Sem dados ainda`,
+};
+
 // Merge ATLAS_EXTRA3 into ATLAS_STRINGS
 if (typeof ATLAS_STRINGS !== 'undefined' && typeof ATLAS_EXTRA3 !== 'undefined') {
   Object.keys(ATLAS_EXTRA3).forEach(function(lang) {
     if (ATLAS_STRINGS[lang]) Object.assign(ATLAS_STRINGS[lang], ATLAS_EXTRA3[lang]);
+  });
+}
+
+// ── pt-BR alias — Brazilian Portuguese pilot (Brazil DynamoDB region) ────────
+// Starts from the full pt locale, then overrides EU-specific vocabulary.
+// Brazilian clinicians and patients at the Brazil pilot site receive these strings.
+if (typeof ATLAS_STRINGS !== 'undefined' && ATLAS_STRINGS['pt']) {
+  ATLAS_STRINGS['pt-BR'] = Object.assign({}, ATLAS_STRINGS['pt'], {
+    // Brazilian spelling corrections (accents / orthographic agreement 2009)
+    consentSub: `Por favor, leia as informações a seguir. Sua participação é voluntária e completamente anônima.`,
+    checkLabel: `Li e entendi o acima. Concordo voluntariamente em participar desta avaliação de pesquisa anônima.`,
+    submitNote: `Todas as 8 perguntas devem ser respondidas antes de enviar. · Anônimo · Seguro · Validado globalmente.`,
+    // Button vocabulary (Brazilian)
+    submitBtn: `Enviar Avaliação`,
+    resultDownload: `↓ Baixar Meu Cartão de Resultado`,
+    resultSpectator: `◉ Ver o Mapa Global ao Vivo`,
+    // Field labels (Brazilian)
+    labelGender: `Gênero`,
+    // Placeholder geography (Brazil)
+    placeholderCountry: `ex. Brasil`,
+    placeholderCity: `ex. São Paulo`,
+    // Notes (Brazilian phrasing)
+    noteStudy: `Fornecido pelo seu pesquisador responsável.`,
+    // Entry screen
+    researcherLabel: `Trilhas A+B · Pesquisador`,
+    researcherName: `Sou PI, pesquisador, farmacêutico, clínico ou estudante`,
+    institutionLabel: `Trilhas A+B · Instituição`,
+    // ZOE voice
+    zoeTitle: `Prefere falar suas respostas?`,
+    zoeSub: `Preencha suas informações acima e deixe a ZOE guiá-lo pelas perguntas com voz.`,
+    zoeBtn: `🎙 Iniciar Avaliação por Voz`,
+    // LGPD consent note (Brazil-specific regulation)
+    s3body: `Suas respostas são armazenadas de forma anônima. Registramos: sua pontuação MMAS-8, sua localização aproximada (país e cidade), um ID de sessão aleatório e um carimbo de data/hora. Dados de participantes brasileiros são armazenados exclusivamente em servidores na região sa-east-1 (São Paulo, Brasil) em conformidade com a LGPD.`,
+    lang_select_label: `Idioma`,
   });
 }
 

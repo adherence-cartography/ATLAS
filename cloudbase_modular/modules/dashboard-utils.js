@@ -845,6 +845,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     enterSpectatorMode();
   });
 
+  const _globeAtlasBtn = document.getElementById('dash-globe-atlas-btn');
+  if (_globeAtlasBtn) _globeAtlasBtn.addEventListener('click', () => {
+    if (typeof wsOpenGlobeOverlay === 'function') wsOpenGlobeOverlay();
+  });
+
   document.getElementById('mmas-refresh-btn').addEventListener('click', loadMmasCohortData);
   document.getElementById('peacs-refresh-btn').addEventListener('click', loadPeacsCohortData);
   document.getElementById('mapc-refresh-btn').addEventListener('click', function() { _renderMapRecordsTab(dashMmasData); });

@@ -527,13 +527,25 @@ function renderLongitudinalDashboard(containerId, workspaceKey) {
     return;
   }
 
+  // workspaceKey may be a string (single workspace) or an array (PI/institution multi-site)
+  var _wsSet = null;
+  if (Array.isArray(workspaceKey)) {
+    _wsSet = {};
+    workspaceKey.forEach(function(k) { if (k) _wsSet[k.toUpperCase()] = true; });
+  }
+
   _lmFbGet('map_sessions')
     .then(function(data) {
       var allSessions = [];
       if (data) {
         Object.keys(data).forEach(function(key) {
           var sess = data[key];
-          if (sess && sess.workspace_key === workspaceKey) allSessions.push(sess);
+          if (!sess) return;
+          var sessWs = (sess.workspace_key || '').toUpperCase();
+          var match = _wsSet
+            ? _wsSet[sessWs]
+            : (!workspaceKey || sessWs === (workspaceKey || '').toUpperCase());
+          if (match) allSessions.push(sess);
         });
       }
       allSessions.sort(function(a, b) { return (b.last_updated || 0) - (a.last_updated || 0); });

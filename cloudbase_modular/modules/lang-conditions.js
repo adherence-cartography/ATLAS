@@ -132,7 +132,10 @@ function rebuildConditionDropdown() {
   const other = document.getElementById('sdoh-condition-other');
   if (!sel) return;
   const _COND_LANGS = ['ar','es','el','af','sq','bn','zh','zh-TW','hr','da','nl','fi','fr','de','hi','id','it','ja','ko','ms','pt','ru','sw','sv','tr','uk','ur','vi','tl','pl'];
-  const _cl = (typeof mmasCurrentLang !== 'undefined' && _COND_LANGS.includes(mmasCurrentLang)) ? mmasCurrentLang : 'en';
+  const _COND_LANG_ALIASES = { 'pt-BR': 'pt', 'zh-CN': 'zh', 'zh-HK': 'zh-TW' };
+  const _rawLang = (typeof mmasCurrentLang !== 'undefined') ? mmasCurrentLang : 'en';
+  const _resolvedLang = _COND_LANG_ALIASES[_rawLang] || _rawLang;
+  const _cl = _COND_LANGS.includes(_resolvedLang) ? _resolvedLang : 'en';
   const _condUI = {
     ar: { label: 'الحالة الطبية التي يتم علاجها <span class="sdoh-optional">اختياري</span>', note: 'اضغط Ctrl / Cmd لاختيار أكثر من خيار. تظهر اختياراتك أدناه.', placeholder: '— اختر الحالة —', other: 'يرجى تحديد الحالة' },
     es: { label: 'Condición Médica en Tratamiento <span class="sdoh-optional">opcional</span>', note: 'Mantenga Ctrl / Cmd para seleccionar varias. Sus selecciones aparecen abajo.', placeholder: '— Seleccionar condición —', other: 'Por favor especifique la condición' },
@@ -680,15 +683,17 @@ function classifyPattern(answers) {
  * @returns {{ intentional: number, unintentional: number }}
  */
 function classifyMapPattern(record) {
+  // Reads both map_q{n} (clinical records) and plain q{n} (pharmacy kiosk records)
+  const _q = n => parseFloat(record['map_q'+n] ?? record['q'+n] ?? 0);
   let intentional = 0, unintentional = 0;
-  if (parseFloat(record.map_q1||0) === 0) unintentional++;  // forgetting — UNA
-  if (parseFloat(record.map_q2||0) === 0) intentional++;    // deliberate omission — INA
-  if (parseFloat(record.map_q3||0) === 0) intentional++;    // side-effect-driven stop — INA
-  // map_q4 Neutral (Context domain) — excluded
-  // map_q5 Neutral — excluded
-  if (parseFloat(record.map_q6||0) === 0) intentional++;    // symptom-based stop — INA
-  // map_q7 Neutral (Context domain) — excluded
-  if (parseFloat(record.map_q8||0) < 1)   unintentional++;  // frequency of difficulty remembering — UNA
+  if (_q(1) === 0) unintentional++;  // forgetting — UNA
+  if (_q(2) === 0) intentional++;    // deliberate omission — INA
+  if (_q(3) === 0) intentional++;    // side-effect-driven stop — INA
+  // Q4 Neutral (Context domain) — excluded
+  // Q5 Neutral — excluded
+  if (_q(6) === 0) intentional++;    // symptom-based stop — INA
+  // Q7 Neutral (Context domain) — excluded
+  if (_q(8) < 1)   unintentional++;  // frequency of difficulty remembering — UNA
   return { intentional, unintentional };
 }
 

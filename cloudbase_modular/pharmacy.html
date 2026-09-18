@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>ATLAS Pharmacy Gateway · MAP Assessment · TESSERA GRC</title>
 <meta name="atlas-build" content="2026.06.15-pharmacy-gateway-v2"/>
 <meta name="description" content="ATLAS Pharmacy Gateway — MAP medication adherence assessment for community pharmacists"/>
@@ -11,6 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" integrity="sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0" crossorigin="anonymous"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" integrity="sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p" crossorigin="anonymous"></script>
+<script src="modules/lang-conditions.js"></script>
 <style>
 /* ═══════════════════════════════════════════
    RESET & TOKENS
@@ -188,6 +189,11 @@ body::before{
   background-position:right 18px center;
   padding-right:44px;
   cursor:pointer;
+}
+[dir=rtl] .field-select{
+  background-position:left 18px center;
+  padding-right:16px;
+  padding-left:44px;
 }
 .field-select option{background:#0d1525;color:#cdd8e8;}
 .field-select:focus,.field-input:focus{
@@ -408,6 +414,10 @@ body::before{
   display:flex;align-items:center;padding:0 20px;
   text-align:left;gap:14px;
 }
+@media (max-height:680px){
+  .q8-options{gap:7px;}
+  .q8-btn{min-height:46px;font-size:0.93rem;padding:0 14px;}
+}
 .q8-btn:hover{
   border-color:rgba(6,182,212,0.4);
   background:rgba(6,182,212,0.06);
@@ -513,13 +523,41 @@ body::before{
 .tl-status.green{color:#34d399;}
 .tl-status.amber{color:#fbbf24;}
 .tl-status.red{color:#f87171;}
-.tl-pe{
-  font-family:var(--font-mono);
-  font-size:0.85rem;letter-spacing:0.2em;
-  color:var(--muted);
-  margin-top:12px;
+.tl-scores{
+  display:flex;align-items:center;gap:28px;
+  margin-top:16px;
 }
-.tl-pe span{color:var(--pe);font-size:1.2rem;}
+.tl-score-block{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.tl-score-label{
+  font-family:var(--font-mono);
+  font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--muted);
+}
+.tl-score-val{
+  font-family:var(--font-mono);
+  font-size:1.35rem;
+  color:var(--pe);
+}
+.tl-score-denom{
+  font-size:0.82rem;
+  color:var(--muted);
+}
+.tl-score-sep{
+  width:1px;height:36px;
+  background:rgba(255,255,255,0.15);
+  flex-shrink:0;
+}
+.tl-adh-level{
+  font-family:var(--font-mono);
+  font-size:0.63rem;letter-spacing:0.15em;text-transform:uppercase;
+  padding:2px 7px;border-radius:4px;
+  margin-top:4px;
+}
+.tl-adh-level.adh-low{ color:#f87171;background:rgba(239,68,68,0.12); }
+.tl-adh-level.adh-mod{ color:#fbbf24;background:rgba(245,158,11,0.12); }
+.tl-adh-level.adh-high{ color:#34d399;background:rgba(16,185,129,0.12); }
 
 /* Domain bars */
 .domain-bars{
@@ -940,6 +978,53 @@ body::before{
   background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);
   border-radius:6px;padding:6px 14px;
 }
+.sdoh-barrier-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);
+  border-radius:20px;padding:5px 12px;font-size:0.82rem;color:var(--dim);
+  cursor:pointer;transition:all 0.15s;user-select:none;
+}
+.sdoh-barrier-chip:hover{ background:rgba(255,255,255,0.08); }
+.sdoh-barrier-chip input{ accent-color:var(--accent);cursor:pointer; }
+.pg-login-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:18px;padding:36px 32px;
+  width:100%;max-width:360px;
+  display:flex;flex-direction:column;gap:18px;align-items:center;
+}
+.pg-login-icon{font-size:2rem;opacity:0.6;}
+.pg-login-title{font-size:1.3rem;font-weight:600;color:var(--text);margin:0;text-align:center;}
+.pg-login-sub{font-size:0.9rem;color:var(--muted);text-align:center;margin:0;line-height:1.5;}
+.pg-key-input{
+  width:100%;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:10px;
+  color:var(--text);
+  font-family:var(--font-mono);
+  font-size:0.95rem;letter-spacing:0.08em;
+  padding:14px 16px;outline:none;
+  text-transform:uppercase;text-align:center;
+  transition:border-color 0.2s;
+}
+.pg-key-input:focus{border-color:rgba(212,168,67,0.55);}
+.pg-key-input::placeholder{color:rgba(255,255,255,0.2);text-transform:none;letter-spacing:0;}
+.pg-login-error{
+  font-family:var(--font-mono);font-size:0.78rem;letter-spacing:0.06em;
+  color:rgba(248,113,113,0.9);text-align:center;min-height:1.2em;margin:0;
+}
+.pg-login-btn{
+  width:100%;
+  background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.3);
+  border-radius:10px;color:rgba(212,168,67,0.9);
+  font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;
+  padding:14px;cursor:pointer;font-weight:600;
+  transition:background 0.2s,border-color 0.2s,transform 0.15s;
+}
+.pg-login-btn:hover{background:rgba(212,168,67,0.2);border-color:rgba(212,168,67,0.5);}
+.pg-login-btn:active{transform:translateY(1px);}
+.pg-login-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
 .pg-ws-link{
   display:none;align-items:center;gap:10px;
   background:rgba(46,201,138,0.06);
@@ -1028,7 +1113,37 @@ body::before{
   </div>
 </div>
 
-<!-- ═══ SCREEN 0b: INVALID KEY ═══ -->
+<!-- ═══ SCREEN 0b: LOGIN ═══ -->
+<div id="screen-login" class="screen">
+  <header class="pharm-header">
+    <div class="header-brand">
+      <div class="header-badge">
+        <span class="header-badge-dot"></span>
+        ATLAS · Pharmacy Gateway
+      </div>
+      <div class="header-title"><em>MAP</em> Assessment</div>
+    </div>
+    <div class="header-meta">
+      <div class="header-tessera">TESSERA GRC</div>
+      <div class="header-scala">Scala Carta Foundation</div>
+    </div>
+  </header>
+  <div class="pg-gate-center">
+    <div class="pg-login-card">
+      <div class="pg-login-icon">&#128274;</div>
+      <p class="pg-login-title">Pharmacy Sign In</p>
+      <p class="pg-login-sub">Enter your workspace key to access this assessment kiosk.</p>
+      <input type="text" id="pg-key-input" class="pg-key-input"
+             placeholder="PHRM-XXXX-XXXX-XXXX"
+             autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+             onkeydown="if(event.key==='Enter')_pgLoginSubmit()">
+      <p class="pg-login-error" id="pg-login-error"></p>
+      <button class="pg-login-btn" id="pg-login-btn" onclick="_pgLoginSubmit()">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 0c: INVALID KEY ═══ -->
 <div id="screen-invalid" class="screen">
   <header class="pharm-header">
     <div class="header-brand">
@@ -1069,6 +1184,10 @@ body::before{
   </header>
 
   <div class="setup-body">
+    <!-- Remote patient mode banner — visible only when ?remote=1 -->
+    <div id="pg-remote-banner" style="display:none;background:rgba(78,156,245,0.08);border:1px solid rgba(78,156,245,0.25);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:#4e9cf5;">
+      &#128274; Your follow-up assessment has been sent by your care team. Your information is pre-filled — just confirm and begin.
+    </div>
     <div class="setup-intro">
       <h2 id="setup-intro-h2">Pharmacy Assessment Setup</h2>
       <p id="setup-intro-p">Configure the session before handing the tablet to your patient. This takes about 10 seconds.</p>
@@ -1083,58 +1202,107 @@ body::before{
     </div>
 
     <div class="setup-fields">
-      <div class="pharmacy-name-row">
-        <div class="field-group">
-          <label class="field-label" for="pharmacy-name" id="lbl-pharmacy-name">Pharmacy Name (optional)</label>
-          <input class="field-input" type="text" id="pharmacy-name" placeholder="e.g. Farmacia Roma Centrale"/>
-        </div>
+
+      <div class="field-group">
+        <label class="field-label" for="patient-ref-input" id="lbl-patient-ref">Patient Reference Code</label>
+        <input class="field-input" type="text" id="patient-ref-input"
+          placeholder="Chart or visit number (no personal data)" required/>
       </div>
 
       <div class="field-group">
-        <label class="field-label" for="condition-select" id="lbl-condition">Patient Condition</label>
-        <select class="field-select" id="condition-select">
-          <option value="" id="opt-condition-default">Select condition...</option>
-          <option value="Hypertension" id="opt-condition-hyp">Hypertension</option>
-          <option value="Diabetes" id="opt-condition-dia">Diabetes</option>
-          <option value="Cardiovascular" id="opt-condition-cvd">Cardiovascular</option>
-          <option value="HIV">HIV</option>
-          <option value="Other" id="opt-condition-other">Other</option>
+        <label class="field-label" for="condition-select" id="lbl-condition">Medical Condition Being Treated <span style="font-weight:400;opacity:0.6;">(optional)</span></label>
+        <input type="text" id="condition-search" class="field-input" placeholder="Search conditions…"
+          autocomplete="off" oninput="filterConditionDropdown(this.value,'condition-select')"
+          style="margin-bottom:6px;"/>
+        <select class="field-select" id="condition-select" size="5" style="height:auto;min-height:110px;">
+          <!-- Populated by _pgBuildConditionDropdown() -->
         </select>
       </div>
 
       <div class="field-group">
-        <label class="field-label" for="medication-input" id="lbl-medication">Medication Type (optional)</label>
-        <input class="field-input" type="text" id="medication-input" placeholder="e.g. ACE inhibitor, Metformin..."/>
+        <label class="field-label" for="num-meds-select">Number of Medications <span style="font-weight:400;opacity:0.6;">(optional)</span></label>
+        <select class="field-select" id="num-meds-select">
+          <option value="">— Select —</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="medication-input" id="lbl-medication">Medication(s) <span style="font-weight:400;opacity:0.6;">(optional)</span></label>
+        <input class="field-input" type="text" id="medication-input" placeholder="e.g. Metformin 500 mg, Amlodipine 5 mg…"/>
       </div>
 
       <div class="pharmacy-name-row">
         <div class="field-group">
-          <label class="field-label" for="age-select" id="lbl-age">Patient Age Range (optional)</label>
-          <select class="field-select" id="age-select">
-            <option value="" id="opt-age-default">Select age range...</option>
-            <option value="18-30">18 – 30</option>
-            <option value="31-50">31 – 50</option>
-            <option value="51-64">51 – 64</option>
-            <option value="65+">65 +</option>
-            <option value="prefer_not" id="opt-age-prefer-not">Prefer not to say</option>
+          <label class="field-label" for="gender-select" id="lbl-gender">Gender <span style="font-weight:400;opacity:0.6;">(optional)</span></label>
+          <select class="field-select" id="gender-select">
+            <option value="" id="opt-gender-default">— Select —</option>
+            <option value="Male" id="opt-gender-male">Male</option>
+            <option value="Female" id="opt-gender-female">Female</option>
+            <option value="Other/Prefer not to say" id="opt-gender-pnts">Other / Prefer not to say</option>
           </select>
         </div>
         <div class="field-group">
-          <label class="field-label" for="gender-select" id="lbl-gender">Gender (optional)</label>
-          <select class="field-select" id="gender-select">
-            <option value="" id="opt-gender-default">Select...</option>
-            <option value="male" id="opt-gender-male">Male</option>
-            <option value="female" id="opt-gender-female">Female</option>
-            <option value="non_binary" id="opt-gender-nb">Non-binary</option>
-            <option value="prefer_not" id="opt-gender-pnts">Prefer not to say</option>
+          <label class="field-label" for="age-select" id="lbl-age">Age Range <span style="font-weight:400;opacity:0.6;">(optional)</span></label>
+          <select class="field-select" id="age-select">
+            <option value="">— Select —</option>
+            <option>Under 18</option>
+            <option>18–24</option>
+            <option>25–34</option>
+            <option>35–44</option>
+            <option>45–54</option>
+            <option>55–64</option>
+            <option>65–74</option>
+            <option>75 or older</option>
+            <option>Prefer not to say</option>
           </select>
         </div>
       </div>
 
       <div class="field-group">
-        <label class="field-label" for="patient-ref-input" id="lbl-patient-ref">Patient Reference Code (optional)</label>
-        <input class="field-input" type="text" id="patient-ref-input"
-          placeholder="e.g. initials + birth year: MR1958 — enables repeat-visit tracking"/>
+        <label class="field-label" for="edu-select">Highest Level of Education <span style="font-weight:400;opacity:0.6;">(optional)</span></label>
+        <select class="field-select" id="edu-select">
+          <option value="">— Select —</option>
+          <option>No formal education</option>
+          <option>Primary school (Elementary)</option>
+          <option>Secondary school (High school)</option>
+          <option>Some college / University (incomplete)</option>
+          <option>Associate degree / Trade school</option>
+          <option>Bachelor's degree</option>
+          <option>Master's degree</option>
+          <option>Doctoral degree (PhD, MD, JD, etc.)</option>
+          <option>Prefer not to say</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Reported Adherence Barriers <span style="font-weight:400;opacity:0.6;">(optional — select all that apply)</span></label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;" id="pg-barriers-group">
+          <label class="sdoh-barrier-chip"><input type="checkbox" name="pg_barrier" value="Cost / affordability"> Cost / Affordability</label>
+          <label class="sdoh-barrier-chip"><input type="checkbox" name="pg_barrier" value="Side effects"> Side Effects</label>
+          <label class="sdoh-barrier-chip"><input type="checkbox" name="pg_barrier" value="Forgetfulness"> Forgetfulness</label>
+          <label class="sdoh-barrier-chip"><input type="checkbox" name="pg_barrier" value="Complex regimen"> Complex Regimen</label>
+          <label class="sdoh-barrier-chip"><input type="checkbox" name="pg_barrier" value="Access / supply issues"> Access / Supply Issues</label>
+          <label class="sdoh-barrier-chip"><input type="checkbox" name="pg_barrier" value="Beliefs about medication"> Beliefs about Medication</label>
+          <label class="sdoh-barrier-chip"><input type="checkbox" name="pg_barrier" value="Swallowing difficulty"> Swallowing Difficulty</label>
+          <label class="sdoh-barrier-chip"><input type="checkbox" name="pg_barrier" value="Injection anxiety"> Injection Anxiety</label>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="pharmacist-notes-input">Pharmacist Notes <span style="font-weight:400;opacity:0.6;">(optional)</span></label>
+        <textarea class="field-input" id="pharmacist-notes-input" rows="2"
+          style="resize:vertical;min-height:52px;font-family:inherit;"
+          placeholder="Clinical context, side-effect detail, regimen change, outcome of last visit…"></textarea>
       </div>
 
       <div class="field-group">
@@ -1170,6 +1338,7 @@ body::before{
           <option value="uk">Українська</option>
           <option value="ur">اردو</option>
           <option value="vi">Tiếng Việt</option>
+          <option value="pt">Português (Brasil)</option>
         </select>
       </div>
     </div>
@@ -1257,7 +1426,18 @@ body::before{
     <div class="traffic-light" id="traffic-light">
       <div class="tl-icon" id="tl-icon"></div>
       <div class="tl-status" id="tl-status"></div>
-      <div class="tl-pe"><span id="tl-pe-label">MAP PE Score:</span> <span id="tl-pe-val"></span> <span id="tl-pe-suffix">/ 1.00</span></div>
+      <div class="tl-scores">
+        <div class="tl-score-block">
+          <div class="tl-score-label" id="tl-pe-label">MAP PE Score</div>
+          <div class="tl-score-val"><span id="tl-pe-val"></span><span class="tl-score-denom"> / 1.00</span></div>
+        </div>
+        <div class="tl-score-sep"></div>
+        <div class="tl-score-block">
+          <div class="tl-score-label" id="tl-additive-label">Additive Score</div>
+          <div class="tl-score-val"><span id="tl-additive-val"></span><span class="tl-score-denom"> / 8</span></div>
+          <div class="tl-adh-level" id="tl-adh-level"></div>
+        </div>
+      </div>
     </div>
 
     <div class="domain-bars">
@@ -1375,6 +1555,25 @@ body::before{
       </button>
     </div>
 
+    <!-- Follow-up Panel: send QR/SMS link for next assessment -->
+    <div id="followup-panel" style="margin-top:18px;border:1px solid rgba(78,156,245,0.2);border-left:3px solid #4e9cf5;border-radius:8px;padding:16px;background:rgba(78,156,245,0.04);">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:#4e9cf5;margin-bottom:10px;">&#128203; Schedule Follow-up Assessment</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;">
+        <div id="followup-qr-box" style="flex-shrink:0;"></div>
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px;">
+          <div id="followup-link-row" style="display:flex;gap:6px;align-items:center;">
+            <input id="followup-link-input" type="text" readonly style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;background:var(--card2,#1a1a1a);border:1px solid var(--border,#333);border-radius:5px;padding:5px 9px;color:var(--muted,#aaa);outline:none;"/>
+            <button onclick="copyFollowUpLink()" style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;background:rgba(78,156,245,0.10);border:1px solid rgba(78,156,245,0.3);color:#4e9cf5;border-radius:5px;padding:5px 10px;cursor:pointer;white-space:nowrap;">&#128203; Copy</button>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input id="followup-phone-input" type="tel" placeholder="+1 555 000 0000" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;background:var(--card2,#1a1a1a);border:1px solid var(--border,#333);border-radius:5px;padding:6px 10px;color:var(--text,#eee);outline:none;" oninput="this.style.borderColor=this.value?'rgba(78,156,245,0.5)':'var(--border,#333)'"/>
+            <button onclick="sendFollowUpSMS()" style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.35);color:#4e9cf5;border-radius:5px;padding:6px 12px;cursor:pointer;white-space:nowrap;">&#128241; Send SMS</button>
+          </div>
+          <div id="followup-due-note" style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:var(--dim,#666);"></div>
+        </div>
+      </div>
+    </div>
+
     <button class="alert-back-btn" id="btn-back-results" onclick="showScreen('screen-results')">
       &#8592; Back to Results
     </button>
@@ -1436,12 +1635,74 @@ if(!firebase.apps.length){
 }
 const db = firebase.database();
 
-// ── Site code: read from ?site= URL param ─────────────────────────────────
-const _PG_SITE_CODE = ((new URLSearchParams(window.location.search)).get('site') || '').trim().toUpperCase() || 'UNASSIGNED';
-// ── Demo mode: ?demo=true shows synthetic data, no Firebase writes ──
-const _PG_DEMO = (new URLSearchParams(window.location.search)).get('demo') === 'true';
+// ── URL params ──────────────────────────────────────────────────────────────
+const _pgUrlParams = new URLSearchParams(window.location.search);
+// Remote patient mode: ?remote=1&key=XXXX&pid=YYYY — skips pharmacist login,
+// pre-populates patient ID from URL, shows patient-facing header.
+const _PG_REMOTE     = _pgUrlParams.get('remote') === '1';
+const _PG_REMOTE_PID = (_pgUrlParams.get('pid') || '').trim();
+const _PG_REMOTE_LANG= (_pgUrlParams.get('lang') || '').trim().toLowerCase();
+// Site code: from ?site= (kiosk), ?key= (remote link), or login form after auth
+let _PG_SITE_CODE = (_pgUrlParams.get('site') || (_PG_REMOTE ? _pgUrlParams.get('key') : '') || '').trim().toUpperCase();
+// Demo mode: ?demo=true shows synthetic data, no Firebase writes
+const _PG_DEMO = _pgUrlParams.get('demo') === 'true';
 // ── Workspace profile: populated after successful site code validation ─────
 let _pgWorkspaceProfile = null;
+
+// Calls Lambda to validate a key, signs into Firebase, returns { ok, profile, error }.
+async function _pgDoValidate(key){
+  const ctrl = new AbortController();
+  setTimeout(()=>ctrl.abort(), 12000);
+  try{
+    const resp = await fetch('/lambda-proxy/validate-key',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({key}),signal:ctrl.signal
+    });
+    const data = await resp.json();
+    if(!data.valid) return {ok:false, error: data.error||'This workspace key is invalid or has expired.'};
+    if(data.magic_required || data.mfa_required)
+      return {ok:false, error:'This key uses email-based login and cannot be used on a shared kiosk. Provision a kiosk key without an email field in SSM.'};
+    if(!data.token) return {ok:false, error:'No auth token returned. Check Lambda configuration.'};
+    await firebase.auth().signInWithCustomToken(data.token);
+    const profile = data.profile || {};
+    // SSM profiles may lack parent_pi / parent_institution because /admin/edit-key
+    // Lambda does not write back to SSM. Merge from Firebase workspace node so
+    // submissions are tagged with the correct PI and institution linkage.
+    if (!profile.parent_pi || !profile.parent_institution) {
+      try {
+        const wsSnap = await firebase.database().ref('workspaces/' + key.toUpperCase()).once('value');
+        const wsData = wsSnap.val();
+        if (wsData) {
+          if (!profile.parent_pi && wsData.parent_pi) profile.parent_pi = wsData.parent_pi;
+          if (!profile.parent_institution && wsData.parent_institution) profile.parent_institution = wsData.parent_institution;
+        }
+      } catch(e) { /* non-fatal — submission falls back to site code */ }
+    }
+    return {ok:true, profile};
+  }catch(err){
+    const msg = err.name==='AbortError'
+      ? 'Request timed out. Check your connection and try again.'
+      : 'Could not verify this key. Check your connection and try again.';
+    return {ok:false, error: msg};
+  }
+}
+
+// Returns true if the profile role is permitted to access the pharmacy gateway.
+function _pgRoleAllowed(profile){
+  const r = (profile.role||'').toLowerCase();
+  return r === 'clinician' || r === 'pharmacy';
+}
+
+// Applies workspace profile to the setup screen UI.
+function _pgApplyProfile(profile){
+  _pgWorkspaceProfile = profile;
+  if(profile.parent_pi){
+    const badge = document.getElementById('pg-ws-link');
+    const nameEl = document.getElementById('pg-ws-link-name');
+    if(badge) badge.style.display = 'flex';
+    if(nameEl) nameEl.textContent = profile.parent_institution_name || profile.parent_pi;
+  }
+}
 
 async function _pgInitGateway(){
   if(_PG_DEMO){
@@ -1449,55 +1710,83 @@ async function _pgInitGateway(){
     showScreen('screen-setup');
     return;
   }
-  if(_PG_SITE_CODE === 'UNASSIGNED'){
-    const el = document.getElementById('invalid-msg');
-    if(el) el.textContent = 'No site code provided. Pharmacy gateway URLs must include a ?site= parameter.';
-    showScreen('screen-invalid');
+  if(!_PG_SITE_CODE){
+    // No ?site= param: show login screen so the pharmacist can enter their key.
+    showScreen('screen-login');
     return;
   }
-  try{
-    const ctrl = new AbortController();
-    setTimeout(()=>ctrl.abort(), 12000);
-    const resp = await fetch('/lambda-proxy/validate-key',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({key: _PG_SITE_CODE}),
-      signal: ctrl.signal
-    });
-    const data = await resp.json();
-    if(!data.valid){
-      const el = document.getElementById('invalid-msg');
-      if(el) el.textContent = data.error || 'This site code is invalid or has expired.';
-      const codeEl = document.getElementById('invalid-site-code');
-      if(codeEl) codeEl.textContent = _PG_SITE_CODE;
-      showScreen('screen-invalid');
-      return;
-    }
-    await firebase.auth().signInWithCustomToken(data.token);
-    _pgWorkspaceProfile = data.profile || {};
-    // Pre-fill pharmacy name from workspace profile
-    const nameInput = document.getElementById('pharmacy-name');
-    if(nameInput && !nameInput.value && _pgWorkspaceProfile.name){
-      nameInput.value = _pgWorkspaceProfile.name;
-    }
-    // Show workspace-link badge if connected to a PI workspace
-    if(_pgWorkspaceProfile.parent_pi){
-      const badge = document.getElementById('pg-ws-link');
-      const nameEl = document.getElementById('pg-ws-link-name');
-      if(badge) badge.style.display = 'flex';
-      if(nameEl) nameEl.textContent = _pgWorkspaceProfile.parent_institution_name || _pgWorkspaceProfile.parent_pi;
-    }
-    showScreen('screen-setup');
-  } catch(err){
+  // URL-based path: auto-validate on load.
+  const result = await _pgDoValidate(_PG_SITE_CODE);
+  if(!result.ok){
     const el = document.getElementById('invalid-msg');
-    if(el) el.textContent = err.name === 'AbortError'
-      ? 'Request timed out. Check your connection and try again.'
-      : 'Could not verify this site. Check your connection and try again.';
+    if(el) el.textContent = result.error;
     const codeEl = document.getElementById('invalid-site-code');
     if(codeEl) codeEl.textContent = _PG_SITE_CODE;
     showScreen('screen-invalid');
-    console.warn('[ATLAS-PG] Gateway validation error:', err.message);
+    return;
   }
+  if(!_pgRoleAllowed(result.profile)){
+    const el = document.getElementById('invalid-msg');
+    if(el) el.textContent = 'This workspace key does not have pharmacy gateway access. Clinician accounts only.';
+    const codeEl = document.getElementById('invalid-site-code');
+    if(codeEl) codeEl.textContent = _PG_SITE_CODE;
+    showScreen('screen-invalid');
+    return;
+  }
+  _pgApplyProfile(result.profile);
+  _pgApplyRemoteMode();
+  showScreen('screen-setup');
+}
+
+// In remote patient mode, pre-populate patient ID and apply patient-facing UI.
+function _pgApplyRemoteMode() {
+  if (!_PG_REMOTE) return;
+  if (_PG_REMOTE_PID) {
+    const el = document.getElementById('patient-ref-input');
+    if (el) { el.value = _PG_REMOTE_PID; el.readOnly = true; }
+  }
+  if (_PG_REMOTE_LANG) {
+    const sel = document.getElementById('pg-lang-select');
+    if (sel) sel.value = _PG_REMOTE_LANG;
+  }
+  // Show a patient-facing banner instead of pharmacist header
+  const loginHdr = document.getElementById('screen-setup');
+  if (loginHdr) loginHdr.setAttribute('data-remote', '1');
+  const remoteBanner = document.getElementById('pg-remote-banner');
+  if (remoteBanner) remoteBanner.style.display = 'block';
+  // Hide pharmacist-only setup fields (dashboard link, workspace info badge)
+  ['pg-ws-link','pg-dashboard-link'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+// Called by the login form Sign In button and Enter key.
+async function _pgLoginSubmit(){
+  const input  = document.getElementById('pg-key-input');
+  const btn    = document.getElementById('pg-login-btn');
+  const errEl  = document.getElementById('pg-login-error');
+  const key    = (input.value||'').trim().toUpperCase();
+  if(!key){ errEl.textContent = 'Please enter your workspace key.'; return; }
+  errEl.textContent = '';
+  btn.disabled = true; btn.textContent = 'Verifying…';
+  _PG_SITE_CODE = key;
+  const result = await _pgDoValidate(key);
+  if(!result.ok){
+    errEl.textContent = result.error;
+    btn.disabled = false; btn.textContent = 'Sign In';
+    input.select();
+    return;
+  }
+  if(!_pgRoleAllowed(result.profile)){
+    errEl.textContent = 'This key does not have pharmacy gateway access. Clinician accounts only.';
+    btn.disabled = false; btn.textContent = 'Sign In';
+    _PG_SITE_CODE = '';
+    firebase.auth().signOut().catch(()=>{});
+    return;
+  }
+  _pgApplyProfile(result.profile);
+  showScreen('screen-setup');
 }
 
 if(document.readyState === 'loading'){
@@ -1600,7 +1889,8 @@ const Q8_TRANSLATIONS = {
   it:['Mai','Raramente','A volte','Spesso','Sempre'],
   es:['Nunca','Raramente','A veces','A menudo','Siempre'],
   fr:['Jamais','Rarement','Parfois','Souvent','Tout le temps'],
-  ar:['ابدا','نادرا','احيانا','كثيرا','دائما']
+  ar:['ابدا','نادرا','احيانا','كثيرا','دائما'],
+  pt:['Nunca','Raramente','Às vezes','Com frequência','O tempo todo']
 };
 
 // Patient-friendly question translations — MAP instrument (correct item set)
@@ -1644,6 +1934,16 @@ const QUESTION_TRANSLATIONS = {
     'عندما تبدا في الشعور بتحسن او تتراجع الاعراض، هل تفكر احيانا في تقليل دوائك او ايقافه بنفسك؟',
     'هل يبدو الالتزام بروتين تناول ادويتك تحديا كبيرا في حياتك اليومية؟',
     'في الاسبوع الاعتيادي، كم مرة تجد صعوبة في تناول جميع ادويتك كما وصفت لك؟'
+  ],
+  pt:[
+    'Existem momentos em que você esquece de tomar seus medicamentos?',
+    'Nas últimas duas semanas, houve momentos em que você escolheu pular uma dose (por exemplo, por causa de efeitos colaterais, custo ou por sentir-se melhor)?',
+    'Nas últimas duas semanas, você reduziu a dose ou parou um medicamento por conta própria, sem informar seu médico ou equipe de saúde, por causa de como estava se sentindo?',
+    'Quando sua rotina diária muda (por exemplo, ao viajar, trabalhar em horários diferentes ou ficar longe de casa), você acha difícil manter seus medicamentos em dia?',
+    'Você conseguiu tomar sua última dose conforme prescrito?',
+    'Quando você começa a se sentir melhor ou seus sintomas melhoram, você pensa em reduzir ou pausar seu medicamento por conta própria?',
+    'Manter a rotina de tomar seus medicamentos parece um grande desafio no seu dia a dia?',
+    'Em uma semana típica, com que frequência você tem dificuldade em tomar todos os seus medicamentos conforme prescrito?'
   ]
 };
 
@@ -1655,6 +1955,12 @@ const UI_STRINGS = {
     setup_intro_h2:'Pharmacy Assessment Setup',
     setup_intro_p:'Configure the session before handing the tablet to your patient. This takes about 10 seconds.',
     lbl_pharmacy_name:'Pharmacy Name (optional)',
+    lbl_pharmacy_type:'Pharmacy Type',
+    opt_phtype_default:'Select type...',
+    opt_phtype_independent:'Independent Pharmacy',
+    opt_phtype_retail:'Retail / Community Pharmacy',
+    opt_phtype_specialty:'Specialty Pharmacy',
+    opt_phtype_hospital:'Hospital / Clinical Pharmacy',
     lbl_condition:'Patient Condition',
     opt_condition_default:'Select condition...',
     opt_condition_hyp:'Hypertension', opt_condition_dia:'Diabetes',
@@ -1668,8 +1974,8 @@ const UI_STRINGS = {
     opt_gender_default:'Select...',
     opt_gender_male:'Male', opt_gender_female:'Female',
     opt_gender_nb:'Non-binary', opt_gender_pnts:'Prefer not to say',
-    lbl_patient_ref:'Patient Reference Code (optional)',
-    ph_patient_ref:'e.g. initials + birth year: MR1958 \u2014 enables repeat-visit tracking',
+    lbl_patient_ref:'Patient Reference Code',
+    ph_patient_ref:'chart or visit number (no personal data)',
     lbl_language:'Language',
     begin_label:'Begin Assessment',
     begin_sub:'Hand tablet to patient \u00b7 approximately 3 minutes',
@@ -1681,8 +1987,10 @@ const UI_STRINGS = {
     q_back:'\u2190 Back',
     hdr_badge_results:'Assessment Complete',
     hdr_title_results:'Results',
-    tl_pe_label:'MAP PE Score:',
+    tl_pe_label:'MAP PE Score',
     tl_pe_suffix:'/ 1.00',
+    tl_additive_label:'Additive Score',
+    adh_low:'Low', adh_mod:'Moderate', adh_high:'High',
     domain_breakdown_title:'Domain Breakdown',
     domain_arch:'Architecture', domain_exec:'Execution', domain_ctx:'Context-Guard',
     insight_label:'Clinical Insight',
@@ -1731,6 +2039,12 @@ const UI_STRINGS = {
     setup_intro_h2:'Configurazione Valutazione Farmacia',
     setup_intro_p:'Configura la sessione prima di consegnare il tablet al paziente. Ci vogliono circa 10 secondi.',
     lbl_pharmacy_name:'Nome Farmacia (opzionale)',
+    lbl_pharmacy_type:'Tipo di Farmacia',
+    opt_phtype_default:'Seleziona tipo...',
+    opt_phtype_independent:'Farmacia Indipendente',
+    opt_phtype_retail:'Farmacia al Dettaglio / Farmacia di Comunità',
+    opt_phtype_specialty:'Farmacia Specializzata',
+    opt_phtype_hospital:'Farmacia Ospedaliera / Clinica',
     lbl_condition:'Condizione del Paziente',
     opt_condition_default:'Seleziona condizione...',
     opt_condition_hyp:'Ipertensione', opt_condition_dia:'Diabete',
@@ -1744,8 +2058,8 @@ const UI_STRINGS = {
     opt_gender_default:'Seleziona...',
     opt_gender_male:'Maschio', opt_gender_female:'Femmina',
     opt_gender_nb:'Non binario', opt_gender_pnts:'Preferisco non rispondere',
-    lbl_patient_ref:'Codice di Riferimento Paziente (opzionale)',
-    ph_patient_ref:'es. iniziali + anno di nascita: MR1958 \u2014 abilita tracciamento visite ripetute',
+    lbl_patient_ref:'Codice di Riferimento Paziente',
+    ph_patient_ref:'numero fascicolo o visita (no dati personali)',
     lbl_language:'Lingua',
     begin_label:'Inizia Valutazione',
     begin_sub:'Consegna il tablet al paziente \u00b7 circa 3 minuti',
@@ -1757,8 +2071,10 @@ const UI_STRINGS = {
     q_back:'\u2190 Indietro',
     hdr_badge_results:'Valutazione Completata',
     hdr_title_results:'Risultati',
-    tl_pe_label:'Punteggio MAP PE:',
+    tl_pe_label:'Punteggio MAP PE',
     tl_pe_suffix:'/ 1.00',
+    tl_additive_label:'Punteggio Additivo',
+    adh_low:'Basso', adh_mod:'Moderato', adh_high:'Alto',
     domain_breakdown_title:'Analisi per Dominio',
     domain_arch:'Architettura', domain_exec:'Esecuzione', domain_ctx:'Contesto-Guardia',
     insight_label:'Valutazione Clinica',
@@ -1820,8 +2136,8 @@ const UI_STRINGS = {
     opt_gender_default:'Seleccionar...',
     opt_gender_male:'Masculino', opt_gender_female:'Femenino',
     opt_gender_nb:'No binario', opt_gender_pnts:'Prefiero no decirlo',
-    lbl_patient_ref:'Código de Referencia del Paciente (opcional)',
-    ph_patient_ref:'ej. iniciales + año de nacimiento: MR1958',
+    lbl_patient_ref:'Código de Referencia del Paciente',
+    ph_patient_ref:'número de expediente o visita (sin datos personales)',
     lbl_language:'Idioma',
     begin_label:'Iniciar Evaluación',
     begin_sub:'Entregue la tableta al paciente · aproximadamente 3 minutos',
@@ -1833,8 +2149,10 @@ const UI_STRINGS = {
     q_back:'← Atrás',
     hdr_badge_results:'Evaluación Completada',
     hdr_title_results:'Resultados',
-    tl_pe_label:'Puntuación MAP PE:',
+    tl_pe_label:'Puntuación MAP PE',
     tl_pe_suffix:'/ 1.00',
+    tl_additive_label:'Puntuación Aditiva',
+    adh_low:'Bajo', adh_mod:'Moderado', adh_high:'Alto',
     domain_breakdown_title:'Desglose por Dominio',
     domain_arch:'Arquitectura', domain_exec:'Ejecución', domain_ctx:'Contexto-Guardia',
     insight_label:'Evaluación Clínica',
@@ -1896,8 +2214,8 @@ const UI_STRINGS = {
     opt_gender_default:'Sélectionner...',
     opt_gender_male:'Masculin', opt_gender_female:'Féminin',
     opt_gender_nb:'Non binaire', opt_gender_pnts:'Préfère ne pas répondre',
-    lbl_patient_ref:'Code de Référence Patient (optionnel)',
-    ph_patient_ref:'ex. initiales + année de naissance : MR1958',
+    lbl_patient_ref:'Code de Référence Patient',
+    ph_patient_ref:'numéro de dossier ou visite (sans données personnelles)',
     lbl_language:'Langue',
     begin_label:'Commencer l’évaluation',
     begin_sub:'Remettez la tablette au patient · environ 3 minutes',
@@ -1909,8 +2227,10 @@ const UI_STRINGS = {
     q_back:'← Retour',
     hdr_badge_results:'Évaluation Terminée',
     hdr_title_results:'Résultats',
-    tl_pe_label:'Score MAP PE :',
+    tl_pe_label:'Score MAP PE',
     tl_pe_suffix:'/ 1.00',
+    tl_additive_label:'Score Additif',
+    adh_low:'Faible', adh_mod:'Modéré', adh_high:'Élevé',
     domain_breakdown_title:'Détail par Domaine',
     domain_arch:'Architecture', domain_exec:'Exécution', domain_ctx:'Contexte-Garde',
     insight_label:'Évaluation Clinique',
@@ -1972,8 +2292,8 @@ const UI_STRINGS = {
     opt_gender_default:'اختر...',
     opt_gender_male:'ذكر', opt_gender_female:'أنثى',
     opt_gender_nb:'غير ثنائي', opt_gender_pnts:'أفضل عدم الإفصاح',
-    lbl_patient_ref:'رمز مرجعية المريض (اختياري)',
-    ph_patient_ref:'مثل: الأحرف الأولى + سنة الميلاد: MR1958',
+    lbl_patient_ref:'رمز مرجعية المريض',
+    ph_patient_ref:'رقم الملف أو الزيارة (بدون بيانات شخصية)',
     lbl_language:'اللغة',
     begin_label:'بدء التقييم',
     begin_sub:'سلّم الجهاز اللوحي للمريض · حوالي 3 دقائق',
@@ -1985,8 +2305,10 @@ const UI_STRINGS = {
     q_back:'← رجوع',
     hdr_badge_results:'اكتمل التقييم',
     hdr_title_results:'النتائج',
-    tl_pe_label:'درجة MAP PE:',
+    tl_pe_label:'درجة MAP PE',
     tl_pe_suffix:'‏/ 1.00',
+    tl_additive_label:'الدرجة التراكمية',
+    adh_low:'منخفض', adh_mod:'متوسط', adh_high:'مرتفع',
     domain_breakdown_title:'تفصيل النطاقات',
     domain_arch:'البنية', domain_exec:'التنفيذ', domain_ctx:'حارس السياق',
     insight_label:'تقييم سريري',
@@ -2031,6 +2353,84 @@ const UI_STRINGS = {
     ans_yes:'نعم',
     ans_no:'لا',
   },
+  pt: {
+    setup_intro_h2:'Configuração da Avaliação',
+    setup_intro_p:'Configure a sessão antes de entregar o tablet ao paciente. Isso leva cerca de 10 segundos.',
+    lbl_pharmacy_name:'Nome da Farmácia (opcional)',
+    lbl_condition:'Condição do Paciente',
+    opt_condition_default:'Selecionar condição...',
+    opt_condition_hyp:'Hipertensão', opt_condition_dia:'Diabetes',
+    opt_condition_cvd:'Cardiovascular', opt_condition_other:'Outro',
+    lbl_medication:'Tipo de Medicamento (opcional)',
+    ph_medication:'ex. IECA, Metformina...',
+    lbl_age:'Faixa Etária do Paciente (opcional)',
+    opt_age_default:'Selecionar faixa etária...',
+    opt_age_prefer_not:'Prefiro não informar',
+    lbl_gender:'Gênero (opcional)',
+    opt_gender_default:'Selecionar...',
+    opt_gender_male:'Masculino', opt_gender_female:'Feminino',
+    opt_gender_nb:'Não binário', opt_gender_pnts:'Prefiro não informar',
+    lbl_patient_ref:'Código de Referência do Paciente',
+    ph_patient_ref:'número de prontuário ou visita (sem dados pessoais)',
+    lbl_language:'Idioma',
+    begin_label:'Iniciar Avaliação',
+    begin_sub:'Entregue o tablet ao paciente · aproximadamente 3 minutos',
+    setup_footnote:'MAP · Parâmetros Multidimensionais de Adesão<br>Administrado pelo farmacêutico · Códigos de referência são não identificáveis',
+    demo_mode_label:'Modo Demo Ativo',
+    demo_shortcut_btn:'📊 Ver Painel (68 Pacientes de Amostra)',
+    hdr_badge_question:'Avaliação do Paciente',
+    hdr_title_question:'Perguntas',
+    q_back:'← Voltar',
+    hdr_badge_results:'Avaliação Concluída',
+    hdr_title_results:'Resultados',
+    tl_pe_label:'Pontuação MAP PE',
+    tl_pe_suffix:'/ 1.00',
+    tl_additive_label:'Pontuação Aditiva',
+    adh_low:'Baixo', adh_mod:'Moderado', adh_high:'Alto',
+    domain_breakdown_title:'Detalhamento por Domínio',
+    domain_arch:'Arquitetura', domain_exec:'Execução', domain_ctx:'Contexto-Guarda',
+    insight_label:'Avaliação Clínica',
+    peacs_label:'Fenótipo PEACS',
+    btn_alert:'⚠ Enviar Alerta ao Prescritor',
+    btn_save_new:'✓ Salvar e Novo Paciente',
+    btn_print:'🖨 Imprimir Resumo',
+    btn_dashboard:'📊 Ver Painel da Farmácia',
+    tl_green:'Adesão Forte: Baixo Risco',
+    tl_amber:'Risco Elevado: Monitorar',
+    tl_red:'Alto Risco: Alerta ao Prescritor Recomendado',
+    hdr_badge_alert:'Alerta ao Prescritor',
+    hdr_title_alert:'Cartão de Alerta',
+    alert_header_title:'Risco de Não Adesão Identificado',
+    alert_header_sub:'Alto Risco · Notificação ao Prescritor Recomendada',
+    alert_card_title:'Alerta MAP ATLAS',
+    btn_copy:'📋 Copiar para Área de Transferência',
+    btn_email:'✉ Enviar por E-mail',
+    btn_back_results:'← Voltar aos Resultados',
+    hdr_badge_dashboard:'Painel do Local',
+    hdr_title_dashboard:'Estatísticas',
+    dash_this_month:'Este Mês',
+    demo_banner_text:'Modo Demo — Dados de avaliação de amostra. Sem leituras ou gravações reais no Firebase.',
+    btn_back_assessment:'← Voltar à Avaliação',
+    btn_report:'📄 Gerar Relatório',
+    insight_arch:'Este paciente pode ter dúvidas sobre se o medicamento está funcionando. Recomenda-se uma conversa com o prescritor sobre os objetivos do tratamento.',
+    insight_exec:'Este paciente tem uma lacuna de hábito ou rotina. Um sistema de lembrete estruturado ou blister pode ajudar.',
+    insight_ctx:'Este paciente enfrenta barreiras práticas (viagem, conveniência, acesso). Uma discussão com o prescritor para simplificar o esquema pode ajudar.',
+    peacs_full:'Aderente Completo',
+    peacs_forgetter:'Esquecedor de Rotina',
+    peacs_skipper:'Pula Situacional',
+    peacs_stopper:'Otimista Interruptor',
+    peacs_resistor:'Resistente Intencional',
+    peacs_mixed:'Perfil de Adesão Misto',
+    af_patient:'Paciente', af_date:'Data', af_pe:'Pontuação MAP PE',
+    af_risk:'Nível de Risco', af_domain:'Domínio Primário de Falha',
+    af_rec:'Recomendação Clínica', af_action:'Ação Recomendada',
+    af_action_val:'Por favor, discuta as barreiras de adesão na próxima consulta.',
+    af_instrument:'Instrumento',
+    af_assessed:'paciente avaliado em',
+    q_counter_format:'Pergunta {n} de 8',
+    ans_yes:'Sim',
+    ans_no:'Não',
+  },
   el: {
     setup_intro_h2: 'Εκτίμηση Τήρησης Αγωγής MAP · Φαρμακείο',
     setup_intro_p: 'Βοηθήστε τους ασθενείς σας με ένα σύντομο εργαλείο εκτίμησης τήρησης αγωγής MAP. Αποτελέσματα σε 3 λεπτά.',
@@ -2053,7 +2453,7 @@ const UI_STRINGS = {
     opt_gender_nb: 'Άλλο',
     opt_gender_pnts: 'Προτιμώ να μη δηλώσω',
     lbl_patient_ref: 'Αναφορά Ασθενή',
-    ph_patient_ref: 'π.χ. αρχικά + έτος γέννησης: ΑΑ1958',
+    ph_patient_ref: 'αρ. φακέλου ή επίσκεψης (χωρίς προσωπικά δεδομένα)',
     lbl_language: 'Γλώσσα',
     begin_label: 'Έναρξη Εκτίμησης MAP',
     begin_sub: 'Εκτιμήστε την τήρηση αγωγής του ασθενή σε 3 λεπτά.',
@@ -2116,7 +2516,7 @@ const UI_STRINGS = {
     opt_gender_nb: 'Inne',
     opt_gender_pnts: 'Wolę nie mówić',
     lbl_patient_ref: 'Identyfikator pacjenta',
-    ph_patient_ref: 'np. inicjały + rok urodzenia: JK1958',
+    ph_patient_ref: 'nr karty lub wizyty (bez danych osobowych)',
     lbl_language: 'Język',
     begin_label: 'Rozpocznij ocenę MAP',
     begin_sub: 'Oceń adherencję pacjenta w 3 minuty.',
@@ -2178,8 +2578,8 @@ const UI_STRINGS = {
     opt_gender_female: 'Weiblich',
     opt_gender_nb: 'Divers',
     opt_gender_pnts: 'Keine Angabe',
-    lbl_patient_ref: 'Patientenreferenz (optional)',
-    ph_patient_ref: 'z.B. Initialen + Geburtsjahr: PM1958',
+    lbl_patient_ref: 'Patientenreferenz',
+    ph_patient_ref: 'Akten- oder Besuchsnummer (keine persönlichen Daten)',
     lbl_language: 'Sprache',
     begin_label: 'Bewertung starten',
     begin_sub: 'Tablet dem Patienten übergeben · ca. 3 Minuten',
@@ -2241,8 +2641,8 @@ const UI_STRINGS = {
     opt_gender_female: '女',
     opt_gender_nb: '非二元',
     opt_gender_pnts: '不愿透露',
-    lbl_patient_ref: '患者参考编码（选填）',
-    ph_patient_ref: '例如：姓名缩写 + 出生年份：ZM1958',
+    lbl_patient_ref: '患者参考编码',
+    ph_patient_ref: '病历号或就诊号（无个人数据）',
     lbl_language: '语言',
     begin_label: '开始评估',
     begin_sub: '将平板电脑交给患者 · 约3分钟',
@@ -2304,8 +2704,8 @@ const UI_STRINGS = {
     opt_gender_female: '女',
     opt_gender_nb: '非二元',
     opt_gender_pnts: '不願透露',
-    lbl_patient_ref: '患者參考代碼（選填）',
-    ph_patient_ref: '例如：姓名縮寫 + 出生年份：ZM1958',
+    lbl_patient_ref: '患者參考代碼',
+    ph_patient_ref: '病歷號或就診號（無個人資料）',
     lbl_language: '語言',
     begin_label: '開始評估',
     begin_sub: '將平板電腦交給患者 · 約3分鐘',
@@ -2367,8 +2767,8 @@ const UI_STRINGS = {
     opt_gender_female: '女性',
     opt_gender_nb: 'ノンバイナリー',
     opt_gender_pnts: '回答しない',
-    lbl_patient_ref: '患者参照コード（任意）',
-    ph_patient_ref: '例：イニシャル + 生年：TY1958',
+    lbl_patient_ref: '患者参照コード',
+    ph_patient_ref: 'カルテ番号または受診番号（個人情報不要）',
     lbl_language: '言語',
     begin_label: '評価を開始',
     begin_sub: '患者にタブレットを渡してください · 約3分',
@@ -2430,8 +2830,8 @@ const UI_STRINGS = {
     opt_gender_female: '여성',
     opt_gender_nb: '논바이너리',
     opt_gender_pnts: '답변 거부',
-    lbl_patient_ref: '환자 참조 코드 (선택 사항)',
-    ph_patient_ref: '예: 이니셜 + 출생연도: KM1958',
+    lbl_patient_ref: '환자 참조 코드',
+    ph_patient_ref: '진료기록 또는 방문 번호 (개인정보 없음)',
     lbl_language: '언어',
     begin_label: '평가 시작',
     begin_sub: '환자에게 태블릿 전달 · 약 3분',
@@ -2493,8 +2893,8 @@ const UI_STRINGS = {
     opt_gender_female: 'Женский',
     opt_gender_nb: 'Небинарный',
     opt_gender_pnts: 'Не хочу указывать',
-    lbl_patient_ref: 'Код пациента (необязательно)',
-    ph_patient_ref: 'напр. инициалы + год рождения: ПМ1958',
+    lbl_patient_ref: 'Код пациента',
+    ph_patient_ref: 'номер карты или визита (без личных данных)',
     lbl_language: 'Язык',
     begin_label: 'Начать оценку',
     begin_sub: 'Передайте планшет пациенту · около 3 минут',
@@ -2556,8 +2956,8 @@ const UI_STRINGS = {
     opt_gender_female: 'Kadın',
     opt_gender_nb: 'İkili olmayan',
     opt_gender_pnts: 'Belirtmek istemiyorum',
-    lbl_patient_ref: 'Hasta Referans Kodu (isteğe bağlı)',
-    ph_patient_ref: 'ör. baş harfler + doğum yılı: AM1958',
+    lbl_patient_ref: 'Hasta Referans Kodu',
+    ph_patient_ref: 'dosya veya ziyaret numarası (kişisel veri yok)',
     lbl_language: 'Dil',
     begin_label: 'Değerlendirmeyi Başlat',
     begin_sub: 'Tableti hastaya verin · yaklaşık 3 dakika',
@@ -2619,8 +3019,8 @@ const UI_STRINGS = {
     opt_gender_female: 'महिला',
     opt_gender_nb: 'गैर-द्विआधारी',
     opt_gender_pnts: 'बताना नहीं चाहते',
-    lbl_patient_ref: 'रोगी संदर्भ कोड (वैकल्पिक)',
-    ph_patient_ref: 'उदा. आद्याक्षर + जन्म वर्ष: PM1958',
+    lbl_patient_ref: 'रोगी संदर्भ कोड',
+    ph_patient_ref: 'फ़ाइल या विज़िट नंबर (कोई व्यक्तिगत डेटा नहीं)',
     lbl_language: 'भाषा',
     begin_label: 'मूल्यांकन शुरू करें',
     begin_sub: 'रोगी को टैबलेट दें · लगभग 3 मिनट',
@@ -2678,8 +3078,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Pilih...',
     opt_gender_male: 'Laki-laki', opt_gender_female: 'Perempuan',
     opt_gender_nb: 'Non-biner', opt_gender_pnts: 'Tidak ingin menyebutkan',
-    lbl_patient_ref: 'Kode Referensi Pasien (opsional)',
-    ph_patient_ref: 'mis. inisial + tahun lahir: MR1958',
+    lbl_patient_ref: 'Kode Referensi Pasien',
+    ph_patient_ref: 'nombor fail atau lawatan (tanpa data peribadi)',
     lbl_language: 'Bahasa',
     begin_label: 'Mulai Penilaian',
     begin_sub: 'Serahkan tablet kepada pasien · sekitar 3 menit',
@@ -2754,8 +3154,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Pumili...',
     opt_gender_male: 'Lalaki', opt_gender_female: 'Babae',
     opt_gender_nb: 'Non-binary', opt_gender_pnts: 'Mas gusto kong huwag sabihin',
-    lbl_patient_ref: 'Code ng Sanggunian ng Pasyente (opsyonal)',
-    ph_patient_ref: 'hal. mga inisyal + taon ng kapanganakan: MR1958',
+    lbl_patient_ref: 'Code ng Sanggunian ng Pasyente',
+    ph_patient_ref: 'numero ng talaan o bisita (walang personal na datos)',
     lbl_language: 'Wika',
     begin_label: 'Simulan ang Pagtatasa',
     begin_sub: 'Ibigay ang tablet sa pasyente · humigit-kumulang 3 minuto',
@@ -2830,8 +3230,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Chagua...',
     opt_gender_male: 'Mwanaume', opt_gender_female: 'Mwanamke',
     opt_gender_nb: 'Isiyo ya pande mbili', opt_gender_pnts: 'Ninapendelea kutosema',
-    lbl_patient_ref: 'Nambari ya Kumbukumbu ya Mgonjwa (si lazima)',
-    ph_patient_ref: 'mfano: herufi za kwanza + mwaka wa kuzaliwa: MR1958',
+    lbl_patient_ref: 'Nambari ya Kumbukumbu ya Mgonjwa',
+    ph_patient_ref: 'nambari ya faili au ziara (bila data ya kibinafsi)',
     lbl_language: 'Lugha',
     begin_label: 'Anza Tathmini',
     begin_sub: 'Mpe mgonjwa kompyuta kibao · dakika 3 hivi',
@@ -2906,8 +3306,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Kies...',
     opt_gender_male: 'Manlik', opt_gender_female: 'Vroulik',
     opt_gender_nb: 'Nie-binere', opt_gender_pnts: 'Verkies om nie te se nie',
-    lbl_patient_ref: 'Pasientverwysings-kode (opsioneel)',
-    ph_patient_ref: 'bv. voorletters + geboortejaar: MR1958',
+    lbl_patient_ref: 'Pasientverwysings-kode',
+    ph_patient_ref: 'dossier- of bezoeknummer (geen persoonsgegevens)',
     lbl_language: 'Taal',
     begin_label: 'Begin Evaluasie',
     begin_sub: 'Gee tablet aan pasient · ongeveer 3 minute',
@@ -2982,8 +3382,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Zgjidhni...',
     opt_gender_male: 'Mashkull', opt_gender_female: 'Femer',
     opt_gender_nb: 'Jo-binar', opt_gender_pnts: 'Preferoj te mos them',
-    lbl_patient_ref: 'Kodi i Referencës se Pacientit (opsional)',
-    ph_patient_ref: 'p.sh. iniciale + viti i lindjes: MR1958',
+    lbl_patient_ref: 'Kodi i Referencës se Pacientit',
+    ph_patient_ref: 'numër dosjeje ose vizite (pa të dhëna personale)',
     lbl_language: 'Gjuha',
     begin_label: 'Fillo Vleresimine',
     begin_sub: 'Jepi tabletën pacientit · rreth 3 minuta',
@@ -3058,8 +3458,8 @@ const UI_STRINGS = {
     opt_gender_default: 'নির্বাচন করুন...',
     opt_gender_male: 'পুরুষ', opt_gender_female: 'মহিলা',
     opt_gender_nb: 'নন-বাইনারি', opt_gender_pnts: 'না বলতে পছন্দ করি',
-    lbl_patient_ref: 'রোগীর রেফারেন্স কোড (ঐচ্ছিক)',
-    ph_patient_ref: 'যেমন: আদ্যক্ষর + জন্মসাল: MR1958',
+    lbl_patient_ref: 'রোগীর রেফারেন্স কোড',
+    ph_patient_ref: 'ফাইল বা ভিজিট নম্বর (ব্যক্তিগত তথ্য ছাড়া)',
     lbl_language: 'ভাষা',
     begin_label: 'মূল্যায়ন শুরু করুন',
     begin_sub: 'রোগীর কাছে ট্যাবলেট দিন · প্রায় ৩ মিনিট',
@@ -3134,8 +3534,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Odaberite...',
     opt_gender_male: 'Musko', opt_gender_female: 'Zensko',
     opt_gender_nb: 'Nebinarno', opt_gender_pnts: 'Radije ne bih rekao',
-    lbl_patient_ref: 'Referentni kod pacijenta (neobavezno)',
-    ph_patient_ref: 'npr. inicijali + godina rodenja: MR1958',
+    lbl_patient_ref: 'Referentni kod pacijenta',
+    ph_patient_ref: 'broj dosijea ili posjeta (bez osobnih podataka)',
     lbl_language: 'Jezik',
     begin_label: 'Zapocni procjenu',
     begin_sub: 'Predajte tablet pacijentu · otprilike 3 minute',
@@ -3210,8 +3610,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Vælg...',
     opt_gender_male: 'Mand', opt_gender_female: 'Kvinde',
     opt_gender_nb: 'Ikke-binær', opt_gender_pnts: 'Foretrækker ikke at sige',
-    lbl_patient_ref: 'Patientreferencekode (valgfrit)',
-    ph_patient_ref: 'f.eks. initialer + fødselsår: MR1958',
+    lbl_patient_ref: 'Patientreferencekode',
+    ph_patient_ref: 'sags- eller besøgsnummer (ingen personoplysninger)',
     lbl_language: 'Sprog',
     begin_label: 'Start vurdering',
     begin_sub: 'Giv patienten tabletten · ca. 3 minutter',
@@ -3286,8 +3686,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Selecteer...',
     opt_gender_male: 'Man', opt_gender_female: 'Vrouw',
     opt_gender_nb: 'Non-binair', opt_gender_pnts: 'Zeg ik liever niet',
-    lbl_patient_ref: 'Patiëntreferentiecode (optioneel)',
-    ph_patient_ref: 'bijv. initialen + geboortejaar: MR1958',
+    lbl_patient_ref: 'Patiëntreferentiecode',
+    ph_patient_ref: 'intern referentienummer (geen persoonsgegevens)',
     lbl_language: 'Taal',
     begin_label: 'Beoordeling starten',
     begin_sub: 'Geef patiënt de tablet · ongeveer 3 minuten',
@@ -3362,8 +3762,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Valitse...',
     opt_gender_male: 'Mies', opt_gender_female: 'Nainen',
     opt_gender_nb: 'Muunsukupuolinen', opt_gender_pnts: 'Mieluummin en sano',
-    lbl_patient_ref: 'Potilasviitekoodi (valinnainen)',
-    ph_patient_ref: 'esim. nimikirjaimet + syntymävuosi: MR1958',
+    lbl_patient_ref: 'Potilasviitekoodi',
+    ph_patient_ref: 'tiedosto- tai käyntinumero (ei henkilötietoja)',
     lbl_language: 'Kieli',
     begin_label: 'Aloita arviointi',
     begin_sub: 'Anna potilaalle tabletti · noin 3 minuuttia',
@@ -3438,8 +3838,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Pilih...',
     opt_gender_male: 'Lelaki', opt_gender_female: 'Perempuan',
     opt_gender_nb: 'Bukan binari', opt_gender_pnts: 'Lebih suka tidak memberitahu',
-    lbl_patient_ref: 'Kod Rujukan Pesakit (pilihan)',
-    ph_patient_ref: 'cth. inisial + tahun lahir: MR1958',
+    lbl_patient_ref: 'Kod Rujukan Pesakit',
+    ph_patient_ref: 'nombor rekod atau lawatan (tanpa data peribadi)',
     lbl_language: 'Bahasa',
     begin_label: 'Mulakan Penilaian',
     begin_sub: 'Berikan tablet kepada pesakit · kira-kira 3 minit',
@@ -3514,8 +3914,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Välj...',
     opt_gender_male: 'Man', opt_gender_female: 'Kvinna',
     opt_gender_nb: 'Icke-binär', opt_gender_pnts: 'Föredrar att inte svara',
-    lbl_patient_ref: 'Patientreferenskod (valfritt)',
-    ph_patient_ref: 't.ex. initialer + födelseår: MR1958',
+    lbl_patient_ref: 'Patientreferenskod',
+    ph_patient_ref: 'ärende- eller besöksnummer (inga personuppgifter)',
     lbl_language: 'Språk',
     begin_label: 'Starta bedömning',
     begin_sub: 'Ge patienten plattan · ungefär 3 minuter',
@@ -3590,8 +3990,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Виберіть...',
     opt_gender_male: 'Чоловік', opt_gender_female: 'Жінка',
     opt_gender_nb: 'Небінарна', opt_gender_pnts: 'Воліє не відповідати',
-    lbl_patient_ref: 'Код посилання пацієнта (необов\'язково)',
-    ph_patient_ref: 'напр. ініціали + рік народження: MR1958',
+    lbl_patient_ref: 'Код посилання пацієнта',
+    ph_patient_ref: 'номер справи або візиту (без особистих даних)',
     lbl_language: 'Мова',
     begin_label: 'Почати оцінювання',
     begin_sub: 'Передайте планшет пацієнту · приблизно 3 хвилини',
@@ -3666,8 +4066,8 @@ const UI_STRINGS = {
     opt_gender_default: 'منتخب کریں...',
     opt_gender_male: 'مرد', opt_gender_female: 'خاتون',
     opt_gender_nb: 'نان بائنری', opt_gender_pnts: 'بتانا پسند نہیں',
-    lbl_patient_ref: 'مریض کا حوالہ کوڈ (اختیاری)',
-    ph_patient_ref: 'مثلاً ابتدائی حروف + پیدائشی سال: MR1958',
+    lbl_patient_ref: 'مریض کا حوالہ کوڈ',
+    ph_patient_ref: 'فائل یا دورہ نمبر (ذاتی ڈیٹا کے بغیر)',
     lbl_language: 'زبان',
     begin_label: 'تشخیص شروع کریں',
     begin_sub: 'مریض کو ٹیبلٹ دیں · تقریباً 3 منٹ',
@@ -3742,8 +4142,8 @@ const UI_STRINGS = {
     opt_gender_default: 'Chọn...',
     opt_gender_male: 'Nam', opt_gender_female: 'Nữ',
     opt_gender_nb: 'Phi nhị giới', opt_gender_pnts: 'Không muốn tiết lộ',
-    lbl_patient_ref: 'Mã tham chiếu bệnh nhân (tùy chọn)',
-    ph_patient_ref: 'ví dụ: chữ tắt + năm sinh: MR1958',
+    lbl_patient_ref: 'Mã tham chiếu bệnh nhân',
+    ph_patient_ref: 'số hồ sơ hoặc lần khám (không có dữ liệu cá nhân)',
     lbl_language: 'Ngôn ngữ',
     begin_label: 'Bắt đầu đánh giá',
     begin_sub: 'Đưa máy tính bảng cho bệnh nhân · khoảng 3 phút',
@@ -3815,6 +4215,12 @@ function _pgApplyLang(lang){
   set('setup-intro-h2', s.setup_intro_h2);
   set('setup-intro-p', s.setup_intro_p);
   set('lbl-pharmacy-name', s.lbl_pharmacy_name);
+  set('lbl-pharmacy-type', s.lbl_pharmacy_type || UI_STRINGS.en.lbl_pharmacy_type);
+  set('opt-phtype-default', s.opt_phtype_default || UI_STRINGS.en.opt_phtype_default);
+  set('opt-phtype-independent', s.opt_phtype_independent || UI_STRINGS.en.opt_phtype_independent);
+  set('opt-phtype-retail', s.opt_phtype_retail || UI_STRINGS.en.opt_phtype_retail);
+  set('opt-phtype-specialty', s.opt_phtype_specialty || UI_STRINGS.en.opt_phtype_specialty);
+  set('opt-phtype-hospital', s.opt_phtype_hospital || UI_STRINGS.en.opt_phtype_hospital);
   set('lbl-condition', s.lbl_condition);
   set('opt-condition-default', s.opt_condition_default);
   set('opt-condition-hyp', s.opt_condition_hyp);
@@ -3849,6 +4255,7 @@ function _pgApplyLang(lang){
   setHTML('hdr-title-results', '<em>MAP</em> ' + s.hdr_title_results);
   set('tl-pe-label', s.tl_pe_label);
   set('tl-pe-suffix', s.tl_pe_suffix);
+  set('tl-additive-label', s.tl_additive_label || 'Additive Score');
   set('domain-breakdown-title', s.domain_breakdown_title);
   set('domain-arch-text', s.domain_arch);
   set('domain-exec-text', s.domain_exec);
@@ -3875,6 +4282,7 @@ function _pgApplyLang(lang){
   set('demo-banner-text', s.demo_banner_text);
   set('btn-back-assessment', s.btn_back_assessment);
   set('report-btn', s.btn_report);
+  document.documentElement.dir = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
 }
 
 // ═══════════════════════════════════════════
@@ -3883,6 +4291,18 @@ function _pgApplyLang(lang){
 let currentQ = 0;
 let answers = new Array(8).fill(null);  // raw values (0 or 1 for binary, 0..1 for Q8)
 let sessionSetup = {};
+let _pgLastRecordRef = null;  // Firebase ref of the most recent record saved by THIS tablet (fixes cross-site alert_sent race)
+
+// ── Restore stable site-level setup fields persisted from prior sessions ──
+try{
+  const _pgSaved = JSON.parse(sessionStorage.getItem('pg_setup') || 'null');
+  if(_pgSaved){
+    document.addEventListener('DOMContentLoaded', () => {
+      const l = document.getElementById('language-select');
+      if(l && _pgSaved.language) l.value = _pgSaved.language;
+    });
+  }
+}catch(e){}
 let calcResults = null;
 
 // ═══════════════════════════════════════════
@@ -3906,17 +4326,30 @@ function beginAssessment(){
     return;
   }
   const patientRef = document.getElementById('patient-ref-input').value.trim().toUpperCase().replace(/\s+/g,'');
+  if(!patientRef){
+    pgToast('Please enter a patient reference code before starting.', 'warn');
+    document.getElementById('patient-ref-input').focus();
+    return;
+  }
+  // Persist the stable, site-level fields so staff don't re-enter them each patient
+  try{
+    sessionStorage.setItem('pg_setup', JSON.stringify({
+      language: document.getElementById('language-select').value
+    }));
+  }catch(e){}
+  const _barriers = Array.from(document.querySelectorAll('input[name="pg_barrier"]:checked')).map(cb => cb.value);
   sessionSetup = {
     condition,
-    medication:   document.getElementById('medication-input').value.trim() || null,
-    language:     document.getElementById('language-select').value,
-    pharmacyName: document.getElementById('pharmacy-name').value.trim() || null,
-    ageRange:     document.getElementById('age-select').value || null,
-    gender:       document.getElementById('gender-select').value || null,
+    medication:         document.getElementById('medication-input').value.trim() || null,
+    numMedications:     document.getElementById('num-meds-select').value || null,
+    language:           document.getElementById('language-select').value,
+    ageRange:           document.getElementById('age-select').value || null,
+    gender:             document.getElementById('gender-select').value || null,
+    education:          document.getElementById('edu-select').value || null,
+    adherenceBarriers:  _barriers.length ? _barriers : null,
+    pharmacistNotes:    document.getElementById('pharmacist-notes-input').value.trim() || null,
     // patient_number: site_code + ref if provided, else anonymous token
-    patientNumber: patientRef
-      ? (_PG_SITE_CODE + '_' + patientRef)
-      : ('ANON_' + Date.now())
+    patientNumber: _PG_SITE_CODE + '_' + patientRef
   };
   currentQ = 0;
   answers = new Array(8).fill(null);
@@ -3938,7 +4371,7 @@ function getQuestionText(idx){
 function renderQuestion(idx){
   const q = QUESTIONS[idx];
   const lang = sessionSetup.language || 'en';
-  document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+  document.documentElement.dir = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
   const total = QUESTIONS.length;
   const pct = ((idx) / total) * 100;
 
@@ -3951,9 +4384,10 @@ function renderQuestion(idx){
   // Counter
   document.getElementById('q-counter').textContent = _pgS('q_counter_format').replace('{n}', idx+1);
 
-  // Domain badge
+  // Domain badge — use translated domain names from UI_STRINGS
   const badge = document.getElementById('q-domain-badge');
-  const domainNames = {arch:'Architecture', exec:'Execution', ctx:'Context-Guard'};
+  const s = UI_STRINGS[lang] || UI_STRINGS.en;
+  const domainNames = {arch: s.domain_arch || 'Architecture', exec: s.domain_exec || 'Execution', ctx: s.domain_ctx || 'Context-Guard'};
   const domainClasses = {arch:'arch', exec:'exec', ctx:'ctx'};
   badge.textContent = domainNames[q.domain];
   badge.className = 'q-domain-badge ' + domainClasses[q.domain];
@@ -4149,6 +4583,12 @@ function computeAndShowResults(){
   statusEl.innerHTML = statuses[tl];
   statusEl.className = 'tl-status ' + tl;
   document.getElementById('tl-pe-val').textContent = scores.PE.toFixed(2);
+  document.getElementById('tl-additive-val').textContent = scores.additive;
+  const adhTier = scores.additive === 8 ? 'high' : scores.additive >= 6 ? 'mod' : 'low';
+  const adhLabels = { low: s.adh_low||'Low', mod: s.adh_mod||'Moderate', high: s.adh_high||'High' };
+  const adhEl = document.getElementById('tl-adh-level');
+  adhEl.className = 'tl-adh-level adh-' + adhTier;
+  adhEl.textContent = adhLabels[adhTier];
 
   // Domain bars (animate after short delay)
   document.getElementById('arch-fill').style.width = '0%';
@@ -4214,28 +4654,39 @@ function saveToFirebase(scores, tl, peacs){
       workspace_key:  _PG_SITE_CODE,
       site_code:      _PG_SITE_CODE,
       patient_number: sessionSetup.patientNumber,
-      condition:      sessionSetup.condition   || null,
-      medication:     sessionSetup.medication  || null,
-      age_range:      sessionSetup.ageRange    || null,
-      gender:         sessionSetup.gender      || null,
-      pe_score:       parseFloat(scores.PE.toFixed(4)),
-      arch_score:     parseFloat(scores.A.toFixed(4)),
-      exec_score:     parseFloat(scores.E.toFixed(4)),
-      ctx_score:      parseFloat(scores.Cg.toFixed(4)),
-      additive:       parseFloat(scores.additive.toFixed(2)),
-      low_adherence:  scores.low_adherence,
-      peacs_phenotype: peacs,
-      traffic_light:  tl,
-      ts:             now,
-      assessment_mode:'pharmacy',
-      alert_sent:     false,
-      language:       sessionSetup.language    || 'en',
-      pharmacy_name:  sessionSetup.pharmacyName || null,
-      country:        geo.country,
-      city:           geo.city,
-      country_iso2:   geo.country_iso2
+      condition:           sessionSetup.condition         || null,
+      medication:          sessionSetup.medication        || null,
+      num_medications:     sessionSetup.numMedications    || null,
+      age_range:           sessionSetup.ageRange          || null,
+      gender:              sessionSetup.gender            || null,
+      education_level:     sessionSetup.education         || null,
+      adherence_barriers:  sessionSetup.adherenceBarriers || null,
+      pharmacist_notes:    sessionSetup.pharmacistNotes   || null,
+      pe_score:            parseFloat(scores.PE.toFixed(4)),
+      arch_score:          parseFloat(scores.A.toFixed(4)),
+      exec_score:          parseFloat(scores.E.toFixed(4)),
+      ctx_score:           parseFloat(scores.Cg.toFixed(4)),
+      additive:            parseFloat(scores.additive.toFixed(2)),
+      low_adherence:       scores.low_adherence,
+      peacs_phenotype:     peacs,
+      traffic_light:       tl,
+      ts:                  now,
+      assessment_mode:     'pharmacy',
+      alert_sent:          false,
+      language:            sessionSetup.language    || 'en',
+      pharmacy_name:       (_pgWorkspaceProfile && _pgWorkspaceProfile.name) ? _pgWorkspaceProfile.name : null,
+      pharmacy_type:       (_pgWorkspaceProfile && _pgWorkspaceProfile.pharmacy_type) ? _pgWorkspaceProfile.pharmacy_type : null,
+      country:             geo.country,
+      city:                geo.city,
+      country_iso2:        geo.country_iso2
     };
-    db.ref('pharmacy_assessments').push(pharmRecord);
+    fetch('/lambda-proxy-uae/pharmacy-assessment', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(pharmRecord)
+    }).then(r => r.json()).then(data => {
+      if (data.key) _pgLastRecordRef = db.ref('pharmacy_assessments/' + data.key);
+    }).catch(e => console.warn('[ATLAS-PG] UAE Lambda write failed:', e.message));
 
     // ── Record 2: main assessments path ──────────────────────────────────────
     // Matches the schema expected by the PI workspace dashboard, global map,
@@ -4252,14 +4703,17 @@ function saveToFirebase(scores, tl, peacs){
       instrument_type:  'map',
       workspace_key:    _PG_SITE_CODE,
       patient_number:   sessionSetup.patientNumber,
-      condition:        sessionSetup.condition   || null,
-      drug_type:        sessionSetup.medication  || null,
-      drug_name:        null,
-      drug_strength:    null,
+      condition:           sessionSetup.condition         || null,
+      drug_type:           sessionSetup.medication        || null,
+      drug_name:           null,
+      drug_strength:       null,
       route_of_administration: null,
-      gender:           sessionSetup.gender      || null,
-      age_range:        sessionSetup.ageRange    || null,
-      education_level:  null,   // not collected at pharmacy counter
+      num_medications:     sessionSetup.numMedications    || null,
+      gender:              sessionSetup.gender            || null,
+      age_range:           sessionSetup.ageRange          || null,
+      education_level:     sessionSetup.education         || null,
+      adherence_barriers:  sessionSetup.adherenceBarriers || null,
+      pharmacist_notes:    sessionSetup.pharmacistNotes   || null,
       // Individual MAP item scores (0 or 1 for Q1-Q7; 0-1 ordinal for Q8)
       q1: ans[0] ?? null, q2: ans[1] ?? null, q3: ans[2] ?? null,
       q4: ans[3] ?? null, q5: ans[4] ?? null, q6: ans[5] ?? null,
@@ -4285,7 +4739,8 @@ function saveToFirebase(scores, tl, peacs){
       longitude:        geo.longitude || null,
       // Metadata
       language:         sessionSetup.language    || 'en',
-      pharmacy_name:    sessionSetup.pharmacyName || null,
+      pharmacy_name:    (_pgWorkspaceProfile && _pgWorkspaceProfile.name) ? _pgWorkspaceProfile.name : null,
+      pharmacy_type:    (_pgWorkspaceProfile && _pgWorkspaceProfile.pharmacy_type) ? _pgWorkspaceProfile.pharmacy_type : null,
       assessment_mode:  'pharmacy',
       source:           'pharmacy_gateway',
       upload_source:    'pharmacy_gateway',
@@ -4293,9 +4748,30 @@ function saveToFirebase(scores, tl, peacs){
       data_tier:        'clinical',
       timestamp:        now,
       submitted_at:     new Date(now).toISOString(),
-      alert_sent:       false
+      alert_sent:       false,
+      // institution_code must match the ATLAS workspace key that should see this record
+      // (Firebase server-side filter: orderByChild('institution_code').equalTo(ws)).
+      // parent_pi in the SSM profile is the linked ATLAS account (PI or institution).
+      institution_code: (_pgWorkspaceProfile && _pgWorkspaceProfile.parent_pi)
+                        ? _pgWorkspaceProfile.parent_pi.toUpperCase()
+                        : _PG_SITE_CODE,
+      parent_institution: (_pgWorkspaceProfile && _pgWorkspaceProfile.parent_institution)
+                          ? _pgWorkspaceProfile.parent_institution.toUpperCase()
+                          : null,
+      parent_pi:          (_pgWorkspaceProfile && _pgWorkspaceProfile.parent_pi)
+                          ? _pgWorkspaceProfile.parent_pi.toUpperCase()
+                          : null
     };
-    db.ref('assessments').push(assessmentRecord);
+    const doWrite = () => db.ref('assessments').push(assessmentRecord)
+      .catch(e => console.warn('[ATLAS-PG] assessments write failed:', e.message));
+    const user = firebase.auth().currentUser;
+    if (user) {
+      doWrite();
+    } else {
+      const unsub = firebase.auth().onAuthStateChanged(u => {
+        if (u) { unsub(); doWrite(); }
+      });
+    }
 
   } catch(e){
     console.warn('[ATLAS-PG] Firebase save failed:', e.message);
@@ -4306,10 +4782,23 @@ function saveToFirebase(scores, tl, peacs){
 // RESULTS ACTIONS
 // ═══════════════════════════════════════════
 function saveAndReset(){
-  pgToast('Result saved. Ready for next patient.');
+  pgToast('Ready for next patient.');
   setTimeout(()=>{
+    // Clear ALL per-patient fields so the next patient doesn't inherit them
     document.getElementById('condition-select').value = '';
+    const _condSrch = document.getElementById('condition-search');
+    if(_condSrch){ _condSrch.value = ''; filterConditionDropdown('', 'condition-select'); }
     document.getElementById('medication-input').value = '';
+    document.getElementById('num-meds-select').value = '';
+    document.getElementById('patient-ref-input').value = '';
+    document.getElementById('age-select').value = '';
+    document.getElementById('gender-select').value = '';
+    document.getElementById('edu-select').value = '';
+    document.querySelectorAll('input[name="pg_barrier"]').forEach(cb => cb.checked = false);
+    document.getElementById('pharmacist-notes-input').value = '';
+    // Restore text direction to match the (kept) language selector
+    const lang = document.getElementById('language-select').value;
+    document.documentElement.dir = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
     showScreen('screen-setup');
   }, 1200);
 }
@@ -4715,15 +5204,13 @@ function generatePharmacyReport(){
     finish(buildReport(_buildDemoRecords()));
     return;
   }
-  // Live mode: read from Firebase
-  firebase.database().ref('pharmacy_assessments').once('value', snap => {
+  // Live mode: read from Firebase — indexed per-site query (scales past the pilot;
+  // the old full-table read downloaded every site's records and filtered client-side)
+  firebase.database().ref('pharmacy_assessments')
+    .orderByChild('workspace_key').equalTo(_PG_SITE_CODE)
+    .once('value', snap => {
     const raw = snap.val() || {};
-    const all = Object.values(raw);
-    const site = _PG_SITE_CODE.toUpperCase();
-    const siteRecs = site === 'UNASSIGNED' ? all
-      : all.filter(r =>
-          (r.site_code||'').toUpperCase()===site ||
-          (r.workspace_key||'').toUpperCase()===site);
+    const siteRecs = Object.values(raw);
     const now = new Date();
     const month = siteRecs.filter(r => {
       const d = new Date(r.ts);
@@ -4785,6 +5272,8 @@ function goToAlert(){
   }
 
   showScreen('screen-alert');
+  // Initialise the follow-up QR + link after screen renders
+  setTimeout(_pgQRInit, 100);
 }
 
 function buildAlertText(){
@@ -4823,12 +5312,9 @@ function copyAlert(){
   } else {
     pgToastFallbackCopy(text);
   }
-  // Mark alert as sent in Firebase (best-effort)
+  // Mark alert as sent in Firebase (best-effort) — on THIS session's record only
   try{
-    db.ref('pharmacy_assessments').orderByChild('ts')
-      .limitToLast(1).once('value',snap=>{
-        snap.forEach(child=>{child.ref.update({alert_sent:true});});
-      });
+    if(_pgLastRecordRef) _pgLastRecordRef.update({alert_sent:true});
   } catch(e){}
 }
 
@@ -4858,7 +5344,7 @@ function pushAlertToWorkspace(){
   const alertRecord = {
     type: 'pharmacy_alert',
     from_site: _PG_SITE_CODE,
-    pharmacy_name: sessionSetup.pharmacyName || _pgWorkspaceProfile.name || null,
+    pharmacy_name: (_pgWorkspaceProfile && _pgWorkspaceProfile.name) ? _pgWorkspaceProfile.name : null,
     patient_ref: sessionSetup.patientNumber || null,
     condition: sessionSetup.condition || null,
     pe_score: parseFloat(scores.PE.toFixed(4)),
@@ -4885,15 +5371,116 @@ function pushAlertToWorkspace(){
     .catch(err=>{
       pgToast((lang === 'it' ? 'Errore: ' : 'Error: ') + err.message, 'warn');
     });
-  // Mark alert_sent on the most recent pharmacy record
+  // Mark alert_sent on THIS session's record only (not the global latest —
+  // with multiple sites submitting concurrently the old query could flag
+  // another pharmacy's record)
   try{
-    db.ref('pharmacy_assessments').orderByChild('ts')
-      .limitToLast(1).once('value', snap=>{
-        snap.forEach(child=>{
-          child.ref.update({alert_sent:true, alert_workspace: parentPi});
-        });
-      });
+    if(_pgLastRecordRef) _pgLastRecordRef.update({alert_sent:true, alert_workspace: parentPi});
   } catch(e){}
+}
+
+// ── Follow-up Assessment Link + QR + SMS ─────────────────────────────────
+function _pgBuildFollowUpUrl() {
+  if (!_PG_SITE_CODE) return null;
+  const pid  = sessionSetup.patientNumber || '';
+  const lang = _pgLang();
+  const due  = _pgCalcFollowUpDue();
+  const base = window.location.origin + '/pharmacy.html';
+  const params = new URLSearchParams({ remote: '1', key: _PG_SITE_CODE, pid, lang });
+  if (due) params.set('due', due);
+  return base + '?' + params.toString();
+}
+
+function _pgCalcFollowUpDue() {
+  if (!calcResults) return null;
+  const score = calcResults.scores ? calcResults.scores.PE : null;
+  if (score === null) return null;
+  const days = score < 0.55 ? 7 : score < 0.70 ? 14 : 30;
+  const d = new Date(Date.now() + days * 86400000);
+  return d.toISOString().split('T')[0];
+}
+
+function _pgQRInit() {
+  const url = _pgBuildFollowUpUrl();
+  if (!url) return;
+
+  const linkInput = document.getElementById('followup-link-input');
+  if (linkInput) linkInput.value = url;
+
+  const dueNote = document.getElementById('followup-due-note');
+  if (dueNote) {
+    const due = _pgCalcFollowUpDue();
+    const score = calcResults && calcResults.scores ? calcResults.scores.PE : null;
+    const days  = score !== null ? (score < 0.55 ? 7 : score < 0.70 ? 14 : 30) : null;
+    dueNote.textContent = due && days ? 'Recommended follow-up in ' + days + ' days (' + due + ')' : '';
+  }
+
+  const qrBox = document.getElementById('followup-qr-box');
+  if (qrBox) {
+    qrBox.innerHTML = '';
+    if (typeof QRCode !== 'undefined') {
+      try { new QRCode(qrBox, { text: url, width: 120, height: 120, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M }); }
+      catch(e) { qrBox.innerHTML = ''; }
+    } else {
+      // QR lib not loaded — show a scannable link hint
+      qrBox.innerHTML = '<div style="font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:#4e9cf5;text-align:center;width:120px;">QR loading…</div>';
+      setTimeout(() => {
+        if (typeof QRCode !== 'undefined') {
+          qrBox.innerHTML = '';
+          try { new QRCode(qrBox, { text: url, width: 120, height: 120, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M }); } catch(e) {}
+        }
+      }, 1200);
+    }
+  }
+}
+
+function copyFollowUpLink() {
+  const url = _pgBuildFollowUpUrl();
+  if (!url) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url)
+      .then(() => pgToast('Follow-up link copied.'))
+      .catch(() => { const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);pgToast('Follow-up link copied.'); });
+  } else {
+    const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);pgToast('Follow-up link copied.');
+  }
+}
+
+function sendFollowUpSMS() {
+  const url = _pgBuildFollowUpUrl();
+  const phoneInput = document.getElementById('followup-phone-input');
+  if (!phoneInput || !url) return;
+  const phone = (phoneInput.value || '').replace(/[\s\-\(\)]/g,'').trim();
+  if (!phone || !/^\+[1-9]\d{6,14}$/.test(phone)) {
+    pgToast('Enter a valid phone number in E.164 format (+15551234567)', 'warn');
+    return;
+  }
+  const lang = _pgLang();
+  const msgs = {
+    ar: 'متابعة تقييم الالتزام بالعلاج جاهزة. انقر للبدء: ' + url,
+    es: 'Su evaluación de seguimiento de adherencia está lista. Toque para comenzar: ' + url,
+    fr: 'Votre évaluation de suivi est prête. Cliquez pour commencer: ' + url,
+    pt: 'Sua avaliação de acompanhamento está pronta. Clique para começar: ' + url,
+    it: 'La tua valutazione di follow-up è pronta. Tocca per iniziare: ' + url,
+  };
+  const message = msgs[lang] || ('Your adherence follow-up assessment is ready. Tap to begin: ' + url);
+  const btn = document.querySelector('#followup-panel button[onclick="sendFollowUpSMS()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  fetch('/lambda-proxy/send-sms', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to: phone, message, workspace: _PG_SITE_CODE })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (btn) { btn.disabled = false; btn.innerHTML = '&#128241; Send SMS'; }
+    if (d.sent) pgToast('SMS sent to ' + phone + '.');
+    else pgToast('SMS error: ' + (d.error || 'Delivery failed'), 'warn');
+  })
+  .catch(e => {
+    if (btn) { btn.disabled = false; btn.innerHTML = '&#128241; Send SMS'; }
+    pgToast('SMS request failed: ' + e.message, 'warn');
+  });
 }
 
 // ── Demo mode boot: show shortcut button on Setup screen ─────────────────
@@ -4909,13 +5496,44 @@ if(_PG_DEMO){
   }
 }
 
+// ── Condition dropdown (uses _CONDITION_GROUPS from lang-conditions.js) ───────
+function _pgBuildConditionDropdown(lang){
+  const sel = document.getElementById('condition-select');
+  if(!sel || typeof _CONDITION_GROUPS === 'undefined') return;
+  const _COND_LANG_ALIASES = { 'pt-BR':'pt', 'zh-CN':'zh', 'zh-HK':'zh-TW' };
+  const _cl = _COND_LANG_ALIASES[lang] || lang;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  const blank = document.createElement('option');
+  blank.value = '';
+  blank.textContent = '— Select condition —';
+  sel.appendChild(blank);
+  _CONDITION_GROUPS.forEach(group => {
+    const og = document.createElement('optgroup');
+    og.label = group[_cl] || group.en;
+    group.items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.en;
+      opt.textContent = item[_cl] || item.en;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  if(prev) sel.value = prev;
+  const srch = document.getElementById('condition-search');
+  if(srch && srch.value) filterConditionDropdown(srch.value, 'condition-select');
+}
+
 // ── Language switch wiring ─────────────────────────────────────────────────
 (function _bootLang(){
   const sel = document.getElementById('language-select');
   if(sel){
-    sel.addEventListener('change', () => _pgApplyLang(sel.value));
-    // Apply default (en) on load so all elements are consistent
+    sel.addEventListener('change', () => {
+      _pgApplyLang(sel.value);
+      _pgBuildConditionDropdown(sel.value);
+    });
     _pgApplyLang(sel.value || 'en');
+    _pgBuildConditionDropdown(sel.value || 'en');
   }
 })();
 
@@ -4937,5 +5555,6 @@ function pgToast(msg, type){
   _toastTimer = setTimeout(()=>el.classList.remove('show'), 3200);
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </body>
 </html>

@@ -74,6 +74,13 @@ function _uaPopulate() {
   document.getElementById('ua-name').value        = name;
   document.getElementById('ua-email').value       = p.email || _lsEmail || '';
   document.getElementById('ua-institution').value = p.institution || _lsInst || '';
+  // Clear location fields before Firebase fetch
+  ['ua-site-address','ua-site-city','ua-site-country','ua-site-lat','ua-site-lng'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const _geoSt = document.getElementById('ua-geo-status');
+  if (_geoSt) { _geoSt.textContent = ''; }
+
   if (key) {
     database.ref('workspaces/' + key).once('value').catch(() => null).then(snap => {
       const d = snap && snap.val() || {};
@@ -86,6 +93,19 @@ function _uaPopulate() {
         || (workspaceProfile && workspaceProfile.institution)
         || (workspaceProfile && workspaceProfile.parent_institution) || '';
       if (instDisplay) { document.getElementById('ua-institution').value = instDisplay; if (workspaceProfile) workspaceProfile.institution = instDisplay; }
+      // Location fields
+      const addrEl   = document.getElementById('ua-site-address');
+      const cityEl   = document.getElementById('ua-site-city');
+      const countryEl= document.getElementById('ua-site-country');
+      const latEl    = document.getElementById('ua-site-lat');
+      const lngEl    = document.getElementById('ua-site-lng');
+      const geoStEl  = document.getElementById('ua-geo-status');
+      if (addrEl    && d.site_address) addrEl.value    = d.site_address;
+      if (cityEl    && d.site_city)    cityEl.value    = d.site_city;
+      if (countryEl && d.site_country) countryEl.value = d.site_country;
+      if (latEl     && d.site_lat != null) latEl.value = String(d.site_lat);
+      if (lngEl     && d.site_lng != null) lngEl.value = String(d.site_lng);
+      if (geoStEl   && d.site_lat != null) { geoStEl.textContent = '✓ Location on file'; geoStEl.style.color = 'var(--strata)'; }
     });
   }
 
@@ -199,6 +219,105 @@ async function _uaSaveProfile() {
 
   show('Profile saved.', true);
   setTimeout(() => { if (msgEl) msgEl.style.display = 'none'; }, 3000);
+}
+
+async function _uaGeocode() {
+  const address = (document.getElementById('ua-site-address')?.value || '').trim();
+  const city    = (document.getElementById('ua-site-city')?.value    || '').trim();
+  const country = (document.getElementById('ua-site-country')?.value || '').trim();
+  const status  = document.getElementById('ua-geo-status');
+  const query   = [address, city, country].filter(Boolean).join(', ');
+  if (!query) {
+    if (status) { status.style.color = '#ef4444'; status.textContent = 'Enter an address, city, or country first.'; }
+    return;
+  }
+  if (status) { status.style.color = 'var(--dim)'; status.textContent = 'Geocoding…'; }
+  try {
+    const res  = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query), {
+      headers: { 'Accept-Language': 'en', 'User-Agent': 'ATLAS-Adherence-Platform/1.0' }
+    });
+    const data = await res.json();
+    if (!data || !data.length) {
+      if (status) { status.style.color = '#ef4444'; status.textContent = 'Not found — try a more specific query.'; }
+      return;
+    }
+    const lat = parseFloat(data[0].lat).toFixed(6);
+    const lng = parseFloat(data[0].lon).toFixed(6);
+    const latEl = document.getElementById('ua-site-lat');
+    const lngEl = document.getElementById('ua-site-lng');
+    if (latEl) latEl.value = lat;
+    if (lngEl) lngEl.value = lng;
+    const label = (data[0].display_name || '').split(',').slice(0, 3).join(', ');
+    if (status) { status.style.color = 'var(--strata)'; status.textContent = '✓ ' + label; }
+  } catch(e) {
+    if (status) { status.style.color = '#ef4444'; status.textContent = 'Geocode failed — check your connection.'; }
+  }
+}
+
+async function _uaSaveLocation() {
+  const key     = currentWorkspace;
+  const msgEl   = document.getElementById('ua-location-msg');
+  const show    = (msg, ok) => { if (msgEl) { msgEl.textContent = msg; msgEl.style.display = ''; msgEl.style.background = ok ? 'rgba(46,201,138,0.08)' : 'rgba(255,107,107,0.08)'; msgEl.style.color = ok ? 'var(--strata)' : '#ff6b6b'; } };
+
+  if (!key) return show('No workspace key found.', false);
+
+  const address = (document.getElementById('ua-site-address')?.value || '').trim() || null;
+  const city    = (document.getElementById('ua-site-city')?.value    || '').trim() || null;
+  const country = (document.getElementById('ua-site-country')?.value || '').trim() || null;
+  const latRaw  = (document.getElementById('ua-site-lat')?.value     || '').trim();
+  const lngRaw  = (document.getElementById('ua-site-lng')?.value     || '').trim();
+  const lat     = latRaw ? parseFloat(latRaw) : null;
+  const lng     = lngRaw ? parseFloat(lngRaw) : null;
+
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    return show('Geocode the address first to get coordinates.', false);
+  }
+
+  show('Saving…', true);
+
+  try {
+    const wsRef  = database.ref('workspaces/' + key);
+    const snap   = await wsRef.once('value');
+    const existing = snap.val() || {};
+
+    await wsRef.update({
+      site_address: address,
+      site_city:    city,
+      site_country: country,
+      site_lat:     lat,
+      site_lng:     lng,
+    });
+
+    // Upsert a verified POI so the location appears immediately on the global map.
+    const institution = (workspaceProfile?.institution || workspaceProfile?.name || key);
+    const poiRecord = {
+      type:          'pharmacy',
+      name:          institution,
+      latitude:      lat,
+      longitude:     lng,
+      country:       country || '',
+      city:          city    || '',
+      address:       address || '',
+      workspace_key: key,
+      submitted_by:  'atlas_admin',
+      submitted_at:  Date.now(),
+      confirmations: 3,
+      confirmed_by:  ['atlas_admin'],
+      verified:      true,
+    };
+    const existingPoiKey = existing.site_poi_key || null;
+    if (existingPoiKey) {
+      await database.ref('infrastructure_poi/' + existingPoiKey).update(poiRecord);
+    } else {
+      const poiRef = await database.ref('infrastructure_poi').push(poiRecord);
+      await wsRef.update({ site_poi_key: poiRef.key });
+    }
+
+    show('Location saved — site is now visible on the global map.', true);
+    setTimeout(() => { if (msgEl) msgEl.style.display = 'none'; }, 4000);
+  } catch(e) {
+    show('Save failed: ' + (e.message || 'Unknown error'), false);
+  }
 }
 
 async function _uaSendPasswordReset() {

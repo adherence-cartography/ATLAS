@@ -203,6 +203,18 @@ async function verifyPubLicPayment() {
   if (verBtn) { verBtn.disabled = true; verBtn.textContent = 'Issuing license…'; }
   if (errEl)  errEl.style.display = 'none';
 
+  // Show processing indicator so users know the 5–10s wait is normal
+  let loadEl = document.getElementById('pub-lic-loading-msg');
+  if (!loadEl) {
+    loadEl = document.createElement('div');
+    loadEl.id = 'pub-lic-loading-msg';
+    loadEl.style.cssText = 'margin-top:14px;font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;color:rgba(99,102,241,0.7);text-align:center;animation:blink 1.4s ease-in-out infinite;';
+    loadEl.textContent = 'Processing your license — this takes 5–10 seconds…';
+    const verRow = document.getElementById('pub-lic-verify-row');
+    if (verRow) verRow.insertAdjacentElement('afterend', loadEl);
+  }
+  loadEl.style.display = 'block';
+
   try {
     let pending = {};
     try { pending = JSON.parse(sessionStorage.getItem('_pubLicPending') || '{}'); } catch(e) {}
@@ -256,9 +268,11 @@ async function verifyPubLicPayment() {
     sessionStorage.removeItem('_pubLicPending');
     try { localStorage.removeItem('_plcSession'); } catch(e) {}
     window._pubLicSessionId = null;
+    if (loadEl) loadEl.style.display = 'none';
     pubLicStep(4);
 
   } catch(e) {
+    if (loadEl) loadEl.style.display = 'none';
     if (errEl) { errEl.textContent = (e.message || 'Verification failed. Please try again or contact info@adherence.cc'); errEl.style.display = 'block'; }
     if (verBtn) { verBtn.disabled = false; verBtn.textContent = '✓ I\'ve completed payment — Issue My License'; }
   }
@@ -457,24 +471,26 @@ async function guestPubLicUpload(file) {
     study_phase:       String(rows[6]?.[1] || '').trim() || null,
   };
 
-  // Locate the column-header row: first row whose col-0 starts with 'country'
+  // Locate the column-header row. v2 template has 'date' in col-0; v1 has 'country'.
   let headerRowIdx = 8;
+  let hasDateCol = false;
   for (let i = 0; i < Math.min(rows.length, 15); i++) {
-    if (String(rows[i]?.[0] || '').trim().toLowerCase().startsWith('country')) {
-      headerRowIdx = i; break;
-    }
+    const _c0 = String(rows[i]?.[0] || '').trim().toLowerCase();
+    if (_c0.startsWith('date'))    { headerRowIdx = i; hasDateCol = true;  break; }
+    if (_c0.startsWith('country')) { headerRowIdx = i; hasDateCol = false; break; }
   }
+  const _dc = hasDateCol ? 1 : 0; // column offset: skip Date col when present
 
   // Instrument is selected by the user via the MMAS-8 / MAP toggle buttons in the modal,
   // which call setDndImportTool() — the same function used by the subscription DnD upload.
   const tool = (typeof _dndImportTool !== 'undefined' ? _dndImportTool : null) || 'mmas';
 
   const _isExampleRow = row =>
-    String(row[0] || '').toUpperCase().includes('EXAMPLE') ||
-    String(row[2] || '').toUpperCase().includes('EXAMPLE');
+    String(row[_dc]     || '').toUpperCase().includes('EXAMPLE') ||
+    String(row[_dc + 2] || '').toUpperCase().includes('EXAMPLE');
 
   const dataRows = rows.slice(headerRowIdx + 1).filter(row =>
-    row && row.length >= 10 && row[0] && !_isExampleRow(row)
+    row && row.length >= 10 && row[_dc] && !_isExampleRow(row)
   );
 
   if (!dataRows.length) {
@@ -499,11 +515,11 @@ async function guestPubLicUpload(file) {
   const _pendingRecords = [];
 
   for (const row of dataRows) {
-    // Col layout: 0=Country 1=City 2=PatientNum 3=Condition 4=DrugType 5=DrugName
-    // 6=DrugStrength 7=Route 8=Gender 9=AgeRange 10=Education 11–18=Q1–Q8
+    // Col layout (after _dc offset): 0=Country 1=City 2=PatientNum 3=Condition 4=DrugType
+    // 5=DrugName 6=DrugStrength 7=Route 8=Gender 9=AgeRange 10=Education 11–18=Q1–Q8
     const [country_raw, city_raw, patientNum, condition, drugType, drugName,
            drugStrength, route, gender, ageRange, education,
-           _q1, _q2, _q3, _q4, _q5, _q6, _q7, _q8] = row;
+           _q1, _q2, _q3, _q4, _q5, _q6, _q7, _q8] = row.slice(_dc);
 
     const qVals = [_q1, _q2, _q3, _q4, _q5, _q6, _q7];
     if (qVals.some(v => v === undefined || v === null || v === '') ||
@@ -616,6 +632,8 @@ async function guestPubLicUpload(file) {
   }
 
   try { await Promise.allSettled(writes); } catch(e) {}
+
+  if (typeof loadMmasCohortData === 'function') loadMmasCohortData();
 
   const countriesArr = Array.from(countries).filter(Boolean);
   window._pubLicStats = {
@@ -1775,10 +1793,10 @@ function resMapFilter(filter) {
 
 // ── Stability / Fragility Classifier ─────────────────────────────────────────
 function _tssfClass(r) {
-  var pe = r.pe != null ? +r.pe : null;
-  var a  = r.a  != null ? +r.a  : null;
-  var e  = r.e  != null ? +r.e  : null;
-  var c  = r.c  != null ? +r.c  : null;
+  var pe = r.pe != null ? +r.pe : (r.pe_score   != null ? +r.pe_score   : null);
+  var a  = r.a  != null ? +r.a  : (r.arch_score != null ? +r.arch_score : null);
+  var e  = r.e  != null ? +r.e  : (r.exec_score != null ? +r.exec_score : null);
+  var c  = r.c  != null ? +r.c  : (r.ctx_score  != null ? +r.ctx_score  : null);
   var sc = r.score != null ? +r.score : null;
   if (pe === null) return 'unknown';
   if (a !== null && e !== null && c !== null && a < 0.55 && e < 0.55 && c < 0.55) return 'fragile';
@@ -1798,7 +1816,7 @@ function _sfGlossCard(title, color, text) {
 
 // ── Fragility Watchlist renderer (records tab) ────────────────────────────────
 function _tsRenderFragilityWatchlist(container) {
-  var recs = (window._piAllRecords || []).filter(function(r){ return r.pe != null; });
+  var recs = (window._piAllRecords || []).filter(function(r){ return r.pe != null || r.pe_score != null; });
   if (!recs.length) {
     container.innerHTML = '<div style="padding:20px;font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);">No MAP assessment data available for fragility analysis.</div>';
     return;
@@ -1858,7 +1876,13 @@ function _tsRenderFragilityWatchlist(container) {
 
 // ── Domain Fragility Analysis renderer (analytics tab) ───────────────────────
 function _tsRenderDomainFragility(container) {
-  var recs = (window._piAllRecords || []).filter(function(r){ return r.a!=null && r.e!=null && r.c!=null; });
+  var recs = (window._piAllRecords || []).map(function(r) {
+    return (r.a!=null && r.e!=null && r.c!=null) ? r : Object.assign({}, r, {
+      a: r.a != null ? r.a : (r.arch_score != null ? r.arch_score : null),
+      e: r.e != null ? r.e : (r.exec_score != null ? r.exec_score : null),
+      c: r.c != null ? r.c : (r.ctx_score  != null ? r.ctx_score  : null),
+    });
+  }).filter(function(r){ return r.a!=null && r.e!=null && r.c!=null; });
   if (!recs.length) {
     container.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--dim);padding:16px 0;">No MAP domain data available.</div>';
     return;
@@ -1963,14 +1987,19 @@ window.atlasTabSwitch = function(tabId) {
     // Aggregate by country
     var byCountry = {};
     records.forEach(function(r) {
+      var _isMap = r.tool === 'map' || r.map_q1 !== undefined;
+      var _pe  = r.pe     != null ? +r.pe     : (r.pe_score    != null ? +r.pe_score    : null);
+      var _a   = r.a      != null ? +r.a      : (r.arch_score  != null ? +r.arch_score  : null);
+      var _e   = r.e      != null ? +r.e      : (r.exec_score  != null ? +r.exec_score  : null);
+      var _cg  = r.c      != null ? +r.c      : (r.ctx_score   != null ? +r.ctx_score   : null);
       var c = (r.country && r.country !== 'Unknown') ? r.country : (r.institution_code ? r.institution_code.split('-')[0] : 'Unspecified');
       if (!byCountry[c]) byCountry[c] = { n: 0, scores: [], pe: [], a: [], e: [], cg: [], conditions: {} };
       byCountry[c].n++;
-      if (r.score  != null) byCountry[c].scores.push(+r.score);
-      if (r.pe     != null) byCountry[c].pe.push(+r.pe);
-      if (r.a      != null) byCountry[c].a.push(+r.a);
-      if (r.e      != null) byCountry[c].e.push(+r.e);
-      if (r.c      != null) byCountry[c].cg.push(+r.c);
+      if (!_isMap && r.score != null) byCountry[c].scores.push(+r.score);
+      if (_pe  != null) byCountry[c].pe.push(_pe);
+      if (_a   != null) byCountry[c].a.push(_a);
+      if (_e   != null) byCountry[c].e.push(_e);
+      if (_cg  != null) byCountry[c].cg.push(_cg);
       if (r.condition) byCountry[c].conditions[r.condition] = (byCountry[c].conditions[r.condition] || 0) + 1;
       var _cl = _tssfClass(r);
       if (!byCountry[c].sf) byCountry[c].sf = { stable:0, conditional:0, domain:0, fragile:0, hidden:0 };
@@ -2005,10 +2034,11 @@ window.atlasTabSwitch = function(tabId) {
     };
 
     // Summary strip
-    var allScores = records.filter(function(r){return r.score!=null;}).map(function(r){return +r.score;});
-    var allPe     = records.filter(function(r){return r.pe!=null;}).map(function(r){return +r.pe;});
+    var _normPe = function(r) { return r.pe != null ? +r.pe : (r.pe_score != null ? +r.pe_score : null); };
+    var allScores = records.filter(function(r){return r.score!=null && r.tool!=='map' && r.map_q1===undefined;}).map(function(r){return +r.score;});
+    var allPe     = records.map(_normPe).filter(function(v){return v!=null;});
     var globalMmas = mean(allScores), globalPe = mean(allPe);
-    var fragCount  = records.filter(function(r){return r.score>=6 && r.pe!=null && +r.pe<0.65;}).length;
+    var fragCount  = records.filter(function(r){ var _p=_normPe(r); return r.score>=6 && _p!=null && _p<0.65; }).length;
 
     var html = '<div style="padding:20px 22px;">' +
 
@@ -2208,6 +2238,34 @@ window.atlasTabSwitch = function(tabId) {
   };
 
   // ── Side-effects per tab ─────────────────────────────────────────────────
+
+  // PI rail direct tabs (Overview, Patients, Sites, Reports, Research)
+  if (tabId === 'patients') {
+    if (typeof piRenderPatientsTab === 'function') piRenderPatientsTab();
+  }
+  if (tabId === 'sites') {
+    if (typeof piRenderSitesTab === 'function') piRenderSitesTab();
+  }
+  if (tabId === 'reports') {
+    if (typeof loadPiAuditLog === 'function') loadPiAuditLog();
+  }
+  if (tabId === 'research') {
+    // Init Trends sub-panel on first visit
+    if (typeof switchPiTrendsTab === 'function') switchPiTrendsTab('analytics');
+    // Init Research sub-panel on first visit
+    if (typeof switchPiResearchTab === 'function') switchPiResearchTab('study');
+    // Lazy-init country intel and ISR
+    var _intelBody2 = document.getElementById('res-country-intel-body');
+    if (_intelBody2 && !_intelBody2.dataset.inited) {
+      _intelBody2.dataset.inited = '1';
+      if (typeof window.renderCountryIntelPortal === 'function') {
+        window.renderCountryIntelPortal('res-country-intel-body', { useDemo: false });
+      } else {
+        _tsRenderCountryIntel(_intelBody2);
+      }
+    }
+  }
+
   if (tabId === 'records') {
     // Resize MapBox instances if open (researcher and student cohort maps)
     if (window._resCohortMap)  setTimeout(function(){ window._resCohortMap.resize();  }, 100);
@@ -2259,6 +2317,9 @@ window.atlasTabSwitch = function(tabId) {
   if (tabId === 'overview' && typeof _cpoUpdate === 'function') {
     // Refresh Clinical Practice Overview when returning to the tab
     setTimeout(_cpoUpdate, 80);
+  }
+  if (tabId === 'overview' && typeof piRenderOverviewKpis === 'function') {
+    piRenderOverviewKpis(window._piAllRecords || []);
   }
   if (tabId === 'tessera') {
     // Lazy-init TESSERA GRC Grant Resource Center on first visit
@@ -2331,14 +2392,26 @@ window.atlasTabSwitch = function(tabId) {
   // ── 'longitudinal' tab: session tracking + dropout risk ─────────────────
   if (tabId === 'longitudinal' || tabId === 'tracking') {
     var _trackingBody = document.getElementById('res-longitudinal-body');
-    if (_trackingBody && !_trackingBody.dataset.inited && !_tsNeedKey(_trackingBody, 'Longitudinal Tracking') && typeof window.renderLongitudinalDashboard === 'function') {
-      _trackingBody.dataset.inited = '1';
-      window.renderLongitudinalDashboard('res-longitudinal-body', _tsWsKey);
+    if (!_tsNeedKey(_trackingBody, 'Longitudinal Tracking') && typeof window.renderLongitudinalDashboard === 'function') {
+      // For PI/institution: expand to all allowed child workspaces
+      var _lmKeys = [_tsWsKey];
+      if (typeof isPIMode === 'function' && isPIMode() && _tsWsKey) {
+        try {
+          var _lmCached = sessionStorage.getItem('atlas_ws_allowed_' + _tsWsKey);
+          if (_lmCached) { var _lmParsed = JSON.parse(_lmCached); if (Array.isArray(_lmParsed) && _lmParsed.length) _lmKeys = _lmParsed; }
+        } catch(e2) {}
+      }
+      var _lmKeySig = _lmKeys.join(',');
+      if (!_trackingBody.dataset.inited || _trackingBody.dataset.inited !== _lmKeySig) {
+        _trackingBody.dataset.inited = _lmKeySig;
+        window.renderLongitudinalDashboard('res-longitudinal-body', _lmKeys.length === 1 ? _lmKeys[0] : _lmKeys);
+      }
     }
   }
   if (tabId === 'longitudinal' || tabId === 'predict') {
     var _predictBody = document.getElementById('res-predictive-body');
     if (_predictBody && !_predictBody.dataset.inited && !_tsNeedKey(_predictBody, 'Dropout Risk Dashboard') && typeof window.renderDropoutRiskDashboard === 'function') {
+      if (!firebase.auth || !firebase.auth().currentUser) return;
       _predictBody.dataset.inited = '1';
       window.renderDropoutRiskDashboard('res-predictive-body', _tsWsKey);
     }

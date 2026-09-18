@@ -22,6 +22,20 @@ function accOpenEditKey(key) {
   document.getElementById('km-edit-parent').value      = k.parent_institution || '';
   document.getElementById('km-edit-parent-pi').value   = k.parent_pi          || '';
   document.getElementById('km-edit-study').value       = k.study_title  || '';
+  // Physical location fields
+  const _siteAddrEl   = document.getElementById('km-edit-site-address');
+  const _siteCityEl   = document.getElementById('km-edit-site-city');
+  const _siteCountryEl= document.getElementById('km-edit-site-country');
+  const _siteLatEl    = document.getElementById('km-edit-site-lat');
+  const _siteLngEl    = document.getElementById('km-edit-site-lng');
+  const _geoStatusEl  = document.getElementById('km-edit-geocode-status');
+  if (_siteAddrEl)    _siteAddrEl.value    = k.site_address || '';
+  if (_siteCityEl)    _siteCityEl.value    = k.site_city    || '';
+  if (_siteCountryEl) _siteCountryEl.value = k.site_country || '';
+  if (_siteLatEl)     _siteLatEl.value     = k.site_lat != null ? String(k.site_lat) : '';
+  if (_siteLngEl)     _siteLngEl.value     = k.site_lng != null ? String(k.site_lng) : '';
+  if (_geoStatusEl)   _geoStatusEl.textContent = (k.site_lat != null) ? '✓ Location on file' : '';
+  if (_geoStatusEl)   _geoStatusEl.style.color = (k.site_lat != null) ? 'var(--strata)' : 'var(--dim)';
   const editDims = k.peacs_dims || ['base','mvmt','strata'];
   ['base','mvmt','strata'].forEach(d => {
     const cb = document.getElementById('km-edit-dim-'+d);
@@ -129,6 +143,43 @@ function accCloseEditKey() {
 }
 
 /**
+ * Geocodes the address fields in the edit modal using Nominatim (OpenStreetMap).
+ * Writes resolved lat/lng into the readonly fields.
+ */
+async function _kmGeocode() {
+  const address = (document.getElementById('km-edit-site-address')?.value || '').trim();
+  const city    = (document.getElementById('km-edit-site-city')?.value    || '').trim();
+  const country = (document.getElementById('km-edit-site-country')?.value || '').trim();
+  const status  = document.getElementById('km-edit-geocode-status');
+  const query   = [address, city, country].filter(Boolean).join(', ');
+  if (!query) {
+    if (status) { status.style.color = 'var(--poor)'; status.textContent = 'Enter an address, city, or country first.'; }
+    return;
+  }
+  if (status) { status.style.color = 'var(--dim)'; status.textContent = 'Geocoding…'; }
+  try {
+    const res  = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query), {
+      headers: { 'Accept-Language': 'en', 'User-Agent': 'ATLAS-Adherence-Platform/1.0' }
+    });
+    const data = await res.json();
+    if (!data || !data.length) {
+      if (status) { status.style.color = 'var(--poor)'; status.textContent = 'Address not found — try a more specific query.'; }
+      return;
+    }
+    const lat = parseFloat(data[0].lat).toFixed(6);
+    const lng = parseFloat(data[0].lon).toFixed(6);
+    const latEl = document.getElementById('km-edit-site-lat');
+    const lngEl = document.getElementById('km-edit-site-lng');
+    if (latEl) latEl.value = lat;
+    if (lngEl) lngEl.value = lng;
+    const label = (data[0].display_name || '').split(',').slice(0, 3).join(', ');
+    if (status) { status.style.color = 'var(--strata)'; status.textContent = '✓ ' + label; }
+  } catch(e) {
+    if (status) { status.style.color = 'var(--poor)'; status.textContent = 'Geocode failed — check your connection.'; }
+  }
+}
+
+/**
  * Saves edits for the currently open key to the Firebase `workspaces/` node.
  * Also triggers a Firebase Custom Claims update via Lambda when the role is changed.
  * @returns {Promise<void>}
@@ -149,6 +200,15 @@ async function accSaveEditKey() {
   const newRole          = document.getElementById('km-edit-role')?.value || null;
   const originalRole     = document.getElementById('km-edit-role')?.dataset.originalRole || null;
   const roleChanged      = newRole && newRole !== originalRole;
+  // Physical location
+  const siteAddress = document.getElementById('km-edit-site-address')?.value.trim() || null;
+  const siteCity    = document.getElementById('km-edit-site-city')?.value.trim()    || null;
+  const siteCountry = document.getElementById('km-edit-site-country')?.value.trim() || null;
+  const siteLatRaw  = document.getElementById('km-edit-site-lat')?.value.trim();
+  const siteLngRaw  = document.getElementById('km-edit-site-lng')?.value.trim();
+  const siteLat     = siteLatRaw ? parseFloat(siteLatRaw) : null;
+  const siteLng     = siteLngRaw ? parseFloat(siteLngRaw) : null;
+  const hasLocation = siteLat != null && siteLng != null && !isNaN(siteLat) && !isNaN(siteLng);
 
   if (!name || !institution) {
     status.style.color = 'var(--poor)';
@@ -159,17 +219,20 @@ async function accSaveEditKey() {
   status.textContent = roleChanged ? `Upgrading role ${originalRole} → ${newRole}…` : 'Saving…';
   // Helper: apply changes to local cache + re-render table
   const _applyLocalUpdate = (roleChanged, newRoleVal) => {
+    const _patch = base => ({ ...base, name, email, institution,
+      parent_institution: parentInstitution || null,
+      parent_pi:          parentPi          || null,
+      study_title:        studyTitle,
+      peacs_dims:         safePeacsDims,
+      can_edit_children:  canEditChildren,
+      ...(roleChanged ? { role: newRoleVal } : {}) });
     const idx = (_kmAllKeys || []).findIndex(k => k.key === key);
     if (idx !== -1) {
-      _kmAllKeys[idx] = { ..._kmAllKeys[idx], name, email, institution,
-        parent_institution: parentInstitution || null,
-        parent_pi:          parentPi          || null,
-        study_title:        studyTitle,
-        peacs_dims:         safePeacsDims,
-        can_edit_children:  canEditChildren,
-        ...(roleChanged ? { role: newRoleVal } : {}) };
+      _kmAllKeys[idx] = _patch(_kmAllKeys[idx]);
       accRenderKeys((_kmFiltered||[]).map(k => k.key === key ? _kmAllKeys[idx] : k));
     }
+    const pIdx = (typeof _saPlatWsAll !== 'undefined' ? _saPlatWsAll : []).findIndex(k => k.key === key);
+    if (pIdx !== -1) _saPlatWsAll[pIdx] = _patch(_saPlatWsAll[pIdx]);
   };
 
   // Helper: write workspace metadata to Firebase (source of truth for dashboard grouping)
@@ -192,6 +255,11 @@ async function accSaveEditKey() {
       ...(parentPi           ? { parent_pi: parentPi }                           : { parent_pi: null }),
       ...(studyTitle         ? { study_title: studyTitle }                        : {}),
       peacs_dims: safePeacsDims,
+      // Physical location
+      ...(siteAddress ? { site_address: siteAddress } : { site_address: null }),
+      ...(siteCity    ? { site_city:    siteCity    } : { site_city:    null }),
+      ...(siteCountry ? { site_country: siteCountry } : { site_country: null }),
+      ...(hasLocation ? { site_lat: siteLat, site_lng: siteLng } : { site_lat: null, site_lng: null }),
     };
     if (newRole) update.role = newRole;
     // Module overrides — collect checked grants and revokes from the UI
@@ -204,6 +272,34 @@ async function accSaveEditKey() {
     if (_modRevokes.length > 0) update.module_revokes = _modRevokes;
     else delete update.module_revokes;
     await wsRef.set(update);
+
+    // Upsert a verified POI in infrastructure_poi so the location appears on the
+    // global map immediately (bypasses the 2-confirmation crowdsource requirement).
+    // Uses existing site_poi_key if present to update rather than duplicate.
+    if (hasLocation) {
+      const poiRecord = {
+        type:          'pharmacy',
+        name:          institution || name || key,
+        latitude:      siteLat,
+        longitude:     siteLng,
+        country:       siteCountry || '',
+        city:          siteCity    || '',
+        address:       siteAddress || '',
+        workspace_key: key,
+        submitted_by:  'atlas_admin',
+        submitted_at:  Date.now(),
+        confirmations: 3,
+        confirmed_by:  ['atlas_admin'],
+        verified:      true,
+      };
+      const existingPoiKey = existing.site_poi_key || null;
+      if (existingPoiKey) {
+        await database.ref('infrastructure_poi/' + existingPoiKey).update(poiRecord);
+      } else {
+        const poiRef = await database.ref('infrastructure_poi').push(poiRecord);
+        await wsRef.update({ site_poi_key: poiRef.key });
+      }
+    }
   };
 
   try {

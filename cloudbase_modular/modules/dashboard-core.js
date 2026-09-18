@@ -199,7 +199,23 @@ async function resolveAllowedWorkspaces() {
   // All paths are additive. Data from clinician tiers flows upward to PI and institution.
   if (isPIMode()) {
     const allowed      = new Set([ws]);
-    const myParentInst = (workspaceProfile?.parent_institution || '').toUpperCase();
+    let   myParentInst = (workspaceProfile?.parent_institution || '').toUpperCase();
+
+    // parent_institution is stored in Firebase (not SSM) because /admin/edit-key Lambda
+    // route doesn't update SSM. If the SSM profile lacks it, fall back to the PI's own
+    // Firebase workspace node so Path 2 (sibling discovery) can still function.
+    if (!myParentInst) {
+      try {
+        const wsSnap = await database.ref('workspaces/' + ws + '/parent_institution').once('value');
+        const fbParent = (wsSnap.val() || '').toUpperCase();
+        if (fbParent) {
+          myParentInst = fbParent;
+          if (workspaceProfile) workspaceProfile.parent_institution = fbParent;
+        }
+      } catch(e) {
+        if (window._atlasLog) window._atlasLog('warn', 'PI parent_institution Firebase fallback failed: ' + e.message);
+      }
+    }
 
     // Path 3: statically declared child workspaces (matches institution behaviour)
     if (workspaceProfile && workspaceProfile._childWorkspaces) {
@@ -247,6 +263,24 @@ async function resolveAllowedWorkspaces() {
       }
     } catch(e) {
       if (window._atlasLog) window._atlasLog('warn', 'PI PEACS child discovery failed: ' + e.message);
+    }
+    // Path 4+5: discover child/sibling workspaces from the workspaces/ Firebase node.
+    // Path 4: sibling via parent_institution (same institution umbrella; requires myParentInst).
+    // Path 5: direct child via parent_pi === this PI key (pharmacy or clinician linked directly).
+    //         Always runs — only needs ws (PI key), which is always known.
+    try {
+      const wsAllSnap = await database.ref('workspaces').once('value');
+      const wsAll = wsAllSnap.val();
+      if (wsAll) {
+        Object.entries(wsAll).forEach(([key, val]) => {
+          const siblingParent = ((val && val.parent_institution) || '').toUpperCase();
+          const nodeParentPi  = ((val && val.parent_pi)          || '').toUpperCase();
+          if (myParentInst && siblingParent === myParentInst) allowed.add(key.toUpperCase());
+          if (nodeParentPi === ws) allowed.add(key.toUpperCase());
+        });
+      }
+    } catch(e) {
+      if (window._atlasLog) window._atlasLog('warn', 'PI workspace-node discovery failed: ' + e.message);
     }
     _allowedWSCache = allowed; _allowedWSCacheKey = ws; _saveAllowedWSToSession(ws, allowed); return allowed;
   }
@@ -311,6 +345,22 @@ async function resolveAllowedWorkspaces() {
     if (window._atlasLog) window._atlasLog('warn', 'resolveAllowedWorkspaces PEACS child discovery failed: ' + e.message);
   }
 
+  // Workspace-node discovery: find child workspaces by parent_institution field on the
+  // Firebase workspace node. Catches pharmacy/clinician workspaces whose records predate
+  // parent_institution tagging, or workspaces provisioned but not yet submitted any records.
+  try {
+    const wsAllSnap = await database.ref('workspaces').once('value');
+    const wsAll = wsAllSnap.val();
+    if (wsAll) {
+      Object.entries(wsAll).forEach(([key, val]) => {
+        const nodeParent = ((val && val.parent_institution) || '').toUpperCase();
+        if (nodeParent === ws) allowed.add(key.toUpperCase());
+      });
+    }
+  } catch(e) {
+    if (window._atlasLog) window._atlasLog('warn', 'resolveAllowedWorkspaces institution workspace-node discovery failed: ' + e.message);
+  }
+
   _allowedWSCache = allowed;
   _allowedWSCacheKey = ws;
   _saveAllowedWSToSession(ws, allowed);
@@ -332,6 +382,7 @@ function resolveCountryCode(typedCountry, geoFallback) {
 function refreshCommandCenter() {
   const _t = (typeof ATLAS_STRINGS !== 'undefined' && ATLAS_STRINGS[mmasCurrentLang]) || (typeof ATLAS_STRINGS !== 'undefined' && ATLAS_STRINGS.en) || {};
   atlasAuditLog('command_center_read', { workspace: currentWorkspace });
+  if (typeof initPrescriberAlertsPanel === 'function') initPrescriberAlertsPanel();
   const iccRefresh = document.getElementById('icc-last-refresh');
   if (iccRefresh) iccRefresh.textContent = _t.status_loading || 'Loading…';
 
@@ -359,7 +410,7 @@ function refreshCommandCenter() {
       Object.entries(all).forEach(([k, v]) => { v._fbKey = k; });
 
       const records = Object.values(all).filter(r => {
-        if (r.map_q1 !== undefined) return false; // exclude MAP instrument records from MMAS-8 aggregates
+        if (r.tool === 'map' || r.map_q1 !== undefined) return false; // exclude MAP instrument records from MMAS-8 aggregates
         if (!r.institution_code) {
           if (allowedWS === null) { r._ws_display = 'PATIENT (Anonymous)'; return true; }
           return false;
@@ -369,16 +420,23 @@ function refreshCommandCenter() {
       });
 
       const mapRecords = Object.values(all).filter(r => {
-        if (r.map_q1 === undefined) return false; // MAP instrument records only
+        if (r.tool !== 'map' && r.map_q1 === undefined) return false; // MAP instrument records only
         if (!r.institution_code) return allowedWS === null;
         if (allowedWS === null) return true;
         return allowedWS.has(r.institution_code.toUpperCase());
       });
+      window._mapRecords = mapRecords;
 
       const byWS = {};
       records.forEach(r => { const ws=r._ws_display||r.institution_code||null; if(!ws||ws==='Unknown')return; if(!byWS[ws])byWS[ws]=[]; byWS[ws].push(r); });
-      const totalPIs = Object.keys(byWS).length;
+      // MAP records per workspace (pharmacy gateway and clinician MAP submissions)
+      const byWSMap = {};
+      mapRecords.forEach(r => { const ws=r.institution_code||null; if(!ws)return; if(!byWSMap[ws])byWSMap[ws]=[]; byWSMap[ws].push(r); });
+      // Unified workspace set across all instrument types (PEACS added after its fetch)
+      const allWSKeys = new Set([...Object.keys(byWS), ...Object.keys(byWSMap)]);
+      const totalPIs = allWSKeys.size;
       const totalPts = records.length;
+      let totalAllPts = totalPts + mapRecords.length; // PEACS count added after parallel fetch
       const orgAvg   = totalPts > 0 ? (records.reduce((s,r)=>s+(r.score||0),0)/totalPts).toFixed(2) : '—';
       const orgAvgNum = parseFloat(orgAvg) || 0;
       const classP = r => { try { return classifyPattern(r); } catch(e) { return {intentional:0,unintentional:0}; } };
@@ -387,21 +445,21 @@ function refreshCommandCenter() {
       const mixedCount = records.filter(r => { const p=classP(r); return p.intentional===p.unintentional && (r.score||0)!==8; }).length;
       const highCount  = records.filter(r => (r.score||0)===8).length;
       const inaRate    = totalPts > 0 ? Math.round(inaCount/totalPts*100)+'%' : '—';
-      const countries  = new Set(records.map(r=>r.country).filter(c=>c&&c!=='Unknown')).size;
+      const countries  = new Set([...records,...mapRecords].map(r=>r.country).filter(c=>c&&c!=='Unknown')).size;
       const el = id => document.getElementById(id);
 
       // ── Purple collective banner ────────────────────────────────────────────
       const ws = (currentWorkspace || '').toUpperCase();
-      const childWS = Object.keys(byWS).filter(w => w !== ws && w !== 'PATIENT (Anonymous)');
+      const childWS = [...allWSKeys].filter(w => w !== ws && w !== 'PATIENT (Anonymous)');
       const instName = workspaceProfile ? (workspaceProfile.name || ws) : ws;
       if (el('icc-institution-name'))  el('icc-institution-name').textContent  = instName;
       if (el('icc-child-count-badge')) el('icc-child-count-badge').textContent = childWS.length + ' workspaces';
       if (el('icc-coll-workspaces'))   el('icc-coll-workspaces').textContent   = childWS.length || totalPIs;
-      if (el('icc-coll-patients'))     el('icc-coll-patients').textContent     = totalPts.toLocaleString();
+      if (el('icc-coll-patients'))     el('icc-coll-patients').textContent     = totalAllPts.toLocaleString();
       if (el('icc-coll-avg'))          el('icc-coll-avg').textContent          = orgAvg;
       if (el('icc-coll-ina'))          el('icc-coll-ina').textContent          = inaRate;
       if (el('icc-coll-high'))         el('icc-coll-high').textContent         = totalPts > 0 ? Math.round(highCount/totalPts*100)+'%' : '—';
-      if (el('icc-coll-countries'))    el('icc-coll-countries').textContent    = countries;
+      if (el('icc-coll-countries'))    el('icc-coll-countries').textContent    = countries || '—';
       const distBar = el('icc-coll-dist-bar');
       if (distBar && totalPts > 0) {
         distBar.innerHTML = `
@@ -418,10 +476,12 @@ function refreshCommandCenter() {
 
       const tbody = el('icc-benchmark-tbody');
       if (tbody) {
-        if (!Object.keys(byWS).length) {
+        const hasMmasWS = Object.keys(byWS).length > 0;
+        const hasMapWS  = Object.keys(byWSMap).length > 0;
+        if (!hasMmasWS && !hasMapWS) {
           tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--dim);padding:20px;font-family:var(--font-mono);font-size:0.90rem;">No workspace-tagged submissions yet.</td></tr>';
         } else {
-          window._benchRows=Object.entries(byWS).map(([ws,recs])=>{
+          const mmasRows = Object.entries(byWS).map(([ws,recs])=>{
             const n=recs.length,avg=n?(recs.reduce((s,r)=>s+(r.score||0),0)/n):0;
             const high=recs.filter(r=>(r.score||0)===8).length;
             const ina=recs.filter(r=>{const p=classP(r);return p.intentional>p.unintentional;}).length;
@@ -430,6 +490,15 @@ function refreshCommandCenter() {
             const cat=getAdherenceCategory(avg),highPct=n?Math.round(high/n*100):0;
             return {ws,html:`<tr class="bench-site-row" data-site-key="${ws}" onclick="applySiteFilter('${ws.replace(/'/g,'&#39;')}','${ws.replace(/'/g,'&#39;')}')" style="border-bottom:1px solid var(--border);"><td style="padding:10px 14px;font-family:var(--font-mono);font-size:0.80rem;color:var(--bright);">${_esc(ws)}</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--muted);">${n}</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.88rem;font-weight:500;color:${cat.color};">${avg.toFixed(2)}</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--optimal);">${highPct}%</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--poor);">${ina}</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--moderate);">${una}</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.90rem;">${diffStr}</td><td style="padding:10px;text-align:center;"><span style="font-family:var(--font-mono);font-size:0.80rem;padding:2px 7px;border-radius:10px;background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}44;">${cat.label}</span></td></tr>`};
           });
+          // MAP-only workspaces (pharmacy gateway, clinician MAP — not in MMAS byWS)
+          const mapRows = Object.entries(byWSMap).filter(([w])=>!byWS[w]).map(([ws,mrecs])=>{
+            const n=mrecs.length;
+            const avg=n?(mrecs.reduce((s,r)=>s+(r.score!=null?r.score:(r.additive_score||0)),0)/n):0;
+            const highM=mrecs.filter(r=>r.traffic_light==='green'||(!r.traffic_light&&(r.score||0)>=6)).length;
+            const cat=getAdherenceCategory(avg),highPctM=n?Math.round(highM/n*100):0;
+            return {ws,html:`<tr class="bench-site-row" data-site-key="${ws}" onclick="applySiteFilter('${ws.replace(/'/g,'&#39;')}','${ws.replace(/'/g,'&#39;')}')" style="border-bottom:1px solid var(--border);"><td style="padding:10px 14px;font-family:var(--font-mono);font-size:0.80rem;color:var(--bright);">${_esc(ws)}<span style="font-family:var(--font-mono);font-size:0.65rem;color:var(--base);background:rgba(78,156,245,0.12);border:1px solid rgba(78,156,245,0.25);border-radius:4px;padding:1px 5px;margin-left:6px;">MAP</span></td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--muted);">${n}</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.88rem;font-weight:500;color:${cat.color};">${avg.toFixed(2)}</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--optimal);">${highPctM}%</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">—</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">—</td><td style="padding:10px;text-align:center;font-family:var(--font-mono);font-size:0.80rem;color:var(--dim);">—</td><td style="padding:10px;text-align:center;"><span style="font-family:var(--font-mono);font-size:0.80rem;padding:2px 7px;border-radius:10px;background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}44;">${cat.label}</span></td></tr>`};
+          });
+          window._benchRows = [...mmasRows, ...mapRows];
           renderBenchRows();
         }
       }
@@ -472,6 +541,15 @@ function refreshCommandCenter() {
         const code = (r.institution_code || '').toUpperCase();
         return code && allowedWS.has(code);
       });
+      // Include PEACS in unified assessment count and workspace count
+      totalAllPts += peacsFiltered.length;
+      if (el('icc-coll-patients')) el('icc-coll-patients').textContent = totalAllPts.toLocaleString();
+      if (peacsFiltered.length > 0) {
+        peacsFiltered.forEach(r => { const c=(r.institution_code||'').toUpperCase(); if(c) allWSKeys.add(c); });
+        const childWSAll = [...allWSKeys].filter(w => w !== ws && w !== 'PATIENT (Anonymous)');
+        if (el('icc-coll-workspaces')) el('icc-coll-workspaces').textContent = childWSAll.length || allWSKeys.size;
+        if (el('icc-child-count-badge')) el('icc-child-count-badge').textContent = childWSAll.length + ' workspaces';
+      }
       try { buildPatientPanel(records, peacsFiltered, mapRecords); } catch(e) {
         console.error('buildPatientPanel error:', e);
         const _ptbody = document.getElementById('icc-patient-tbody');
@@ -1422,5 +1500,103 @@ function updateDashContextBanner() {
   // Deferred so workspace-specific panels (clinician-dash-panel, student-dash-panel, etc.)
   // have had a chance to be inserted first. Idempotent — won't double-inject.
   setTimeout(_injectQuickActionsCard, 120);
+}
+
+// ── Prescriber Alerts Panel ───────────────────────────────────────────────────
+// Real-time listener on prescriber_alerts/{workspace} — populated by pharmacy.html
+// when a patient assessment triggers a high-risk alert and the pharmacist clicks
+// "Push to Linked Workspace". Clinician sees live cards with scores + action buttons.
+
+let _prescriberAlertsRef = null;
+
+function _paEsc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function initPrescriberAlertsPanel() {
+  const ws = (typeof currentWorkspace !== 'undefined' ? currentWorkspace : '').toUpperCase();
+  if (!ws || typeof database === 'undefined') return;
+
+  const panel = document.getElementById('prescriber-alerts-panel');
+  if (!panel) return;
+
+  // Detach any existing listener before re-attaching (handles manual Refresh clicks)
+  if (_prescriberAlertsRef) { _prescriberAlertsRef.off(); _prescriberAlertsRef = null; }
+
+  _prescriberAlertsRef = database.ref('prescriber_alerts/' + ws);
+  _prescriberAlertsRef.on('value', snap => {
+    const data = snap.val();
+    if (!data) { panel.style.display = 'none'; return; }
+
+    const alerts = Object.entries(data)
+      .map(([k, v]) => ({ _key: k, ...v }))
+      .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+    const unread = alerts.filter(a => !a.read).length;
+    panel.style.display = 'block';
+
+    const badge = document.getElementById('pa-badge');
+    if (badge) {
+      badge.textContent = unread > 0 ? unread + ' unread' : 'All reviewed';
+      badge.style.background = unread > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.10)';
+      badge.style.color = unread > 0 ? '#ef4444' : '#10b981';
+      badge.style.borderColor = unread > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.25)';
+    }
+
+    const list = document.getElementById('pa-list');
+    if (!list) return;
+
+    list.innerHTML = alerts.slice(0, 30).map(a => {
+      const tlColor = a.traffic_light === 'red' ? '#ef4444' : a.traffic_light === 'amber' ? '#f59e0b' : '#10b981';
+      const ts = a.ts ? new Date(a.ts).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const readStyle = a.read ? 'opacity:0.5;' : '';
+      return `<div class="pa-card" style="${readStyle}border-left:3px solid ${tlColor};">
+        <div class="pa-card-top">
+          <span class="pa-tl-dot" style="color:${tlColor};">●</span>
+          <strong class="pa-patient">${_paEsc(a.patient_ref || 'Patient')}</strong>
+          <span class="pa-cond">${_paEsc(a.condition || '—')}</span>
+          <span class="pa-site">${_paEsc(a.pharmacy_name || a.from_site || '—')}</span>
+          <span class="pa-ts">${ts}</span>
+        </div>
+        <div class="pa-scores">
+          PE: <strong style="color:${tlColor};">${a.pe_score != null ? (+a.pe_score).toFixed(2) : '—'}</strong>
+          &nbsp;·&nbsp;A: ${a.arch_score != null ? (+a.arch_score).toFixed(2) : '—'}
+          &nbsp;·&nbsp;E: ${a.exec_score != null ? (+a.exec_score).toFixed(2) : '—'}
+          &nbsp;·&nbsp;Cg: ${a.ctx_score != null ? (+a.ctx_score).toFixed(2) : '—'}
+          ${a.peacs_phenotype ? '&nbsp;·&nbsp;<span style="color:var(--pe);">' + _paEsc(a.peacs_phenotype) + '</span>' : ''}
+        </div>
+        ${a.insight ? `<div class="pa-insight">${_paEsc(a.insight)}</div>` : ''}
+        <div class="pa-actions">
+          ${!a.read
+            ? `<button class="pa-btn-review" onclick="markPrescriberAlertRead('${_paEsc(a._key)}')">✓ Mark Reviewed</button>`
+            : '<span class="pa-reviewed">✓ Reviewed</span>'}
+        </div>
+      </div>`;
+    }).join('');
+  }, err => {
+    console.warn('[prescriber-alerts] Firebase read error:', err.code || err.message);
+  });
+}
+
+function markPrescriberAlertRead(alertKey) {
+  const ws = (typeof currentWorkspace !== 'undefined' ? currentWorkspace : '').toUpperCase();
+  if (!ws || typeof database === 'undefined' || !alertKey) return;
+  database.ref('prescriber_alerts/' + ws + '/' + alertKey).update({ read: true })
+    .catch(e => console.warn('[prescriber-alerts] mark-read error:', e.message));
+}
+
+function markAllPrescriberAlertsRead() {
+  const ws = (typeof currentWorkspace !== 'undefined' ? currentWorkspace : '').toUpperCase();
+  if (!ws || typeof database === 'undefined') return;
+  database.ref('prescriber_alerts/' + ws).once('value').then(snap => {
+    const data = snap.val();
+    if (!data) return;
+    const updates = {};
+    Object.keys(data).forEach(k => { if (!data[k].read) updates[k + '/read'] = true; });
+    if (Object.keys(updates).length) {
+      database.ref('prescriber_alerts/' + ws).update(updates)
+        .catch(e => console.warn('[prescriber-alerts] mark-all-read error:', e.message));
+    }
+  });
 }
 

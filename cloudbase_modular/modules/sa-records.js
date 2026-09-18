@@ -920,11 +920,13 @@ async function _rlLoad() {
   _rlUpdateDelBtn();
 
   try {
-    const [assessSnap, peacsSnap, mapSnap, peacsMapSnap] = await Promise.all([
+    const [assessSnap, peacsSnap, mapSnap, peacsMapSnap, mapASnap, pharmSnap] = await Promise.all([
       db.ref('assessments').once('value').catch(() => null),
       db.ref('peacs_assessments').once('value').catch(() => null),
       db.ref('mapData').once('value').catch(() => null),
       db.ref('peacs_mapData').once('value').catch(() => null),
+      db.ref('map_assessments').once('value').catch(() => null),
+      db.ref('pharmacy_assessments').once('value').catch(() => null),
     ]);
 
     // assessments node holds both MMAS-8 and MAP instrument records.
@@ -939,7 +941,22 @@ async function _rlLoad() {
       ? Object.entries(peacsSnap.val()).map(([k, v]) => ({ ...v, _key: k, _type: 'peacs' }))
       : [];
 
-    _RL.raw = [...assessRecs, ...peacsRecs]
+    // map_assessments: records from submitMAPAssessment — written only here, never to assessments
+    const mapARecs = mapASnap && mapASnap.val()
+      ? Object.entries(mapASnap.val()).map(([k, v]) => ({ ...v, _key: k, _type: 'map' }))
+      : [];
+
+    // pharmacy_assessments: safety net for pharmacy MAP records whose assessments write failed.
+    // Deduplicate against assessRecs using the shared id field written by pharmacy.html.
+    const _existingIds = new Set(assessRecs.map(r => r.id).filter(Boolean));
+    const pharmRecs = pharmSnap && pharmSnap.val()
+      ? Object.entries(pharmSnap.val())
+          .filter(([, v]) => !v.id || !_existingIds.has(v.id))
+          .map(([k, v]) => ({ ...v, _key: k, _type: 'map',
+            timestamp: v.ts || v.timestamp || 0 }))
+      : [];
+
+    _RL.raw = [...assessRecs, ...peacsRecs, ...mapARecs, ...pharmRecs]
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
     // Build reverse index: assessmentKey → mapData Firebase key
@@ -1143,7 +1160,7 @@ function _rlScore(r) {
       const _c=0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2;
       return `<span style="color:${_C.green};">${Math.pow(Math.max(0,_a*_e*_c),1/3).toFixed(3)}</span>`;
     }
-    const _mapPE = r.mapScore ?? r.pe;
+    const _mapPE = r.mapScore ?? r.pe ?? r.pe_score;
     return _mapPE !== undefined ? `<span style="color:${_C.green};">${Number(_mapPE).toFixed(3)}</span>` : '—';
   }
   if (r._type === 'peacs') return r.pe !== undefined ? `<span style="color:${_C.purple};">${Number(r.pe).toFixed(3)}</span>` : '—';
@@ -1240,9 +1257,12 @@ function _rlTrajChart(currentKey, pid, type, wsKey) {
   const plotW = W - PAD.l - PAD.r;
   const plotH = H - PAD.t - PAD.b;
 
-  // Determine which scale to use based on majority type
-  const mmasRecs = records.filter(rec => rec._type === 'mmas' || typeof rec.score === 'number');
-  const mapRecs  = records.filter(rec => rec._type === 'map'  && typeof (rec.pe || rec.mmas_pe) === 'number');
+  // Determine which scale to use based on _type (set at load time from tool/map_q1 fields).
+  // mmasRecs must NOT use typeof rec.score — pharmacy gateway MAP records also have a numeric score field.
+  // mapRecs must check pe_score (pharmacy gateway field name) in addition to pe/mmas_pe, and use typeof
+  // rather than truthy so pe_score=0 is not skipped.
+  const mmasRecs = records.filter(rec => rec._type === 'mmas');
+  const mapRecs  = records.filter(rec => rec._type === 'map' && typeof (rec.pe_score ?? rec.pe ?? rec.mmas_pe) === 'number');
 
   const tMin = records[0].timestamp || 0;
   const tMax = records[records.length - 1].timestamp || tMin + 1;
@@ -1271,7 +1291,7 @@ function _rlTrajChart(currentKey, pid, type, wsKey) {
   // Build MAP/PE polyline
   let mapLine = '', mapDots = '';
   if (mapRecs.length >= 2) {
-    const pts = mapRecs.map(rec => ({ x: xPos(rec.timestamp||0), y: yMap(rec.pe ?? rec.mmas_pe ?? 0), rec }));
+    const pts = mapRecs.map(rec => ({ x: xPos(rec.timestamp||0), y: yMap(rec.pe_score ?? rec.pe ?? rec.mmas_pe ?? 0), rec }));
     mapLine = `<polyline points="${pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(212,168,67,0.55)" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="3 2"/>`;
     mapDots = pts.map(p => {
       const isCurrent = p.rec._key === currentKey;
@@ -1279,7 +1299,7 @@ function _rlTrajChart(currentKey, pid, type, wsKey) {
       return `<circle class="rl-traj-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isCurrent ? 5 : 3}"
         fill="${isCurrent ? 'rgba(212,168,67,1)' : 'rgba(212,168,67,0.5)'}"
         stroke="${isCurrent ? '#fff' : 'none'}" stroke-width="1.5">
-        <title>${dateStr} · PE ${(p.rec.pe ?? p.rec.mmas_pe)?.toFixed(3)}</title>
+        <title>${dateStr} · PE ${(p.rec.pe_score ?? p.rec.pe ?? p.rec.mmas_pe)?.toFixed(3)}</title>
       </circle>`;
     }).join('');
   }
@@ -1290,7 +1310,7 @@ function _rlTrajChart(currentKey, pid, type, wsKey) {
     return `<text x="${PAD.l - 4}" y="${y.toFixed(1)}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="8" fill="${_C.dim}" dominant-baseline="middle">${v}</text>`;
   }).join('');
 
-  // Score delta badge (last vs first for MMAS)
+  // Score delta badge (last vs first)
   let deltaBadge = '';
   if (mmasRecs.length >= 2) {
     const first = mmasRecs[0].score;
@@ -1299,6 +1319,14 @@ function _rlTrajChart(currentKey, pid, type, wsKey) {
     const sign  = delta >= 0 ? '+' : '';
     const col   = delta >= 0 ? 'rgba(46,201,138,0.8)' : 'rgba(239,68,68,0.8)';
     deltaBadge = `<span style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:${col};margin-left:10px;">${sign}${delta.toFixed(2)} overall</span>`;
+  } else if (mapRecs.length >= 2) {
+    const peVal = r => r.pe_score ?? r.pe ?? r.mmas_pe ?? 0;
+    const first = peVal(mapRecs[0]);
+    const last  = peVal(mapRecs[mapRecs.length - 1]);
+    const delta = last - first;
+    const sign  = delta >= 0 ? '+' : '';
+    const col   = delta >= 0 ? 'rgba(46,201,138,0.8)' : 'rgba(239,68,68,0.8)';
+    deltaBadge = `<span style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;color:${col};margin-left:10px;">${sign}${delta.toFixed(3)} overall</span>`;
   }
 
   const legend = [
@@ -1788,7 +1816,7 @@ async function _rlSaveRecord(key) {
         city:             updates.city     ?? rec.city     ?? '',
         institution_code: rec.institution_code ?? rec.workspace_key ?? '',
         tool:             rec.tool ?? rec._type ?? 'map',
-        timestamp:        rec.timestamp ?? Date.now(),
+        timestamp:        Date.now(),
       };
       const pinRef = await db.ref(mapNode).push(newPin);
       _RL.mapKeyIndex[key] = pinRef.key;

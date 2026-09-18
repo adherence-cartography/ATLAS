@@ -22,6 +22,11 @@ let _saGlobeHideInvalidTs = false; // superadmin toggle: exclude ts=0 records
 
 const _MB_TOKEN = ATLAS_MAPBOX_TOKEN;
 
+let _saGlobeFlat     = false;   // true = mercator flat, false = 3D globe
+let _saGlobeDay      = false;   // true = satellite-streets style, false = outdoors-v12
+let _saGlobeLiveOn   = false;   // guards against duplicate live listeners
+let _saGlobeRotInt   = null;    // auto-rotation interval handle
+
 function _saRenderGlobe(container) {
   // The globe tab takes over the FULL main area — zero padding
   container.style.padding = '0';
@@ -35,6 +40,14 @@ function _saRenderGlobe(container) {
   _saGlobeTimeMs      = null;
   _saGlobeTimePlaying = false;
   if (_saGlobeTimeTimer) { clearInterval(_saGlobeTimeTimer); _saGlobeTimeTimer = null; }
+
+  _saGlobeFlat   = false;
+  _saGlobeDay    = false;
+  _saGlobeLiveOn = false;
+  if (_saGlobeRotInt) { clearInterval(_saGlobeRotInt); _saGlobeRotInt = null; }
+  if (window._saGlobeAssessListener && (typeof database !== 'undefined' && database)) { try { database.ref('assessments').off('child_added', window._saGlobeAssessListener); } catch(e){} window._saGlobeAssessListener = null; }
+  if (window._saGlobeMapAListener   && (typeof database !== 'undefined' && database)) { try { database.ref('map_assessments').off('child_added', window._saGlobeMapAListener); } catch(e){} window._saGlobeMapAListener = null; }
+  if (window._saGlobePeacsListener  && (typeof database !== 'undefined' && database)) { try { database.ref('peacs_assessments').off('child_added', window._saGlobePeacsListener); } catch(e){} window._saGlobePeacsListener = null; }
 
   container.innerHTML = `
     <!-- Map canvas -->
@@ -84,6 +97,19 @@ function _saRenderGlobe(container) {
               ${f.toUpperCase()}
             </button>`).join('')}
         </div>
+      </div>
+      <!-- View controls: projection + map style -->
+      <div style="padding:8px 14px;border-bottom:1px solid ${_C.border};display:flex;gap:5px;">
+        <button id="sa-globe-proj-btn" onclick="saGlobeToggleProjection()"
+          style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.09em;
+                 text-transform:uppercase;padding:4px 5px;border-radius:4px;cursor:pointer;
+                 border:1px solid ${_C.border};background:transparent;color:${_C.muted};transition:all 0.15s;"
+          onmouseover="this.style.color='${_C.cyan}'" onmouseout="this.style.color='${_C.muted}'">⬤ Globe</button>
+        <button id="sa-globe-style-btn" onclick="saGlobeToggleStyle()"
+          style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.09em;
+                 text-transform:uppercase;padding:4px 5px;border-radius:4px;cursor:pointer;
+                 border:1px solid ${_C.border};background:transparent;color:${_C.muted};transition:all 0.15s;"
+          onmouseover="this.style.color='${_C.cyan}'" onmouseout="this.style.color='${_C.muted}'">◑ Satellite</button>
       </div>
       <!-- Legend -->
       <div style="padding:10px 14px;">
@@ -239,7 +265,7 @@ function _saInitGlobeMap() {
 
   _saGlobeMap = new mapboxgl.Map({
     container:  'sa-globe-map',
-    style:      'mapbox://styles/mapbox/dark-v11',
+    style:      'mapbox://styles/mapbox/outdoors-v12',
     projection: 'globe',
     zoom:       1.4,
     center:     [10, 20],
@@ -249,11 +275,11 @@ function _saInitGlobeMap() {
   _saGlobeMap.on('load', () => {
     // Atmosphere + fog
     _saGlobeMap.setFog({
-      color:             '#04091c',
-      'high-color':      '#0d1a3a',
-      'horizon-blend':   0.06,
-      'space-color':     '#010408',
-      'star-intensity':  0.45,
+      color:             'rgba(160,200,240,0.6)',
+      'high-color':      'rgba(74,130,210,0.8)',
+      'horizon-blend':   0.10,
+      'space-color':     '#0a1526',
+      'star-intensity':  0.65,
     });
 
     // Add navigation control
@@ -261,6 +287,19 @@ function _saInitGlobeMap() {
 
     // Build GeoJSON from cached data and add all layers
     _saGlobeAddData();
+
+    // Wire live Firebase listeners for real-time dot-drop
+    _saGlobeStartLive();
+
+    // Auto-rotation at low zoom, stops on first user interaction
+    if (_saGlobeRotInt) clearInterval(_saGlobeRotInt);
+    _saGlobeRotInt = setInterval(() => {
+      if (_saGlobeFlat || !_saGlobeMap || _saGlobeMap.getZoom() >= 3) return;
+      const c = _saGlobeMap.getCenter();
+      c.lng = (c.lng + 0.15) % 360;
+      _saGlobeMap.setCenter(c);
+    }, 80);
+    _saGlobeMap.on('movestart', () => { if (_saGlobeRotInt) { clearInterval(_saGlobeRotInt); _saGlobeRotInt = null; } });
   });
 }
 
@@ -274,7 +313,8 @@ function _saGlobeAddData() {
   // MMAS points
   _saCache.mmas.forEach(r => {
     if (!r.latitude || !r.longitude) return;
-    if (r.map_q1 !== undefined) return; // MAP records handled below
+    if (r.map_q1 !== undefined) return; // standard MAP records — handled below
+    if (r.tool === 'map' || r.instrument_type === 'map') return; // pharmacy MAP records — handled below
     const score = r.score || 0;
     features.push({
       type: 'Feature',
@@ -291,13 +331,18 @@ function _saGlobeAddData() {
     });
   });
 
-  // MAP instrument points — all records in assessments node with map_q1 present.
-  // Includes pharmacy gateway, CHW gateway, and self-assessment submissions.
-  _saCache.mmas.filter(r => r.map_q1 !== undefined && r.latitude && r.longitude).forEach(r => {
-    const _a=((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3;
-    const _e=((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3;
-    const _c=Math.max(0.5, 0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2);
-    const pe = Math.pow(Math.max(0,_a*_e*_c),1/3);
+  // MAP instrument points — records with map_q1 present OR tagged as MAP via tool/instrument_type
+  // (pharmacy gateway records use q1-q8 and pe_score instead of map_q1-map_q8).
+  _saCache.mmas.filter(r => (r.map_q1 !== undefined || r.tool === 'map' || r.instrument_type === 'map') && r.latitude && r.longitude).forEach(r => {
+    let pe;
+    if (r.map_q1 !== undefined) {
+      const _a=((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3;
+      const _e=((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3;
+      const _c=Math.max(0.5, 0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2);
+      pe = Math.pow(Math.max(0,_a*_e*_c),1/3);
+    } else {
+      pe = +(r.pe_score ?? r.pe ?? 0);
+    }
     // Determine origin: pharmacy, chw, or self-assessment
     const origin = r.source || r.upload_source || r.assessment_mode || 'map';
     features.push({
@@ -329,6 +374,25 @@ function _saGlobeAddData() {
         workspace:  r.institution_code || 'Unknown',
         country:    r.country || 'Unknown',
         source:     r.source || r.assessment_mode || 'peacs',
+        ts:         r.timestamp || 0,
+      }
+    });
+  });
+
+  // map_assessments — written by map-assessment.js submitMAPAssessment; never lands in assessments/
+  (_saCache.mapA || []).forEach(r => {
+    if (!r.latitude || !r.longitude) return;
+    const pe = +(r.pe_score ?? 0);
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [+r.longitude, +r.latitude] },
+      properties: {
+        instrument: 'map',
+        score:      pe * 8,
+        normScore:  pe,
+        workspace:  r.workspace_key || 'Unknown',
+        country:    r.country || 'Unknown',
+        source:     'map-assessment',
         ts:         r.timestamp || 0,
       }
     });
@@ -527,13 +591,15 @@ function _saGlobeOpenDrawer(info) {
   window._saGlobeCurrentCluster = info;
 
   // Find nearby assessment records (within ~2 degrees).
-  // _saCache.mmas holds both MMAS-8 (no map_q1) and MAP instrument (has map_q1) records.
+  // _saCache.mmas holds both MMAS-8 and MAP instrument records.
+  // MAP records have map_q1 (assess.html) or tool/instrument_type='map' (pharmacy gateway).
   // _saCache.map is the mapData geo-pin node — excluded here to avoid double-counting.
   const inRange = r => r.latitude && r.longitude &&
     Math.abs(+r.latitude - info.lat) < 2 && Math.abs(+r.longitude - info.lng) < 2;
+  const isMapRecord = r => r.map_q1 !== undefined || r.tool === 'map' || r.instrument_type === 'map';
 
-  const nearbyMmas  = (_saCache.mmas  || []).filter(r => r.map_q1 === undefined && inRange(r));
-  const nearbyMap   = (_saCache.mmas  || []).filter(r => r.map_q1 !== undefined && inRange(r));
+  const nearbyMmas  = (_saCache.mmas  || []).filter(r => !isMapRecord(r) && inRange(r));
+  const nearbyMap   = (_saCache.mmas  || []).filter(r => isMapRecord(r) && inRange(r));
   const nearbyPeacs = (_saCache.peacs || []).filter(inRange);
   const nearby = [...nearbyMmas, ...nearbyMap, ...nearbyPeacs];
 
@@ -1400,3 +1466,183 @@ function saGlobeTimeHideInvalid(checked) {
   _saGlobeHideInvalidTs = checked;
   _saGlobeApplyTimeFilter();
 }
+
+// ── Workspace Globe Overlay ───────────────────────────────────────────────────
+// Opens the full Global Atlas (with instrument toggles) as a fixed overlay
+// accessible to ALL workspace roles. Loads Firebase data directly, bypassing
+// the Mission Control _saCache dependency.
+function wsOpenGlobeOverlay() {
+  // Remove any stale overlay (invisible but blocking re-open)
+  const _stale = document.getElementById('ws-globe-overlay');
+  if (_stale) _stale.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'ws-globe-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:#020c1b;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.84rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(56,189,248,0.7);">Loading Global Atlas…</div>`;
+  document.body.appendChild(overlay);
+
+  const _db = (typeof database !== 'undefined' && database) || null;
+  if (!_db) {
+    overlay.innerHTML = `<div style="color:rgba(239,68,68,0.8);font-family:'IBM Plex Mono',monospace;font-size:0.80rem;text-align:center;">Firebase not available.<br/><button onclick="document.getElementById('ws-globe-overlay').remove()" style="margin-top:12px;padding:6px 14px;border:1px solid rgba(239,68,68,0.3);background:transparent;color:#ef4444;border-radius:4px;cursor:pointer;font-family:inherit;font-size:0.70rem;">Close</button></div>`;
+    return;
+  }
+
+  const _mapboxReady = (typeof ensureMapbox === 'function') ? ensureMapbox() : Promise.resolve();
+
+  Promise.all([
+    _mapboxReady,
+    _db.ref('assessments').once('value'),
+    _db.ref('peacs_assessments').once('value'),
+    _db.ref('map_assessments').once('value'),
+  ]).then(([, aSnap, pSnap, mSnap]) => {
+    _saCache.mmas  = aSnap.val() ? Object.values(aSnap.val()) : [];
+    _saCache.peacs = pSnap.val() ? Object.values(pSnap.val()) : [];
+    _saCache.mapA  = mSnap.val() ? Object.values(mSnap.val()) : [];
+
+    // Keep dark background; give wrapper explicit full dimensions so
+    // _saRenderGlobe's position:relative doesn't collapse the container
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:#020c1b;overflow:hidden;';
+    overlay.innerHTML = '';
+    const _globeWrap = document.createElement('div');
+    _globeWrap.style.cssText = 'width:100%;height:100%;';
+    overlay.appendChild(_globeWrap);
+    _saRenderGlobe(_globeWrap);
+
+    // Floating close button at bottom-centre
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕  Exit Global Atlas';
+    closeBtn.style.cssText = [
+      'position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:9500;',
+      'font-family:"IBM Plex Mono",monospace;font-size:0.70rem;letter-spacing:0.16em;text-transform:uppercase;',
+      'padding:7px 20px;border-radius:6px;cursor:pointer;',
+      'border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.1);color:#ef4444;',
+      'backdrop-filter:blur(8px);transition:background 0.15s;',
+    ].join('');
+    closeBtn.onmouseover = () => { closeBtn.style.background = 'rgba(239,68,68,0.2)'; };
+    closeBtn.onmouseout  = () => { closeBtn.style.background = 'rgba(239,68,68,0.1)'; };
+    closeBtn.onclick = wsCloseGlobeOverlay;
+    overlay.appendChild(closeBtn);
+
+  }).catch(err => {
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:#020c1b;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `<div style="text-align:center;color:rgba(239,68,68,0.8);font-family:'IBM Plex Mono',monospace;font-size:0.80rem;">
+      Failed to load globe data.<br/>
+      <button onclick="document.getElementById('ws-globe-overlay').remove()" style="margin-top:12px;padding:6px 14px;border:1px solid rgba(239,68,68,0.3);background:transparent;color:#ef4444;border-radius:4px;cursor:pointer;font-family:inherit;font-size:0.70rem;">Close</button>
+    </div>`;
+    console.error('[ATLAS] wsOpenGlobeOverlay error:', err);
+  });
+}
+
+function wsCloseGlobeOverlay() {
+  if (_saGlobeMap) { try { _saGlobeMap.remove(); } catch(e){} _saGlobeMap = null; }
+  if (_saGlobeRotInt) { clearInterval(_saGlobeRotInt); _saGlobeRotInt = null; }
+  _saGlobeLiveOn = false;
+  if (window._saGlobeAssessListener && (typeof database !== 'undefined' && database)) { try { database.ref('assessments').off('child_added', window._saGlobeAssessListener); } catch(e){} window._saGlobeAssessListener = null; }
+  if (window._saGlobeMapAListener   && (typeof database !== 'undefined' && database)) { try { database.ref('map_assessments').off('child_added', window._saGlobeMapAListener); } catch(e){} window._saGlobeMapAListener = null; }
+  if (window._saGlobePeacsListener  && (typeof database !== 'undefined' && database)) { try { database.ref('peacs_assessments').off('child_added', window._saGlobePeacsListener); } catch(e){} window._saGlobePeacsListener = null; }
+  const overlay = document.getElementById('ws-globe-overlay');
+  if (overlay) overlay.remove();
+}
+
+// Toggle globe ↔ flat (mercator) projection
+function saGlobeToggleProjection() {
+  _saGlobeFlat = !_saGlobeFlat;
+  const map = _saGlobeMap;
+  if (map) {
+    map.setProjection(_saGlobeFlat ? 'mercator' : 'globe');
+    if (_saGlobeFlat) map.flyTo({ center: [0, 20], zoom: 1.5, duration: 1200 });
+  }
+  const btn = document.getElementById('sa-globe-proj-btn');
+  if (btn) btn.textContent = _saGlobeFlat ? '⊞ Flat Map' : '⬤ Globe';
+}
+
+// Toggle outdoors-v12 ↔ satellite-streets (geographic) style
+function saGlobeToggleStyle() {
+  _saGlobeDay = !_saGlobeDay;
+  const map = _saGlobeMap;
+  if (!map) return;
+  const style = _saGlobeDay
+    ? 'mapbox://styles/mapbox/satellite-streets-v12'
+    : 'mapbox://styles/mapbox/outdoors-v12';
+  map.setStyle(style);
+  map.once('style.load', () => {
+    const fog = _saGlobeDay
+      ? { color:'#0d1f3c','high-color':'#1a3a6e','horizon-blend':0.08,'space-color':'#0a1526','star-intensity':0.70 }
+      : { color:'rgba(160,200,240,0.6)','high-color':'rgba(74,130,210,0.8)','horizon-blend':0.10,'space-color':'#0a1526','star-intensity':0.65 };
+    map.setFog(fog);
+    try { map.setProjection(_saGlobeFlat ? 'mercator' : 'globe'); } catch(e) {}
+    _saGlobeAddData();
+  });
+  const btn = document.getElementById('sa-globe-style-btn');
+  if (btn) btn.textContent = _saGlobeDay ? '◑ Topo' : '◑ Satellite';
+}
+
+// Wire Firebase child_added listeners — appends new records in real time
+function _saGlobeStartLive() {
+  if (_saGlobeLiveOn || typeof database === 'undefined' || !database) return;
+  _saGlobeLiveOn = true;
+  const since = Date.now();
+
+  function _liveFeature(r, instrument) {
+    if (!r || !r.latitude || !r.longitude) return null;
+    if (!r.timestamp || r.timestamp <= since) return null;
+    let normScore;
+    if (instrument === 'mmas') {
+      normScore = (r.score || 0) / 8;
+    } else if (instrument === 'map') {
+      if (r.map_q1 !== undefined) {
+        const _a = ((+r.map_q2||0)+(+r.map_q3||0)+(+r.map_q6||0))/3;
+        const _e = ((+r.map_q1||0)+(+r.map_q5||0)+(+r.map_q8||0))/3;
+        const _c = Math.max(0.5, 0.5+0.5*((+r.map_q4||0)+(+r.map_q7||0))/2);
+        normScore = Math.pow(Math.max(0,_a*_e*_c),1/3);
+      } else {
+        normScore = +(r.pe_score ?? r.pe ?? 0);
+      }
+    } else {
+      normScore = +(r.pe ?? 0);
+    }
+    return {
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [+r.longitude, +r.latitude] },
+      properties: {
+        instrument,
+        score:     normScore * 8,
+        normScore,
+        workspace: r.institution_code || r.workspace_key || r.workspace || 'Unknown',
+        country:   r.country || 'Unknown',
+        source:    r.source || instrument,
+        ts:        r.timestamp,
+      }
+    };
+  }
+
+  // assessments — MMAS-8 and pharmacy MAP records
+  window._saGlobeAssessListener = database.ref('assessments').on('child_added', snap => {
+    const r = snap.val();
+    if (!r || !r.timestamp || r.timestamp <= since) return;
+    const isMap = r.tool === 'map' || r.instrument_type === 'map' || r.map_q1 !== undefined;
+    const f = _liveFeature(r, isMap ? 'map' : 'mmas');
+    if (f) { _saGlobeAllFeatures.push(f); _saGlobeApplyTimeFilter(); }
+  });
+
+  // map_assessments — standalone MAP from map-assessment.js
+  window._saGlobeMapAListener = database.ref('map_assessments').on('child_added', snap => {
+    const r = snap.val();
+    if (!r || !r.timestamp || r.timestamp <= since) return;
+    const f = _liveFeature(r, 'map');
+    if (f) { _saGlobeAllFeatures.push(f); _saGlobeApplyTimeFilter(); }
+  });
+
+  // peacs_assessments
+  window._saGlobePeacsListener = database.ref('peacs_assessments').on('child_added', snap => {
+    const r = snap.val();
+    if (!r || !r.timestamp || r.timestamp <= since) return;
+    const f = _liveFeature(r, 'peacs');
+    if (f) { _saGlobeAllFeatures.push(f); _saGlobeApplyTimeFilter(); }
+  });
+}
+
+// Ensure workspace overlay functions are accessible as window properties
+window.wsOpenGlobeOverlay  = wsOpenGlobeOverlay;
+window.wsCloseGlobeOverlay = wsCloseGlobeOverlay;

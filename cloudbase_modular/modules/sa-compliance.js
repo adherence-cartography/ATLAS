@@ -1,7 +1,7 @@
-// sa-compliance.js — Compliance Hub: HIPAA, GDPR, UAE PDPL, 21 CFR sections, DSAR, breach log, TOMs checklist, attestation download
+// sa-compliance.js — Compliance Hub: HIPAA, GDPR, UAE PDPL, Brazil LGPD, 21 CFR sections, DSAR, breach log, TOMs checklist, attestation download
 
 // ══════════════════════════════════════════════════════════════════════════════
-// COMPLIANCE HUB — ATLAS Platform · HIPAA · GDPR · UAE PDPL · 21 CFR Part 11
+// COMPLIANCE HUB — ATLAS Platform · HIPAA · GDPR · UAE PDPL · Brazil LGPD · 21 CFR Part 11
 // Sections: Data Localisation, DSAR, Export/Delete, Breach Log, TOMs Checklist.
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -15,7 +15,7 @@ function _saRenderCompliance(container) {
     <div style="max-width:900px;margin:0 auto;">
       <div style="font-size:0.7rem;letter-spacing:0.22em;text-transform:uppercase;color:${_C.amber};margin-bottom:6px;">Compliance Hub</div>
       <div style="font-size:1.18rem;font-weight:700;color:${_C.text};margin-bottom:6px;">ATLAS Platform Compliance</div>
-      <div style="font-size:0.8rem;color:${_C.muted};margin-bottom:24px;">HIPAA · GDPR · UAE PDPL (Decree-Law 45/2021) · 21 CFR Part 11 · ADHICS v2.0</div>
+      <div style="font-size:0.8rem;color:${_C.muted};margin-bottom:24px;">HIPAA · GDPR · UAE PDPL (Decree-Law 45/2021) · Brazil LGPD (Lei 13.709/2018) · 21 CFR Part 11 · ADHICS v2.0</div>
 
       <!-- Section nav -->
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px;" id="comp-section-nav">
@@ -111,13 +111,18 @@ function _compRenderLocalisation(panel) {
     { service:'DynamoDB — PEACS Records (EU)',        region:'eu-central-1 · Frankfurt, Germany',               framework:'GDPR',        note:'EU-resident PEACS records for European clients.' },
     { service:'Lambda — Data Relay (EU)',             region:'eu-central-1 · Frankfurt, Germany',               framework:'GDPR',        note:'EU workspace auth, MAP, and MMAS routes. Firebase exempt (dyna_only:true) — no PHI from EU clients reaches Firebase. SSM keys born in eu-central-1.' },
     { service:'SSM Parameter Store (EU)',             region:'eu-central-1 · Frankfurt, Germany',               framework:'GDPR',        note:'Workspace keys for EU clients provisioned in eu-central-1. Consistent with GDPR Art. 44 data residency requirement.' },
+    { service:'DynamoDB — Patient Assessments (Brazil)', region:'sa-east-1 · São Paulo, Brazil',               framework:'LGPD',        note:'Brazil-resident PHI store for Brazilian institutional workspaces (region: br). dyna_only:true — no PHI leaves Brazil. LGPD Art. 33 cross-border transfer obligation satisfied by local residency.' },
+    { service:'DynamoDB — PEACS Records (Brazil)',    region:'sa-east-1 · São Paulo, Brazil',                   framework:'LGPD',        note:'Brazil-resident PEACS records. Co-located with assessment store in sa-east-1.' },
+    { service:'DynamoDB — Audit Log (Brazil)',        region:'sa-east-1 · São Paulo, Brazil',                   framework:'LGPD / 21 CFR Pt 11', note:'Immutable CFR-11 audit trail for Brazilian workspaces. Brazil-resident.' },
+    { service:'Lambda — Data Relay (Brazil)',         region:'sa-east-1 · São Paulo, Brazil',                   framework:'LGPD',        note:'Brazilian workspace data relay. All assessment writes, PEACS, and audit entries route to sa-east-1 exclusively via Cloudflare Worker /lambda-proxy-brazil/ route. Deployed and live — Function URL active in sa-east-1.' },
+    { service:'SSM Parameter Store (Brazil)',         region:'us-east-1 · N. Virginia, USA (centralised)',      framework:'LGPD',        note:'Workspace key parameters are held centrally in us-east-1 SSM alongside all other workspaces. Only patient PHI (DynamoDB) is Brazil-resident; credential metadata is not PHI and its central storage satisfies LGPD Art. 33.' },
     { service:'SES — Email Delivery',                 region:'us-east-1 · N. Virginia, USA',                    framework:'HIPAA / PDPL',note:'Magic-link and OTP emails only — no PHI payload transmitted.' },
-    { service:'Firebase Realtime Database',           region:'us-central1 · Iowa, USA (default)',               framework:'HIPAA / PDPL',note:'ALTHIQA and EU workspaces are fully exempt — dyna_only:true is set at account creation. Firebase receives no PHI from UAE or EU clients.' },
+    { service:'Firebase Realtime Database',           region:'us-central1 · Iowa, USA (default)',               framework:'HIPAA / PDPL',note:'UAE (ALTHIQA), EU, and Brazil institutional workspaces are fully exempt — dyna_only:true is set at workspace creation. Firebase receives no PHI from UAE, EU, or Brazilian institutional clients.' },
     { service:'Cloudflare Workers',                   region:'Distributed (nearest PoP)',                        framework:'HIPAA',       note:'Reverse-proxy only — no PHI stored at edge. PHI transits in-flight (TLS 1.3) to Lambda. BAA available under Enterprise; standard proxy pattern accepted under HIPAA.' },
   ];
 
   const sc = 'rgba(46,201,138,0.9)';
-  const fwColors = { 'UAE PDPL':'rgba(212,168,67,0.7)', 'HIPAA':'rgba(99,102,241,0.7)', 'HIPAA / PDPL':'rgba(99,102,241,0.7)', '21 CFR Pt 11':'rgba(46,201,138,0.7)', 'GDPR':'rgba(6,182,212,0.7)' };
+  const fwColors = { 'UAE PDPL':'rgba(212,168,67,0.7)', 'HIPAA':'rgba(99,102,241,0.7)', 'HIPAA / PDPL':'rgba(99,102,241,0.7)', '21 CFR Pt 11':'rgba(46,201,138,0.7)', 'GDPR':'rgba(6,182,212,0.7)', 'LGPD':'rgba(46,201,138,0.7)', 'LGPD / 21 CFR Pt 11':'rgba(46,201,138,0.7)' };
 
   const rows = infra.map(r => `
     <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
@@ -139,7 +144,7 @@ function _compRenderLocalisation(panel) {
     </tr>`).join('');
 
   panel.innerHTML =
-    _compCard('Infrastructure Status', 'Data Localisation · HIPAA · GDPR · UAE PDPL · 21 CFR Part 11',
+    _compCard('Infrastructure Status', 'Data Localisation · HIPAA · GDPR · UAE PDPL · Brazil LGPD · 21 CFR Part 11',
       `<div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
           <thead><tr style="border-bottom:1px solid ${_C.border};">
@@ -485,7 +490,7 @@ async function _compExportDelete() {
       deleted_by:          actor,
       platform:            'ATLAS',
       data_store:          'Firebase Realtime Database (assessments + peacs_assessments nodes)',
-      note:                'DynamoDB records in AWS me-central-1 (UAE) and eu-central-1 (EU) must be deleted separately via AWS Console or Lambda admin endpoint.',
+      note:                'DynamoDB records in AWS me-central-1 (UAE), eu-central-1 (EU), and sa-east-1 (Brazil) must be deleted separately via AWS Console or Lambda admin endpoint.',
       dpa_clause:          '8.1(b) + 8.3',
       certificate_version: '1.0',
     };
@@ -720,7 +725,7 @@ const _TOMS = [
   { id:12, domain:'Vulnerability mgmt',  measure:'Continuous scanning; defined patch SLA; annual third-party penetration test.' },
   { id:13, domain:'Secure SDLC',         measure:'Code review, SAST, DAST, dependency and supply-chain scanning in development pipeline.' },
   { id:14, domain:'Sub-Processor mgmt',  measure:'Sub-Processor register (Annex 3); risk assessment before engagement; flow-down of equivalent contractual protection.' },
-  { id:15, domain:'Cross-border',        measure:'Regional data residency enforced: EU clients routed to eu-central-1 (Frankfurt), UAE clients to me-central-1 (Abu Dhabi); AAMEN exemption where required; documented GDPR Art. 44–49 and PDPL Art. 22–23 basis for any cross-border transfer.' },
+  { id:15, domain:'Cross-border',        measure:'Regional data residency enforced: EU clients routed to eu-central-1 (Frankfurt), UAE clients to me-central-1 (Abu Dhabi), Brazil clients to sa-east-1 (São Paulo); AAMEN exemption where required; documented GDPR Art. 44–49, PDPL Art. 22–23, and LGPD Art. 33 basis for any cross-border transfer.' },
   { id:16, domain:'Incident response',   measure:'Documented incident response plan; 24-hour Personal Data Breach notification capability; annual tabletop exercise.' },
   { id:17, domain:'Business continuity', measure:'BCP/DR plan with defined RTO and RPO; annual recovery test.' },
   { id:18, domain:'Backup',              measure:'Daily backups; immutable backup option where available; quarterly restore test.' },
