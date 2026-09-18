@@ -31,6 +31,7 @@ let _saCons_activeSubTab      = 'members';
 let _saCons_tierFilter    = 'all';
 let _saCons_regionFilter  = 'all';
 let _saCons_fitFilter     = 'all';
+let _saCons_grantsListener    = null;
 
 // ── Tier definitions ─────────────────────────────────────────────────────────
 const _CONS_TIERS = {
@@ -52,34 +53,91 @@ const _TESSERA_TIER_TO_CONS = { founder:0, institutional:1, validation:2, affili
 // Tier 4=Student $19/mo · Tier 3=Researcher $49/mo · Tier 2=PI $149/mo · Tier 1=Academic $399/mo
 const _CONS_MONTHLY_PRICE = { 0: 0, 1: 399, 2: 149, 3: 49, 4: 19, 5: 599 };
 
-// ── Country list ─────────────────────────────────────────────────────────────
+// ── Country list (all UN member states + key territories, alphabetical) ───────
 const _CONS_COUNTRIES = [
-  'United States','United Kingdom','Canada','Australia','New Zealand',
-  'Germany','France','Spain','Italy','Portugal','Netherlands','Belgium',
-  'Switzerland','Austria','Sweden','Norway','Denmark','Finland',
-  'Poland','Czech Republic','Hungary','Romania','Bulgaria','Croatia',
-  'Cyprus','Malta','Greece','Turkey','Israel','Saudi Arabia','UAE',
-  'Egypt','South Africa','Nigeria','Kenya','Ethiopia','Ghana',
-  'Brazil','Mexico','Argentina','Colombia','Chile','Peru',
-  'India','China','Japan','South Korea','Singapore','Thailand',
-  'Philippines','Indonesia','Malaysia','Vietnam','Pakistan','Bangladesh',
-  'Other',
+  'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda',
+  'Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain',
+  'Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia',
+  'Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso',
+  'Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic',
+  'Chad','Chile','China','Colombia','Comoros','Congo (Republic)','Costa Rica',
+  'Croatia','Cuba','Cyprus','Czech Republic','Denmark','Djibouti','Dominica',
+  'Dominican Republic','DR Congo','Ecuador','Egypt','El Salvador',
+  'Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland',
+  'France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada',
+  'Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary',
+  'Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy',
+  'Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait',
+  'Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya',
+  'Liechtenstein','Lithuania','Luxembourg','Madagascar','Malawi','Malaysia',
+  'Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico',
+  'Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique',
+  'Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua',
+  'Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan',
+  'Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines',
+  'Poland','Portugal','Qatar','Romania','Russia','Rwanda',
+  'Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines',
+  'Samoa','San Marino','São Tomé and Príncipe','Saudi Arabia','Senegal','Serbia',
+  'Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands',
+  'Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka',
+  'Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan',
+  'Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago',
+  'Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine',
+  'United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan',
+  'Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
 ];
 
 // ── Flag lookup ───────────────────────────────────────────────────────────────
 const _CONS_FLAGS = {
-  'United States':'🇺🇸','United Kingdom':'🇬🇧','Canada':'🇨🇦','Australia':'🇦🇺',
-  'New Zealand':'🇳🇿','Germany':'🇩🇪','France':'🇫🇷','Spain':'🇪🇸','Italy':'🇮🇹',
-  'Portugal':'🇵🇹','Netherlands':'🇳🇱','Belgium':'🇧🇪','Switzerland':'🇨🇭',
-  'Austria':'🇦🇹','Sweden':'🇸🇪','Norway':'🇳🇴','Denmark':'🇩🇰','Finland':'🇫🇮',
-  'Poland':'🇵🇱','Czech Republic':'🇨🇿','Hungary':'🇭🇺','Romania':'🇷🇴',
-  'Bulgaria':'🇧🇬','Croatia':'🇭🇷','Cyprus':'🇨🇾','Malta':'🇲🇹','Greece':'🇬🇷',
-  'Turkey':'🇹🇷','Israel':'🇮🇱','Saudi Arabia':'🇸🇦','UAE':'🇦🇪','Egypt':'🇪🇬',
-  'South Africa':'🇿🇦','Nigeria':'🇳🇬','Kenya':'🇰🇪','Ethiopia':'🇪🇹','Ghana':'🇬🇭',
-  'Brazil':'🇧🇷','Mexico':'🇲🇽','Argentina':'🇦🇷','Colombia':'🇨🇴','Chile':'🇨🇱',
-  'Peru':'🇵🇪','India':'🇮🇳','China':'🇨🇳','Japan':'🇯🇵','South Korea':'🇰🇷',
-  'Singapore':'🇸🇬','Thailand':'🇹🇭','Philippines':'🇵🇭','Indonesia':'🇮🇩',
-  'Malaysia':'🇲🇾','Vietnam':'🇻🇳','Pakistan':'🇵🇰','Bangladesh':'🇧🇩',
+  'Afghanistan':'🇦🇫','Albania':'🇦🇱','Algeria':'🇩🇿','Andorra':'🇦🇩',
+  'Angola':'🇦🇴','Antigua and Barbuda':'🇦🇬','Argentina':'🇦🇷','Armenia':'🇦🇲',
+  'Australia':'🇦🇺','Austria':'🇦🇹','Azerbaijan':'🇦🇿','Bahamas':'🇧🇸',
+  'Bahrain':'🇧🇭','Bangladesh':'🇧🇩','Barbados':'🇧🇧','Belarus':'🇧🇾',
+  'Belgium':'🇧🇪','Belize':'🇧🇿','Benin':'🇧🇯','Bhutan':'🇧🇹','Bolivia':'🇧🇴',
+  'Bosnia and Herzegovina':'🇧🇦','Botswana':'🇧🇼','Brazil':'🇧🇷','Brunei':'🇧🇳',
+  'Bulgaria':'🇧🇬','Burkina Faso':'🇧🇫','Burundi':'🇧🇮','Cabo Verde':'🇨🇻',
+  'Cambodia':'🇰🇭','Cameroon':'🇨🇲','Canada':'🇨🇦','Central African Republic':'🇨🇫',
+  'Chad':'🇹🇩','Chile':'🇨🇱','China':'🇨🇳','Colombia':'🇨🇴','Comoros':'🇰🇲',
+  'Congo (Republic)':'🇨🇬','Costa Rica':'🇨🇷','Croatia':'🇭🇷','Cuba':'🇨🇺',
+  'Cyprus':'🇨🇾','Czech Republic':'🇨🇿','Denmark':'🇩🇰','Djibouti':'🇩🇯',
+  'Dominica':'🇩🇲','Dominican Republic':'🇩🇴','DR Congo':'🇨🇩','Ecuador':'🇪🇨',
+  'Egypt':'🇪🇬','El Salvador':'🇸🇻','Equatorial Guinea':'🇬🇶','Eritrea':'🇪🇷',
+  'Estonia':'🇪🇪','Eswatini':'🇸🇿','Ethiopia':'🇪🇹','Fiji':'🇫🇯','Finland':'🇫🇮',
+  'France':'🇫🇷','Gabon':'🇬🇦','Gambia':'🇬🇲','Georgia':'🇬🇪','Germany':'🇩🇪',
+  'Ghana':'🇬🇭','Greece':'🇬🇷','Grenada':'🇬🇩','Guatemala':'🇬🇹','Guinea':'🇬🇳',
+  'Guinea-Bissau':'🇬🇼','Guyana':'🇬🇾','Haiti':'🇭🇹','Honduras':'🇭🇳',
+  'Hungary':'🇭🇺','Iceland':'🇮🇸','India':'🇮🇳','Indonesia':'🇮🇩','Iran':'🇮🇷',
+  'Iraq':'🇮🇶','Ireland':'🇮🇪','Israel':'🇮🇱','Italy':'🇮🇹','Jamaica':'🇯🇲',
+  'Japan':'🇯🇵','Jordan':'🇯🇴','Kazakhstan':'🇰🇿','Kenya':'🇰🇪','Kiribati':'🇰🇮',
+  'Kosovo':'🇽🇰','Kuwait':'🇰🇼','Kyrgyzstan':'🇰🇬','Laos':'🇱🇦','Latvia':'🇱🇻',
+  'Lebanon':'🇱🇧','Lesotho':'🇱🇸','Liberia':'🇱🇷','Libya':'🇱🇾',
+  'Liechtenstein':'🇱🇮','Lithuania':'🇱🇹','Luxembourg':'🇱🇺','Madagascar':'🇲🇬',
+  'Malawi':'🇲🇼','Malaysia':'🇲🇾','Maldives':'🇲🇻','Mali':'🇲🇱','Malta':'🇲🇹',
+  'Marshall Islands':'🇲🇭','Mauritania':'🇲🇷','Mauritius':'🇲🇺','Mexico':'🇲🇽',
+  'Micronesia':'🇫🇲','Moldova':'🇲🇩','Monaco':'🇲🇨','Mongolia':'🇲🇳',
+  'Montenegro':'🇲🇪','Morocco':'🇲🇦','Mozambique':'🇲🇿','Myanmar':'🇲🇲',
+  'Namibia':'🇳🇦','Nauru':'🇳🇷','Nepal':'🇳🇵','Netherlands':'🇳🇱',
+  'New Zealand':'🇳🇿','Nicaragua':'🇳🇮','Niger':'🇳🇪','Nigeria':'🇳🇬',
+  'North Korea':'🇰🇵','North Macedonia':'🇲🇰','Norway':'🇳🇴','Oman':'🇴🇲',
+  'Pakistan':'🇵🇰','Palau':'🇵🇼','Palestine':'🇵🇸','Panama':'🇵🇦',
+  'Papua New Guinea':'🇵🇬','Paraguay':'🇵🇾','Peru':'🇵🇪','Philippines':'🇵🇭',
+  'Poland':'🇵🇱','Portugal':'🇵🇹','Qatar':'🇶🇦','Romania':'🇷🇴','Russia':'🇷🇺',
+  'Rwanda':'🇷🇼','Saint Kitts and Nevis':'🇰🇳','Saint Lucia':'🇱🇨',
+  'Saint Vincent and the Grenadines':'🇻🇨','Samoa':'🇼🇸','San Marino':'🇸🇲',
+  'São Tomé and Príncipe':'🇸🇹','Saudi Arabia':'🇸🇦','Senegal':'🇸🇳',
+  'Serbia':'🇷🇸','Seychelles':'🇸🇨','Sierra Leone':'🇸🇱','Singapore':'🇸🇬',
+  'Slovakia':'🇸🇰','Slovenia':'🇸🇮','Solomon Islands':'🇸🇧','Somalia':'🇸🇴',
+  'South Africa':'🇿🇦','South Korea':'🇰🇷','South Sudan':'🇸🇸','Spain':'🇪🇸',
+  'Sri Lanka':'🇱🇰','Sudan':'🇸🇩','Suriname':'🇸🇷','Sweden':'🇸🇪',
+  'Switzerland':'🇨🇭','Syria':'🇸🇾','Taiwan':'🇹🇼','Tajikistan':'🇹🇯',
+  'Tanzania':'🇹🇿','Thailand':'🇹🇭','Timor-Leste':'🇹🇱','Togo':'🇹🇬',
+  'Tonga':'🇹🇴','Trinidad and Tobago':'🇹🇹','Tunisia':'🇹🇳','Turkey':'🇹🇷',
+  'Turkmenistan':'🇹🇲','Tuvalu':'🇹🇻','Uganda':'🇺🇬','Ukraine':'🇺🇦',
+  'United Arab Emirates':'🇦🇪','United Kingdom':'🇬🇧','United States':'🇺🇸',
+  'Uruguay':'🇺🇾','Uzbekistan':'🇺🇿','Vanuatu':'🇻🇺','Vatican City':'🇻🇦',
+  'Venezuela':'🇻🇪','Vietnam':'🇻🇳','Yemen':'🇾🇪','Zambia':'🇿🇲','Zimbabwe':'🇿🇼',
+  // legacy alias kept for existing records
+  'UAE':'🇦🇪',
 };
 
 // ── Hardcoded funding opportunities ──────────────────────────────────────────
@@ -602,12 +660,11 @@ function _saCons_showNormativeInline(container) {
     if (typeof downloadNormativeTemplate === 'function') downloadNormativeTemplate(this);
   });
 
-  const statusEl     = document.getElementById('sc-norm-status');
   const fileInput    = document.getElementById('sc-norm-file-input');
   const uploadLabel  = document.getElementById('sc-norm-upload-label');
 
   function _handleNormFile(file) {
-    if (file) _saCons_processNormativeFile(file, statusEl);
+    if (file) processBulkUpload(file);
   }
 
   if (fileInput) {
@@ -631,121 +688,6 @@ function _saCons_showNormativeInline(container) {
       _handleNormFile(e.dataTransfer.files?.[0]);
     });
   }
-}
-
-async function _saCons_processNormativeFile(file, statusEl) {
-  var normAge   = {'under 18':'Under 18','18-24':'18–24','25-34':'25–34','35-44':'35–44','45-54':'45–54','55-64':'55–64','65-74':'65–74','75+':'75 and older','75 and over':'75 and older','prefer not to say':'Prefer not to say'};
-  var normEdu   = {'no formal education':'No formal education','primary school':'Primary school','primary':'Primary school','secondary school':'Secondary school','secondary':'Secondary school','high school':'Secondary school','vocational/technical':'Vocational / Technical','vocational/ technical':'Vocational / Technical','vocational':'Vocational / Technical','some university':'Some university / college','some college':'Some university / college','bachelor degree':'Bachelor\'s degree','bachelors degree':'Bachelor\'s degree','bachelor':'Bachelor\'s degree','undergraduate':'Bachelor\'s degree','masters degree':'Master\'s degree','masters':'Master\'s degree','graduate degree':'Master\'s degree','graduate':'Master\'s degree','postgraduate':'Master\'s degree','doctoral degree':'Doctoral degree','doctorate':'Doctoral degree','doctoral':'Doctoral degree','phd':'Doctoral degree','prefer not to say':'Prefer not to say'};
-  var normRoute = {'oral':'Oral (Tablet/Capsule)','tablet':'Oral (Tablet/Capsule)','capsule':'Oral (Tablet/Capsule)','iv':'Intravenous (IV)','intravenous':'Intravenous (IV)','im':'Intramuscular (IM)','intramuscular':'Intramuscular (IM)','sc':'Subcutaneous (SC)','subcutaneous':'Subcutaneous (SC)','patch':'Transdermal (Patch)','transdermal':'Transdermal (Patch)','inhaled':'Inhaled','inhalation':'Inhaled','intranasal':'Intranasal','nasal':'Intranasal','eye drops':'Ophthalmic (Eye drops)','ophthalmic':'Ophthalmic (Eye drops)','ear drops':'Otic (Ear drops)','otic':'Otic (Ear drops)','rectal':'Rectal (Suppository)','suppository':'Rectal (Suppository)','vaginal':'Vaginal','topical':'Topical (Cream/Gel)','cream':'Topical (Cream/Gel)','gel':'Topical (Cream/Gel)','other':'Other'};
-  var normQ8    = {'never/rarely':'Never/Rarely','never':'Never/Rarely','rarely':'Never/Rarely','once in a while':'Once in a while','occasionally':'Once in a while','sometimes':'Sometimes','usually':'Usually','often':'Usually','all the time':'All of the time','always':'All of the time','all of the time':'All of the time'};
-  function normLookup(map, val) { if (!val) return val; return map[String(val).trim().toLowerCase()] || String(val).trim(); }
-  function setStatus(msg, type) {
-    if (!statusEl) return;
-    statusEl.style.display    = 'block';
-    statusEl.style.background = type === 'error' ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)';
-    statusEl.style.border     = type === 'error' ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(16,185,129,0.25)';
-    statusEl.style.color      = type === 'error' ? '#f87171' : '#94c8ac';
-    statusEl.textContent      = msg;
-  }
-
-  setStatus('Reading file: ' + file.name + '…', 'info');
-
-  try {
-    await ensureSheetJS();
-  } catch(e) {
-    setStatus('Could not load Excel parser. Please refresh and try again.', 'error');
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onerror = () => setStatus('Could not read file.', 'error');
-  reader.onload = async function(ev) {
-    try {
-      const wb = XLSX.read(ev.target.result, { type: 'array' });
-      const ws = wb.Sheets['Data Entry'];
-      if (!ws) {
-        setStatus('Invalid file: "Data Entry" sheet not found. Please use the TESSERA Normative Contribution Template.', 'error');
-        return;
-      }
-
-      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
-      if (!String(aoa[0]?.[0] || '').includes('NORMATIVE CONTRIBUTION')) {
-        setStatus('Invalid file: This does not appear to be a TESSERA Normative Contribution Template.', 'error');
-        return;
-      }
-
-      const studyTitle       = String(aoa[1]?.[1] || '').trim();
-      const pi               = String(aoa[2]?.[1] || '').trim();
-      const institution      = String(aoa[3]?.[1] || '').trim();
-      const irbProtocol      = String(aoa[4]?.[1] || '').trim();
-      const clinicalTrialsId = String(aoa[5]?.[1] || '').trim();
-      const studyPhase       = String(aoa[6]?.[1] || '').trim();
-
-      if (!studyTitle || !pi || !institution) {
-        setStatus('Please fill in Study Title, Principal Investigator, and Institution in the Data Entry sheet (rows 2–4, column B).', 'error');
-        return;
-      }
-
-      const records = [];
-      for (let i = 10; i < aoa.length; i++) {
-        const row     = aoa[i];
-        const country = String(row[1] || '').trim();
-        if (!country || country.toUpperCase().includes('EXAMPLE')) continue;
-        const q1 = String(row[11] || '').trim();
-        if (!q1) continue;
-        records.push({
-          date:          String(row[0]  || '').trim(),
-          country,
-          city:          String(row[2]  || '').trim(),
-          condition:     String(row[3]  || '').trim(),
-          drug_type:     String(row[4]  || '').trim(),
-          drug_name:     String(row[5]  || '').trim(),
-          drug_strength: String(row[6]  || '').trim(),
-          route:         normLookup(normRoute, String(row[7]  || '')),
-          gender:        String(row[8]  || '').trim(),
-          age_range:     normLookup(normAge,   String(row[9]  || '')),
-          education:     normLookup(normEdu,   String(row[10] || '')),
-          q1: q1.toUpperCase(),
-          q2: String(row[12] || '').trim().toUpperCase(),
-          q3: String(row[13] || '').trim().toUpperCase(),
-          q4: String(row[14] || '').trim().toUpperCase(),
-          q5: String(row[15] || '').trim().toUpperCase(),
-          q6: String(row[16] || '').trim().toUpperCase(),
-          q7: String(row[17] || '').trim().toUpperCase(),
-          q8: normLookup(normQ8, String(row[18] || '')),
-        });
-      }
-
-      if (records.length === 0) {
-        setStatus('No valid data rows found. Fill in patient records starting at row 11 and delete the example row.', 'error');
-        return;
-      }
-
-      setStatus('Uploading ' + records.length + ' record(s) to TESSERA…', 'info');
-
-      await firebase.database().ref('normative_contributions').push({
-        submitted_at:       Date.now(),
-        study_title:        studyTitle,
-        pi,
-        institution,
-        irb_protocol:       irbProtocol,
-        clinical_trials_id: clinicalTrialsId,
-        study_phase:        studyPhase,
-        record_count:       records.length,
-        records,
-        template_version:   'v1',
-      });
-
-      setStatus('✓ ' + records.length + ' record(s) submitted to the TESSERA Normative Dataset. Thank you for your contribution.', 'success');
-      if (typeof showToast === 'function') showToast('TESSERA: ' + records.length + ' normative records submitted.', 5000);
-
-    } catch(err) {
-      console.error('[normative-upload]', err);
-      setStatus('Upload failed: ' + err.message, 'error');
-    }
-  };
-  reader.readAsArrayBuffer(file);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1125,7 +1067,20 @@ window._saCons_submitAddMember = async function() {
   errEl.style.display = 'none';
 
   try {
-    await firebase.database().ref('consortium_members').push(data);
+    const newRef = await firebase.database().ref('consortium_members').push(data);
+    if (status === 'active') {
+      await firebase.database().ref('tessera_grants/' + newRef.key).set({
+        recipient:   name,
+        institution: institution,
+        country:     country,
+        study_title: study || '',
+        grant_type:  'subscription_grant',
+        tier:        tier,
+        granted_at:  Date.now(),
+        status:      'active',
+        email:       email,
+      });
+    }
     document.getElementById('sc-add-member-overlay')?.remove();
     if (typeof showToast === 'function') showToast('✓ Member added to consortium.', 2200);
     if (typeof atlasAuditLog === 'function') atlasAuditLog('consortium_member_added', { name, institution, tier });
@@ -1289,74 +1244,25 @@ window._saCons_saveEditMember = async function(key) {
   try {
     const db = firebase.database();
 
-    // 1. Update consortium member record
-    await db.ref('consortium_members/' + key).update({
-      name, contact_email: email, email, institution, study_title: study,
-      country, tier, instruments, status, lmic_tier: lmicTier,
-    });
+    // 1. Update consortium member record via root multi-path update.
+    //    Each field is an explicit top-level path so arrays or nested objects
+    //    in the payload cannot interfere with adjacent fields (e.g. tier).
+    const _p = 'consortium_members/' + key + '/';
+    const _memberPatch = {};
+    _memberPatch[_p + 'name']          = name;
+    _memberPatch[_p + 'contact_email'] = email;
+    _memberPatch[_p + 'email']         = email;
+    _memberPatch[_p + 'institution']   = institution;
+    _memberPatch[_p + 'study_title']   = study || null;
+    _memberPatch[_p + 'country']       = country;
+    _memberPatch[_p + 'tier']          = tier;
+    _memberPatch[_p + 'status']        = status;
+    _memberPatch[_p + 'lmic_tier']     = lmicTier;
+    _memberPatch[_p + 'instruments']   = instruments.length > 0 ? instruments : null;
+    await db.ref().update(_memberPatch);
 
-    // 2. Provision or revoke LMIC access tier in Firebase (lmic_access/{uid})
-    //    key === uid (consortium_members are keyed by firebase auth uid)
-    if (lmicTier && status === 'active') {
-      // Find existing TESSERA ID from members cache if available
-      const cached = _saCons_membersCache.find(x => x._key === key);
-      const tesseraId = (cached && cached.tessera_id) || '';
-      await db.ref('lmic_access/' + key).set({
-        active:           true,
-        country:          country,
-        institution:      institution,
-        tessera_grc_id:   tesseraId,
-        granted_by:  'superadmin',
-        granted_at:  Date.now(),
-        email:       email,
-      });
-      if (typeof atlasAuditLog === 'function') atlasAuditLog('lmic_access_granted', { uid: key, country, institution });
-
-      // Write tessera_grants entry for public Impact Ledger.
-      // Value is NOT stored — the website computes it organically from tier + elapsed months.
-      // Only create/re-activate if no active record exists, so granted_at is not reset on edits.
-      const existingGrant = await db.ref('tessera_grants/' + key).once('value');
-      const grantVal = existingGrant.val();
-      if (!grantVal || grantVal.status === 'revoked') {
-        await db.ref('tessera_grants/' + key).set({
-          recipient:      name,
-          institution:    institution,
-          country:        country,
-          study_title:    study || '',
-          grant_type:     'lmic_grant',
-          tier:           tier,
-          granted_at:     Date.now(),
-          status:         'active',
-          email:          email,
-          tessera_grc_id: tesseraId,
-        });
-        if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_grant_created', { uid: key, tier, country, institution });
-      } else {
-        // Already active — update metadata only, preserve granted_at
-        await db.ref('tessera_grants/' + key).update({
-          recipient:    name,
-          institution:  institution,
-          country:      country,
-          study_title:  study || '',
-          tier:         tier,
-          email:        email,
-        });
-      }
-    } else if (!lmicTier) {
-      // Revoke: mark inactive rather than delete to preserve audit trail
-      const existing = await db.ref('lmic_access/' + key).once('value');
-      if (existing.val()) {
-        await db.ref('lmic_access/' + key + '/active').set(false);
-        if (typeof atlasAuditLog === 'function') atlasAuditLog('lmic_access_revoked', { uid: key });
-      }
-      // Stop the clock on tessera_grants — value locks at revoked_at
-      const existingGrant = await db.ref('tessera_grants/' + key).once('value');
-      if (existingGrant.val() && existingGrant.val().status === 'active') {
-        await db.ref('tessera_grants/' + key).update({ status: 'revoked', revoked_at: Date.now() });
-        if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_grant_revoked', { uid: key });
-      }
-    }
-
+    // 2. Close modal, refresh UI, and show toast immediately after member record saves.
+    //    LMIC/grants logic runs below in its own try-catch so it cannot block the UI update.
     document.getElementById('sc-edit-member-overlay')?.remove();
     const lmicNote = lmicTier && status === 'active' ? ' LMIC researcher access provisioned.' : '';
     if (typeof showToast === 'function') showToast('✓ Member updated.' + lmicNote, 2800);
@@ -1366,6 +1272,89 @@ window._saCons_saveEditMember = async function(key) {
     // Auto-open workspace provisioning when a member is activated without one
     if (status === 'active' && _wasNotActive && !_hadWorkspace) {
       _saCons_provisionWorkspace(key);
+    }
+
+    // 3. Provision or revoke LMIC access tier and tessera_grants (non-blocking)
+    try {
+      if (lmicTier && status === 'active') {
+        const cached = _saCons_membersCache.find(x => x._key === key);
+        const tesseraId = (cached && cached.tessera_id) || '';
+        await db.ref('lmic_access/' + key).set({
+          active:         true,
+          country:        country,
+          institution:    institution,
+          tessera_grc_id: tesseraId,
+          granted_by:     'superadmin',
+          granted_at:     Date.now(),
+          email:          email,
+        });
+        if (typeof atlasAuditLog === 'function') atlasAuditLog('lmic_access_granted', { uid: key, country, institution });
+
+        const existingGrant = await db.ref('tessera_grants/' + key).once('value');
+        const grantVal = existingGrant.val();
+        if (!grantVal || grantVal.status === 'revoked') {
+          await db.ref('tessera_grants/' + key).set({
+            recipient:      name,
+            institution:    institution,
+            country:        country,
+            study_title:    study || '',
+            grant_type:     'lmic_grant',
+            tier:           tier,
+            granted_at:     Date.now(),
+            status:         'active',
+            email:          email,
+            tessera_grc_id: tesseraId,
+          });
+          if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_grant_created', { uid: key, tier, country, institution });
+        } else {
+          await db.ref('tessera_grants/' + key).update({
+            recipient:    name,
+            institution:  institution,
+            country:      country,
+            study_title:  study || '',
+            tier:         tier,
+            email:        email,
+          });
+        }
+      } else if (!lmicTier) {
+        const existing = await db.ref('lmic_access/' + key).once('value');
+        if (existing.val()) {
+          await db.ref('lmic_access/' + key + '/active').set(false);
+          if (typeof atlasAuditLog === 'function') atlasAuditLog('lmic_access_revoked', { uid: key });
+        }
+        const existingGrant = await db.ref('tessera_grants/' + key).once('value');
+        const existingGrantVal = existingGrant.val();
+        if (existingGrantVal && existingGrantVal.status === 'active' && existingGrantVal.grant_type === 'lmic_grant') {
+          await db.ref('tessera_grants/' + key).update({ status: 'revoked', revoked_at: Date.now() });
+          if (typeof atlasAuditLog === 'function') atlasAuditLog('tessera_grant_revoked', { uid: key });
+        }
+        if (status === 'active') {
+          if (!existingGrantVal || existingGrantVal.status === 'revoked') {
+            await db.ref('tessera_grants/' + key).set({
+              recipient:   name,
+              institution: institution,
+              country:     country,
+              study_title: study || '',
+              grant_type:  'subscription_grant',
+              tier:        tier,
+              granted_at:  existingGrantVal?.granted_at || Date.now(),
+              status:      'active',
+              email:       email,
+            });
+          } else if (existingGrantVal.grant_type !== 'lmic_grant') {
+            await db.ref('tessera_grants/' + key).update({
+              recipient: name, institution, country,
+              study_title: study || '', tier, email,
+            });
+          }
+        } else {
+          if (existingGrantVal && existingGrantVal.status === 'active') {
+            await db.ref('tessera_grants/' + key).update({ status: 'revoked', revoked_at: Date.now() });
+          }
+        }
+      }
+    } catch (grantErr) {
+      console.warn('LMIC/grants sync failed (member record was saved):', grantErr.message);
     }
   } catch (e) {
     errEl.textContent = 'Save failed: ' + e.message;
@@ -2817,8 +2806,17 @@ window._saCons_openAppDrawer = function(key) {
       </div>
 
       <div style="background:${_CC.bg2};border:1px solid rgba(${a.tier===1?'212,168,67':a.tier===2?'56,189,248':a.tier===3?'46,201,138':a.tier===4?'139,111,245':'245,158,11'},0.25);border-radius:8px;padding:13px 14px;margin-bottom:14px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:${tierColor};margin-bottom:5px;">Requested Tier</div>
-        <div style="font-size:0.84rem;color:${_CC.text};font-weight:600;">${tierLabel}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:${tierColor};margin-bottom:3px;">Applicant Requested</div>
+        <div style="font-size:0.78rem;color:${_CC.muted};margin-bottom:10px;">${tierLabel}</div>
+        ${isPending ? `
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:${_CC.dim};margin-bottom:5px;">Assign Tier</div>
+        <select id="sc-drawer-tier-${a._key}" style="width:100%;background:${_CC.bg};border:1px solid ${_CC.border};border-radius:5px;color:${_CC.text};font-family:'IBM Plex Mono',monospace;font-size:0.76rem;padding:7px 10px;cursor:pointer;outline:none;">
+          <option value="1" ${a.tier===1?'selected':''}>1 — Institutional Partner</option>
+          <option value="2" ${a.tier===2?'selected':''}>2 — Validation Partner</option>
+          <option value="3" ${a.tier===3?'selected':''}>3 — Research Affiliate</option>
+          <option value="4" ${a.tier===4?'selected':''}>4 — Student Affiliate</option>
+          <option value="5" ${a.tier===5?'selected':''}>5 — Industry Partner</option>
+        </select>` : `<div style="font-size:0.84rem;color:${_CC.text};font-weight:600;">${tierLabel}</div>`}
       </div>
 
       ${a.study_title ? `<div style="background:${_CC.bg2};border:1px solid ${_CC.border};border-radius:8px;padding:13px 14px;margin-bottom:14px;">
@@ -2848,9 +2846,9 @@ window._saCons_openAppDrawer = function(key) {
           <div style="font-family:'IBM Plex Mono',monospace;font-size:0.60rem;letter-spacing:0.16em;text-transform:uppercase;color:${_CC.dim};">Review Decision</div>
           ${a.lmic_eligible ? `
           <button onclick="_saCons_fastTrackLmicGrant('${a._key}')" style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;padding:13px;border-radius:7px;border:1px solid rgba(139,111,245,0.5);background:rgba(139,111,245,0.14);color:rgba(139,111,245,0.95);cursor:pointer;">✦ TESSERA LMIC Grant — Issue Key Now</button>
-          <div style="font-size:0.70rem;color:rgba(139,111,245,0.6);line-height:1.5;padding:0 2px;">One-click: creates member, issues student workspace key (1-year), activates LMIC researcher access. No payment required. Key ready to send immediately.</div>
+          <div style="font-size:0.70rem;color:rgba(139,111,245,0.6);line-height:1.5;padding:0 2px;">One-click: creates member at Research Affiliate (Tier 3), issues researcher workspace key (1-year), activates LMIC researcher access. No payment required. Key ready to send immediately.</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:${_CC.dim};text-align:center;padding:2px 0;">— or standard review pathway —</div>` : ''}
-          <button onclick="_saCons_approveApp('${a._key}')" style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;padding:13px;border-radius:7px;border:1px solid rgba(212,168,67,0.5);background:rgba(212,168,67,0.12);color:rgba(212,168,67,0.95);cursor:pointer;">Approve — Send Payment Link ($199/yr)</button>
+          <button onclick="_saCons_approveApp('${a._key}')" style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:0.70rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;padding:13px;border-radius:7px;border:1px solid rgba(212,168,67,0.5);background:rgba(212,168,67,0.12);color:rgba(212,168,67,0.95);cursor:pointer;">Approve — Send Payment Link</button>
           <div style="font-size:0.70rem;color:${_CC.dim};line-height:1.5;padding:0 2px;">Member record, consortium letter, mosaic tile, and workspace key are created automatically once payment is confirmed.</div>
           <div style="display:flex;gap:10px;margin-top:4px;">
             <button onclick="_saCons_approveAndComp('${a._key}')" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.08em;text-transform:uppercase;padding:9px;border-radius:7px;border:1px solid ${_CC.border};background:transparent;color:${_CC.muted};cursor:pointer;">Comp / Issue Free</button>
@@ -2873,7 +2871,9 @@ window._saCons_approveApp = async function(key) {
     _saCons_provisionWorkspace(a.member_key);
     return;
   }
-  if (!confirm(`Send payment link to ${a.name || a.contact_email}?\n\nThis will email them a $199/year Stripe checkout link. Their member record, consortium letter, mosaic tile, and workspace key are all created automatically once payment is confirmed.`)) return;
+  const assignedTier = parseInt(document.getElementById('sc-drawer-tier-' + key)?.value) || a.tier || 3;
+  const assignedTierLabel = _CONS_TIER_LABELS[assignedTier] || `Tier ${assignedTier}`;
+  if (!confirm(`Send payment link to ${a.name || a.contact_email}?\n\nAssigned tier: ${assignedTierLabel}\n\nThis will email them a Stripe checkout link. Their member record, consortium letter, mosaic tile, and workspace key are all created automatically once payment is confirmed.`)) return;
 
   const email = (a.contact_email || a.email || '').trim().toLowerCase();
   const name  = (a.name || '').trim();
@@ -2886,7 +2886,7 @@ window._saCons_approveApp = async function(key) {
     await db.ref('consortium_pending_members/' + key).set({
       name, email, contact_email: a.contact_email || a.email || '',
       institution: inst, department: a.department || '', country: a.country || '',
-      role: a.role || '', tier: a.tier || 3, study_title: a.study_title || '',
+      role: a.role || '', tier: assignedTier, study_title: a.study_title || '',
       disease_areas: a.disease_areas || [], instruments: a.instruments || [],
       irb_status: a.irb_status || '', description: a.description || '',
       open_science: a.open_science || false, lmic_eligible: a.lmic_eligible || false,
@@ -2894,7 +2894,7 @@ window._saCons_approveApp = async function(key) {
       applied_at: a.applied_at || Date.now(), application_ref: a.application_ref || '',
       grant_agency: a.grant_agency || '', grant_mechanism: a.grant_mechanism || '',
       country_flag: _CONS_FLAGS[a.country] || '',
-      tile_tier: _CONS_TIER_TO_TESSERA[a.tier || 3] || 'affiliate',
+      tile_tier: _CONS_TIER_TO_TESSERA[assignedTier] || 'affiliate',
       staged_at: Date.now(),
     });
     await db.ref('consortium_applications/' + key).update({ status: 'payment_pending', staged_at: Date.now() });
@@ -2929,7 +2929,9 @@ window._saCons_approveAndComp = async function(key) {
     _saCons_provisionWorkspace(a.member_key);
     return;
   }
-  if (!confirm(`Comp/approve ${a.name || a.contact_email} without payment?\n\nThis immediately creates the member record, consortium letter, and mosaic tile, then opens workspace provisioning. Use for internal team, pilot partners, or waived fees.`)) return;
+  const assignedTier = parseInt(document.getElementById('sc-drawer-tier-' + key)?.value) || a.tier || 3;
+  const assignedTierLabel = _CONS_TIER_LABELS[assignedTier] || `Tier ${assignedTier}`;
+  if (!confirm(`Comp/approve ${a.name || a.contact_email} without payment?\n\nAssigned tier: ${assignedTierLabel}\n\nThis immediately creates the member record, consortium letter, and mosaic tile, then opens workspace provisioning. Use for internal team, pilot partners, or waived fees.`)) return;
   try {
     const db = firebase.database();
     const memberData = {
@@ -2940,7 +2942,7 @@ window._saCons_approveAndComp = async function(key) {
       department:    a.department    || '',
       country:       a.country       || '',
       role:          a.role          || '',
-      tier:          a.tier          || 3,
+      tier:          assignedTier,
       study_title:   a.study_title   || '',
       disease_areas: a.disease_areas || [],
       instruments:   a.instruments   || [],
@@ -2959,7 +2961,7 @@ window._saCons_approveAndComp = async function(key) {
     const newRef = await db.ref('consortium_members').push(memberData);
     const newMemberKey = newRef.key;
     await db.ref('consortium_applications/' + key).update({ status: 'approved', member_key: newMemberKey });
-    await _saCons_autoProvisionOnApproval(newMemberKey, a, a.tier || 3);
+    await _saCons_autoProvisionOnApproval(newMemberKey, a, assignedTier);
     document.getElementById('sc-app-drawer')?.remove();
     if (typeof showToast === 'function') showToast('✓ Comped. Letter issued, mosaic tile added. Provision workspace to complete.', 4000);
     await _saCons_loadMembers();
@@ -3536,8 +3538,8 @@ window._saCons_fastTrackLmicGrant = async function(appKey) {
   const confirmed = confirm(
     `Issue TESSERA LMIC Grant to ${name || email}?\n\n` +
     `This will:\n` +
-    `  • Create a TESSERA Student Affiliate (Tier 4) member record\n` +
-    `  • Issue a student workspace key (1-year expiry)\n` +
+    `  • Create a TESSERA Research Affiliate (Tier 3) member record\n` +
+    `  • Issue a researcher workspace key (1-year expiry)\n` +
     `  • Activate LMIC researcher access\n` +
     `  • No payment required\n\n` +
     `You will be shown the key to copy and send to the researcher.`
@@ -3550,7 +3552,7 @@ window._saCons_fastTrackLmicGrant = async function(appKey) {
   try {
     const db = firebase.database();
 
-    // 1. Create consortium_members record (status: active, tier: 4 Student Affiliate)
+    // 1. Create consortium_members record (status: active, tier: 3 Research Affiliate)
     const memberData = {
       name:            a.name            || '',
       contact_email:   a.contact_email   || a.email || '',
@@ -3558,8 +3560,8 @@ window._saCons_fastTrackLmicGrant = async function(appKey) {
       institution:     a.institution     || '',
       department:      a.department      || '',
       country:         a.country         || '',
-      role:            a.role            || 'Student',
-      tier:            4,
+      role:            a.role            || 'Researcher',
+      tier:            3,
       study_title:     a.study_title     || '',
       disease_areas:   a.disease_areas   || [],
       instruments:     a.instruments     || [],
@@ -3588,7 +3590,7 @@ window._saCons_fastTrackLmicGrant = async function(appKey) {
       body: JSON.stringify({
         name, email,
         institution: inst,
-        role: 'student',
+        role: 'researcher',
         peacs_dims: ['base', 'mvmt', 'strata'],
         lmic_grant: true,
         country: a.country || '',
@@ -3605,14 +3607,14 @@ window._saCons_fastTrackLmicGrant = async function(appKey) {
     const expiryStr = expiry.toISOString().slice(0, 10);
 
     await db.ref('workspaces/' + issuedKey).update({
-      role:           'student',
+      role:           'researcher',
       created_at:     Date.now(),
       name,
       email,
       institution:    inst,
       peacs_dims:     ['base', 'mvmt', 'strata'],
       tessera_member: true,
-      tessera_tier:   4,
+      tessera_tier:   3,
       lmic_grant:     true,
       expiry:         expiryStr,
       sa_note:        `TESSERA LMIC Grant · ${a.country || 'Unknown'} · ${new Date().toISOString().slice(0, 10)}`,
@@ -3649,7 +3651,7 @@ window._saCons_fastTrackLmicGrant = async function(appKey) {
     }
 
     // 8. Auto-provision letter of support + mosaic tile
-    await _saCons_autoProvisionOnApproval(newMemberKey, a, 4);
+    await _saCons_autoProvisionOnApproval(newMemberKey, a, 3);
 
     // 9. Reload lists and show confirmation
     await _saCons_loadMembers();
@@ -3730,7 +3732,7 @@ function _saCons_showGrantConfirmation(name, email, key, country, expiry) {
       <div style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;letter-spacing:0.24em;text-transform:uppercase;color:rgba(139,111,245,0.8);margin-bottom:10px;">TESSERA LMIC Grant Issued</div>
       <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:${_CC.bright};margin-bottom:3px;">${_saCons_esc(name)}</div>
       <div style="font-size:0.76rem;color:${_CC.dim};margin-bottom:6px;">${_saCons_esc(email)}${country ? ' · ' + _saCons_esc(country) : ''}</div>
-      <div style="font-size:0.72rem;color:${_CC.dim};margin-bottom:22px;">Student Affiliate (Tier 4) · LMIC access active · Expires ${_saCons_esc(expiry)}</div>
+      <div style="font-size:0.72rem;color:${_CC.dim};margin-bottom:22px;">Research Affiliate (Tier 3) · LMIC access active · Expires ${_saCons_esc(expiry)}</div>
 
       <div style="background:${_CC.bg};border:1px solid rgba(139,111,245,0.32);border-radius:9px;padding:16px 20px;margin-bottom:22px;">
         <div style="font-family:'IBM Plex Mono',monospace;font-size:0.56rem;letter-spacing:0.20em;text-transform:uppercase;color:${_CC.dim};margin-bottom:8px;">Workspace Key</div>
@@ -3741,7 +3743,7 @@ function _saCons_showGrantConfirmation(name, email, key, country, expiry) {
         <button onclick="navigator.clipboard.writeText('${_saCons_esc(key)}').then(()=>{ this.textContent='✓ Copied'; setTimeout(()=>{ this.textContent='Copy Key'; },1800); }).catch(()=>{ document.execCommand('copy'); });" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;padding:11px 24px;border-radius:6px;border:1px solid rgba(139,111,245,0.45);background:rgba(139,111,245,0.12);color:rgba(139,111,245,0.95);cursor:pointer;transition:background 0.13s;">Copy Key</button>
         <button onclick="document.getElementById('sc-grant-confirm-overlay').remove();" style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;padding:11px 22px;border-radius:6px;border:1px solid ${_CC.border};background:transparent;color:${_CC.muted};cursor:pointer;">Close</button>
       </div>
-      <div style="font-size:0.70rem;color:${_CC.dim};line-height:1.6;max-width:360px;margin:0 auto;">Send this key to the researcher by email. Enrollment as TESSERA Student Affiliate and LMIC researcher access are now live in Firebase.</div>
+      <div style="font-size:0.70rem;color:${_CC.dim};line-height:1.6;max-width:360px;margin:0 auto;">Send this key to the researcher by email. Enrollment as TESSERA Research Affiliate and LMIC researcher access are now live in Firebase.</div>
     </div>`;
 
   document.body.appendChild(overlay);
@@ -3828,7 +3830,12 @@ window._saCons_downloadGrantsCSV = function() {
 function _saCons_renderAccounting(container) {
   container.innerHTML = `<div style="color:${_CC.muted};font-size:0.90rem;padding:20px 0;">Loading grant ledger…</div>`;
 
-  firebase.database().ref('tessera_grants').once('value').then(snap => {
+  if (_saCons_grantsListener) {
+    firebase.database().ref('tessera_grants').off('value', _saCons_grantsListener);
+    _saCons_grantsListener = null;
+  }
+
+  _saCons_grantsListener = firebase.database().ref('tessera_grants').on('value', snap => {
     const raw  = snap.val() || {};
     const rows = Object.entries(raw)
       .map(([k, g]) => g ? _saCons_acctComputeRow(k, g) : null)
@@ -3959,7 +3966,7 @@ function _saCons_renderAccounting(container) {
         QuickBooks import: <em>Accountant → Journal Entries → Import</em>. Map "Total In-Kind Value ($)" to both Program Service Expense and Contribution Revenue lines. Consult your CPA for entity-specific chart of accounts mapping.
       </div>
     `;
-  }).catch(err => {
+  }, err => {
     container.innerHTML = `<div style="color:rgba(239,68,68,0.8);font-size:0.85rem;padding:20px 0;">Failed to load grant ledger: ${_saCons_esc(err.message)}</div>`;
   });
 }
