@@ -5,6 +5,8 @@ compatibility_date = "2024-09-02"
 [assets]
 directory = "./"
 binding = "ASSETS"
+run_worker_first = true
+html_handling = "none"
 
 [vars]
 LAMBDA_URL        = "https://fv3y62xuce6w3t37oj73x5gzcq0uwdqo.lambda-url.us-east-1.on.aws"
