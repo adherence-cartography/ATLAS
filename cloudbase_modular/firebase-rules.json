@@ -9,43 +9,83 @@
     "assessments": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role !== 'observer'",
-      ".indexOn": ["patient_number", "user_id", "timestamp", "campaign_id", "institution_code", "parent_institution", "parent_pi"],
+      ".indexOn": [
+        "patient_number",
+        "user_id",
+        "timestamp",
+        "campaign_id",
+        "institution_code",
+        "parent_institution",
+        "parent_pi"
+      ],
       "$record": {
-        ".validate": "newData.hasChildren(['score','timestamp','user_id']) && newData.child('score').isNumber() && newData.child('score').val() >= -1 && newData.child('score').val() <= 8 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 && newData.child('timestamp').val() >= now - 86400000 && newData.child('user_id').isString() && newData.child('user_id').val().length <= 64 && (!newData.hasChild('institution_code') || (newData.child('institution_code').isString() && newData.child('institution_code').val().length <= 32)) && (!newData.hasChild('patient_number') || (newData.child('patient_number').isString() && newData.child('patient_number').val().length <= 64)) && (!newData.hasChild('country') || (newData.child('country').isString() && newData.child('country').val().length <= 80)) && (!newData.hasChild('condition') || (newData.child('condition').isString() && newData.child('condition').val().length <= 500)) && (!newData.hasChild('drug_name') || (newData.child('drug_name').isString() && newData.child('drug_name').val().length <= 200))",
-        "q1": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
-        "q2": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
-        "q3": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
-        "q4": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
-        "q5": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
-        "q6": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
-        "q7": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))" },
-        "q8": { ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 0.25 || newData.val() === 0.5 || newData.val() === 0.75 || newData.val() === 1))" }
+        ".validate": "newData.hasChildren(['score','timestamp','user_id']) && newData.child('score').isNumber() && newData.child('score').val() >= -1 && newData.child('score').val() <= 8 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 && (data.exists() || newData.child('timestamp').val() >= now - 86400000) && newData.child('user_id').isString() && newData.child('user_id').val().length <= 64 && (!newData.hasChild('institution_code') || (newData.child('institution_code').isString() && newData.child('institution_code').val().length <= 32)) && (!newData.hasChild('patient_number') || (newData.child('patient_number').isString() && newData.child('patient_number').val().length <= 64)) && (!newData.hasChild('country') || (newData.child('country').isString() && newData.child('country').val().length <= 80)) && (!newData.hasChild('condition') || (newData.child('condition').isString() && newData.child('condition').val().length <= 500)) && (!newData.hasChild('drug_name') || (newData.child('drug_name').isString() && newData.child('drug_name').val().length <= 200)) && (!newData.hasChild('lang') || (newData.child('lang').isString() && newData.child('lang').val().length <= 10))",
+        "q1": {
+          ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))"
+        },
+        "q2": {
+          ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))"
+        },
+        "q3": {
+          ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))"
+        },
+        "q4": {
+          ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))"
+        },
+        "q5": {
+          ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))"
+        },
+        "q6": {
+          ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))"
+        },
+        "q7": {
+          ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 1))"
+        },
+        "q8": {
+          ".validate": "!newData.exists() || (newData.isNumber() && (newData.val() === 0 || newData.val() === 0.25 || newData.val() === 0.5 || newData.val() === 0.75 || newData.val() === 1))"
+        }
       }
     },
     "mapData": {
       ".read": true,
       ".write": "auth != null && auth.token.role !== 'observer'",
-      ".indexOn": ["timestamp"],
+      ".indexOn": [
+        "timestamp"
+      ],
       "$record": {
-        ".validate": "newData.hasChildren(['score','timestamp']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 8 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 && newData.child('timestamp').val() >= now - 86400000 && (!newData.hasChild('latitude') || (newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90)) && (!newData.hasChild('longitude') || (newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180))"
+        ".validate": "newData.hasChildren(['score','timestamp']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 8 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 && (data.exists() || newData.child('timestamp').val() >= now - 86400000) && (!newData.hasChild('latitude') || (newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90)) && (!newData.hasChild('longitude') || (newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180))"
       }
     },
     "public_stats": {
       ".read": true,
       ".write": "auth != null && auth.token.role !== 'observer'",
-      "total": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000" },
-      "score_sum": { ".validate": "newData.isNumber() && newData.val() >= 0" },
-      "high_count": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000" },
+      "total": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+      },
+      "score_sum": {
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "high_count": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+      },
       "countries": {
-        "$country": { ".validate": "newData.isBoolean() && $country.length <= 80" }
+        "$country": {
+          ".validate": "newData.isBoolean() && $country.length <= 80"
+        }
       }
     },
     "peacs_public_stats": {
       ".read": true,
       ".write": "auth != null && auth.token.role !== 'observer'",
-      "total": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000" },
-      "score_sum": { ".validate": "newData.isNumber() && newData.val() >= 0" },
-      "high_count": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000" }
+      "total": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+      },
+      "score_sum": {
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "high_count": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+      }
     },
     "site_banner": {
       ".read": true,
@@ -55,7 +95,12 @@
     "peacs_assessments": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role !== 'observer'",
-      ".indexOn": ["patient_number", "institution_code", "parent_institution", "parent_pi"],
+      ".indexOn": [
+        "patient_number",
+        "institution_code",
+        "parent_institution",
+        "parent_pi"
+      ],
       "$record": {
         ".validate": "newData.hasChildren(['pe','timestamp']) && newData.child('pe').isNumber() && newData.child('pe').val() >= 0 && newData.child('pe').val() <= 1 && (!newData.hasChild('base') || (newData.child('base').isNumber() && newData.child('base').val() >= 0 && newData.child('base').val() <= 1)) && (!newData.hasChild('mvmt') || (newData.child('mvmt').isNumber() && newData.child('mvmt').val() >= 0 && newData.child('mvmt').val() <= 1)) && (!newData.hasChild('strata') || (newData.child('strata').isNumber() && newData.child('strata').val() >= 0 && newData.child('strata').val() <= 1)) && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 && newData.child('timestamp').val() >= now - 86400000"
       }
@@ -85,7 +130,9 @@
     "wad_checkins": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role !== 'observer'",
-      ".indexOn": ["timestamp"],
+      ".indexOn": [
+        "timestamp"
+      ],
       "$record": {
         ".validate": "newData.hasChildren(['msg','timestamp']) && newData.child('msg').isString() && newData.child('msg').val().length >= 1 && newData.child('msg').val().length <= 200 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 && newData.child('timestamp').val() >= now - 86400000"
       }
@@ -94,7 +141,9 @@
       "$workspace": {
         ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
         ".write": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
-        ".indexOn": ["ts"]
+        ".indexOn": [
+          "ts"
+        ]
       }
     },
     "globalStats": {
@@ -105,7 +154,9 @@
       },
       "countries": {
         ".write": "auth != null && auth.token.role !== 'observer'",
-        "$country": { ".validate": "newData.isBoolean() && $country.length <= 80" }
+        "$country": {
+          ".validate": "newData.isBoolean() && $country.length <= 80"
+        }
       }
     },
     "export_counts": {
@@ -113,18 +164,24 @@
       "$workspace": {
         ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
         ".write": "auth != null && auth.token.role !== 'observer' && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
-        "$month": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000" }
+        "$month": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+        }
       }
     },
     "campaigns": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role === 'superadmin'",
-      ".indexOn": ["created_at"]
+      ".indexOn": [
+        "created_at"
+      ]
     },
     "wall_projects": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role === 'superadmin'",
-      ".indexOn": ["created_at"]
+      ".indexOn": [
+        "created_at"
+      ]
     },
     "api_keys": {
       ".read": "auth != null && auth.token.role === 'superadmin'",
@@ -165,13 +222,27 @@
       ".write": "auth != null && auth.token.role === 'superadmin'"
     },
     "workspaces": {
-      ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.role === 'institution')",
+      ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.role === 'institution' || auth.token.role === 'pi')",
       ".write": "auth != null && auth.token.role === 'superadmin'",
       "$workspace": {
-        "name": { ".read": "auth != null" },
-        "cohortLabel": { ".read": "auth != null" },
-        "institution": { ".read": "auth != null" },
-        "parent_institution_name": { ".read": "auth != null" },
+        "name": {
+          ".read": "auth != null"
+        },
+        "cohortLabel": {
+          ".read": "auth != null"
+        },
+        "institution": {
+          ".read": "auth != null"
+        },
+        "parent_institution_name": {
+          ".read": "auth != null"
+        },
+        "parent_institution": {
+          ".read": "auth != null"
+        },
+        "parent_pi": {
+          ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.role === 'institution' || auth.token.role === 'pi' || auth.token.workspace === $workspace)"
+        },
         "profile": {
           ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)"
         },
@@ -223,7 +294,9 @@
       ".write": "auth != null && auth.token.role !== 'observer'",
       "$record": {
         ".validate": "newData.hasChildren(['ts']) && newData.child('ts').isNumber() && newData.child('ts').val() <= now + 300000",
-        "ts": { ".validate": "newData.isNumber() && newData.val() > (now - 7776000000)" }
+        "ts": {
+          ".validate": "newData.isNumber() && newData.val() > (now - 7776000000)"
+        }
       }
     },
     "warnings": {
@@ -236,6 +309,7 @@
     "audit_log": {
       ".read": "auth != null && auth.token.role === 'superadmin'",
       ".write": "auth != null",
+      ".indexOn": ["timestamp", "uid", "cfr11"],
       "$record": {
         ".validate": "newData.hasChildren(['action','timestamp','uid']) && newData.child('action').isString() && newData.child('action').val().length <= 80 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 300000 && newData.child('timestamp').val() >= now - 86400000 && newData.child('uid').isString() && newData.child('uid').val().length <= 128"
       }
@@ -269,36 +343,39 @@
         ".validate": "newData.hasChildren(['title','uid','submitted_at']) && newData.child('title').isString() && newData.child('title').val().length <= 200 && newData.child('uid').isString() && newData.child('submitted_at').isNumber()"
       }
     },
-
     "map_assessments": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role !== 'observer'",
-      ".indexOn": ["workspace_key", "ts", "instrument_type", "session_id"],
+      ".indexOn": [
+        "workspace_key",
+        "ts",
+        "instrument_type",
+        "session_id"
+      ],
       "$record": {
         ".validate": "newData.hasChildren(['pe_score','ts']) && newData.child('pe_score').isNumber() && newData.child('pe_score').val() >= 0 && newData.child('pe_score').val() <= 1 && newData.child('ts').isNumber() && newData.child('ts').val() <= now + 300000 && newData.child('ts').val() >= now - 86400000"
       }
     },
-
     "map_sessions": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role !== 'observer'",
-      ".indexOn": ["workspace_key", "ts"]
+      ".indexOn": [
+        "workspace_key",
+        "ts"
+      ]
     },
-
     "map_longitudinal_sessions": {
       "$workspace": {
         ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
         ".write": "auth != null && auth.token.role !== 'observer' && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)"
       }
     },
-
     "map_cert_progress": {
       "$uid": {
         ".read": "auth != null && (auth.token.role === 'superadmin' || auth.uid === $uid)",
         ".write": "auth != null && (auth.token.role === 'superadmin' || auth.uid === $uid)"
       }
     },
-
     "isr_proposals": {
       ".read": "auth != null && auth.token.role === 'superadmin'",
       ".write": "auth != null && auth.token.role !== 'observer'",
@@ -307,36 +384,43 @@
         ".validate": "newData.hasChildren(['title','uid','submitted_at']) && newData.child('title').isString() && newData.child('title').val().length <= 300 && newData.child('uid').isString() && newData.child('submitted_at').isNumber()"
       }
     },
-
     "pharmacy_assessments": {
-      ".read": "auth != null && auth.token.role !== 'observer'",
+      ".read": "auth != null && auth.token.role !== 'observer' && (auth.token.role === 'superadmin' || auth.token.workspace != null)",
       ".write": "auth != null && auth.token.workspace !== null && auth.token.role !== 'observer'",
-      ".indexOn": ["workspace_key", "site_code", "ts"],
+      ".indexOn": [
+        "workspace_key",
+        "site_code",
+        "ts"
+      ],
       "$record": {
         ".validate": "newData.hasChildren(['pe_score','ts','assessment_mode']) && newData.child('pe_score').isNumber() && newData.child('pe_score').val() >= 0 && newData.child('pe_score').val() <= 1 && newData.child('ts').isNumber() && newData.child('ts').val() <= now + 300000 && newData.child('ts').val() >= now - 86400000 && newData.child('assessment_mode').isString() && newData.child('assessment_mode').val() === 'pharmacy' && (!newData.hasChild('workspace_key') || newData.child('workspace_key').val() === auth.token.workspace)"
       }
     },
-
     "prescriber_alerts": {
       "$workspace": {
         ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.workspace === $workspace)",
         ".write": "auth != null && auth.token.workspace !== null && auth.token.role !== 'observer'",
-        ".indexOn": ["ts", "read"],
+        ".indexOn": [
+          "ts",
+          "read"
+        ],
         "$record": {
           ".validate": "newData.hasChildren(['ts','type','from_site']) && newData.child('ts').isNumber() && newData.child('ts').val() <= now + 300000 && newData.child('type').isString() && newData.child('from_site').isString() && newData.child('from_site').val().length <= 64"
         }
       }
     },
-
     "patient_self_assessments": {
       ".read": "auth != null",
       ".write": "auth != null",
-      ".indexOn": ["patient_code", "workspace_key", "ts"],
+      ".indexOn": [
+        "patient_code",
+        "workspace_key",
+        "ts"
+      ],
       "$record": {
         ".validate": "newData.hasChildren(['pe_score','ts','source']) && newData.child('pe_score').isNumber() && newData.child('pe_score').val() >= 0 && newData.child('pe_score').val() <= 1 && newData.child('ts').isNumber() && newData.child('ts').val() <= now + 300000 && newData.child('ts').val() >= now - 86400000 && newData.child('source').isString() && newData.child('source').val() === 'map-self'"
       }
     },
-
     "patient_self_assessments_intents": {
       ".read": "auth != null && auth.token.role === 'superadmin'",
       ".write": "auth != null",
@@ -344,21 +428,22 @@
         ".validate": "newData.hasChildren(['ts','intent']) && newData.child('ts').isNumber() && newData.child('intent').isString() && newData.child('intent').val().length <= 64"
       }
     },
-
     "chw_assessments": {
       ".read": "auth != null && auth.token.role !== 'observer'",
       ".write": "auth != null",
-      ".indexOn": ["workspace", "site_id", "ts"],
+      ".indexOn": [
+        "workspace",
+        "site_id",
+        "ts"
+      ],
       "$record": {
         ".validate": "newData.hasChildren(['pe_score','ts','assessment_mode','site_id']) && newData.child('pe_score').isNumber() && newData.child('pe_score').val() >= 0 && newData.child('pe_score').val() <= 1 && newData.child('ts').isNumber() && newData.child('ts').val() <= now + 300000 && newData.child('ts').val() >= now - 86400000 && newData.child('assessment_mode').isString() && newData.child('assessment_mode').val() === 'chw' && newData.child('site_id').isString() && newData.child('site_id').val().length >= 1 && newData.child('site_id').val().length <= 64"
       }
     },
-
     "open_data_notifications": {
       ".read": "auth != null && auth.token.role === 'superadmin'",
       ".write": "auth != null && auth.token.role === 'superadmin'"
     },
-
     "infrastructure_poi": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.role !== 'observer'",
@@ -366,17 +451,59 @@
         ".validate": "newData.hasChildren(['type','latitude','longitude','submitted_by','submitted_at']) && newData.child('latitude').isNumber() && newData.child('longitude').isNumber() && newData.child('submitted_at').isNumber() && newData.child('type').isString()"
       }
     },
-
     "users": {
       "$uid": {
         ".read": "auth != null && (auth.token.role === 'superadmin' || auth.uid === $uid)",
         ".write": "auth != null && auth.token.role === 'superadmin'"
       }
     },
-
     "tessera_grants": {
       ".read": true,
       ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "lmic_access": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "benchmark_cache": {
+      ".read": "auth != null && (auth.token.role === 'superadmin' || auth.token.role === 'institution' || auth.token.role === 'pi' || auth.token.role === 'researcher')",
+      ".write": "auth != null && auth.token.role === 'superadmin'"
+    },
+    "tessera_tiles": {
+      ".read": true,
+      ".write": "auth != null && auth.token.role === 'superadmin'",
+      ".indexOn": [
+        "joinedAt"
+      ]
+    },
+    "tessera_payments": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "false",
+      ".indexOn": [
+        "ts",
+        "customer_email"
+      ]
+    },
+    "foundation_donations": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".write": "false",
+      ".indexOn": [
+        "ts"
+      ]
+    },
+    "research_exchange": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.role !== 'observer'",
+      ".indexOn": ["posted", "status", "type"],
+      "$record": {
+        ".validate": "newData.hasChildren(['type','title','posted']) && newData.child('type').isString() && newData.child('type').val().length <= 80 && newData.child('title').isString() && newData.child('title').val().length <= 300 && newData.child('posted').isNumber() && newData.child('posted').val() <= now + 300000"
+      }
+    },
+    "researcher_profiles": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.token.role === 'superadmin' || auth.uid === $uid)"
+      }
     }
   }
 }
